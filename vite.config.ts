@@ -62,13 +62,14 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [react()],
       define: {
+        // Direct client-side APIs (key needed in bundle)
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.FAL_KEY': JSON.stringify(env.FAL_KEY),
-        'process.env.REPLICATE_API_TOKEN': JSON.stringify(env.REPLICATE_API_TOKEN),
-        'process.env.OPENAI_API_KEY': JSON.stringify(env.OPENAI_API_KEY),
-        'process.env.IDEOGRAM_API_KEY': JSON.stringify(env.IDEOGRAM_API_KEY),
         'process.env.MODELSLAB_API_KEY': JSON.stringify(env.MODELSLAB_API_KEY),
+        // Proxied APIs — keys injected server-side via Cloudflare Functions (prod)
+        // or Vite dev proxy (dev). Keys must NOT be baked into the client bundle.
+        // Supabase public anon key — safe to expose
         'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL),
         'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY),
       },
