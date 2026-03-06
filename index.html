@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VIST Studio</title>
+
+    <!-- Fonts: Space Grotesk (display), Inter (body), JetBrains Mono (code/labels) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CDN config — must be defined BEFORE loading the CDN -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              // Warm zinc overrides — shifts ALL bg-zinc-* / text-zinc-* to warm tones
+              zinc: {
+                50:  '#FAF7F6',
+                100: '#F5F0EE',
+                200: '#E8DDD9',
+                300: '#D4C8C4',
+                400: '#B8A9A5',
+                500: '#8C7570',
+                600: '#6B5A56',
+                700: '#2A1F1C',
+                800: '#1E1614',
+                850: '#19100E',
+                900: '#161110',
+                950: '#0D0A0A',
+              },
+              // Brand coral accent
+              coral: {
+                DEFAULT: '#FF5C35',
+                hover:   '#FF7A57',
+                pressed: '#E64A25',
+                dim:     'rgba(255,92,53,0.25)',
+              },
+              // Brand amber accent
+              amber: {
+                brand: '#FFB347',
+                dim:   'rgba(255,179,71,0.15)',
+              },
+            },
+            fontFamily: {
+              display: ['"Space Grotesk"', 'sans-serif'],
+              body:    ['"Inter"', 'sans-serif'],
+              jet:     ['"JetBrains Mono"', 'monospace'],
+            },
+            backgroundImage: {
+              'brand-gradient': 'linear-gradient(135deg, #FF5C35 0%, #FFB347 100%)',
+              'brand-gradient-v': 'linear-gradient(180deg, #FF5C35 0%, #FF8C42 100%)',
+            },
+            boxShadow: {
+              'coral-glow': '0 4px 24px rgba(255, 92, 53, 0.35)',
+              'coral-glow-lg': '0 8px 40px rgba(255, 92, 53, 0.45)',
+            },
+          },
+        },
+      };
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+      /* ── CSS Design Tokens ──────────────────────────────────────────── */
+      :root {
+        --bg-primary:    #0D0A0A;
+        --bg-surface:    #161110;
+        --bg-elevated:   #1E1614;
+        --bg-hover:      #251A17;
+
+        --accent:        #FF5C35;
+        --accent-hover:  #FF7A57;
+        --accent-glow:   rgba(255, 92, 53, 0.25);
+        --accent-amber:  #FFB347;
+
+        --text-primary:  #FFFFFF;
+        --text-secondary:#B8A9A5;
+        --text-muted:    #6B5A56;
+
+        --border:        #2A1F1C;
+        --border-active: rgba(255, 92, 53, 0.45);
+        --border-glow:   rgba(255, 92, 53, 0.6);
+
+        --gradient-brand: linear-gradient(135deg, #FF5C35 0%, #FFB347 100%);
+
+        --font-display: 'Space Grotesk', sans-serif;
+        --font-body:    'Inter', sans-serif;
+        --font-mono:    'JetBrains Mono', monospace;
+      }
+
+      /* ── Base ─────────────────────────────────────────────────────── */
+      *, *::before, *::after { box-sizing: border-box; }
+
+      html { scroll-behavior: smooth; }
+
+      body {
+        font-family: var(--font-body);
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      h1, h2, h3, h4, h5, h6 {
+        font-family: var(--font-display);
+      }
+
+      /* ── Scrollbar ────────────────────────────────────────────────── */
+      ::-webkit-scrollbar        { width: 4px; height: 4px; }
+      ::-webkit-scrollbar-track  { background: var(--bg-primary); }
+      ::-webkit-scrollbar-thumb  { background: var(--accent); border-radius: 2px; }
+      ::-webkit-scrollbar-thumb:hover { background: var(--accent-hover); }
+
+      /* ── Custom scrollbar class (keeps existing .custom-scrollbar working) */
+      .custom-scrollbar::-webkit-scrollbar        { width: 4px; }
+      .custom-scrollbar::-webkit-scrollbar-track  { background: transparent; }
+      .custom-scrollbar::-webkit-scrollbar-thumb  { background: var(--accent); border-radius: 2px; opacity: 0.6; }
+
+      /* ── Gradient text utility ────────────────────────────────────── */
+      .text-gradient-brand {
+        background: var(--gradient-brand);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      /* ── Ambient glow (hero / section backgrounds) ──────────────── */
+      .glow-coral {
+        background: radial-gradient(ellipse 60% 40% at 30% 50%,
+          rgba(255, 92, 53, 0.08) 0%, transparent 70%);
+      }
+
+      /* ── Card hover glow ─────────────────────────────────────────── */
+      .card-hover-glow {
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+      .card-hover-glow:hover {
+        border-color: var(--border-active);
+        box-shadow: 0 0 0 1px var(--border-active),
+                    0 8px 32px var(--accent-glow);
+      }
+
+      /* ── Shimmer skeleton loader ─────────────────────────────────── */
+      @keyframes shimmer {
+        0%   { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+      .skeleton-shimmer {
+        background: linear-gradient(90deg,
+          var(--bg-surface) 25%,
+          var(--bg-hover) 50%,
+          var(--bg-surface) 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+      }
+
+      /* ── Accent divider line ─────────────────────────────────────── */
+      .accent-line {
+        height: 1px;
+        background: linear-gradient(90deg, transparent 0%, var(--accent) 50%, transparent 100%);
+        opacity: 0.35;
+      }
+
+      /* ── Font utilities ──────────────────────────────────────────── */
+      .font-display { font-family: var(--font-display) !important; }
+      .font-jet     { font-family: var(--font-mono) !important; }
+
+      /* ── Primary button override: coral gradient ─────────────────── */
+      /* Targets existing purple→indigo gradient buttons app-wide */
+      .from-purple-600.to-indigo-600 {
+        --tw-gradient-from: #FF5C35 !important;
+        --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(255,92,53,0)) !important;
+        --tw-gradient-to: #FFB347 !important;
+      }
+      .hover\:from-purple-500:hover {
+        --tw-gradient-from: #FF7A57 !important;
+        --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(255,122,87,0)) !important;
+      }
+      .hover\:to-indigo-500:hover {
+        --tw-gradient-to: #FFC96A !important;
+      }
+      /* Purple shadow → coral glow */
+      .shadow-\[0_0_20px_rgba\(147\,51\,234\,0\.3\)\] {
+        box-shadow: 0 4px 24px rgba(255, 92, 53, 0.35) !important;
+      }
+      /* Violet/indigo button variants */
+      .from-violet-600.to-purple-600,
+      .from-indigo-600.to-purple-600 {
+        --tw-gradient-from: #FF5C35 !important;
+        --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(255,92,53,0)) !important;
+        --tw-gradient-to: #FFB347 !important;
+      }
+      .hover\:from-violet-500:hover,
+      .hover\:from-indigo-500:hover {
+        --tw-gradient-from: #FF7A57 !important;
+        --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(255,122,87,0)) !important;
+      }
+      .hover\:to-purple-500:hover {
+        --tw-gradient-to: #FFC96A !important;
+      }
+      /* Gradient line dividers (purple pill/bar) */
+      .from-purple-500.to-indigo-600 {
+        --tw-gradient-from: #FF5C35 !important;
+        --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(255,92,53,0)) !important;
+        --tw-gradient-to: #FFB347 !important;
+      }
+
+      /* ── Focus ring → coral ──────────────────────────────────────── */
+      .focus-within\:border-purple-500\/40:focus-within {
+        border-color: rgba(255, 92, 53, 0.4) !important;
+      }
+      .focus-within\:ring-purple-500\/10:focus-within {
+        --tw-ring-color: rgba(255, 92, 53, 0.1) !important;
+      }
+      .focus-within\:shadow-purple-900\/5:focus-within {
+        --tw-shadow-color: rgba(255, 92, 53, 0.05) !important;
+      }
+    </style>
+
+    <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0"
+  }
+}
+</script>
+    <link rel="stylesheet" href="/index.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

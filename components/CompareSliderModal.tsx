@@ -1,0 +1,152 @@
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { GeneratedContent } from '../types';
+
+interface CompareSliderModalProps {
+  itemA: GeneratedContent;
+  itemB: GeneratedContent;
+  onClose: () => void;
+}
+
+const CompareSliderModal: React.FC<CompareSliderModalProps> = ({ itemA, itemB, onClose }) => {
+  const [sliderPos, setSliderPos] = useState(50); // 0–100%
+  const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') onClose();
+    if (e.key === 'ArrowLeft') setSliderPos(p => Math.max(0, p - 2));
+    if (e.key === 'ArrowRight') setSliderPos(p => Math.min(100, p + 2));
+  }, [onClose]);
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
+  const updateSlider = useCallback((clientX: number) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const pos = Math.min(100, Math.max(0, ((clientX - rect.left) / rect.width) * 100));
+    setSliderPos(pos);
+  }, []);
+
+  const onMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDragging) return;
+    updateSlider(e.clientX);
+  }, [isDragging, updateSlider]);
+
+  const onTouchMove = useCallback((e: TouchEvent) => {
+    updateSlider(e.touches[0].clientX);
+  }, [updateSlider]);
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', () => setIsDragging(false));
+    }
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', () => setIsDragging(false));
+    };
+  }, [isDragging, onMouseMove]);
+
+  const labelA = itemA.tags?.includes('uploaded') ? 'Photo A' : `${itemA.type === 'edit' ? 'Edited' : 'Created'} A`;
+  const labelB = itemB.tags?.includes('uploaded') ? 'Photo B' : `${itemB.type === 'edit' ? 'Edited' : 'Created'} B`;
+
+  return (
+    <div className="fixed inset-0 z-[90] bg-black flex flex-col animate-in fade-in duration-200">
+      {/* Header */}
+      <div className="shrink-0 flex items-center justify-between px-6 py-3 border-b border-white/5 bg-zinc-950/80 backdrop-blur-md">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onClose}
+            className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-xl border border-white/5 text-sm"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5" /><path d="m12 19-7-7 7-7" /></svg>
+            Back
+          </button>
+          <h2 className="text-sm font-semibold text-white">Compare</h2>
+          <span className="text-[11px] text-zinc-500">Drag slider · Arrow keys</span>
+        </div>
+        <div className="flex items-center gap-2 text-[11px] text-zinc-500">
+          <span className="text-sky-400 font-medium">{Math.round(sliderPos)}%</span>
+        </div>
+      </div>
+
+      {/* Comparison canvas */}
+      <div className="flex-1 flex items-center justify-center p-4 overflow-hidden">
+        <div
+          ref={containerRef}
+          className="relative select-none max-w-5xl w-full h-full cursor-ew-resize rounded-xl overflow-hidden shadow-2xl"
+          onMouseDown={(e) => { e.preventDefault(); setIsDragging(true); updateSlider(e.clientX); }}
+          onTouchStart={(e) => updateSlider(e.touches[0].clientX)}
+          onTouchMove={(e) => onTouchMove(e.nativeEvent)}
+        >
+          {/* Image B — right side (full, behind) */}
+          <img
+            src={itemB.url}
+            alt={labelB}
+            className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+            draggable={false}
+          />
+
+          {/* Image A — left side (clipped by slider) */}
+          <div
+            className="absolute inset-0 overflow-hidden"
+            style={{ width: `${sliderPos}%` }}
+          >
+            <img
+              src={itemA.url}
+              alt={labelA}
+              className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+              style={{ width: `${containerRef.current?.offsetWidth ?? 800}px`, maxWidth: 'none' }}
+              draggable={false}
+            />
+          </div>
+
+          {/* Slider handle */}
+          <div
+            className="absolute top-0 bottom-0 z-20 flex flex-col items-center"
+            style={{ left: `${sliderPos}%`, transform: 'translateX(-50%)' }}
+          >
+            {/* Line */}
+            <div className="w-[2px] h-full bg-white/90 shadow-[0_0_8px_rgba(0,0,0,0.8)]" />
+            {/* Handle circle */}
+            <div className="absolute top-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-xl flex items-center justify-center cursor-ew-resize">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 9l-3 3 3 3" />
+                <path d="M16 9l3 3-3 3" />
+                <line x1="11" y1="12" x2="13" y2="12" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Labels */}
+          <div className="absolute top-4 left-4 z-30 px-2 py-1 bg-black/60 backdrop-blur-sm rounded-lg text-[11px] font-semibold text-white pointer-events-none">
+            {labelA}
+          </div>
+          <div className="absolute top-4 right-4 z-30 px-2 py-1 bg-black/60 backdrop-blur-sm rounded-lg text-[11px] font-semibold text-white pointer-events-none">
+            {labelB}
+          </div>
+        </div>
+      </div>
+
+      {/* Thumbnails strip */}
+      <div className="shrink-0 flex items-center justify-center gap-4 px-6 py-3 border-t border-white/5 bg-zinc-950/80 backdrop-blur-md">
+        <div className="flex items-center gap-2">
+          <div className="w-1.5 h-8 bg-white/80 rounded-full" />
+          <img src={itemA.url} alt={labelA} className="w-10 h-10 rounded-lg object-cover border-2 border-white/40" />
+          <span className="text-[11px] text-zinc-400">{labelA}</span>
+        </div>
+        <span className="text-zinc-600 text-sm">vs</span>
+        <div className="flex items-center gap-2">
+          <img src={itemB.url} alt={labelB} className="w-10 h-10 rounded-lg object-cover border-2 border-zinc-600/40" />
+          <span className="text-[11px] text-zinc-400">{labelB}</span>
+          <div className="w-1.5 h-8 bg-zinc-700 rounded-full" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CompareSliderModal;

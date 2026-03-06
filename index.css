@@ -1,0 +1,44 @@
+/* ════════════════════════════════════════════════════════════
+   VIST Studio — Design System
+   Coral/Amber brand identity. Warm, bold, creator-first.
+   ════════════════════════════════════════════════════════════ */
+
+/* All core tokens, animations, and global overrides live in
+   index.html <style> for CDN Tailwind compatibility.
+   This file handles anything that needs cascade ordering
+   separate from the CDN-injected sheet. */
+
+/* ── Input focus ring override ────────────────────────────────── */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--border-glow) !important;
+  box-shadow: 0 0 0 3px var(--accent-glow) !important;
+}
+
+/* ── Range slider (brush size, etc.) ─────────────────────────── */
+input[type="range"]::-webkit-slider-thumb {
+  background: var(--accent) !important;
+}
+input[type="range"]::-moz-range-thumb {
+  background: var(--accent) !important;
+  border: none !important;
+}
+/* Track */
+input[type="range"]::-webkit-slider-runnable-track {
+  background: var(--border) !important;
+}
+
+/* ── Checkbox / accent-purple → coral ────────────────────────── */
+.accent-purple-500 { accent-color: #FF5C35 !important; }
+
+/* ── Progress bar fill → coral ───────────────────────────────── */
+progress::-webkit-progress-value { background: var(--accent) !important; }
+progress::-moz-progress-bar      { background: var(--accent) !important; }
+
+/* ── Selection highlight ─────────────────────────────────────── */
+::selection {
+  background: rgba(255, 92, 53, 0.25);
+  color: #fff;
+}

@@ -1,0 +1,5 @@
+{
+  "name": "VIST",
+  "description": "A professional dashboard to manage and generate high-fidelity images for your virtual influencer using Gemini 3 Pro Image Preview.",
+  "requestFramePermissions": []
+}
