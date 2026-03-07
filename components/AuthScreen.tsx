@@ -2,11 +2,20 @@
 import React, { useState } from 'react';
 import { signInWithEmail, signUpWithEmail, supabase } from '../services/supabaseService';
 
+const CONTEXT_BANNERS: Record<string, string> = {
+  director: 'Inicia sesión para acceder al Director Studio',
+  generate: 'Inicia sesión para generar imágenes con IA',
+  characters: 'Inicia sesión para gestionar tu librería de personajes',
+  storyboard: 'Inicia sesión para crear storyboards',
+  profile: 'Inicia sesión para ver tu perfil',
+};
+
 interface AuthScreenProps {
   onAuthenticated: () => void;
+  intendedWorkspace?: string;
 }
 
-const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
+const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, intendedWorkspace }) => {
   const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -86,6 +95,14 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated }) => {
         <h1 className="text-3xl font-bold text-white tracking-tight">VIST</h1>
         <p className="text-zinc-500 text-sm mt-1">Virtual Influencer Studio</p>
       </div>
+
+      {/* Context banner */}
+      {intendedWorkspace && CONTEXT_BANNERS[intendedWorkspace] && (
+        <div className="w-full max-w-sm mb-3 px-4 py-3 rounded-xl text-[13px] text-center"
+          style={{ background: 'rgba(255,92,53,0.08)', border: '1px solid rgba(255,92,53,0.2)', color: '#FF5C35' }}>
+          {CONTEXT_BANNERS[intendedWorkspace]}
+        </div>
+      )}
 
       {/* Card */}
       <div className="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-2xl">

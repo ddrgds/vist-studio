@@ -122,11 +122,12 @@ Si te piden la pose: Mándales un párrafo útil y descriptivo (ej. "Mujer senta
     };
 
     return (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+        <div className="fixed bottom-20 right-6 z-40 flex flex-col items-end">
             {/* Botón Flotante */}
             <button
                 onClick={toggleWidget}
-                className="w-14 h-14 bg-blue-600 hover:bg-blue-500 rounded-full shadow-xl flex items-center justify-center text-white transition-all transform hover:scale-110 border-2 border-white/20"
+                className="w-12 h-12 rounded-full shadow-xl flex items-center justify-center text-white transition-all transform hover:scale-110"
+                style={{ background: '#1A1714', border: '1px solid #2A1F1C', boxShadow: '0 4px 16px rgba(0,0,0,0.5)' }}
             >
                 {isOpen ? (
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -137,9 +138,10 @@ Si te piden la pose: Mándales un párrafo útil y descriptivo (ej. "Mujer senta
 
             {/* Ventana de Chat */}
             {isOpen && (
-                <div className="absolute bottom-16 right-0 w-80 md:w-96 h-[500px] max-h-[80vh] bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5">
+                <div className="absolute bottom-14 right-0 w-80 md:w-96 h-[500px] max-h-[80vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+                  style={{ background: '#0D0A0A', border: '1px solid #2A1F1C', boxShadow: '0 8px 40px rgba(0,0,0,0.7)' }}>
                     {/* Header */}
-                    <div className="bg-zinc-800 p-4 border-b border-white/10 flex justify-between items-center">
+                    <div className="p-4 flex justify-between items-center" style={{ background: '#161110', borderBottom: '1px solid #2A1F1C' }}>
                         <div>
                             <h3 className="text-white font-medium">Asistente de Poses (GPT-5 Nano)</h3>
                             <p className="text-xs text-zinc-400">Sube fotos para describir ropa o poses</p>

@@ -31,7 +31,10 @@ import {
   OPENAI_MODEL_LABELS,
   IDEOGRAM_MODEL_LABELS,
   VIDEO_ENGINE_LABELS,
+  CREDIT_COSTS,
+  OPERATION_CREDIT_COSTS,
 } from "../types";
+import { useSubscription } from "../hooks/useSubscription";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -396,6 +399,20 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
 }) => {
   const form = useForm();
   const gallery = useGallery();
+  const sub = useSubscription();
+
+  // Credit cost for current config
+  const genCreditCost = (() => {
+    if (form.activeMode === 'video') return CREDIT_COSTS[form.videoEngine as string] ?? 50;
+    let costPerImage = 5;
+    if (form.aiProvider === AIProvider.Fal) costPerImage = CREDIT_COSTS[form.falModel] ?? 10;
+    else if (form.aiProvider === AIProvider.Replicate) costPerImage = CREDIT_COSTS[form.replicateModel] ?? 15;
+    else if (form.aiProvider === AIProvider.OpenAI) costPerImage = CREDIT_COSTS[form.openaiModel] ?? 20;
+    else if (form.aiProvider === AIProvider.Ideogram) costPerImage = CREDIT_COSTS[form.ideogramModel] ?? 10;
+    else if (form.aiProvider === AIProvider.ModelsLab) costPerImage = CREDIT_COSTS[form.modelsLabModel] ?? 5;
+    else costPerImage = CREDIT_COSTS[form.geminiModel] ?? 5;
+    return costPerImage * form.numberOfImages;
+  })();
 
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -438,6 +455,8 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
   const featuredModels = ALL_MODELS.filter((m) => m.section === "featured" && filter(m));
   const otherModels = ALL_MODELS.filter((m) => m.section === "other" && filter(m));
   const videoModels = ALL_MODELS.filter((m) => m.section === "video" && filter(m));
+
+  const isFirstTime = gallery.generatedHistory.length === 0;
 
   // Gallery items
   const recentItems = gallery.generatedHistory.slice(0, 8);
@@ -644,6 +663,31 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
                     </button>
                   )}
                 </div>
+
+                {/* Onboarding — suggested prompts for first-time users */}
+                {isFirstTime && (
+                  <div className="mt-10 max-w-md">
+                    <p className="text-[11px] font-jet mb-3" style={{ color: '#4A3A36' }}>
+                      ✨ Pro tip: Start with a description of person, style, and setting
+                    </p>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {[
+                        'Young woman, editorial fashion, studio lighting',
+                        'Male model, streetwear, urban background',
+                        'Beauty close-up, golden hour, soft bokeh',
+                      ].map((prompt) => (
+                        <button
+                          key={prompt}
+                          onClick={() => { if (char0) form.updateCharacter(char0.id, 'outfitDescription', prompt); }}
+                          className="px-3 py-1.5 rounded-full text-[11px] transition-all hover:scale-[1.03]"
+                          style={{ background: 'rgba(255,92,53,0.08)', border: '1px solid rgba(255,92,53,0.2)', color: '#FF5C35' }}
+                        >
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               /* Fallback if no model active somehow */
@@ -899,6 +943,17 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
             <Settings className="w-3.5 h-3.5" />
           </button>
 
+          {/* Credit cost pill */}
+          {!isGenerating && (
+            <div className="flex items-center gap-1.5 text-[10px] font-jet mr-1" style={{ color: '#6B5A56' }}>
+              <span style={{ color: '#FFB347' }}>⚡{genCreditCost}</span>
+              <span style={{ color: '#2A1F1C' }}>·</span>
+              <span style={{ color: sub.credits < 20 ? '#EF4444' : sub.credits < 100 ? '#F59E0B' : '#6B5A56' }}>
+                {sub.isUnlimited ? '∞' : sub.credits.toLocaleString()}
+              </span>
+            </div>
+          )}
+
           {/* Generate / Stop */}
           <button
             onClick={isGenerating ? onStopGeneration : onGenerate}
@@ -906,9 +961,12 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
             className={`flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold transition-all active:scale-95 ${
               isGenerating
                 ? "text-white hover:opacity-90"
-                : "bg-white text-black hover:bg-zinc-100"
+                : "text-white hover:opacity-90"
             }`}
-            style={isGenerating ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)' } : undefined}
+            style={isGenerating
+              ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)' }
+              : { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', boxShadow: '0 2px 16px rgba(255,92,53,0.3)' }
+            }
           >
             {isGenerating ? (
               <>
@@ -916,7 +974,7 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
                 Generating…
               </>
             ) : (
-              <>Generate <span className="opacity-60 font-normal">→ {form.numberOfImages}</span></>
+              <>⚡ Generate <span className="opacity-60 font-normal">→ {form.numberOfImages}</span></>
             )}
           </button>
         </div>

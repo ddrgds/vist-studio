@@ -10,13 +10,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
-    <!-- Tailwind CDN config — must be defined BEFORE loading the CDN -->
+    <!-- Tailwind CDN — load first, then configure -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
             colors: {
-              // Warm zinc overrides — shifts ALL bg-zinc-* / text-zinc-* to warm tones
               zinc: {
                 50:  '#FAF7F6',
                 100: '#F5F0EE',
@@ -31,14 +31,12 @@
                 900: '#161110',
                 950: '#0D0A0A',
               },
-              // Brand coral accent
               coral: {
                 DEFAULT: '#FF5C35',
                 hover:   '#FF7A57',
                 pressed: '#E64A25',
                 dim:     'rgba(255,92,53,0.25)',
               },
-              // Brand amber accent
               amber: {
                 brand: '#FFB347',
                 dim:   'rgba(255,179,71,0.15)',
@@ -61,8 +59,6 @@
         },
       };
     </script>
-
-    <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
       /* ── CSS Design Tokens ──────────────────────────────────────────── */

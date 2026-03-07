@@ -1136,9 +1136,16 @@ const AppInner: React.FC = () => {
     );
   }
 
-  // ─── Auth gate ───────────────────────────
-  if (!user) {
-    return <AuthScreen onAuthenticated={() => {}} />;
+  // ─── Auth gate — public pages: explore, pricing ───────────────
+  const PUBLIC_WORKSPACES: AppWorkspace[] = ['explore', 'pricing'];
+  const isPublicWorkspace = PUBLIC_WORKSPACES.includes(activeWorkspace);
+
+  if (!user && !isPublicWorkspace) {
+    // Protected workspace — redirect to login with context
+    const intendedWorkspace = activeWorkspace;
+    return <AuthScreen onAuthenticated={() => {
+      if (intendedWorkspace) setActiveWorkspace(intendedWorkspace);
+    }} intendedWorkspace={intendedWorkspace} />;
   }
 
   // ─── Render ──────────────────────────────
@@ -1762,46 +1769,115 @@ const AppInner: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="relative group flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full font-jet cursor-default" style={{ color: '#B8A9A5', background: '#161110', border: '1px solid #2A1F1C' }}>
-              <span style={{ color: '#FFB347' }}>⚡</span>
-              {sub.isUnlimited ? '∞' : sub.credits.toLocaleString()}
-              {/* Credits tooltip */}
-              <span
-                className="absolute top-full right-0 mt-2 px-2.5 py-1.5 rounded-lg text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none font-jet z-[100]"
-                style={{ background: '#161110', border: '1px solid #2A1F1C', color: '#B8A9A5', boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}
-              >
-                {sub.isUnlimited ? 'Unlimited credits' : `${sub.credits.toLocaleString()} credits remaining`}
-              </span>
-            </div>
+            {user ? (
+              <>
+                {/* Credits pill */}
+                <div className="relative group flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full font-jet cursor-pointer" style={{ color: '#B8A9A5', background: '#161110', border: '1px solid #2A1F1C' }}
+                  onClick={() => setActiveWorkspace('pricing')}>
+                  <span style={{ color: '#FFB347' }}>⚡</span>
+                  <span style={{
+                    color: sub.isUnlimited ? '#B8A9A5' : sub.credits < 20 ? '#EF4444' : sub.credits < 100 ? '#F59E0B' : '#B8A9A5',
+                    animation: !sub.isUnlimited && sub.credits < 20 ? 'pulse 2s infinite' : undefined,
+                  }}>
+                    {sub.isUnlimited ? '∞' : sub.credits.toLocaleString()}
+                  </span>
+                  {/* Credits dropdown */}
+                  <div
+                    className="absolute top-full right-0 mt-2 w-56 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto font-jet z-[100]"
+                    style={{ background: '#161110', border: '1px solid #2A1F1C', boxShadow: '0 8px 24px rgba(0,0,0,0.6)' }}
+                  >
+                    <div className="px-3 py-2.5 space-y-1.5">
+                      <div className="text-[11px]" style={{ color: '#F5EDE8' }}>
+                        {sub.isUnlimited ? 'Unlimited credits' : `${sub.credits.toLocaleString()} credits available`}
+                      </div>
+                      <div className="text-[10px]" style={{ color: '#4A3A36' }}>
+                        {sub.plan === 'starter' ? '50' : sub.plan === 'pro' ? '500' : sub.plan === 'studio' ? '1,500' : '8,000'} credits/mo included in {sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1)}
+                      </div>
+                      {sub.renewsAt && (
+                        <div className="text-[10px]" style={{ color: '#4A3A36' }}>
+                          Renews: {new Date(sub.renewsAt).toLocaleDateString()}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ borderTop: '1px solid #1A1210' }} className="px-3 py-2">
+                      <div className="text-[10px] font-semibold text-center py-1 rounded-lg transition-colors"
+                        style={{ background: 'rgba(255,92,53,0.08)', color: '#FF5C35' }}>
+                        + Buy credits
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-            <button
-              onClick={() => setActiveWorkspace('pricing')}
-              className="hidden xl:block px-4 py-1.5 rounded-full text-xs font-bold text-white transition-all hover:scale-[1.02]"
-              style={{ background: 'linear-gradient(135deg, #FF5C35, #FFB347)', boxShadow: '0 2px 12px rgba(255,92,53,0.35)', fontFamily: 'var(--font-display)' }}
-            >
-              Upgrade
-            </button>
+                <button
+                  onClick={() => setActiveWorkspace('pricing')}
+                  className="hidden xl:block px-4 py-1.5 rounded-full text-xs font-bold text-white transition-all hover:scale-[1.02]"
+                  style={{ background: 'linear-gradient(135deg, #FF5C35, #FFB347)', boxShadow: '0 2px 12px rgba(255,92,53,0.35)', fontFamily: 'var(--font-display)' }}
+                >
+                  Upgrade
+                </button>
 
-            {/* User avatar — navigates to profile */}
-            <button
-              onClick={() => setActiveWorkspace('profile')}
-              className="relative flex items-center justify-center w-8 h-8 rounded-full overflow-hidden transition-all"
-              style={{
-                background: '#1E1614',
-                border: activeWorkspace === 'profile' ? '1.5px solid #FF5C35' : '1px solid #2A1F1C',
-                boxShadow: activeWorkspace === 'profile' ? '0 0 0 2px rgba(255,92,53,0.2)' : 'none',
-              }}
-              title="Your profile"
-            >
-              {profileCtx.profile?.avatarUrl ? (
-                <img src={profileCtx.profile.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-xs font-bold font-display" style={{ color: '#FF5C35' }}>
-                  {(profileCtx.profile?.displayName || user?.email || 'U')
-                    .split(/[\s@]/).filter(Boolean).map(s => s[0].toUpperCase()).slice(0, 2).join('')}
-                </span>
-              )}
-            </button>
+                {/* User avatar with dropdown */}
+                <div className="relative group">
+                  <button
+                    onClick={() => setActiveWorkspace('profile')}
+                    className="relative flex items-center justify-center w-8 h-8 rounded-full overflow-hidden transition-all"
+                    style={{
+                      background: '#1E1614',
+                      border: activeWorkspace === 'profile' ? '1.5px solid #FF5C35' : '1px solid #2A1F1C',
+                      boxShadow: activeWorkspace === 'profile' ? '0 0 0 2px rgba(255,92,53,0.2)' : 'none',
+                    }}
+                    title="Your profile"
+                  >
+                    {profileCtx.profile?.avatarUrl ? (
+                      <img src={profileCtx.profile.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xs font-bold font-display" style={{ color: '#FF5C35' }}>
+                        {(profileCtx.profile?.displayName || user?.email || 'U')
+                          .split(/[\s@]/).filter(Boolean).map(s => s[0].toUpperCase()).slice(0, 2).join('')}
+                      </span>
+                    )}
+                  </button>
+                  {/* Avatar dropdown */}
+                  <div className="absolute top-full right-0 mt-2 w-44 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto z-[100] py-1"
+                    style={{ background: '#161110', border: '1px solid #2A1F1C', boxShadow: '0 8px 24px rgba(0,0,0,0.6)' }}>
+                    <button onClick={() => setActiveWorkspace('profile')}
+                      className="w-full text-left px-3 py-2 text-[11px] transition-colors hover:bg-white/5"
+                      style={{ color: '#B8A9A5' }}>
+                      My profile
+                    </button>
+                    <button onClick={() => setActiveWorkspace('pricing')}
+                      className="w-full text-left px-3 py-2 text-[11px] transition-colors hover:bg-white/5"
+                      style={{ color: '#B8A9A5' }}>
+                      Plans & billing
+                    </button>
+                    <div className="mx-2 my-1" style={{ borderTop: '1px solid #1A1210' }} />
+                    <button onClick={() => signOut()}
+                      className="w-full text-left px-3 py-2 text-[11px] transition-colors hover:bg-white/5"
+                      style={{ color: '#EF4444' }}>
+                      Sign out
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Anonymous — show login/signup buttons */}
+                <button
+                  onClick={() => setActiveWorkspace('generate')}
+                  className="px-4 py-1.5 rounded-full text-xs font-semibold transition-all hover:bg-white/5"
+                  style={{ color: '#B8A9A5', border: '1px solid #2A1F1C' }}
+                >
+                  Sign in
+                </button>
+                <button
+                  onClick={() => setActiveWorkspace('generate')}
+                  className="px-4 py-1.5 rounded-full text-xs font-bold text-white transition-all hover:scale-[1.02]"
+                  style={{ background: 'linear-gradient(135deg, #FF5C35, #FFB347)', boxShadow: '0 2px 12px rgba(255,92,53,0.35)', fontFamily: 'var(--font-display)' }}
+                >
+                  Get Started
+                </button>
+              </>
+            )}
           </div>
         </header>
 

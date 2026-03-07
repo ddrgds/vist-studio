@@ -20,7 +20,8 @@ type AppWorkspace =
   | "storyboard"
   | "create"
   | "video"
-  | "influencer";
+  | "influencer"
+  | "pricing";
 
 interface ExplorePageProps {
   onNavigate: (workspace: AppWorkspace, mode?: string, modelId?: string) => void;
@@ -305,6 +306,107 @@ const ExplorePage: React.FC<ExplorePageProps> = ({ onNavigate }) => {
               Open Director
             </button>
           </div>
+        </div>
+      </section>
+
+      {/* ── Divider ──────────────────────────────────────────────────────── */}
+      <div className="mx-8 accent-line" />
+
+      {/* ── HOW IT WORKS ───────────────────────────────────────────────── */}
+      <section className="px-4 sm:px-8 py-16 max-w-[1400px] mx-auto">
+        <div className="text-center mb-12">
+          <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-3 font-jet" style={{ color: '#FF5C35' }}>How it works</p>
+          <h2 className="text-[28px] sm:text-[36px] font-black tracking-tight font-display" style={{ color: '#F5EDE8' }}>
+            Three steps to your AI character
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[
+            { step: '01', title: 'Upload or build from scratch', desc: 'Upload 1–3 face photos, or start fresh with AI-generated characters. Define traits, style, and identity.', icon: '📷' },
+            { step: '02', title: 'Configure scenes & outfits', desc: 'Set lighting, camera angle, costume, and scenario. Choose from 10+ AI engines to match your creative vision.', icon: '🎨' },
+            { step: '03', title: 'Generate instantly', desc: 'Get photorealistic images and video clips in seconds. Download, edit, or add to your storyboard.', icon: '⚡' },
+          ].map((item) => (
+            <div key={item.step} className="relative p-6 rounded-2xl" style={{ background: '#161110', border: '1px solid #2A1F1C' }}>
+              <span className="text-[48px] font-black font-display absolute top-4 right-5 leading-none" style={{ color: 'rgba(255,92,53,0.06)' }}>{item.step}</span>
+              <span className="text-3xl mb-4 block">{item.icon}</span>
+              <h3 className="text-sm font-bold mb-2" style={{ color: '#F5EDE8' }}>{item.title}</h3>
+              <p className="text-xs leading-relaxed" style={{ color: '#6B5A56' }}>{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Divider ──────────────────────────────────────────────────────── */}
+      <div className="mx-8 accent-line" />
+
+      {/* ── PRICING PREVIEW ──────────────────────────────────────────────── */}
+      <section className="px-4 sm:px-8 py-16 max-w-[1400px] mx-auto">
+        <div className="text-center mb-10">
+          <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-3 font-jet" style={{ color: '#FF5C35' }}>Pricing</p>
+          <h2 className="text-[28px] sm:text-[36px] font-black tracking-tight font-display" style={{ color: '#F5EDE8' }}>
+            Simple, transparent pricing
+          </h2>
+          <p className="text-sm mt-2" style={{ color: '#6B5A56' }}>
+            Start free. Upgrade when you need more.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 max-w-4xl mx-auto">
+          {[
+            { name: 'Starter', price: 'Free', credits: '50 cr/mo', highlight: false },
+            { name: 'Pro', price: '$19/mo', credits: '500 cr/mo', highlight: true },
+            { name: 'Studio', price: '$49/mo', credits: '1,500 cr/mo', highlight: false },
+            { name: 'Brand', price: '$149/mo', credits: '8,000 cr/mo', highlight: false },
+          ].map((plan) => (
+            <div key={plan.name} className="text-center p-5 rounded-2xl transition-all hover:-translate-y-0.5"
+              style={{
+                background: plan.highlight ? 'rgba(255,92,53,0.04)' : '#161110',
+                border: plan.highlight ? '1px solid rgba(255,92,53,0.25)' : '1px solid #2A1F1C',
+              }}>
+              <h3 className="text-sm font-bold mb-1" style={{ color: '#F5EDE8' }}>{plan.name}</h3>
+              <div className="text-2xl font-black font-display mb-1" style={{ color: '#F5EDE8' }}>{plan.price}</div>
+              <div className="text-[10px] font-jet font-bold mb-4" style={{ color: '#FFB347' }}>⚡ {plan.credits}</div>
+              <button onClick={() => onNavigate("pricing")}
+                className="w-full py-2 rounded-xl text-[11px] font-semibold transition-all"
+                style={plan.highlight
+                  ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', color: '#fff' }
+                  : { background: '#1A1210', color: '#6B5A56', border: '1px solid #2A1F1C' }
+                }>
+                {plan.name === 'Starter' ? 'Get Started' : `Start ${plan.name}`}
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className="text-center mt-6">
+          <button onClick={() => onNavigate("pricing")}
+            className="text-xs font-semibold transition-colors"
+            style={{ color: '#FF5C35' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#FF7A57'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#FF5C35'; }}
+          >
+            See all plans & compare features →
+          </button>
+        </div>
+      </section>
+
+      {/* ── FINAL CTA ────────────────────────────────────────────────────── */}
+      <section className="px-4 sm:px-8 pb-16 pt-8 max-w-[1400px] mx-auto">
+        <div className="rounded-2xl py-14 px-6 text-center relative overflow-hidden"
+          style={{ background: 'linear-gradient(135deg, #FF5C35, #FFB347)' }}>
+          <div className="absolute inset-0 opacity-10" style={{ background: 'radial-gradient(circle at 30% 50%, rgba(255,255,255,0.3) 0%, transparent 60%)' }} />
+          <h2 className="text-[28px] sm:text-[36px] font-black tracking-tight font-display text-white relative z-10 leading-tight">
+            Your AI character awaits.
+          </h2>
+          <p className="text-sm mt-3 relative z-10" style={{ color: 'rgba(255,255,255,0.8)' }}>
+            Start free. No credit card required.
+          </p>
+          <button
+            onClick={() => onNavigate("director")}
+            className="mt-6 relative z-10 inline-flex items-center gap-2 px-7 py-3 rounded-xl font-bold text-sm transition-all hover:scale-[1.03] active:scale-[0.97]"
+            style={{ background: '#fff', color: '#0D0A0A', fontFamily: 'var(--font-display)', boxShadow: '0 4px 24px rgba(0,0,0,0.2)' }}
+          >
+            Create my character
+            <ArrowRight className="w-4 h-4" />
+          </button>
         </div>
       </section>
     </div>

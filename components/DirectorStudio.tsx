@@ -31,7 +31,8 @@ import {
 } from "../types";
 import GalleryGrid from "./Gallery/GalleryGrid";
 import InspirationBoard from "./InspirationBoard";
-import { InspirationImage } from "../types";
+import { InspirationImage, CREDIT_COSTS, OPERATION_CREDIT_COSTS, VideoEngine } from "../types";
+import { useSubscription } from "../hooks/useSubscription";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -490,6 +491,29 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
 
+  // ─── Subscription / credits ──────────────────────────────────────────────────
+  const sub = useSubscription();
+
+  const computeDirectorCreditCost = (): number => {
+    if (studioMode === 'ai') {
+      if (form.editSubMode === 'ai' && form.aiEditEngine === AIEditEngine.FaceSwapFal) return OPERATION_CREDIT_COSTS.faceSwap;
+      return OPERATION_CREDIT_COSTS.upscale;
+    }
+    if (studioMode === 'session') return OPERATION_CREDIT_COSTS.photoSession * (form.editNumberOfImages || 1);
+    if (studioMode === 'poses') return 10;
+    // create mode
+    let costPerImage = 5;
+    if (form.aiProvider === AIProvider.Fal) costPerImage = CREDIT_COSTS[form.falModel] ?? 10;
+    else if (form.aiProvider === AIProvider.Replicate) costPerImage = CREDIT_COSTS[form.replicateModel] ?? 15;
+    else if (form.aiProvider === AIProvider.OpenAI) costPerImage = CREDIT_COSTS[form.openaiModel] ?? 20;
+    else if (form.aiProvider === AIProvider.Ideogram) costPerImage = CREDIT_COSTS[form.ideogramModel] ?? 10;
+    else if (form.aiProvider === AIProvider.ModelsLab) costPerImage = CREDIT_COSTS[form.modelsLabModel] ?? 5;
+    else costPerImage = CREDIT_COSTS[form.geminiModel] ?? 5;
+    return costPerImage * form.numberOfImages;
+  };
+
+  const directorCreditCost = computeDirectorCreditCost();
+
   // ─── Mobile panel (6.1) ─────────────────────────────────────────────────────
   const [showMobilePanel, setShowMobilePanel] = useState(false);
 
@@ -867,8 +891,9 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
         </div>
 
         {studioMode === "create" && (
-          <>
-            {/* ── LIBRARY ── */}
+          <div className="flex flex-col">
+            {/* ── LIBRARY ── (order 2 = below Identity+Engine) */}
+            <div style={{ order: 2 }}>
             <div className="px-4 pt-4 pb-1 flex items-center justify-between">
               <SectionLabel>Library</SectionLabel>
               <button
@@ -1114,9 +1139,10 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
               />
             </div>
 
-            <div className="mx-4 border-t border-zinc-800/60 mb-1" />
+            </div>{/* end Library order wrapper */}
 
-            {/* ── IDENTITY ── */}
+            {/* ── IDENTITY ── (order 0 = top of panel) */}
+            <div style={{ order: 0 }}>
             <AccordionSection
               label="Identity"
               isOpen={openSections.identity}
@@ -1167,6 +1193,17 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                 </div>
               </div>
             </AccordionSection>
+            </div>{/* end Identity order wrapper */}
+
+            {/* Dim sections if no character face uploaded */}
+            {(char0?.modelImages.length ?? 0) === 0 && (
+              <div style={{ order: 1 }} className="flex items-center justify-center py-3">
+                <span className="text-[10px] font-jet px-3 py-1.5 rounded-lg" style={{ background: '#161110', border: '1px solid #2A1F1C', color: '#6B5A56' }}>
+                  Upload a face photo first
+                </span>
+              </div>
+            )}
+            <div style={{ order: 1, ...((char0?.modelImages.length ?? 0) === 0 ? { opacity: 0.4, pointerEvents: 'none' as const } : {}) }}>
 
             {/* Engine / Provider */}
             <AccordionSection
@@ -1179,26 +1216,28 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
               <div className="px-4 pb-2">
                 <div className="flex gap-1.5">
                   {providerChips.map((chip) => {
-                    const TIPS: Record<string, { speed: string; best: string }> = {
-                      [AIProvider.Gemini]:    { speed: 'Fast',   best: 'Multi-reference, complex scenes' },
-                      [AIProvider.Fal]:       { speed: 'Fast',   best: 'Identity preservation, edits' },
-                      [AIProvider.OpenAI]:    { speed: 'Medium', best: 'Commercial quality, rich context' },
-                      [AIProvider.Replicate]: { speed: 'Fast',   best: 'Fast edits, creative results' },
-                      [AIProvider.ModelsLab]: { speed: 'Medium', best: 'NSFW, uncensored generation' },
+                    const TIPS: Record<string, { speed: string; best: string; cost: number }> = {
+                      [AIProvider.Gemini]:    { speed: 'Fast',   best: 'Multi-reference, complex scenes', cost: 5 },
+                      [AIProvider.Fal]:       { speed: 'Fast',   best: 'Identity preservation, edits', cost: 10 },
+                      [AIProvider.OpenAI]:    { speed: 'Medium', best: 'Commercial quality, rich context', cost: 20 },
+                      [AIProvider.Replicate]: { speed: 'Fast',   best: 'Fast edits, creative results', cost: 12 },
+                      [AIProvider.ModelsLab]: { speed: 'Medium', best: 'NSFW, uncensored generation', cost: 8 },
                     };
                     const tip = TIPS[chip.id];
+                    const costColor = (tip?.cost ?? 5) <= 5 ? '#4ADE80' : (tip?.cost ?? 5) <= 10 ? '#FFB347' : '#FF5C35';
                     return (
                       <div key={chip.id} className="relative group/tip flex-1">
                         <button
                           onClick={() => { chip.select(); setShowSubModels(true); }}
-                          className={`w-full flex flex-col items-center gap-1 py-2 px-1 rounded-lg border text-center transition-all ${
+                          className={`w-full flex flex-col items-center gap-1.5 py-2.5 px-1 rounded-lg border text-center transition-all ${
                             form.aiProvider === chip.id
                               ? "bg-white/8 border-zinc-500 text-white"
                               : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
                           }`}
                         >
-                          <span className="text-sm leading-none">{chip.icon}</span>
+                          <span className="text-lg leading-none">{chip.icon}</span>
                           <span className="text-[9px] font-semibold">{chip.label}</span>
+                          <span className="text-[8px] font-jet font-bold" style={{ color: costColor }}>⚡{tip?.cost ?? 5}</span>
                         </button>
                         {/* Tooltip */}
                         {tip && (
@@ -1386,12 +1425,13 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                 </p>
               )}
             </AccordionSection>
+            </div>{/* end dim wrapper */}
 
             {/* Divider */}
-            <div className="mx-4 border-t border-zinc-800/60 mb-3" />
+            <div className="mx-4 border-t border-zinc-800/60 mb-3" style={{ order: 3 }} />
 
             {/* ── CHARACTER 2 ── */}
-            <div className="px-4 pb-4">
+            <div className="px-4 pb-4" style={{ order: 3 }}>
               <button
                 onClick={() => setShowChar2(!showChar2)}
                 className="w-full flex items-center justify-between text-[10px] font-bold text-zinc-600 uppercase tracking-widest hover:text-zinc-400 transition-colors py-1"
@@ -1425,7 +1465,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                 </div>
               )}
             </div>
-          </>
+          </div>
         )}
 
         {/* ── POSES MODE ── */}
@@ -1834,28 +1874,33 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
 
         {/* Mode + Tab bar */}
         <div className="flex items-center gap-1 px-4 py-2 border-b border-zinc-800/60 bg-zinc-950/80 shrink-0 flex-wrap">
-          {/* Studio mode tabs */}
+          {/* Studio mode tabs — Create is dominant */}
           <button
             onClick={() => handleSetStudioMode("create")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${studioMode === "create" ? "bg-zinc-800 text-white" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900"}`}
+            title="Generate new images from your character"
+            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${studioMode === "create" ? "text-white" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900"}`}
+            style={studioMode === "create" ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', color: '#fff' } : undefined}
           >
             ✦ Create
           </button>
           <button
             onClick={() => handleSetStudioMode("poses")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${studioMode === "poses" ? "bg-zinc-800 text-white" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900"}`}
+            title="Repose an existing image"
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${studioMode === "poses" ? "bg-zinc-800 text-white" : "text-zinc-600 hover:text-zinc-400 hover:bg-zinc-900"}`}
           >
             🎭 Poses
           </button>
           <button
             onClick={() => handleSetStudioMode("ai")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${studioMode === "ai" ? "bg-zinc-800 text-white" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900"}`}
+            title="Edit images with AI instructions"
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${studioMode === "ai" ? "bg-zinc-800 text-white" : "text-zinc-600 hover:text-zinc-400 hover:bg-zinc-900"}`}
           >
             ✨ AI Edit
           </button>
           <button
             onClick={() => handleSetStudioMode("session")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${studioMode === "session" ? "bg-zinc-800 text-white" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900"}`}
+            title="Generate a batch photo session"
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${studioMode === "session" ? "bg-zinc-800 text-white" : "text-zinc-600 hover:text-zinc-400 hover:bg-zinc-900"}`}
           >
             📷 Photo Session
           </button>
@@ -2201,14 +2246,24 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
           </div>
         )}
 
-        {/* Direct / Apply button */}
-        <div className="px-4 pb-5 mt-auto">
+        {/* Sticky Generate bar with credit indicator */}
+        <div className="sticky bottom-0 z-[60] px-4 pb-4 pt-3 mt-auto" style={{ background: 'linear-gradient(to top, rgba(9,9,11,1) 60%, rgba(9,9,11,0))' }}>
+          {/* Credit cost pill */}
+          {!isGenerating && (
+            <div className="flex items-center justify-center gap-2 mb-2 text-[11px] font-jet">
+              <span style={{ color: '#FFB347' }}>⚡ {directorCreditCost} credits</span>
+              <span style={{ color: '#2A1F1C' }}>·</span>
+              <span style={{ color: sub.credits < 20 ? '#EF4444' : sub.credits < 100 ? '#F59E0B' : '#6B5A56' }}>
+                {sub.isUnlimited ? '∞ remaining' : `${sub.credits.toLocaleString()} remaining`}
+              </span>
+            </div>
+          )}
           <button
             onClick={isGenerating ? onStopGeneration : () => { setShowMobilePanel(false); handleDirectorGenerate(); }}
-            className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all active:scale-95 text-white`}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all active:scale-95"
             style={isGenerating
-              ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)' }
-              : { background: '#fff', color: '#000' }
+              ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', color: '#fff' }
+              : { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', color: '#fff', boxShadow: '0 4px 24px rgba(255,92,53,0.35)' }
             }
           >
             {isGenerating ? (

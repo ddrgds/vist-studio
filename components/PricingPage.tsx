@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createCheckoutSession } from '../services/lemonSqueezyService';
 import { useProfile } from '../contexts/ProfileContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
 
 // ─────────────────────────────────────────────
@@ -36,6 +37,9 @@ const V = {
   studioAnnual:   import.meta.env.VITE_LS_STUDIO_ANNUAL_VARIANT_ID   ?? '',
   brandMonthly:   import.meta.env.VITE_LS_BRAND_MONTHLY_VARIANT_ID   ?? '',
   brandAnnual:    import.meta.env.VITE_LS_BRAND_ANNUAL_VARIANT_ID    ?? '',
+  credits200:     import.meta.env.VITE_LS_CREDITS_200_VARIANT_ID     ?? '',
+  credits750:     import.meta.env.VITE_LS_CREDITS_750_VARIANT_ID     ?? '',
+  credits3000:    import.meta.env.VITE_LS_CREDITS_3000_VARIANT_ID    ?? '',
 };
 
 // ─────────────────────────────────────────────
@@ -47,10 +51,10 @@ const PLANS: Plan[] = [
     id: 'starter', name: 'Starter', monthlyPrice: 0, annualPrice: 0,
     description: 'Explora el estudio sin compromiso.',
     cta: 'Get Started', ctaStyle: 'ghost',
-    credits: '100 credits / mo',
+    credits: '50 credits / mo',
     monthlyVariantId: '', annualVariantId: '',
     limits: [
-      { label: 'Credits / mo',        value: '100' },
+      { label: 'Credits / mo',        value: '50' },
       { label: 'Characters saved',    value: '3' },
       { label: 'Image resolution',    value: 'Up to 1K' },
       { label: 'Video clips',         value: '—' },
@@ -66,11 +70,11 @@ const PLANS: Plan[] = [
     description: 'Para creators construyendo su presencia AI.',
     badge: 'Most popular',
     cta: 'Start Pro →', ctaStyle: 'coral',
-    credits: '2,000 credits / mo',
+    credits: '500 credits / mo',
     monthlyVariantId: V.proMonthly,
     annualVariantId:  V.proAnnual,
     limits: [
-      { label: 'Credits / mo',        value: '2,000' },
+      { label: 'Credits / mo',        value: '500' },
       { label: 'Characters saved',    value: '25' },
       { label: 'Image resolution',    value: 'Up to 2K' },
       { label: 'Video clips',         value: '20 / mo' },
@@ -88,11 +92,11 @@ const PLANS: Plan[] = [
     id: 'studio', name: 'Studio', monthlyPrice: 49, annualPrice: 41,
     description: 'Para agencias y power creators.',
     cta: 'Start Studio →', ctaStyle: 'white',
-    credits: '8,000 credits / mo',
+    credits: '1,500 credits / mo',
     monthlyVariantId: V.studioMonthly,
     annualVariantId:  V.studioAnnual,
     limits: [
-      { label: 'Credits / mo',        value: '8,000' },
+      { label: 'Credits / mo',        value: '1,500' },
       { label: 'Characters saved',    value: 'Unlimited' },
       { label: 'Image resolution',    value: 'Up to 4K' },
       { label: 'Video clips',         value: 'Unlimited' },
@@ -111,18 +115,18 @@ const PLANS: Plan[] = [
     description: 'Para equipos de marca y producción masiva.',
     badge: 'Enterprise',
     cta: 'Start Brand →', ctaStyle: 'gold',
-    credits: 'Unlimited',
+    credits: '8,000 credits / mo',
     monthlyVariantId: V.brandMonthly,
     annualVariantId:  V.brandAnnual,
     limits: [
-      { label: 'Credits / mo',        value: '∞ Unlimited' },
+      { label: 'Credits / mo',        value: '8,000' },
       { label: 'Characters saved',    value: 'Unlimited' },
       { label: 'Image resolution',    value: 'Up to 4K' },
       { label: 'Video clips',         value: 'Unlimited' },
     ],
     features: [
       { label: 'Everything in Studio' },
-      { label: 'Unlimited credits' },
+      { label: '8,000 monthly credits' },
       { label: 'Dedicated generation queue' },
       { label: 'Custom brand fine-tuning' },
       { label: 'Team seats', note: 'coming soon' },
@@ -131,9 +135,16 @@ const PLANS: Plan[] = [
   },
 ];
 
+const CREDIT_PACKS = [
+  { credits: 200,   price: 5,  perCredit: '2.5¢', variantId: V.credits200 },
+  { credits: 750,   price: 15, perCredit: '2.0¢', variantId: V.credits750 },
+  { credits: 3000,  price: 50, perCredit: '1.7¢', badge: 'Best value', variantId: V.credits3000 },
+];
+
 const FAQ_ITEMS = [
-  { q: 'What is a credit?', a: 'One credit = one generation step. Fast models cost 5 credits; premium models like GPT Image 1.5 cost 20. Video clips cost 80–100 credits each.' },
-  { q: 'Do credits roll over?', a: "Monthly credits reset on your billing date and don't roll over. Brand's unlimited plan has no rollover concern." },
+  { q: 'What is a credit?', a: 'One credit = one generation step. Fast models like Gemini Flash cost 5 credits; premium models like GPT Image 1.5 cost 20. Video clips cost 80–100 credits each.' },
+  { q: 'Do credits expire?', a: "Monthly plan credits reset on your billing date and don't roll over. Credit packs never expire — use them at your own pace." },
+  { q: 'Can I stack packs on top of my plan?', a: 'Yes! Credit packs add on top of your monthly plan credits. They are consumed after your monthly credits run out.' },
   { q: 'Can I switch plans at any time?', a: 'Yes — upgrade or downgrade any time. Upgrades take effect immediately; downgrades apply at the next billing cycle.' },
   { q: 'What is annual billing?', a: 'Annual billing locks in a discounted rate (≈2 months free) and is charged as a single payment at the start of each year.' },
   { q: 'Which AI engines are included?', a: 'All plans include Gemini, FLUX, GPT Image, Grok Imagine, and Ideogram. NSFW engine (ModelsLab) is Studio and Brand only.' },
@@ -192,9 +203,15 @@ const PricingPage: React.FC<PricingPageProps> = ({ onNavigate }) => {
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const { profile } = useProfile();
+  const { user } = useAuth();
   const { plan: currentPlan } = useSubscription();
 
   const handleCheckout = async (plan: Plan) => {
+    // If not logged in, redirect to login (the auth gate will show)
+    if (!user) {
+      onNavigate?.('generate'); // triggers auth gate with context
+      return;
+    }
     const variantId = annual ? plan.annualVariantId : plan.monthlyVariantId;
     if (!variantId) {
       setCheckoutError('Variant ID not configured. Set VITE_LS_*_VARIANT_ID in .env.local');
@@ -389,6 +406,64 @@ const PricingPage: React.FC<PricingPageProps> = ({ onNavigate }) => {
                 style={{ background: '#161110', border: '1px solid #1A1210' }}>
                 <span className="text-[11px]" style={{ color: '#6B5A56' }}>{label}</span>
                 <span className="text-[11px] font-jet font-bold" style={{ color: '#FFB347' }}>⚡{cost}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Credit Packs ── */}
+        <div className="mb-20">
+          <div className="text-center mb-8">
+            <p className="text-[11px] font-jet uppercase tracking-widest mb-3" style={{ color: '#FF5C35' }}>Need more?</p>
+            <h2 className="text-[24px] sm:text-[28px] font-bold mb-2" style={{ color: '#F5EDE8' }}>Credit Packs</h2>
+            <p className="text-[13px]" style={{ color: '#6B5A56' }}>
+              One-time purchase. Never expires. Stacks with your plan.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
+            {CREDIT_PACKS.map((pack) => (
+              <div key={pack.credits} className="relative flex flex-col items-center rounded-2xl p-6 transition-all hover:scale-[1.02]"
+                style={{
+                  background: pack.badge ? 'rgba(255,92,53,0.04)' : '#0D0A0A',
+                  border: pack.badge ? '1px solid rgba(255,92,53,0.25)' : '1px solid #1A1210',
+                }}>
+                {pack.badge && (
+                  <div className="absolute -top-3 px-3 py-1 rounded-full text-[10px] font-bold font-jet"
+                    style={{ background: '#FF5C35', color: '#000' }}>
+                    {pack.badge}
+                  </div>
+                )}
+                <div className="text-[32px] font-bold mb-1" style={{ color: '#F5EDE8' }}>
+                  {pack.credits.toLocaleString()}
+                </div>
+                <div className="text-[11px] font-jet mb-3" style={{ color: '#FFB347' }}>⚡ credits</div>
+                <div className="text-[24px] font-bold mb-1" style={{ color: '#F5EDE8' }}>${pack.price}</div>
+                <div className="text-[11px] font-jet mb-5" style={{ color: '#4A3A36' }}>{pack.perCredit} / credit</div>
+                <button
+                  onClick={async () => {
+                    if (!user) { onNavigate?.('generate'); return; }
+                    if (!pack.variantId) { setCheckoutError('Credit pack variant ID not configured.'); return; }
+                    setCheckoutLoading(`pack-${pack.credits}`);
+                    setCheckoutError(null);
+                    try {
+                      const url = await createCheckoutSession(pack.variantId);
+                      window.location.href = url;
+                    } catch (err) {
+                      setCheckoutError(err instanceof Error ? err.message : 'Checkout failed.');
+                      setCheckoutLoading(null);
+                    }
+                  }}
+                  disabled={checkoutLoading !== null}
+                  className="w-full py-2.5 rounded-xl text-[13px] font-semibold transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"
+                  style={{ background: '#1A1210', color: '#B8A9A5', border: '1px solid #2A1F1C' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#251A17'; e.currentTarget.style.borderColor = 'rgba(255,92,53,0.3)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = '#1A1210'; e.currentTarget.style.borderColor = '#2A1F1C'; }}
+                >
+                  {checkoutLoading === `pack-${pack.credits}`
+                    ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Redirecting…</>
+                    : `Buy ${pack.credits.toLocaleString()} credits`}
+                </button>
               </div>
             ))}
           </div>

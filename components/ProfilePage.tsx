@@ -242,7 +242,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate }) => {
                 style={{ background: '#1E1614' }}
               >
                 {(() => {
-                  const max = sub.plan === 'pro' ? 2000 : sub.plan === 'studio' ? 8000 : 100;
+                  const max = sub.plan === 'brand' ? 8000 : sub.plan === 'studio' ? 1500 : sub.plan === 'pro' ? 500 : 50;
                   const pct = Math.min(100, Math.round((sub.credits / max) * 100));
                   return (
                     <div

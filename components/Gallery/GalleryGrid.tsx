@@ -631,8 +631,7 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
         {/* Type badge — only Video and Photo show text labels; edited images get a ✓ chip */}
         {!isSelectionMode && (item.type === 'video' || item.tags?.includes('uploaded') || item.type === 'edit') && (
           item.type === 'edit' ? (
-            // Small green check for edited/AI-generated edits — no internal label text
-            <div className="absolute top-2 left-2 z-20 pointer-events-none w-5 h-5 rounded-full bg-emerald-500/90 flex items-center justify-center shadow" title="Edited">
+            <div className="absolute top-2 left-2 z-20 pointer-events-none w-5 h-5 rounded-full bg-emerald-500/90 flex items-center justify-center shadow opacity-0 group-hover:opacity-100 transition-opacity duration-200" title="Edited">
               <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
           ) : (
