@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { inpaintImage, inpaintWithZImageTurbo } from '../services/falService';
 import { useToast } from '../contexts/ToastContext';
+import { useProfile } from '../contexts/ProfileContext';
+import { OPERATION_CREDIT_COSTS } from '../types';
 import ProgressBar from './ProgressBar';
 
 interface InpaintingModalProps {
@@ -11,6 +13,7 @@ interface InpaintingModalProps {
 
 const InpaintingModal: React.FC<InpaintingModalProps> = ({ item, onClose, onSave }) => {
   const toast = useToast();
+  const { decrementCredits, restoreCredits } = useProfile();
   const containerRef = useRef<HTMLDivElement>(null);
   const imageCanvasRef = useRef<HTMLCanvasElement>(null); // background image
   const maskCanvasRef = useRef<HTMLCanvasElement>(null);  // drawing layer
@@ -137,6 +140,10 @@ const InpaintingModal: React.FC<InpaintingModalProps> = ({ item, onClose, onSave
   const handleGenerate = async () => {
     if (!prompt.trim()) { toast.error('Describe qué quieres generar en el área marcada'); return; }
 
+    const cost = OPERATION_CREDIT_COSTS.inpaint;
+    const hasCredits = await decrementCredits(cost);
+    if (!hasCredits) { toast.error('Insufficient credits. Please upgrade your plan.'); return; }
+
     setLoading(true);
     setProgress(0);
     setResult(null);
@@ -152,6 +159,7 @@ const InpaintingModal: React.FC<InpaintingModalProps> = ({ item, onClose, onSave
         : await inpaintImage(imageFile, maskFile, prompt, setProgress);
       setResult(dataUrl);
     } catch (err: any) {
+      restoreCredits(cost);
       toast.error(err?.message || 'Error al hacer el inpainting');
     } finally {
       setLoading(false);

@@ -11,20 +11,19 @@ const ApiKeyGuard: React.FC<ApiKeyGuardProps> = ({ children }) => {
 
   const checkKey = useCallback(async () => {
     try {
-      // 1. Si hay API key en .env.local (desarrollo local), usarla directamente
-      const envKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
-      if (envKey && envKey.length > 10) {
-        setHasKey(true);
-        return;
-      }
-      // 2. Si estamos en Google AI Studio, usar su interfaz
+      // API keys are now proxied server-side — no client-side key needed.
+      // If running inside Google AI Studio, still check its interface.
       const aistudio = (window as any).aistudio;
       if (aistudio && aistudio.hasSelectedApiKey) {
         const selected = await aistudio.hasSelectedApiKey();
         setHasKey(selected);
+      } else {
+        // Normal deployment — proxy handles auth, always allow through
+        setHasKey(true);
       }
     } catch (error) {
       console.error("Failed to check API key status:", error);
+      setHasKey(true); // Don't block the app on check failure
     } finally {
       setChecking(false);
     }

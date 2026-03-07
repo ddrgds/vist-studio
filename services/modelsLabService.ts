@@ -7,8 +7,8 @@ import { InfluencerParams, AspectRatio, ModelsLabModel } from '../types';
 // Docs: https://docs.modelslab.com
 // ─────────────────────────────────────────────────────────────────────────────
 
-const API_KEY = process.env.MODELSLAB_API_KEY ?? '';
-const BASE    = 'https://modelslab.com/api/v6';
+// API key is injected server-side by the /modelslab-api proxy.
+const BASE = '/modelslab-api/v6';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -72,7 +72,7 @@ async function pollForResult(
     const res = await fetch(`${BASE}/realtime/fetch/${id}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: API_KEY }),
+      body: JSON.stringify({ key: 'PROXIED' }),
       signal,
     });
 
@@ -106,9 +106,6 @@ export async function editImageWithModelsLab(
   options: { strength?: number; steps?: number; guidanceScale?: number; seed?: number; aspectRatio?: AspectRatio } = {},
   signal?: AbortSignal,
 ): Promise<string[]> {
-  if (!API_KEY) {
-    throw new Error('ModelsLab API key no configurada. Agrega MODELSLAB_API_KEY a tu archivo .env');
-  }
 
   const { width, height } = toDimensions(options.aspectRatio ?? AspectRatio.Square);
   const base64 = await fileToBase64(baseImage);
@@ -118,7 +115,7 @@ export async function editImageWithModelsLab(
   if (signal?.aborted) throw new Error('Cancelled');
 
   const body = {
-    key:                  API_KEY,
+    key:                  'PROXIED',
     model_id:             modelId as string,
     prompt:               instruction,
     negative_prompt:      'ugly, deformed, noisy, blurry, distorted, lowres, bad anatomy',
@@ -179,9 +176,6 @@ export async function generateWithModelsLab(
   onProgress: (p: number) => void,
   signal?: AbortSignal,
 ): Promise<string[]> {
-  if (!API_KEY) {
-    throw new Error('ModelsLab API key no configurada. Agrega MODELSLAB_API_KEY a tu archivo .env');
-  }
 
   const { width, height } = toDimensions(params.aspectRatio);
   const char = params.characters[0];
@@ -206,7 +200,7 @@ export async function generateWithModelsLab(
   if (signal?.aborted) throw new Error('Cancelled');
 
   const body = {
-    key:                  API_KEY,
+    key:                  'PROXIED',
     model_id:             modelId as string,
     prompt,
     negative_prompt:      negativePrompt,

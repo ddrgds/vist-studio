@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { generateVirtualTryOn } from '../services/replicateService';
 import { useToast } from '../contexts/ToastContext';
+import { useProfile } from '../contexts/ProfileContext';
+import { OPERATION_CREDIT_COSTS } from '../types';
 import ProgressBar from './ProgressBar';
 
 type Category = 'upper_body' | 'lower_body' | 'dresses';
@@ -19,6 +21,7 @@ const CATEGORIES: { value: Category; label: string; icon: string; hint: string }
 
 const TryOnModal: React.FC<TryOnModalProps> = ({ targetItem, onClose, onSave }) => {
   const toast = useToast();
+  const { decrementCredits, restoreCredits } = useProfile();
   const garmentInputRef = useRef<HTMLInputElement>(null);
 
   const [garmentFile, setGarmentFile] = useState<File | null>(null);
@@ -58,6 +61,10 @@ const TryOnModal: React.FC<TryOnModalProps> = ({ targetItem, onClose, onSave }) 
     if (!garmentFile) { toast.error('Sube una foto de la prenda'); return; }
     if (!garmentDesc.trim()) { toast.error('Describe la prenda brevemente'); return; }
 
+    const cost = OPERATION_CREDIT_COSTS.virtualTryOn;
+    const hasCredits = await decrementCredits(cost);
+    if (!hasCredits) { toast.error('Insufficient credits. Please upgrade your plan.'); return; }
+
     setLoading(true);
     setProgress(0);
     setResult(null);
@@ -74,6 +81,7 @@ const TryOnModal: React.FC<TryOnModalProps> = ({ targetItem, onClose, onSave }) 
       );
       setResult(dataUrl);
     } catch (err: any) {
+      restoreCredits(cost);
       toast.error(err?.message || 'Error al aplicar el try-on');
     } finally {
       setLoading(false);

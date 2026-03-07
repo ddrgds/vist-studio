@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { faceSwapWithGemini } from '../services/geminiService';
 import { useToast } from '../contexts/ToastContext';
+import { useProfile } from '../contexts/ProfileContext';
+import { OPERATION_CREDIT_COSTS } from '../types';
 import ProgressBar from './ProgressBar';
 
 interface FaceSwapModalProps {
@@ -11,6 +13,7 @@ interface FaceSwapModalProps {
 
 const FaceSwapModal: React.FC<FaceSwapModalProps> = ({ targetItem, onClose, onSave }) => {
   const toast = useToast();
+  const { decrementCredits, restoreCredits } = useProfile();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [sourceFaceFile, setSourceFaceFile] = useState<File | null>(null);
   const [sourceFacePreview, setSourceFacePreview] = useState<string | null>(null);
@@ -46,6 +49,11 @@ const FaceSwapModal: React.FC<FaceSwapModalProps> = ({ targetItem, onClose, onSa
 
   const handleGenerate = async () => {
     if (!sourceFaceFile) { toast.error('Sube una foto de la cara a usar'); return; }
+
+    const cost = OPERATION_CREDIT_COSTS.faceSwap;
+    const hasCredits = await decrementCredits(cost);
+    if (!hasCredits) { toast.error('Insufficient credits. Please upgrade your plan.'); return; }
+
     setLoading(true);
     setProgress(0);
     setResult(null);
@@ -58,6 +66,7 @@ const FaceSwapModal: React.FC<FaceSwapModalProps> = ({ targetItem, onClose, onSa
       const dataUrl = await faceSwapWithGemini(targetFile, sourceFaceFile, setProgress);
       setResult(dataUrl);
     } catch (err: any) {
+      restoreCredits(cost);
       toast.error(err?.message || 'Error al hacer el face swap');
     } finally {
       setLoading(false);

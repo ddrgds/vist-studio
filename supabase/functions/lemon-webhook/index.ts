@@ -19,14 +19,25 @@ const PLAN_CREDITS: Record<string, number> = {
 };
 
 // ── Map LS variant ID → plan name ─────────────────────────────────────────────
-const buildVariantMap = (): Record<string, string> => ({
-  [Deno.env.get('LEMONSQUEEZY_PRO_MONTHLY_VARIANT_ID')    ?? '']: 'pro',
-  [Deno.env.get('LEMONSQUEEZY_PRO_ANNUAL_VARIANT_ID')     ?? '']: 'pro',
-  [Deno.env.get('LEMONSQUEEZY_STUDIO_MONTHLY_VARIANT_ID') ?? '']: 'studio',
-  [Deno.env.get('LEMONSQUEEZY_STUDIO_ANNUAL_VARIANT_ID')  ?? '']: 'studio',
-  [Deno.env.get('LEMONSQUEEZY_BRAND_MONTHLY_VARIANT_ID')  ?? '']: 'brand',
-  [Deno.env.get('LEMONSQUEEZY_BRAND_ANNUAL_VARIANT_ID')   ?? '']: 'brand',
-});
+const buildVariantMap = (): Record<string, string> => {
+  const raw: Record<string, string> = {
+    [Deno.env.get('LEMONSQUEEZY_PRO_MONTHLY_VARIANT_ID')    ?? '']: 'pro',
+    [Deno.env.get('LEMONSQUEEZY_PRO_ANNUAL_VARIANT_ID')     ?? '']: 'pro',
+    [Deno.env.get('LEMONSQUEEZY_STUDIO_MONTHLY_VARIANT_ID') ?? '']: 'studio',
+    [Deno.env.get('LEMONSQUEEZY_STUDIO_ANNUAL_VARIANT_ID')  ?? '']: 'studio',
+    [Deno.env.get('LEMONSQUEEZY_BRAND_MONTHLY_VARIANT_ID')  ?? '']: 'brand',
+    [Deno.env.get('LEMONSQUEEZY_BRAND_ANNUAL_VARIANT_ID')   ?? '']: 'brand',
+  };
+  // BUG #6 — filter out empty string keys (missing env vars)
+  const filtered: Record<string, string> = {};
+  for (const [k, v] of Object.entries(raw)) {
+    if (k) filtered[k] = v;
+  }
+  if (Object.keys(filtered).length === 0) {
+    console.error('lemon-webhook: variant map is empty — all LEMONSQUEEZY_*_VARIANT_ID env vars are missing');
+  }
+  return filtered;
+};
 
 // ── Webhook payload types ─────────────────────────────────────────────────────
 interface LsEvent {
@@ -82,17 +93,40 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   );
 
+  // ── BUG #4 — Idempotency check ──────────────────────────────────────────
+  const eventId = `${event_name}:${event.data.id}`;
+  const { data: existing } = await supabase
+    .from('webhook_events')
+    .select('event_id')
+    .eq('event_id', eventId)
+    .maybeSingle();
+
+  if (existing) {
+    // Already processed — return 200 without re-processing
+    return new Response('ok (duplicate)', { status: 200 });
+  }
+
+  // ── BUG #5 — Missing user_id ────────────────────────────────────────────
+  if (!userId) {
+    console.error(`lemon-webhook: missing user_id in custom_data for event ${event_name}, data.id=${event.data.id}`);
+    return new Response('error: missing user_id', { status: 400 });
+  }
+
+  // ── BUG #6 — Empty variant map ──────────────────────────────────────────
+  if (Object.keys(variantMap).length === 0) {
+    console.error('lemon-webhook: cannot process — variant map is empty');
+    return new Response('error: variant map empty', { status: 500 });
+  }
+
   // ── order_created / subscription_created ─────────────────────────────────
   // Initial purchase — activate plan + assign credits.
   if (event_name === 'order_created' || event_name === 'subscription_created') {
-    if (!userId) return new Response('ok'); // can't match without user_id
-
     const variantId = String(attrs.variant_id ?? attrs.first_subscription_item?.variant_id ?? '');
     const plan      = variantMap[variantId] ?? 'starter';
     const credits   = PLAN_CREDITS[plan] ?? 100;
     const renewsAt  = attrs.renews_at ?? null;
 
-    await supabase.from('profiles').update({
+    const { error } = await supabase.from('profiles').update({
       subscription_plan:              plan,
       subscription_status:            'active',
       lemon_squeezy_customer_id:      String(attrs.customer_id),
@@ -100,63 +134,87 @@ Deno.serve(async (req) => {
       credits_remaining:              credits,
       subscription_renews_at:         renewsAt,
     }).eq('id', userId);
+
+    // BUG #3 — Return 500 on DB error so Lemon Squeezy retries
+    if (error) {
+      console.error('lemon-webhook: DB update failed for order/subscription_created', error);
+      return new Response('error: db update failed', { status: 500 });
+    }
   }
 
   // ── subscription_updated ─────────────────────────────────────────────────
   // Plan change (upgrade/downgrade) or renewal.
   if (event_name === 'subscription_updated') {
-    if (!userId) return new Response('ok');
-
     const variantId = String(attrs.variant_id ?? '');
     const newPlan   = variantMap[variantId];
     const renewsAt  = attrs.renews_at ?? null;
+    let updateError: any = null;
 
     if (newPlan) {
       // Plan changed — reset credits to new plan allocation
       const credits = PLAN_CREDITS[newPlan] ?? 100;
-      await supabase.from('profiles').update({
+      const { error } = await supabase.from('profiles').update({
         subscription_plan:      newPlan,
         subscription_status:    attrs.status === 'active' ? 'active' : attrs.status,
         credits_remaining:      credits,
         subscription_renews_at: renewsAt,
       }).eq('id', userId);
+      updateError = error;
     } else if (attrs.status === 'expired' || attrs.status === 'cancelled') {
-      await supabase.from('profiles').update({
+      const { error } = await supabase.from('profiles').update({
         subscription_plan:      'starter',
         subscription_status:    'free',
         credits_remaining:      100,
         subscription_renews_at: null,
       }).eq('id', userId);
+      updateError = error;
     } else {
       // Just a renewal — refresh renews_at
-      await supabase.from('profiles').update({
+      const { error } = await supabase.from('profiles').update({
         subscription_renews_at: renewsAt,
         subscription_status: 'active',
       }).eq('id', userId);
+      updateError = error;
+    }
+
+    if (updateError) {
+      console.error('lemon-webhook: DB update failed for subscription_updated', updateError);
+      return new Response('error: db update failed', { status: 500 });
     }
   }
 
   // ── subscription_cancelled ───────────────────────────────────────────────
   // User cancelled — keep active until period ends (ends_at).
   if (event_name === 'subscription_cancelled') {
-    if (!userId) return new Response('ok');
-    await supabase.from('profiles').update({
+    const { error } = await supabase.from('profiles').update({
       subscription_status:    'cancelled',
       subscription_renews_at: attrs.ends_at ?? null,
     }).eq('id', userId);
+
+    if (error) {
+      console.error('lemon-webhook: DB update failed for subscription_cancelled', error);
+      return new Response('error: db update failed', { status: 500 });
+    }
   }
 
   // ── subscription_expired ─────────────────────────────────────────────────
   // Billing cycle ended with no renewal — downgrade to starter.
   if (event_name === 'subscription_expired') {
-    if (!userId) return new Response('ok');
-    await supabase.from('profiles').update({
+    const { error } = await supabase.from('profiles').update({
       subscription_plan:      'starter',
       subscription_status:    'free',
       credits_remaining:      100,
       subscription_renews_at: null,
     }).eq('id', userId);
+
+    if (error) {
+      console.error('lemon-webhook: DB update failed for subscription_expired', error);
+      return new Response('error: db update failed', { status: 500 });
+    }
   }
+
+  // ── BUG #4 — Record event for idempotency ───────────────────────────────
+  await supabase.from('webhook_events').insert({ event_id: eventId });
 
   return new Response('ok', { status: 200 });
 });

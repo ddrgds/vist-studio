@@ -119,12 +119,19 @@ export const restoreCreditsInDb = async (
     p_amount: amount,
   });
   if (error) {
-    // Fallback: direct update if RPC doesn't exist yet
+    // Fallback: read current balance then add amount (RPC may not exist yet)
+    const { data: row, error: readErr } = await supabase
+      .from('profiles')
+      .select('credits_remaining')
+      .eq('id', userId)
+      .single();
+    if (readErr) { console.warn('restoreCredits fallback read failed:', readErr.message); return; }
+    const current = (row?.credits_remaining as number) ?? 0;
     const { error: updateErr } = await supabase
       .from('profiles')
-      .update({ credits_remaining: amount })
+      .update({ credits_remaining: current + amount })
       .eq('id', userId);
-    if (updateErr) console.warn('restoreCredits fallback failed:', updateErr.message);
+    if (updateErr) console.warn('restoreCredits fallback update failed:', updateErr.message);
   }
 };
 

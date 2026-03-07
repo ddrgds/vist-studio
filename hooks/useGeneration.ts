@@ -449,9 +449,8 @@ export const useGeneration = (onGenerateStart?: () => void) => {
           voiceFile: videoVoice,
           resolution: videoResolution,
           aspectRatio,
+          engine: videoEngine,
         } as VideoParams;
-
-        const { videoEngine, referenceVideo } = params;
 
         let videoUrl: string;
         if (videoEngine === VideoEngine.KlingStandard || videoEngine === VideoEngine.KlingPro) {

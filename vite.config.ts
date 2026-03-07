@@ -58,17 +58,43 @@ export default defineConfig(({ mode }) => {
               });
             },
           },
+          '/gemini-api': {
+            target: 'https://generativelanguage.googleapis.com',
+            changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/gemini-api/, ''),
+            secure: true,
+            configure: (proxy) => {
+              proxy.on('proxyReq', (proxyReq, req) => {
+                // Append key= query param to the target URL
+                const url = new URL(proxyReq.path, 'https://generativelanguage.googleapis.com');
+                url.searchParams.set('key', env.GEMINI_API_KEY);
+                proxyReq.path = url.pathname + url.search;
+              });
+            },
+          },
+          '/fal-api': {
+            target: 'https://queue.fal.run',
+            changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/fal-api/, ''),
+            secure: true,
+            configure: (proxy) => {
+              proxy.on('proxyReq', (proxyReq) => {
+                proxyReq.setHeader('Authorization', `Key ${env.FAL_KEY}`);
+                proxyReq.removeHeader('origin');
+              });
+            },
+          },
+          '/modelslab-api': {
+            target: 'https://modelslab.com/api',
+            changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/modelslab-api/, ''),
+            secure: true,
+          },
         },
       },
       plugins: [react()],
       define: {
-        // Direct client-side APIs (key needed in bundle)
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.FAL_KEY': JSON.stringify(env.FAL_KEY),
-        'process.env.MODELSLAB_API_KEY': JSON.stringify(env.MODELSLAB_API_KEY),
-        // Proxied APIs — keys injected server-side via Cloudflare Functions (prod)
-        // or Vite dev proxy (dev). Keys must NOT be baked into the client bundle.
+        // API keys are now proxied server-side — never baked into the client bundle.
         // Supabase public anon key — safe to expose
         'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL),
         'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY),

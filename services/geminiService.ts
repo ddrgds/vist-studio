@@ -2,6 +2,12 @@
 import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from "@google/genai";
 import { InfluencerParams, PoseModificationParams, VideoParams, GeminiImageModel, BatchOutfitItem, IMAGEN4_MODELS, AIEditParams } from "../types";
 
+// API key is injected server-side by the /gemini-api proxy.
+// We pass a placeholder apiKey (the SDK requires a non-empty string)
+// and route all requests through the proxy via httpOptions.baseUrl.
+const createGeminiClient = () =>
+  new GoogleGenAI({ apiKey: 'PROXIED', httpOptions: { baseUrl: '/gemini-api' } });
+
 // ─────────────────────────────────────────────
 // Safety Settings relajados (lo máximo permitido
 // sin aprobación especial de Google)
@@ -254,7 +260,7 @@ const generateWithFallback = async (
 export const enhancePrompt = async (text: string, category: string): Promise<string> => {
   if (!text.trim()) return "";
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = createGeminiClient();
 
   try {
     const response = await withExponentialBackoff(() =>
@@ -298,7 +304,7 @@ export const generateInfluencerImage = async (
   onProgress?: (percent: number) => void,
   abortSignal?: AbortSignal
 ): Promise<string[]> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = createGeminiClient();
   if (abortSignal?.aborted) throw new Error("Cancelado por el usuario.");
 
   if (onProgress) onProgress(10);
@@ -496,7 +502,7 @@ export const modifyInfluencerPose = async (
   onProgress?: (percent: number) => void,
   abortSignal?: AbortSignal
 ): Promise<PoseGenerationResult[]> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = createGeminiClient();
   if (abortSignal?.aborted) throw new Error("Cancelado por el usuario.");
   if (onProgress) onProgress(10);
 
@@ -656,7 +662,7 @@ export const generateInfluencerVideo = async (
   onProgress?: (percent: number) => void,
   abortSignal?: AbortSignal
 ): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = createGeminiClient();
   if (abortSignal?.aborted) throw new Error("Cancelado por el usuario.");
   if (onProgress) onProgress(5);
 
@@ -703,7 +709,9 @@ export const generateInfluencerVideo = async (
 
     if (onProgress) onProgress(98);
 
-    const videoResponse = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
+    // Route video download through the proxy — the proxy appends the real API key
+    const proxyVideoUrl = `/gemini-api/${downloadLink.replace('https://generativelanguage.googleapis.com/', '')}`;
+    const videoResponse = await fetch(proxyVideoUrl);
     if (!videoResponse.ok) {
       throw new Error("Failed to download generated video.");
     }
@@ -733,7 +741,7 @@ export const generateBatchOutfits = async (
   onProgress?: (percent: number) => void,
   abortSignal?: AbortSignal
 ): Promise<BatchOutfitResult[]> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = createGeminiClient();
   if (abortSignal?.aborted) throw new Error("Cancelado por el usuario.");
   if (onProgress) onProgress(5);
 
@@ -851,7 +859,7 @@ export const generateWithImagen4 = async (
   onProgress?: (percent: number) => void,
   abortSignal?: AbortSignal
 ): Promise<string[]> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = createGeminiClient();
   const selectedModel = params.model ?? GeminiImageModel.Imagen4;
   if (abortSignal?.aborted) throw new Error("Cancelado por el usuario.");
 
@@ -952,7 +960,7 @@ export const editImageWithAI = async (
   onProgress?: (percent: number) => void,
   abortSignal?: AbortSignal
 ): Promise<string[]> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = createGeminiClient();
   if (abortSignal?.aborted) throw new Error("Cancelado por el usuario.");
   if (onProgress) onProgress(10);
 
@@ -1038,7 +1046,7 @@ export const generatePhotoSession = async (
   onProgress?: (percent: number) => void,
   abortSignal?: AbortSignal
 ): Promise<PoseGenerationResult[]> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = createGeminiClient();
   if (abortSignal?.aborted) throw new Error('Cancelado por el usuario.');
   if (onProgress) onProgress(5);
 
@@ -1146,7 +1154,7 @@ export const generateCaption = async (
   language: 'es' | 'en',
   contextHint?: string
 ): Promise<CaptionResult> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = createGeminiClient();
 
   // Extract base64 and mimeType from data URL
   const [header, base64Data] = imageDataUrl.split(',');

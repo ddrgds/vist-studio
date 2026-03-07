@@ -5,6 +5,8 @@ import {
   STUDIO_PRESETS, LIGHT_TYPE_ACCENT, DEFAULT_GLOBAL,
 } from '../services/relightService';
 import { useToast } from '../contexts/ToastContext';
+import { useProfile } from '../contexts/ProfileContext';
+import { OPERATION_CREDIT_COSTS } from '../types';
 import ProgressBar from './ProgressBar';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -738,6 +740,7 @@ type Tab = 'lights' | 'presets' | 'advanced';
 
 const RelightModal: React.FC<RelightModalProps> = ({ targetItem, onClose, onSave }) => {
   const toast = useToast();
+  const { decrementCredits, restoreCredits } = useProfile();
   const [settings, setSettings] = useState<StudioSettings>(makeDefault);
   const [selectedLightId, setSelectedLightId] = useState<string | null>(() => makeDefault().lights[0]?.id ?? null);
   const [activeTab, setActiveTab] = useState<Tab>('lights');
@@ -780,6 +783,10 @@ const RelightModal: React.FC<RelightModalProps> = ({ targetItem, onClose, onSave
   };
 
   const handleAI = async () => {
+    const cost = OPERATION_CREDIT_COSTS.relight;
+    const hasCredits = await decrementCredits(cost);
+    if (!hasCredits) { toast.error('Insufficient credits. Please upgrade your plan.'); return; }
+
     setLoading(true); setActiveMode('ai'); setProgress(0); setResult(null); setShowResult(false);
     const ctrl = new AbortController();
     abortRef.current = ctrl;
@@ -790,6 +797,7 @@ const RelightModal: React.FC<RelightModalProps> = ({ targetItem, onClose, onSave
       const dataUrl = await relightWithStudio(file, settings, setProgress, ctrl.signal);
       setResult(dataUrl); setProgress(100);
     } catch (err: any) {
+      restoreCredits(cost);
       if (err?.message !== 'Cancelled') toast.error(err?.message || 'AI relight failed.');
     } finally { setLoading(false); abortRef.current = null; }
   };

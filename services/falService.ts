@@ -2,9 +2,12 @@ import { fal } from '@fal-ai/client';
 import { InfluencerParams, FalModel, AspectRatio, PoseModificationParams } from '../types';
 
 // ─────────────────────────────────────────────
-// Config — usa FAL_KEY desde process.env (inyectado por vite.config.ts)
+// Config — API key is injected server-side by the /fal-api proxy.
+// The fal SDK's requestMiddleware rewrites URLs to go through the proxy.
 // ─────────────────────────────────────────────
-fal.config({ credentials: process.env.FAL_KEY });
+fal.config({
+  proxyUrl: '/fal-api',
+});
 
 // ─────────────────────────────────────────────
 // Helpers

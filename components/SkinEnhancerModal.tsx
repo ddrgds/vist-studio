@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { editImageWithAI } from '../services/geminiService';
-import { GeminiImageModel } from '../types';
+import { GeminiImageModel, OPERATION_CREDIT_COSTS } from '../types';
 import { useToast } from '../contexts/ToastContext';
+import { useProfile } from '../contexts/ProfileContext';
 import ProgressBar from './ProgressBar';
 
 interface SkinEnhancerModalProps {
@@ -35,12 +36,17 @@ const INTENSITY_OPTIONS: { value: Intensity; label: string; desc: string; prompt
 
 const SkinEnhancerModal: React.FC<SkinEnhancerModalProps> = ({ targetItem, onClose, onSave }) => {
   const toast = useToast();
+  const { decrementCredits, restoreCredits } = useProfile();
   const [intensity, setIntensity] = useState<Intensity>('medium');
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
 
   const handleGenerate = async () => {
+    const cost = OPERATION_CREDIT_COSTS.skinEnhancer;
+    const hasCredits = await decrementCredits(cost);
+    if (!hasCredits) { toast.error('Insufficient credits. Please upgrade your plan.'); return; }
+
     setLoading(true);
     setProgress(0);
     setResult(null);
@@ -77,6 +83,7 @@ OUTPUT: Return the complete photograph. Only the skin quality changes.`;
       if (results.length === 0) throw new Error('No image returned.');
       setResult(results[0]);
     } catch (err: any) {
+      restoreCredits(cost);
       toast.error(err?.message || 'Error al mejorar la piel');
     } finally {
       setLoading(false);
