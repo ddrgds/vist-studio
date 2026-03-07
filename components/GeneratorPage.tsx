@@ -10,11 +10,7 @@ import {
   RefreshCw,
   Maximize2,
   ChevronDown,
-  ChevronRight,
-  AtSign,
-  Upload,
   Image,
-  Zap,
 } from "lucide-react";
 import { useForm } from "../contexts/FormContext";
 import { useGallery } from "../contexts/GalleryContext";
@@ -278,24 +274,23 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
     return costPerImage * form.numberOfImages;
   })();
 
-  const [showEnginePicker, setShowEnginePicker] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [lightboxItem, setLightboxItem] = useState<GeneratedContent | null>(null);
   const [galleryTab, setGalleryTab] = useState<'session' | 'history'>('session');
 
-  const enginePickerRef = useRef<HTMLDivElement>(null);
+  const settingsRef = useRef<HTMLDivElement>(null);
   const refInputRef = useRef<HTMLInputElement>(null);
 
   // Session tracking — items generated in this session
   const sessionStartRef = useRef(Date.now());
 
-  // Close engine picker on click outside
+  // Close settings popover on click outside
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (enginePickerRef.current && !enginePickerRef.current.contains(e.target as Node))
-        setShowEnginePicker(false);
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node))
+        setShowSettings(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -321,20 +316,12 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
   );
   const displayItems = galleryTab === 'session' ? sessionItems : allItems;
 
-  const currentAr = AR_OPTIONS.find((o) => o.value === form.aspectRatio);
-  const currentArLabel = currentAr ? currentAr.label : "3:4";
-  const currentSizeLabel = SIZE_OPTIONS.find((o) => o.value === form.imageSize)?.label ?? "1K";
-
   const handleRefFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (files.length > 0 && char0) {
       form.updateCharacter(char0.id, "modelImages", files);
     }
   };
-
-  // Engine name for the engine chip
-  const engineLabel = activeModel?.name ?? "Select engine";
-  const engineIcon = activeModel?.icon ?? "✦";
 
   return (
     <div className="flex flex-col h-full overflow-hidden" style={{ background: '#0D0A0A' }}>
@@ -373,128 +360,106 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
 
         {displayItems.length > 0 ? (
           <>
-            {/* Tab switcher */}
-            <div className="sticky top-0 z-10 flex items-center gap-1 px-4 pt-3 pb-2" style={{ background: '#0D0A0A' }}>
+            {/* Tab switcher — flush left, minimal */}
+            <div className="sticky top-0 z-10 flex items-center gap-1 px-2 py-1.5" style={{ background: '#0D0A0A' }}>
               {(['session', 'history'] as const).map(tab => (
                 <button
                   key={tab}
                   onClick={() => setGalleryTab(tab)}
-                  className="px-3 py-1.5 rounded-lg text-[11px] font-semibold font-jet transition-all"
+                  className="px-2.5 py-1 rounded text-[10px] font-semibold font-jet transition-all"
                   style={galleryTab === tab
-                    ? { background: 'rgba(255,92,53,0.1)', color: '#FF5C35', border: '1px solid rgba(255,92,53,0.2)' }
-                    : { color: '#4A3A36', border: '1px solid transparent' }
+                    ? { color: '#FF5C35' }
+                    : { color: '#4A3A36' }
                   }
                 >
-                  {tab === 'session' ? `Session (${sessionItems.length})` : `History (${allItems.length})`}
+                  {tab === 'session' ? `Session ${sessionItems.length}` : `History ${allItems.length}`}
                 </button>
               ))}
             </div>
 
-            {/* Masonry grid */}
-            <div className="px-3 pb-4">
-              <div className="columns-2 sm:columns-3 lg:columns-3 xl:columns-4 gap-2">
-                {displayItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="break-inside-avoid mb-2 relative group cursor-pointer rounded-lg overflow-hidden"
-                    onMouseEnter={() => setHoveredItem(item.id)}
-                    onMouseLeave={() => setHoveredItem(null)}
-                    onClick={() => setLightboxItem(item)}
-                  >
-                    {item.type === "video" ? (
-                      <video src={item.url} className="w-full rounded-lg" muted loop
-                        onMouseEnter={e => (e.target as HTMLVideoElement).play()}
-                        onMouseLeave={e => { (e.target as HTMLVideoElement).pause(); (e.target as HTMLVideoElement).currentTime = 0; }}
-                      />
-                    ) : (
-                      <img src={item.url} alt="" className="w-full rounded-lg" loading="lazy" />
-                    )}
+            {/* Masonry grid — edge-to-edge, 3 columns, minimal gap */}
+            <div className="columns-3 gap-0.5 px-0.5">
+              {displayItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="break-inside-avoid mb-0.5 relative group cursor-pointer overflow-hidden"
+                  onMouseEnter={() => setHoveredItem(item.id)}
+                  onMouseLeave={() => setHoveredItem(null)}
+                  onClick={() => setLightboxItem(item)}
+                >
+                  {item.type === "video" ? (
+                    <video src={item.url} className="w-full block" muted loop
+                      onMouseEnter={e => (e.target as HTMLVideoElement).play()}
+                      onMouseLeave={e => { (e.target as HTMLVideoElement).pause(); (e.target as HTMLVideoElement).currentTime = 0; }}
+                    />
+                  ) : (
+                    <img src={item.url} alt="" className="w-full block" loading="lazy" />
+                  )}
 
-                    {/* Engine badge on image */}
-                    {item.aiProvider && (
-                      <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[8px] font-jet font-bold"
-                        style={{ background: 'rgba(0,0,0,0.7)', color: '#6B5A56' }}
-                      >
-                        {item.aiProvider === AIProvider.Gemini ? 'Gemini' :
-                         item.aiProvider === AIProvider.Fal ? 'FAL' :
-                         item.aiProvider === AIProvider.Replicate ? 'Replicate' :
-                         item.aiProvider === AIProvider.OpenAI ? 'OpenAI' :
-                         item.aiProvider === AIProvider.Ideogram ? 'Ideogram' :
-                         item.aiProvider === AIProvider.ModelsLab ? 'ModelsLab' : ''}
-                      </div>
-                    )}
+                  {/* Engine badge */}
+                  {item.aiProvider && (
+                    <div className="absolute top-1 left-1 px-1 py-px rounded text-[7px] font-jet font-bold"
+                      style={{ background: 'rgba(0,0,0,0.7)', color: '#6B5A56' }}
+                    >
+                      {item.aiProvider === AIProvider.Gemini ? 'Gemini' :
+                       item.aiProvider === AIProvider.Fal ? 'FAL' :
+                       item.aiProvider === AIProvider.Replicate ? 'Replicate' :
+                       item.aiProvider === AIProvider.OpenAI ? 'OpenAI' :
+                       item.aiProvider === AIProvider.Ideogram ? 'Ideogram' :
+                       item.aiProvider === AIProvider.ModelsLab ? 'ModelsLab' : ''}
+                    </div>
+                  )}
 
-                    {/* Hover actions */}
-                    {hoveredItem === item.id && (
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent rounded-lg">
-                        <div className="absolute top-1.5 right-1.5 flex flex-col gap-1">
-                          <MiniAction icon={<Download className="w-3 h-3" />} onClick={(e) => { e.stopPropagation(); onDownload(item); }} title="Download" />
-                          <MiniAction icon={<RefreshCw className="w-3 h-3" />} onClick={(e) => { e.stopPropagation(); onReuse(item); }} title="Reuse" />
-                          {item.type !== "video" && (
-                            <MiniAction icon={<Maximize2 className="w-3 h-3" />} onClick={(e) => { e.stopPropagation(); onUpscale(item); }} title="Upscale" />
-                          )}
-                          {onSendToDirector && item.type !== "video" && (
-                            <MiniAction icon={<Sparkles className="w-3 h-3" />} onClick={(e) => { e.stopPropagation(); onSendToDirector(item); }} title="Director" />
-                          )}
-                        </div>
+                  {/* Hover actions */}
+                  {hoveredItem === item.id && (
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent">
+                      <div className="absolute top-1 right-1 flex flex-col gap-0.5">
+                        <MiniAction icon={<Download className="w-3 h-3" />} onClick={(e) => { e.stopPropagation(); onDownload(item); }} title="Download" />
+                        <MiniAction icon={<RefreshCw className="w-3 h-3" />} onClick={(e) => { e.stopPropagation(); onReuse(item); }} title="Reuse" />
+                        {item.type !== "video" && (
+                          <MiniAction icon={<Maximize2 className="w-3 h-3" />} onClick={(e) => { e.stopPropagation(); onUpscale(item); }} title="Upscale" />
+                        )}
+                        {onSendToDirector && item.type !== "video" && (
+                          <MiniAction icon={<Sparkles className="w-3 h-3" />} onClick={(e) => { e.stopPropagation(); onSendToDirector(item); }} title="Director" />
+                        )}
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </>
         ) : (
-          /* ── Empty state ── */
-          <div className="flex flex-col items-center justify-center h-full text-center px-6 select-none">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5"
-              style={{ background: 'rgba(255,92,53,0.06)', border: '1px solid rgba(255,92,53,0.1)' }}
-            >
-              <Image className="w-6 h-6" style={{ color: '#FF5C35', opacity: 0.5 }} />
+          /* ── Empty state — minimal ── */
+          <div className="flex flex-col items-center justify-center h-full text-center select-none">
+            <div className="w-6 h-6 mb-4">
+              <Image className="w-6 h-6" style={{ color: '#FF5C35', opacity: 0.4 }} />
             </div>
-            <h2 className="text-lg font-bold mb-1.5" style={{ color: '#E8DDD9' }}>Start creating</h2>
-            <p className="text-sm max-w-xs mb-6" style={{ color: '#4A3A36' }}>
-              Type a prompt and hit Generate. Your images will appear here.
+            <p className="text-sm" style={{ color: '#4A3A36' }}>
+              Describe what you want to create
             </p>
-            <div className="flex flex-wrap gap-2 justify-center max-w-md">
-              {[
-                'Young woman, editorial fashion, studio lighting',
-                'Male model, streetwear, urban background',
-                'Beauty close-up, golden hour, soft bokeh',
-              ].map((prompt) => (
-                <button
-                  key={prompt}
-                  onClick={() => { if (char0) form.updateCharacter(char0.id, 'outfitDescription', prompt); }}
-                  className="px-3 py-1.5 rounded-full text-[11px] transition-all hover:scale-[1.02]"
-                  style={{ background: 'rgba(255,92,53,0.06)', border: '1px solid rgba(255,92,53,0.12)', color: '#FF5C35' }}
-                >
-                  {prompt}
-                </button>
-              ))}
-            </div>
           </div>
         )}
       </div>
 
-      {/* ─── Bottom Bar ─── */}
-      <div className="flex-none border-t" style={{ background: '#0D0A0A', borderColor: '#1A1210' }}>
-        {/* Row 1: Prompt + Generate */}
-        <div className="flex items-center gap-2 px-3 pt-3 pb-2">
-          {/* Reference image button */}
+      {/* ─── Bottom Bar — single row ─── */}
+      <div className="flex-none border-t px-2 py-2" style={{ background: '#0D0A0A', borderColor: '#1A1210' }}>
+        <div className="flex items-center gap-1.5">
+          {/* [+] Reference image */}
           <button
             onClick={() => refInputRef.current?.click()}
-            className="flex items-center justify-center w-9 h-9 rounded-xl flex-none transition-all"
+            className="flex items-center justify-center w-9 h-9 rounded-lg flex-none transition-all"
             style={char0 && char0.modelImages.length > 0
               ? { background: 'rgba(255,92,53,0.1)', border: '1px solid rgba(255,92,53,0.2)', color: '#FF5C35' }
               : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: '#4A3A36' }
             }
             title="Add reference image"
           >
-            <AtSign className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4" />
           </button>
 
           {/* Prompt input */}
-          <div className="flex-1 flex items-center rounded-xl px-3 py-2.5"
+          <div className="flex-1 flex items-center rounded-lg px-3"
             style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
           >
             {isVideo ? (
@@ -502,7 +467,7 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
                 value={form.videoPrompt}
                 onChange={(e) => form.setVideoPrompt(e.target.value)}
                 placeholder="Describe the motion and scene..."
-                className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-zinc-700 font-light"
+                className="flex-1 bg-transparent text-sm text-white outline-none py-2.5 placeholder:text-zinc-700 font-light"
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !isGenerating) { e.preventDefault(); onGenerate(); } }}
               />
             ) : (
@@ -510,14 +475,12 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
                 value={form.characters[0]?.outfitDescription ?? ""}
                 onChange={(e) => char0 && form.updateCharacter(char0.id, "outfitDescription", e.target.value)}
                 placeholder="Describe your image..."
-                className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-zinc-700 font-light"
+                className="flex-1 bg-transparent text-sm text-white outline-none py-2.5 placeholder:text-zinc-700 font-light"
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !isGenerating) { e.preventDefault(); onGenerate(); } }}
               />
             )}
-
-            {/* Ref image count badge inside input */}
             {char0 && char0.modelImages.length > 0 && (
-              <span className="text-[9px] font-jet ml-2 px-1.5 py-0.5 rounded flex-none"
+              <span className="text-[9px] font-jet ml-1.5 px-1.5 py-0.5 rounded flex-none"
                 style={{ background: 'rgba(255,92,53,0.1)', color: '#FF5C35' }}
               >
                 @{char0.modelImages.length}
@@ -525,10 +488,171 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
             )}
           </div>
 
-          {/* Generate button */}
+          {/* [Settings] — opens popover upward */}
+          <div className="relative" ref={settingsRef}>
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="flex items-center justify-center w-9 h-9 rounded-lg flex-none transition-all"
+              style={showSettings
+                ? { background: 'rgba(255,92,53,0.1)', border: '1px solid rgba(255,92,53,0.2)', color: '#FF5C35' }
+                : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: '#4A3A36' }
+              }
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+
+            {/* Settings popover */}
+            {showSettings && (
+              <div className="absolute bottom-full mb-2 right-0 w-[340px] rounded-xl shadow-2xl overflow-hidden z-50"
+                style={{ background: '#0D0A0A', border: '1px solid #1A1210' }}
+              >
+                <div className="p-3 space-y-4">
+                  {/* Engine selector */}
+                  <div>
+                    <label className="text-[9px] font-jet font-bold uppercase tracking-widest block mb-2" style={{ color: '#4A3A36' }}>Engine</label>
+                    <div className="flex items-center gap-2 rounded-lg px-3 py-1.5 mb-2" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <Search className="w-3 h-3 flex-none" style={{ color: '#4A3A36' }} />
+                      <input
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search..."
+                        className="flex-1 bg-transparent text-[11px] text-white outline-none placeholder:text-zinc-700"
+                      />
+                      {searchQuery && <button onClick={() => setSearchQuery("")}><X className="w-3 h-3" style={{ color: '#4A3A36' }} /></button>}
+                    </div>
+                    <div className="max-h-[200px] overflow-y-auto custom-scrollbar space-y-0.5">
+                      {featuredModels.length > 0 && (
+                        <EngineSection title="Featured" models={featuredModels} form={form}
+                          onSelect={(m) => { m.select(form); setSearchQuery(""); }} />
+                      )}
+                      {otherModels.length > 0 && (
+                        <EngineSection title="Other" models={otherModels} form={form}
+                          onSelect={(m) => { m.select(form); setSearchQuery(""); }} />
+                      )}
+                      {videoModels.length > 0 && (
+                        <EngineSection title="Video" models={videoModels} form={form}
+                          onSelect={(m) => { m.select(form); setSearchQuery(""); }} />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Aspect Ratio */}
+                  {!isVideo && (
+                    <div>
+                      <label className="text-[9px] font-jet font-bold uppercase tracking-widest block mb-2" style={{ color: '#4A3A36' }}>Aspect Ratio</label>
+                      <div className="flex gap-1">
+                        {AR_OPTIONS.map((o) => (
+                          <button
+                            key={o.value}
+                            onClick={() => form.setAspectRatio(o.value)}
+                            className="flex-1 py-1.5 rounded text-[10px] font-semibold transition-all text-center"
+                            style={form.aspectRatio === o.value
+                              ? { background: 'rgba(255,92,53,0.1)', color: '#FF5C35', border: '1px solid rgba(255,92,53,0.2)' }
+                              : { color: '#6B5A56', border: '1px solid rgba(255,255,255,0.04)' }
+                            }
+                          >
+                            {o.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Resolution */}
+                  {!isVideo && (
+                    <div>
+                      <label className="text-[9px] font-jet font-bold uppercase tracking-widest block mb-2" style={{ color: '#4A3A36' }}>Resolution</label>
+                      <div className="flex gap-1">
+                        {SIZE_OPTIONS.map((o) => (
+                          <button
+                            key={o.value}
+                            onClick={() => form.setImageSize(o.value)}
+                            className="flex-1 py-1.5 rounded text-[10px] font-semibold transition-all text-center"
+                            style={form.imageSize === o.value
+                              ? { background: 'rgba(255,92,53,0.1)', color: '#FF5C35', border: '1px solid rgba(255,92,53,0.2)' }
+                              : { color: '#6B5A56', border: '1px solid rgba(255,255,255,0.04)' }
+                            }
+                          >
+                            {o.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Variations */}
+                  {!isVideo && (
+                    <div>
+                      <label className="text-[9px] font-jet font-bold uppercase tracking-widest block mb-2" style={{ color: '#4A3A36' }}>Variations</label>
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => form.setNumberOfImages(Math.max(1, form.numberOfImages - 1))}
+                          className="w-7 h-7 rounded flex items-center justify-center"
+                          style={{ background: 'rgba(255,255,255,0.04)', color: '#6B5A56' }}>
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="text-sm font-bold flex-1 text-center" style={{ color: '#E8DDD9' }}>{form.numberOfImages}</span>
+                        <button onClick={() => form.setNumberOfImages(Math.min(4, form.numberOfImages + 1))}
+                          className="w-7 h-7 rounded flex items-center justify-center"
+                          style={{ background: 'rgba(255,255,255,0.04)', color: '#6B5A56' }}>
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Advanced — CFG, Steps, Seed, Negative */}
+                  <details className="group">
+                    <summary className="text-[9px] font-jet font-bold uppercase tracking-widest cursor-pointer list-none flex items-center gap-1" style={{ color: '#4A3A36' }}>
+                      Advanced
+                      <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" />
+                    </summary>
+                    <div className="mt-2 grid grid-cols-3 gap-2">
+                      <div>
+                        <label className="text-[8px] uppercase block mb-1" style={{ color: '#4A3A36' }}>CFG</label>
+                        <AdvStepper value={form.cfg} min={1} max={20} step={0.5} onChange={form.setCfg} />
+                      </div>
+                      <div>
+                        <label className="text-[8px] uppercase block mb-1" style={{ color: '#4A3A36' }}>Steps</label>
+                        <AdvStepper value={form.steps} min={10} max={100} step={5} onChange={form.setSteps} />
+                      </div>
+                      <div>
+                        <label className="text-[8px] uppercase block mb-1" style={{ color: '#4A3A36' }}>Seed</label>
+                        <input
+                          type="number"
+                          value={form.seed ?? ""}
+                          onChange={(e) => form.setSeed(e.target.value === "" ? undefined : parseInt(e.target.value))}
+                          placeholder="Rng"
+                          className="w-full bg-transparent rounded px-1.5 py-1 text-[10px] text-white outline-none placeholder:text-zinc-700 font-jet"
+                          style={{ border: '1px solid rgba(255,255,255,0.06)' }}
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="text-[8px] uppercase block mb-1" style={{ color: '#4A3A36' }}>Negative</label>
+                        <input
+                          value={form.negativePrompt}
+                          onChange={(e) => form.setNegativePrompt(e.target.value)}
+                          placeholder="Things to avoid..."
+                          className="w-full bg-transparent rounded px-1.5 py-1 text-[10px] text-white outline-none placeholder:text-zinc-700 font-jet"
+                          style={{ border: '1px solid rgba(255,255,255,0.06)' }}
+                        />
+                      </div>
+                      <div>
+                        <label className="flex items-center gap-1.5 cursor-pointer mt-1">
+                          <input type="checkbox" checked={form.antiFisheye} onChange={(e) => form.setAntiFisheye(e.target.checked)} className="w-3 h-3 accent-orange-500" />
+                          <span className="text-[9px]" style={{ color: '#6B5A56' }}>Anti-fish</span>
+                        </label>
+                      </div>
+                    </div>
+                  </details>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Generate button — with credit cost inside */}
           <button
             onClick={isGenerating ? onStopGeneration : onGenerate}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 flex-none text-white"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-bold transition-all active:scale-95 flex-none text-white"
             style={isGenerating
               ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)' }
               : { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', boxShadow: '0 2px 12px rgba(255,92,53,0.25)' }
@@ -540,184 +664,10 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
                 Stop
               </>
             ) : (
-              <>
-                Generate
-                <span className="text-[10px] font-jet opacity-70 ml-0.5">
-                  {genCreditCost}
-                </span>
-              </>
+              <>Generate <span className="text-[10px] font-jet opacity-70">{genCreditCost}</span></>
             )}
           </button>
         </div>
-
-        {/* Row 2: Engine + Settings */}
-        <div className="flex items-center gap-2 px-3 pb-3 overflow-x-auto">
-          {/* Engine chip */}
-          <div className="relative" ref={enginePickerRef}>
-            <button
-              onClick={() => setShowEnginePicker(!showEnginePicker)}
-              className="flex items-center gap-1.5 pl-2 pr-2.5 py-1.5 rounded-lg transition-all text-[11px] font-semibold flex-none"
-              style={showEnginePicker
-                ? { background: 'rgba(255,92,53,0.1)', border: '1px solid rgba(255,92,53,0.2)', color: '#FF5C35' }
-                : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: '#B8A9A5' }
-              }
-            >
-              <span className="text-sm leading-none">{engineIcon}</span>
-              <span className="max-w-[100px] truncate">{engineLabel}</span>
-              <ChevronRight className={`w-3 h-3 transition-transform ${showEnginePicker ? 'rotate-90' : ''}`} style={{ color: '#4A3A36' }} />
-            </button>
-
-            {/* Engine picker popover */}
-            {showEnginePicker && (
-              <div className="absolute bottom-full mb-2 left-0 w-[340px] rounded-2xl shadow-2xl overflow-hidden z-50"
-                style={{ background: '#0D0A0A', border: '1px solid #1A1210' }}
-              >
-                <div className="p-3 border-b" style={{ borderColor: '#1A1210' }}>
-                  <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                    <Search className="w-3.5 h-3.5 flex-none" style={{ color: '#4A3A36' }} />
-                    <input
-                      autoFocus
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search engines..."
-                      className="flex-1 bg-transparent text-xs text-white outline-none placeholder:text-zinc-700"
-                    />
-                    {searchQuery && (
-                      <button onClick={() => setSearchQuery("")}><X className="w-3 h-3" style={{ color: '#4A3A36' }} /></button>
-                    )}
-                  </div>
-                </div>
-                <div className="max-h-[360px] overflow-y-auto custom-scrollbar">
-                  {featuredModels.length > 0 && (
-                    <EngineSection title="Featured" models={featuredModels} form={form}
-                      onSelect={(m) => { m.select(form); setShowEnginePicker(false); setSearchQuery(""); }} />
-                  )}
-                  {otherModels.length > 0 && (
-                    <EngineSection title="Other models" models={otherModels} form={form}
-                      onSelect={(m) => { m.select(form); setShowEnginePicker(false); setSearchQuery(""); }} />
-                  )}
-                  {videoModels.length > 0 && (
-                    <EngineSection title="Video" models={videoModels} form={form}
-                      onSelect={(m) => { m.select(form); setShowEnginePicker(false); setSearchQuery(""); }} />
-                  )}
-                  {featuredModels.length === 0 && otherModels.length === 0 && videoModels.length === 0 && (
-                    <p className="text-center text-xs py-8" style={{ color: '#4A3A36' }}>No results</p>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Aspect ratio chip */}
-          {!isVideo && (
-            <ChipButton
-              label={currentArLabel}
-              onClick={() => {
-                const idx = AR_OPTIONS.findIndex(o => o.value === form.aspectRatio);
-                const next = AR_OPTIONS[(idx + 1) % AR_OPTIONS.length];
-                form.setAspectRatio(next.value);
-              }}
-              prefix="□"
-            />
-          )}
-
-          {/* Resolution chip */}
-          {!isVideo && (
-            <ChipButton
-              label={currentSizeLabel}
-              onClick={() => {
-                const idx = SIZE_OPTIONS.findIndex(o => o.value === form.imageSize);
-                const next = SIZE_OPTIONS[(idx + 1) % SIZE_OPTIONS.length];
-                form.setImageSize(next.value);
-              }}
-            />
-          )}
-
-          {/* Variations stepper */}
-          {!isVideo && (
-            <div className="flex items-center gap-px rounded-lg flex-none"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-            >
-              <button onClick={() => form.setNumberOfImages(Math.max(1, form.numberOfImages - 1))}
-                className="px-1.5 py-1.5 transition-colors" style={{ color: '#4A3A36' }}>
-                <Minus className="w-3 h-3" />
-              </button>
-              <span className="text-[11px] font-semibold w-4 text-center" style={{ color: '#B8A9A5' }}>{form.numberOfImages}</span>
-              <button onClick={() => form.setNumberOfImages(Math.min(4, form.numberOfImages + 1))}
-                className="px-1.5 py-1.5 transition-colors" style={{ color: '#4A3A36' }}>
-                <Plus className="w-3 h-3" />
-              </button>
-            </div>
-          )}
-
-          {/* Advanced toggle */}
-          <button
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="flex items-center justify-center w-7 h-7 rounded-lg transition-all flex-none"
-            style={showAdvanced
-              ? { background: 'rgba(255,92,53,0.1)', border: '1px solid rgba(255,92,53,0.2)', color: '#FF5C35' }
-              : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: '#4A3A36' }
-            }
-          >
-            <Settings className="w-3 h-3" />
-          </button>
-
-          {/* Spacer */}
-          <div className="flex-1" />
-
-          {/* Credits */}
-          {!isGenerating && (
-            <div className="flex items-center gap-1.5 text-[10px] font-jet flex-none" style={{ color: '#4A3A36' }}>
-              <Zap className="w-3 h-3" style={{ color: '#FFB347' }} />
-              <span style={{ color: sub.credits < 20 ? '#EF4444' : sub.credits < 100 ? '#F59E0B' : '#6B5A56' }}>
-                {sub.isUnlimited ? '∞' : sub.credits.toLocaleString()}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Advanced drawer */}
-        {showAdvanced && (
-          <div className="px-3 pb-3 border-t pt-3" style={{ borderColor: '#1A1210' }}>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              <div>
-                <label className="text-[9px] uppercase tracking-wider block mb-1" style={{ color: '#4A3A36' }}>CFG</label>
-                <AdvStepper value={form.cfg} min={1} max={20} step={0.5} onChange={form.setCfg} />
-              </div>
-              <div>
-                <label className="text-[9px] uppercase tracking-wider block mb-1" style={{ color: '#4A3A36' }}>Steps</label>
-                <AdvStepper value={form.steps} min={10} max={100} step={5} onChange={form.setSteps} />
-              </div>
-              <div>
-                <label className="text-[9px] uppercase tracking-wider block mb-1" style={{ color: '#4A3A36' }}>Seed</label>
-                <input
-                  type="number"
-                  value={form.seed ?? ""}
-                  onChange={(e) => form.setSeed(e.target.value === "" ? undefined : parseInt(e.target.value))}
-                  placeholder="Random"
-                  className="w-full bg-transparent rounded-lg px-2 py-1.5 text-xs text-white outline-none placeholder:text-zinc-700 font-jet"
-                  style={{ border: '1px solid rgba(255,255,255,0.06)' }}
-                />
-              </div>
-              <div className="col-span-2">
-                <label className="text-[9px] uppercase tracking-wider block mb-1" style={{ color: '#4A3A36' }}>Negative</label>
-                <input
-                  value={form.negativePrompt}
-                  onChange={(e) => form.setNegativePrompt(e.target.value)}
-                  placeholder="Things to avoid..."
-                  className="w-full bg-transparent rounded-lg px-2 py-1.5 text-xs text-white outline-none placeholder:text-zinc-700 font-jet"
-                  style={{ border: '1px solid rgba(255,255,255,0.06)' }}
-                />
-              </div>
-              <div>
-                <label className="flex items-center gap-2 cursor-pointer mt-3">
-                  <input type="checkbox" checked={form.antiFisheye} onChange={(e) => form.setAntiFisheye(e.target.checked)} className="w-3 h-3 accent-orange-500" />
-                  <span className="text-[10px]" style={{ color: '#6B5A56' }}>Anti-fisheye</span>
-                </label>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ─── Lightbox ─── */}
@@ -775,17 +725,6 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
 };
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
-
-const ChipButton: React.FC<{ label: string; onClick: () => void; prefix?: string }> = ({ label, onClick, prefix }) => (
-  <button
-    onClick={onClick}
-    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all flex-none"
-    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: '#B8A9A5' }}
-  >
-    {prefix && <span style={{ color: '#4A3A36' }}>{prefix}</span>}
-    {label}
-  </button>
-);
 
 const MiniAction: React.FC<{ icon: React.ReactNode; onClick: (e: React.MouseEvent) => void; title?: string }> = ({ icon, onClick, title }) => (
   <button
