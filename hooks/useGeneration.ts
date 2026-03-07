@@ -473,6 +473,10 @@ export const useGeneration = (onGenerateStart?: () => void) => {
 
       if (newItems.length === 0) throw new Error('No se generaron imágenes. Inténtalo de nuevo.');
 
+      // Tag source workspace
+      const itemSource = directorFaceImages.length > 0 ? 'director' : 'generate';
+      newItems = newItems.map(item => ({ ...item, source: itemSource as 'generate' | 'director' }));
+
       // addItems handles both Supabase + IndexedDB persistence with fallback
       await addItems(newItems);
 

@@ -139,6 +139,8 @@ export interface GeneratedContent {
   type: 'create' | 'edit' | 'video';
   favorite?: boolean;
   tags?: string[];
+  /** Which workspace produced this item */
+  source?: 'generate' | 'director';
   // Modelo/proveedor usado — para restaurar en "Reutilizar ajustes"
   aiProvider?: AIProvider;
   falModel?: FalModel;

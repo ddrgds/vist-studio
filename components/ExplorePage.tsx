@@ -33,8 +33,8 @@ const FEATURES = [
   {
     id: "generate",
     icon: <Sparkles className="w-5 h-5" />,
-    title: "AI Generator",
-    subtitle: "10+ models in one place",
+    title: "Freestyle",
+    subtitle: "Quick AI generation",
     description:
       "FLUX Kontext, Gemini Flash, GPT Image 1.5, Ideogram V3 — switch instantly and compare results.",
     workspace: "generate" as AppWorkspace,
@@ -83,6 +83,16 @@ const PLACEHOLDERS = [
   { h: 200, bg: "linear-gradient(140deg,#281E1A,#1E1614)" },
   { h: 160, bg: "linear-gradient(155deg,#221714,#261C18)" },
   { h: 240, bg: "linear-gradient(135deg,#1E1614,#2A1F1C)" },
+];
+
+// Demo images shown in the hero when the user has no generated content
+const DEMO_IMAGES = [
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80&auto=format',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80&auto=format',
+  'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=80&auto=format',
+  'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&q=80&auto=format',
+  'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&q=80&auto=format',
+  'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&q=80&auto=format',
 ];
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
@@ -184,7 +194,7 @@ const ExplorePage: React.FC<ExplorePageProps> = ({ onNavigate }) => {
           {/* Right: masonry gallery preview */}
           <div className="w-full sm:flex-1 sm:min-w-0 overflow-hidden rounded-2xl" style={{ maxHeight: 340 }}>
             <MasonryPreview
-              images={hasImages ? realImages.map((i) => i.url) : null}
+              images={hasImages ? realImages.map((i) => i.url) : DEMO_IMAGES}
               onNavigate={onNavigate}
             />
           </div>

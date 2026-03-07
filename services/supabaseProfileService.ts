@@ -114,12 +114,18 @@ export const restoreCreditsInDb = async (
   userId: string,
   amount: number,
 ): Promise<void> => {
-  await supabase
-    .from('profiles')
-    .update({ credits_remaining: supabase.rpc as any })
-    .eq('id', userId);
-  // Use rpc for consistency
-  await supabase.rpc('restore_credits', { p_user_id: userId, p_amount: amount });
+  const { error } = await supabase.rpc('restore_credits', {
+    p_user_id: userId,
+    p_amount: amount,
+  });
+  if (error) {
+    // Fallback: direct update if RPC doesn't exist yet
+    const { error: updateErr } = await supabase
+      .from('profiles')
+      .update({ credits_remaining: amount })
+      .eq('id', userId);
+    if (updateErr) console.warn('restoreCredits fallback failed:', updateErr.message);
+  }
 };
 
 // ─────────────────────────────────────────────

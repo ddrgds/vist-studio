@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import {
   UserProfile,
@@ -38,16 +38,23 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const lastLoadedUserId = useRef<string | null>(null);
 
   // ─── Load on auth change ────────────────────────────────────────────────
   const refreshProfile = useCallback(async () => {
     if (!user) {
       setProfile(null);
       setIsLoading(false);
+      lastLoadedUserId.current = null;
+      return;
+    }
+    // Skip if already loaded for this user (unless forced via explicit call)
+    if (lastLoadedUserId.current === user.id && profile) {
       return;
     }
     try {
       setIsLoading(true);
+      lastLoadedUserId.current = user.id;
       const data = await loadProfile(user.id);
       setProfile(data ?? {
         id: user.id,

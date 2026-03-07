@@ -319,8 +319,32 @@ const AppInner: React.FC = () => {
   const profileCtx = useProfile();
   const sub = useSubscription();
 
-  const [activeWorkspace, setActiveWorkspace] =
-    useState<AppWorkspace>("explore");
+  // Map URL paths to workspaces
+  const PATH_TO_WORKSPACE: Record<string, AppWorkspace> = {
+    '/': 'explore', '/explore': 'explore', '/generate': 'generate',
+    '/director': 'director', '/characters': 'characters', '/library': 'characters',
+    '/storyboard': 'storyboard', '/pricing': 'pricing', '/profile': 'profile',
+  };
+  const initialWs = PATH_TO_WORKSPACE[window.location.pathname] ?? 'explore';
+  const [activeWorkspace, _setActiveWorkspace] =
+    useState<AppWorkspace>(initialWs);
+  const setActiveWorkspace = React.useCallback((ws: AppWorkspace) => {
+    _setActiveWorkspace(ws);
+    const wsPath = ws === 'explore' ? '/' : `/${ws}`;
+    if (window.location.pathname !== wsPath) {
+      window.history.pushState({}, '', wsPath);
+    }
+  }, []);
+
+  // ─── Handle browser back/forward ────────────────────────────────────────
+  React.useEffect(() => {
+    const onPop = () => {
+      const ws = PATH_TO_WORKSPACE[window.location.pathname] ?? 'explore';
+      _setActiveWorkspace(ws);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   // ─── Handle Stripe checkout return ───────────────────────────────────────
   React.useEffect(() => {
@@ -1731,12 +1755,12 @@ const AppInner: React.FC = () => {
             <nav className="flex gap-0.5">
               {(["explore", "generate", "director", "characters", "storyboard", "pricing"] as const).map((ws) => {
                 const TAB_LABELS: Record<string, string> = {
-                  explore: "Explore", generate: "Generate", director: "Director",
+                  explore: "Explore", generate: "Freestyle", director: "Director",
                   characters: "Library", storyboard: "Storyboard", pricing: "Pricing",
                 };
                 const TAB_TIPS: Record<string, string> = {
                   explore: "Home & overview",
-                  generate: "AI image generation",
+                  generate: "Freestyle generation",
                   director: "Character studio",
                   characters: "Character library",
                   storyboard: "Content planner",
@@ -1889,7 +1913,7 @@ const AppInner: React.FC = () => {
             ), label: 'Explore' },
             { ws: 'generate' as const,    icon: (
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            ), label: 'Generate' },
+            ), label: 'Freestyle' },
             { ws: 'director' as const,    icon: (
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
             ), label: 'Director' },

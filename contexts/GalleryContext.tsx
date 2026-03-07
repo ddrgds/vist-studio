@@ -39,6 +39,8 @@ interface GalleryContextValue {
   // Filter / Sort
   filterType: 'all' | 'create' | 'edit' | 'video' | 'favorites';
   setFilterType: React.Dispatch<React.SetStateAction<'all' | 'create' | 'edit' | 'video' | 'favorites'>>;
+  sourceFilter: 'all' | 'generate' | 'director';
+  setSourceFilter: React.Dispatch<React.SetStateAction<'all' | 'generate' | 'director'>>;
   sortOrder: 'newest' | 'oldest';
   setSortOrder: React.Dispatch<React.SetStateAction<'newest' | 'oldest'>>;
   filteredHistory: GeneratedContent[];
@@ -95,6 +97,7 @@ export const GalleryProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // ─── Gallery ───────────────────────────────
   const [generatedHistory, setGeneratedHistory] = useState<GeneratedContent[]>([]);
   const [filterType, setFilterType] = useState<'all' | 'create' | 'edit' | 'video' | 'favorites'>('all');
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'generate' | 'director'>('all');
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -182,11 +185,14 @@ export const GalleryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } else if (filterType !== 'all') {
       result = result.filter(item => item.type === filterType);
     }
+    if (sourceFilter !== 'all') {
+      result = result.filter(item => item.source === sourceFilter);
+    }
     result.sort((a, b) =>
       sortOrder === 'newest' ? b.timestamp - a.timestamp : a.timestamp - b.timestamp
     );
     return result;
-  }, [generatedHistory, filterType, sortOrder]);
+  }, [generatedHistory, filterType, sourceFilter, sortOrder]);
 
   // ─── Gallery Mutations ─────────────────────
   const addItems = async (items: GeneratedContent[]) => {
@@ -372,6 +378,7 @@ export const GalleryProvider: React.FC<{ children: React.ReactNode }> = ({ child
       updateItemTags, allTags,
       storyboardIds, addToStoryboard, removeFromStoryboard, reorderStoryboard,
       filterType, setFilterType,
+      sourceFilter, setSourceFilter,
       sortOrder, setSortOrder,
       filteredHistory,
       selectedIds, toggleSelection, clearSelection, isSelectionMode,
