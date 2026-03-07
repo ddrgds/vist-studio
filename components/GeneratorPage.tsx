@@ -68,7 +68,7 @@ const ALL_MODELS: ModelEntry[] = [
   // ── Featured image models ──
   {
     id: "nb2", name: "NB2", tagline: "Pro quality at Flash speed", icon: "🍌",
-    badge: "TOP", section: "featured", creditCost: 5,
+    badge: "TOP", section: "featured", creditCost: 2,
     select: (f) => { f.setAiProvider(AIProvider.Gemini); f.setGeminiModel(GeminiImageModel.Flash2); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Gemini && f.geminiModel === GeminiImageModel.Flash2,
   },
@@ -141,7 +141,7 @@ const ALL_MODELS: ModelEntry[] = [
   },
   {
     id: "gemini-flash", name: "Gemini Flash", tagline: "Fast and efficient", icon: "⚡",
-    section: "other", creditCost: 5,
+    section: "other", creditCost: 2,
     select: (f) => { f.setAiProvider(AIProvider.Gemini); f.setGeminiModel(GeminiImageModel.Flash); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Gemini && f.geminiModel === GeminiImageModel.Flash,
   },
@@ -264,13 +264,13 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
   // Credit cost for current config
   const genCreditCost = (() => {
     if (form.activeMode === 'video') return CREDIT_COSTS[form.videoEngine as string] ?? 50;
-    let costPerImage = 5;
+    let costPerImage = 2;
     if (form.aiProvider === AIProvider.Fal) costPerImage = CREDIT_COSTS[form.falModel] ?? 10;
     else if (form.aiProvider === AIProvider.Replicate) costPerImage = CREDIT_COSTS[form.replicateModel] ?? 15;
     else if (form.aiProvider === AIProvider.OpenAI) costPerImage = CREDIT_COSTS[form.openaiModel] ?? 20;
     else if (form.aiProvider === AIProvider.Ideogram) costPerImage = CREDIT_COSTS[form.ideogramModel] ?? 10;
     else if (form.aiProvider === AIProvider.ModelsLab) costPerImage = CREDIT_COSTS[form.modelsLabModel] ?? 5;
-    else costPerImage = CREDIT_COSTS[form.geminiModel] ?? 5;
+    else costPerImage = CREDIT_COSTS[form.geminiModel] ?? 2;
     return costPerImage * form.numberOfImages;
   })();
 
@@ -664,7 +664,7 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
                 Stop
               </>
             ) : (
-              <>Generate <span className="text-[10px] font-jet opacity-70">{genCreditCost}</span></>
+              <>Generate <span className="text-[10px] font-jet opacity-70">⚡{genCreditCost}</span></>
             )}
           </button>
         </div>

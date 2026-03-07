@@ -109,7 +109,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ item, onClose }) => {
                         {pose && <p className="text-sm text-zinc-200">{pose}</p>}
                         {poseUrl && (
                             <div className="mt-1 h-16 w-16 rounded border border-zinc-700 overflow-hidden relative group">
-                                <img src={poseUrl} className="w-full h-full object-cover" alt="Imagen de referencia de pose" />
+                                <img src={poseUrl} className="w-full h-full object-cover" alt="Pose reference" />
                                 <div aria-hidden="true" className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 text-[8px] text-white">Ref Pose</div>
                             </div>
                         )}
@@ -180,13 +180,13 @@ const DetailModal: React.FC<DetailModalProps> = ({ item, onClose }) => {
         return (
              <div className="space-y-4">
                  <div className="bg-zinc-800/50 p-3 rounded-lg border border-zinc-700">
-                    <span className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Edición</span>
+                    <span className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Edit</span>
                     <div className="mt-1">
-                        <span className="text-zinc-400 text-xs">Nueva Pose:</span> 
+                        <span className="text-zinc-400 text-xs">New Pose:</span> 
                         {p.pose && <p className="text-sm text-zinc-200">{p.pose}</p>}
                         {poseUrl && (
                             <div className="mt-1 h-16 w-16 rounded border border-zinc-700 overflow-hidden relative group">
-                                <img src={poseUrl} className="w-full h-full object-cover" alt="Imagen de referencia de pose" />
+                                <img src={poseUrl} className="w-full h-full object-cover" alt="Pose reference" />
                                 <div aria-hidden="true" className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 text-[8px] text-white">Ref Pose</div>
                             </div>
                         )}
@@ -288,7 +288,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ item, onClose }) => {
                         item.type === 'edit' ? 'bg-blue-900/50 text-blue-300 border border-blue-500/20' :
                         'bg-red-900/50 text-red-300 border border-red-500/20'
                      }`}>
-                        {item.type === 'create' ? 'Creación' : item.type === 'edit' ? 'Edición' : 'Video Generado'}
+                        {item.type === 'create' ? 'Creation' : item.type === 'edit' ? 'Edit' : 'Generated Video'}
                      </span>
                      <span className="text-xs text-zinc-500">{formatDate(item.timestamp)}</span>
                 </div>

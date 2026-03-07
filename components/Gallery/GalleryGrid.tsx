@@ -27,9 +27,9 @@ const CardDetails: React.FC<{ item: GeneratedContent }> = ({ item }) => {
     const p = item.params as InfluencerParams;
     return (
       <>
-        <p className="truncate"><span className="text-zinc-500">Personajes:</span> {p.characters?.length || 1}</p>
+        <p className="truncate"><span className="text-zinc-500">Characters:</span> {p.characters?.length || 1}</p>
         <p className="truncate">
-          <span className="text-zinc-500">Escena:</span>{' '}
+          <span className="text-zinc-500">Scene:</span>{' '}
           {p.scenario || (p.scenarioImage && p.scenarioImage.length > 0 ? `[${p.scenarioImage.length} Imgs]` : 'N/A')}
         </p>
       </>

@@ -360,8 +360,8 @@ export type SubscriptionStatus = 'free' | 'active' | 'cancelled';
 /** Credits deducted per image/video generation or edit operation. */
 export const CREDIT_COSTS: Record<string, number> = {
   // Gemini
-  [GeminiImageModel.Flash]:      5,
-  [GeminiImageModel.Flash2]:     5,
+  [GeminiImageModel.Flash]:      2,
+  [GeminiImageModel.Flash2]:     2,
   [GeminiImageModel.Pro]:        10,
   [GeminiImageModel.Imagen4]:    8,
   [GeminiImageModel.Imagen4Ultra]: 20,

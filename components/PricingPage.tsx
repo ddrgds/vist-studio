@@ -49,7 +49,7 @@ const V = {
 const PLANS: Plan[] = [
   {
     id: 'starter', name: 'Starter', monthlyPrice: 0, annualPrice: 0,
-    description: 'Explora el estudio sin compromiso.',
+    description: 'Explore the studio, no commitment.',
     cta: 'Get Started', ctaStyle: 'ghost',
     credits: '50 credits / mo',
     monthlyVariantId: '', annualVariantId: '',
@@ -67,7 +67,7 @@ const PLANS: Plan[] = [
   },
   {
     id: 'pro', name: 'Pro', monthlyPrice: 19, annualPrice: 16,
-    description: 'Para creators construyendo su presencia AI.',
+    description: 'For creators building their AI presence.',
     badge: 'Most popular',
     cta: 'Start Pro →', ctaStyle: 'coral',
     credits: '500 credits / mo',
@@ -90,7 +90,7 @@ const PLANS: Plan[] = [
   },
   {
     id: 'studio', name: 'Studio', monthlyPrice: 49, annualPrice: 41,
-    description: 'Para agencias y power creators.',
+    description: 'For agencies and power creators.',
     cta: 'Start Studio →', ctaStyle: 'white',
     credits: '1,500 credits / mo',
     monthlyVariantId: V.studioMonthly,
@@ -112,7 +112,7 @@ const PLANS: Plan[] = [
   },
   {
     id: 'brand', name: 'Brand', monthlyPrice: 149, annualPrice: 119,
-    description: 'Para equipos de marca y producción masiva.',
+    description: 'For brand teams and mass production.',
     badge: 'Enterprise',
     cta: 'Start Brand →', ctaStyle: 'gold',
     credits: '8,000 credits / mo',
@@ -142,7 +142,7 @@ const CREDIT_PACKS = [
 ];
 
 const FAQ_ITEMS = [
-  { q: 'What is a credit?', a: 'One credit = one generation step. Fast models like Gemini Flash cost 5 credits; premium models like GPT Image 1.5 cost 20. Video clips cost 80–100 credits each.' },
+  { q: 'What is a credit?', a: 'One credit = one generation step. Fast models like Gemini Flash cost 2 credits; premium models like GPT Image 1.5 cost 20. Video clips cost 80–100 credits each.' },
   { q: 'Do credits expire?', a: "Monthly plan credits reset on your billing date and don't roll over. Credit packs never expire — use them at your own pace." },
   { q: 'Can I stack packs on top of my plan?', a: 'Yes! Credit packs add on top of your monthly plan credits. They are consumed after your monthly credits run out.' },
   { q: 'Can I switch plans at any time?', a: 'Yes — upgrade or downgrade any time. Upgrades take effect immediately; downgrades apply at the next billing cycle.' },
@@ -391,7 +391,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onNavigate }) => {
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {[
-              { label: 'Gemini Flash',   cost: 5  },
+              { label: 'Gemini Flash',   cost: 2  },
               { label: 'FLUX Kontext',   cost: 10 },
               { label: 'FLUX Max',       cost: 12 },
               { label: 'GPT Image 1.5',  cost: 20 },

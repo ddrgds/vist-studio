@@ -235,7 +235,7 @@ Credits 3000:   1374291  |  Store ID:      308321
 | 3 | 🟡 MEDIUM | `/pricing` inside AuthGuard — anonymous users get redirected silently | OPEN |
 | 4 | 🟡 MEDIUM | Hero images reference private Supabase Storage bucket — render black | OPEN |
 | 5 | 🟡 MEDIUM | 4+ Supabase queries fire simultaneously on every route change | OPEN |
-| 6 | 🟢 MINOR | "Start Free" button on landing has no onClick handler | OPEN |
+| 6 | 🟢 MINOR | "Start Free" button on landing has no onClick handler | ✅ VERIFIED — already works |
 | 7 | 🔴 CRITICAL | 5 modals called APIs without deducting credits | ✅ FIXED — all modals enforce credits |
 | 8 | 🔴 CRITICAL | API keys (Gemini, FAL, ModelsLab) baked into client bundle | ✅ FIXED — server-side proxies |
 | 9 | 🔴 CRITICAL | Webhook: no error handling on DB updates | ✅ FIXED — returns 500 on failure |
@@ -336,12 +336,15 @@ npx tsc --noEmit       # Must return zero errors before every commit
 - [x] Bug #14: Video engine included in VideoParams (Kling routing fix)
 - [x] Generate: masonry grid gallery (Freestyle redesign)
 - [x] Generate: bottom bar collapsed to single row
-- [x] Gemini Flash: ⚡2 credit cost confirmed
+- [x] Gemini Flash: ⚡2 credit cost confirmed across all pages (types, GeneratorPage, PricingPage, DirectorStudio)
+- [x] i18n: Spanish→English in PricingPage plans, GalleryGrid, DetailModal
+- [x] Login/Register redirect: `/login` and `/register` mapped in PATH_TO_WORKSPACE
+- [x] Bottom bar: Generate button shows ⚡ prefix on credit cost
 
 ### 🟡 Open (next up)
 - [ ] Bug #3: Move `/pricing` outside AuthGuard
 - [ ] Bug #4: Replace hero images with static assets in `/public/demo/`
-- [ ] Bug #6: Add onClick to "Start Free" button → navigate to /register
+- [x] Bug #6: "Start Free" button already has onClick → navigates to generate workspace
 - [ ] Library: add [Images] tab showing all gallery_items
 - [ ] gallery_items: add `source TEXT DEFAULT 'director'` column
 - [ ] Generate: save generated images to gallery_items with source='generate'

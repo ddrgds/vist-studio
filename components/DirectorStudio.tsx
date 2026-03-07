@@ -502,13 +502,13 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
     if (studioMode === 'session') return OPERATION_CREDIT_COSTS.photoSession * (form.editNumberOfImages || 1);
     if (studioMode === 'poses') return 10;
     // create mode
-    let costPerImage = 5;
+    let costPerImage = 2;
     if (form.aiProvider === AIProvider.Fal) costPerImage = CREDIT_COSTS[form.falModel] ?? 10;
     else if (form.aiProvider === AIProvider.Replicate) costPerImage = CREDIT_COSTS[form.replicateModel] ?? 15;
     else if (form.aiProvider === AIProvider.OpenAI) costPerImage = CREDIT_COSTS[form.openaiModel] ?? 20;
     else if (form.aiProvider === AIProvider.Ideogram) costPerImage = CREDIT_COSTS[form.ideogramModel] ?? 10;
     else if (form.aiProvider === AIProvider.ModelsLab) costPerImage = CREDIT_COSTS[form.modelsLabModel] ?? 5;
-    else costPerImage = CREDIT_COSTS[form.geminiModel] ?? 5;
+    else costPerImage = CREDIT_COSTS[form.geminiModel] ?? 2;
     return costPerImage * form.numberOfImages;
   };
 
@@ -1217,14 +1217,14 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                 <div className="flex gap-1.5">
                   {providerChips.map((chip) => {
                     const TIPS: Record<string, { speed: string; best: string; cost: number }> = {
-                      [AIProvider.Gemini]:    { speed: 'Fast',   best: 'Multi-reference, complex scenes', cost: 5 },
+                      [AIProvider.Gemini]:    { speed: 'Fast',   best: 'Multi-reference, complex scenes', cost: 2 },
                       [AIProvider.Fal]:       { speed: 'Fast',   best: 'Identity preservation, edits', cost: 10 },
                       [AIProvider.OpenAI]:    { speed: 'Medium', best: 'Commercial quality, rich context', cost: 20 },
                       [AIProvider.Replicate]: { speed: 'Fast',   best: 'Fast edits, creative results', cost: 12 },
                       [AIProvider.ModelsLab]: { speed: 'Medium', best: 'NSFW, uncensored generation', cost: 8 },
                     };
                     const tip = TIPS[chip.id];
-                    const costColor = (tip?.cost ?? 5) <= 5 ? '#4ADE80' : (tip?.cost ?? 5) <= 10 ? '#FFB347' : '#FF5C35';
+                    const costColor = (tip?.cost ?? 2) <= 5 ? '#4ADE80' : (tip?.cost ?? 2) <= 10 ? '#FFB347' : '#FF5C35';
                     return (
                       <div key={chip.id} className="relative group/tip flex-1">
                         <button
@@ -1237,7 +1237,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                         >
                           <span className="text-lg leading-none">{chip.icon}</span>
                           <span className="text-[9px] font-semibold">{chip.label}</span>
-                          <span className="text-[8px] font-jet font-bold" style={{ color: costColor }}>⚡{tip?.cost ?? 5}</span>
+                          <span className="text-[8px] font-jet font-bold" style={{ color: costColor }}>⚡{tip?.cost ?? 2}</span>
                         </button>
                         {/* Tooltip */}
                         {tip && (

@@ -324,6 +324,7 @@ const AppInner: React.FC = () => {
     '/': 'explore', '/explore': 'explore', '/generate': 'generate',
     '/director': 'director', '/characters': 'characters', '/library': 'characters',
     '/storyboard': 'storyboard', '/pricing': 'pricing', '/profile': 'profile',
+    '/login': 'generate', '/register': 'generate',
   };
   const initialWs = PATH_TO_WORKSPACE[window.location.pathname] ?? 'explore';
   const [activeWorkspace, _setActiveWorkspace] =
