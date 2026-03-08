@@ -230,7 +230,7 @@ Credits 3000:   1374291  |  Store ID:      308321
 
 | # | Severity | Description | Status |
 |---|---|---|---|
-| 1 | 🔴 CRITICAL | `decrement_credits` RPC missing in Supabase | ✅ FIXED — RPC created |
+| 1 | 🔴 CRITICAL | `decrement_credits` RPC missing in Supabase | ✅ FIXED — RPC created  |
 | 2 | 🔴 CRITICAL | ProtectedRoute redirects before `getSession()` resolves | ✅ FIXED — `.catch()/.finally()` added to AuthContext |
 | 3 | 🟡 MEDIUM | `/pricing` inside AuthGuard — anonymous users get redirected silently | ✅ FIXED — pricing in PUBLIC_WORKSPACES |
 | 4 | 🟡 MEDIUM | Hero images reference private Supabase Storage bucket — render black | ✅ FIXED — static assets in /public/demo/ |
@@ -321,7 +321,7 @@ Credits 3000:   1374291  |  Store ID:      308321
 ## 🔨 Build Commands
 
 ```bash
-npm run build          # Vite production build (main chunk ~856KB after code splitting)
+npm run build          # Vite production build (main chunk ~758KB after code splitting + legacy removal)
 npx tsc --noEmit       # Must return zero errors before every commit
 ```
 
@@ -370,7 +370,7 @@ npx tsc --noEmit       # Must return zero errors before every commit
 - [x] Pricing CTA for anónimos — sign-up prompt + sessionStorage checkout intent + auto-checkout after login
 - [x] Library Images lightbox — click-to-preview with download, source badge, provider info
 - [x] Onboarding welcome modal — 3-slide tour (Freestyle, Director, Library), shown once on first login
-- [x] Code splitting — React.lazy for 6 workspaces + 12 modals/components + manualChunks for vendors → main chunk 1,422→856KB (-40%)
+- [x] Code splitting — React.lazy for 6 workspaces + 12 modals/components + manualChunks for vendors → main chunk 1,422→758KB (-47%)
 
 ### 🔧 QA Audit Fixes
 - [x] Bug #15 (P0): "Director" button in Generate routed to /influencer — fixed to /director
@@ -380,3 +380,4 @@ npx tsc --noEmit       # Must return zero errors before every commit
 - [x] Bug #19 (P3): Face reference validation in Director — shows warning modal before spending credits
 - [x] Bug #20 (P4): "Start Free" → "Start Creating" for authenticated users
 - [x] Bug #21 (P5): aria-labels added to 6 nav/sidebar/menu icon-only buttons
+- [x] LOGIC-002 (P1): Removed legacy create/video/influencer workspace (~2,760 lines dead code from App.tsx)
