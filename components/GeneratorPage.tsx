@@ -11,6 +11,7 @@ import {
   Maximize2,
   ChevronDown,
   Image,
+  ImagePlus,
 } from "lucide-react";
 import AutocompleteInput from "./AutocompleteInput";
 import { useForm } from "../contexts/FormContext";
@@ -59,7 +60,7 @@ interface ModelEntry {
   icon: string;
   badge?: string;
   isVideo?: boolean;
-  section: "featured" | "other" | "video";
+  section: "featured" | "other" | "nsfw" | "video";
   creditCost: number;
   select: (form: ReturnType<typeof useForm>) => void;
   isActive: (form: ReturnType<typeof useForm>) => boolean;
@@ -149,31 +150,31 @@ const ALL_MODELS: ModelEntry[] = [
   // ── ModelsLab NSFW ──
   {
     id: "lustify-sdxl", name: "Lustify SDXL", tagline: "Photoreal uncensored", icon: "🔞",
-    badge: "NSFW", section: "other", creditCost: 8,
+    badge: "NSFW", section: "nsfw", creditCost: 8,
     select: (f) => { f.setAiProvider(AIProvider.ModelsLab); f.setModelsLabModel(ModelsLabModel.LustifySdxl); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.ModelsLab && f.modelsLabModel === ModelsLabModel.LustifySdxl,
   },
   {
     id: "nsfw-sdxl", name: "NSFW SDXL", tagline: "General uncensored", icon: "🔞",
-    badge: "NSFW", section: "other", creditCost: 8,
+    badge: "NSFW", section: "nsfw", creditCost: 8,
     select: (f) => { f.setAiProvider(AIProvider.ModelsLab); f.setModelsLabModel(ModelsLabModel.NsfwSdxl); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.ModelsLab && f.modelsLabModel === ModelsLabModel.NsfwSdxl,
   },
   {
     id: "wai-nsfw", name: "WAI Illustrious", tagline: "Anime & illustration", icon: "🎌",
-    badge: "NSFW", section: "other", creditCost: 8,
+    badge: "NSFW", section: "nsfw", creditCost: 8,
     select: (f) => { f.setAiProvider(AIProvider.ModelsLab); f.setModelsLabModel(ModelsLabModel.WaiNsfw); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.ModelsLab && f.modelsLabModel === ModelsLabModel.WaiNsfw,
   },
   {
     id: "flux-nsfw", name: "FLUX NSFW", tagline: "FLUX uncensored", icon: "🔞",
-    badge: "NSFW", section: "other", creditCost: 8,
+    badge: "NSFW", section: "nsfw", creditCost: 8,
     select: (f) => { f.setAiProvider(AIProvider.ModelsLab); f.setModelsLabModel(ModelsLabModel.FluxNsfw); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.ModelsLab && f.modelsLabModel === ModelsLabModel.FluxNsfw,
   },
   {
     id: "z-image-turbo", name: "Z-Image Turbo", tagline: "Alibaba 6B uncensored", icon: "🈸",
-    badge: "NSFW", section: "other", creditCost: 5,
+    badge: "NSFW", section: "nsfw", creditCost: 5,
     select: (f) => { f.setAiProvider(AIProvider.Fal); f.setFalModel(FalModel.ZImageTurbo); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Fal && f.falModel === FalModel.ZImageTurbo,
   },
@@ -280,9 +281,11 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [lightboxItem, setLightboxItem] = useState<GeneratedContent | null>(null);
   const [galleryTab, setGalleryTab] = useState<'session' | 'history'>('session');
+  const [promptShake, setPromptShake] = useState(false);
 
   const settingsRef = useRef<HTMLDivElement>(null);
   const refInputRef = useRef<HTMLInputElement>(null);
+  const promptBarRef = useRef<HTMLDivElement>(null);
 
   // Session tracking — items generated in this session
   const sessionStartRef = useRef(Date.now());
@@ -300,6 +303,19 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
   const char0 = form.characters[0];
   const isVideo = form.activeMode === "video";
   const activeModel = getActiveModel(form);
+  const promptIsEmpty = isVideo
+    ? !form.videoPrompt.trim()
+    : !(char0?.outfitDescription?.trim());
+
+  // Validated generate — shakes prompt bar if empty
+  const handleGenerate = () => {
+    if (promptIsEmpty) {
+      setPromptShake(true);
+      setTimeout(() => setPromptShake(false), 500);
+      return;
+    }
+    onGenerate();
+  };
 
   // Filtered models for picker
   const q = searchQuery.toLowerCase();
@@ -307,6 +323,7 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
     !q || m.name.toLowerCase().includes(q) || m.tagline.toLowerCase().includes(q);
   const featuredModels = ALL_MODELS.filter((m) => m.section === "featured" && filter(m));
   const otherModels = ALL_MODELS.filter((m) => m.section === "other" && filter(m));
+  const nsfwModels = ALL_MODELS.filter((m) => m.section === "nsfw" && filter(m));
   const videoModels = ALL_MODELS.filter((m) => m.section === "video" && filter(m));
 
   // Gallery items — session vs history
@@ -465,25 +482,25 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
               What will you create?
             </h3>
             <p className="text-xs mb-6" style={{ color: '#4A3A36' }}>
-              Pick a prompt to get started, or write your own below
+              Choose a suggestion or write your own prompt
             </p>
-            <div className="flex flex-wrap justify-center gap-2 max-w-xl">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-w-xl">
               {[
                 "Editorial fashion shoot, golden hour lighting",
                 "Street style portrait, Tokyo neon nights",
+                "Cyberpunk character, cinematic rain",
                 "Luxury brand campaign, minimalist studio",
+                "Vintage film aesthetic, European café",
                 "Athletic wear, outdoor mountain scenery",
-                "Vintage film aesthetic, European caf\u00e9",
-                "Fantasy character, dramatic cinematic lighting",
-                "Casual chic, rooftop sunset city skyline",
-                "Swimwear editorial, tropical beach paradise",
+                "Fantasy portrait, dramatic rim lighting",
+                "Casual summer outfit, tropical beach",
               ].map((prompt) => (
                 <button
                   key={prompt}
                   onClick={() => {
                     if (char0) form.updateCharacter(char0.id, "outfitDescription", prompt);
                   }}
-                  className="px-3 py-1.5 rounded-full text-[11px] font-medium transition-all hover:scale-[1.03] active:scale-[0.97]"
+                  className="px-4 py-2 rounded-full text-[11px] font-medium transition-all hover:scale-[1.03] active:scale-[0.97]"
                   style={{ background: 'rgba(255,92,53,0.06)', border: '1px solid rgba(255,92,53,0.15)', color: '#B8A9A5' }}
                   onMouseEnter={(e) => {
                     (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,92,53,0.4)';
@@ -498,14 +515,90 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
                 </button>
               ))}
             </div>
+            <p className="mt-6 text-[10px] flex items-center gap-1.5" style={{ color: '#2A1F1C' }}>
+              <ImagePlus className="w-3.5 h-3.5" /> Or add a reference image with the button below
+            </p>
           </div>
         )}
       </div>
 
-      {/* ─── Bottom Bar — single row ─── */}
-      <div className="flex-none border-t px-2 py-2" style={{ background: '#0D0A0A', borderColor: '#1A1210' }}>
+      {/* ─── Bottom Bar ─── */}
+      <div className="flex-none border-t px-2 py-2 space-y-1.5" style={{ background: '#0D0A0A', borderColor: '#1A1210' }}>
+        {/* Inline controls row — engine, aspect, resolution, variations */}
+        {!isVideo && (
+          <div className="flex items-center gap-1.5 px-1 overflow-x-auto custom-scrollbar">
+            {/* Engine chip */}
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex-none"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#B8A9A5' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,92,53,0.4)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
+            >
+              <span className="text-sm leading-none">{activeModel?.icon ?? '⚡'}</span>
+              <span className="truncate max-w-[100px]">{activeModel?.name ?? 'NB2'}</span>
+              <ChevronDown className="w-3 h-3 flex-none" style={{ color: '#4A3A36' }} />
+            </button>
+
+            <div className="w-px h-4 flex-none" style={{ background: '#1A1210' }} />
+
+            {/* Aspect ratio chips */}
+            {AR_OPTIONS.map((o) => (
+              <button
+                key={o.value}
+                onClick={() => form.setAspectRatio(o.value)}
+                className="px-2 py-1 rounded-md text-[10px] font-semibold transition-all flex-none"
+                style={form.aspectRatio === o.value
+                  ? { background: 'rgba(255,92,53,0.1)', color: '#FF5C35', border: '1px solid rgba(255,92,53,0.2)' }
+                  : { color: '#6B5A56', border: '1px solid rgba(255,255,255,0.04)' }
+                }
+                title={o.desc}
+              >
+                {o.label}
+              </button>
+            ))}
+
+            <div className="w-px h-4 flex-none" style={{ background: '#1A1210' }} />
+
+            {/* Resolution chips */}
+            {SIZE_OPTIONS.map((o) => (
+              <button
+                key={o.value}
+                onClick={() => form.setImageSize(o.value)}
+                className="px-2 py-1 rounded-md text-[10px] font-semibold transition-all flex-none"
+                style={form.imageSize === o.value
+                  ? { background: 'rgba(255,92,53,0.1)', color: '#FF5C35', border: '1px solid rgba(255,92,53,0.2)' }
+                  : { color: '#6B5A56', border: '1px solid rgba(255,255,255,0.04)' }
+                }
+              >
+                {o.label}
+              </button>
+            ))}
+
+            <div className="w-px h-4 flex-none" style={{ background: '#1A1210' }} />
+
+            {/* Variations inline */}
+            <div className="flex items-center gap-1 flex-none">
+              <button onClick={() => form.setNumberOfImages(Math.max(1, form.numberOfImages - 1))}
+                className="w-5 h-5 rounded flex items-center justify-center"
+                style={{ background: 'rgba(255,255,255,0.04)', color: '#6B5A56' }}>
+                <Minus className="w-2.5 h-2.5" />
+              </button>
+              <span className="text-[10px] font-bold w-4 text-center font-jet" style={{ color: '#B8A9A5' }}>
+                {form.numberOfImages}
+              </span>
+              <button onClick={() => form.setNumberOfImages(Math.min(4, form.numberOfImages + 1))}
+                className="w-5 h-5 rounded flex items-center justify-center"
+                style={{ background: 'rgba(255,255,255,0.04)', color: '#6B5A56' }}>
+                <Plus className="w-2.5 h-2.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Main prompt row */}
         <div className="flex items-center gap-1.5">
-          {/* [+] Reference image */}
+          {/* Reference image button */}
           <button
             onClick={() => refInputRef.current?.click()}
             className="flex items-center justify-center w-9 h-9 rounded-lg flex-none transition-all"
@@ -514,13 +607,21 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
               : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: '#4A3A36' }
             }
             title="Add reference image"
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#B8A9A5'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = char0 && char0.modelImages.length > 0 ? '#FF5C35' : '#4A3A36'; }}
           >
-            <Plus className="w-4 h-4" />
+            <ImagePlus className="w-4 h-4" />
           </button>
 
           {/* Prompt input */}
-          <div className="flex-1 flex items-center rounded-lg px-3"
-            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+          <div
+            ref={promptBarRef}
+            className="flex-1 flex items-center rounded-lg px-3 transition-all"
+            style={{
+              background: 'rgba(255,255,255,0.03)',
+              border: promptShake ? '1px solid rgba(239,68,68,0.6)' : '1px solid rgba(255,255,255,0.06)',
+              animation: promptShake ? 'prompt-shake 0.4s ease-out' : undefined,
+            }}
           >
             {isVideo ? (
               <input
@@ -528,7 +629,7 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
                 onChange={(e) => form.setVideoPrompt(e.target.value)}
                 placeholder="Describe the motion and scene..."
                 className="flex-1 bg-transparent text-sm text-white outline-none py-2.5 placeholder:text-zinc-700 font-light"
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !isGenerating) { e.preventDefault(); onGenerate(); } }}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !isGenerating) { e.preventDefault(); handleGenerate(); } }}
               />
             ) : (
               <AutocompleteInput
@@ -536,7 +637,7 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
                 onChange={(v) => char0 && form.updateCharacter(char0.id, "outfitDescription", v)}
                 placeholder="Describe your image..."
                 className="flex-1 bg-transparent text-sm text-white outline-none py-2.5 placeholder:text-zinc-700 font-light"
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !isGenerating) { e.preventDefault(); onGenerate(); } }}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !isGenerating) { e.preventDefault(); handleGenerate(); } }}
               />
             )}
             {char0 && char0.modelImages.length > 0 && (
@@ -548,7 +649,7 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
             )}
           </div>
 
-          {/* [Settings] — opens popover upward */}
+          {/* Advanced settings — opens popover upward */}
           <div className="relative" ref={settingsRef}>
             <button
               onClick={() => setShowSettings(!showSettings)}
@@ -557,6 +658,9 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
                 ? { background: 'rgba(255,92,53,0.1)', border: '1px solid rgba(255,92,53,0.2)', color: '#FF5C35' }
                 : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: '#4A3A36' }
               }
+              title="Advanced settings"
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#B8A9A5'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = showSettings ? '#FF5C35' : '#4A3A36'; }}
             >
               <Settings className="w-4 h-4" />
             </button>
@@ -586,7 +690,11 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
                           onSelect={(m) => { m.select(form); setSearchQuery(""); }} />
                       )}
                       {otherModels.length > 0 && (
-                        <EngineSection title="Other" models={otherModels} form={form}
+                        <EngineSection title="Pro Engines" models={otherModels} form={form}
+                          onSelect={(m) => { m.select(form); setSearchQuery(""); }} />
+                      )}
+                      {nsfwModels.length > 0 && (
+                        <EngineSection title="NSFW" models={nsfwModels} form={form}
                           onSelect={(m) => { m.select(form); setSearchQuery(""); }} />
                       )}
                       {videoModels.length > 0 && (
@@ -596,83 +704,16 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
                     </div>
                   </div>
 
-                  {/* Aspect Ratio */}
-                  {!isVideo && (
-                    <div>
-                      <label className="text-[9px] font-jet font-bold uppercase tracking-widest block mb-2" style={{ color: '#4A3A36' }}>Aspect Ratio</label>
-                      <div className="flex gap-1">
-                        {AR_OPTIONS.map((o) => (
-                          <button
-                            key={o.value}
-                            onClick={() => form.setAspectRatio(o.value)}
-                            className="flex-1 py-1.5 rounded text-[10px] font-semibold transition-all text-center"
-                            style={form.aspectRatio === o.value
-                              ? { background: 'rgba(255,92,53,0.1)', color: '#FF5C35', border: '1px solid rgba(255,92,53,0.2)' }
-                              : { color: '#6B5A56', border: '1px solid rgba(255,255,255,0.04)' }
-                            }
-                          >
-                            {o.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Resolution */}
-                  {!isVideo && (
-                    <div>
-                      <label className="text-[9px] font-jet font-bold uppercase tracking-widest block mb-2" style={{ color: '#4A3A36' }}>Resolution</label>
-                      <div className="flex gap-1">
-                        {SIZE_OPTIONS.map((o) => (
-                          <button
-                            key={o.value}
-                            onClick={() => form.setImageSize(o.value)}
-                            className="flex-1 py-1.5 rounded text-[10px] font-semibold transition-all text-center"
-                            style={form.imageSize === o.value
-                              ? { background: 'rgba(255,92,53,0.1)', color: '#FF5C35', border: '1px solid rgba(255,92,53,0.2)' }
-                              : { color: '#6B5A56', border: '1px solid rgba(255,255,255,0.04)' }
-                            }
-                          >
-                            {o.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Variations */}
-                  {!isVideo && (
-                    <div>
-                      <label className="text-[9px] font-jet font-bold uppercase tracking-widest block mb-2" style={{ color: '#4A3A36' }}>Variations</label>
-                      <div className="flex items-center gap-3">
-                        <button onClick={() => form.setNumberOfImages(Math.max(1, form.numberOfImages - 1))}
-                          className="w-7 h-7 rounded flex items-center justify-center"
-                          style={{ background: 'rgba(255,255,255,0.04)', color: '#6B5A56' }}>
-                          <Minus className="w-3 h-3" />
-                        </button>
-                        <span className="text-sm font-bold flex-1 text-center" style={{ color: '#E8DDD9' }}>{form.numberOfImages}</span>
-                        <button onClick={() => form.setNumberOfImages(Math.min(4, form.numberOfImages + 1))}
-                          className="w-7 h-7 rounded flex items-center justify-center"
-                          style={{ background: 'rgba(255,255,255,0.04)', color: '#6B5A56' }}>
-                          <Plus className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
                   {/* Advanced — CFG, Steps, Seed, Negative */}
-                  <details className="group">
-                    <summary className="text-[9px] font-jet font-bold uppercase tracking-widest cursor-pointer list-none flex items-center gap-1" style={{ color: '#4A3A36' }}>
-                      Advanced
-                      <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" />
-                    </summary>
-                    <div className="mt-2 grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="text-[9px] font-jet font-bold uppercase tracking-widest block mb-2" style={{ color: '#4A3A36' }}>Advanced</label>
+                    <div className="grid grid-cols-3 gap-2">
                       <div>
-                        <label className="text-[8px] uppercase block mb-1" style={{ color: '#4A3A36' }}>CFG</label>
+                        <label className="text-[8px] uppercase block mb-1" style={{ color: '#4A3A36' }} title="Controls how closely the image follows your prompt. Higher = more literal">CFG (1-20)</label>
                         <AdvStepper value={form.cfg} min={1} max={20} step={0.5} onChange={form.setCfg} />
                       </div>
                       <div>
-                        <label className="text-[8px] uppercase block mb-1" style={{ color: '#4A3A36' }}>Steps</label>
+                        <label className="text-[8px] uppercase block mb-1" style={{ color: '#4A3A36' }} title="More steps = higher quality but slower generation">Steps (10-100)</label>
                         <AdvStepper value={form.steps} min={10} max={100} step={5} onChange={form.setSteps} />
                       </div>
                       <div>
@@ -681,7 +722,7 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
                           type="number"
                           value={form.seed ?? ""}
                           onChange={(e) => form.setSeed(e.target.value === "" ? undefined : parseInt(e.target.value))}
-                          placeholder="Rng"
+                          placeholder="Seed (random)"
                           className="w-full bg-transparent rounded px-1.5 py-1 text-[10px] text-white outline-none placeholder:text-zinc-700 font-jet"
                           style={{ border: '1px solid rgba(255,255,255,0.06)' }}
                         />
@@ -697,13 +738,13 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="flex items-center gap-1.5 cursor-pointer mt-1">
+                        <label className="flex items-center gap-1.5 cursor-pointer mt-1" title="Minimizes common AI artifacts like distorted features">
                           <input type="checkbox" checked={form.antiFisheye} onChange={(e) => form.setAntiFisheye(e.target.checked)} className="w-3 h-3 accent-orange-500" />
-                          <span className="text-[9px]" style={{ color: '#6B5A56' }}>Anti-fish</span>
+                          <span className="text-[9px]" style={{ color: '#6B5A56' }}>Reduce artifacts</span>
                         </label>
                       </div>
                     </div>
-                  </details>
+                  </div>
                 </div>
               </div>
             )}
@@ -711,12 +752,16 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
 
           {/* Generate button — with credit cost inside */}
           <button
-            onClick={isGenerating ? onStopGeneration : onGenerate}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-bold transition-all active:scale-95 flex-none text-white"
+            onClick={isGenerating ? onStopGeneration : handleGenerate}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-bold transition-all active:scale-[0.97] flex-none text-white"
             style={isGenerating
               ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)' }
-              : { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', boxShadow: '0 2px 12px rgba(255,92,53,0.25)' }
+              : promptIsEmpty && !isGenerating
+                ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', opacity: 0.5, cursor: 'not-allowed', boxShadow: 'none' }
+                : { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', boxShadow: '0 2px 12px rgba(255,92,53,0.25)' }
             }
+            onMouseEnter={e => { if (!promptIsEmpty && !isGenerating) { (e.currentTarget as HTMLElement).style.filter = 'brightness(1.1)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(255,92,53,0.35)'; } }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.filter = ''; (e.currentTarget as HTMLElement).style.boxShadow = promptIsEmpty ? 'none' : '0 2px 12px rgba(255,92,53,0.25)'; }}
           >
             {isGenerating ? (
               <>

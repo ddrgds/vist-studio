@@ -1020,9 +1020,9 @@ const AppInner: React.FC = () => {
                     key={ws}
                     href={href}
                     onClick={(e) => { e.preventDefault(); setActiveWorkspace(ws); }}
-                    className="relative group px-4 py-2 text-xs font-semibold tracking-wide transition-all no-underline"
-                    style={activeWorkspace === ws ? { color: '#FF5C35' } : { color: '#6B5A56' }}
-                    onMouseEnter={e => { if (activeWorkspace !== ws) (e.currentTarget as HTMLElement).style.color = '#B8A9A5'; }}
+                    className="relative group px-4 py-2 text-xs font-semibold tracking-wide no-underline"
+                    style={activeWorkspace === ws ? { color: '#FF5C35', transition: 'color 0.15s ease' } : { color: '#6B5A56', transition: 'color 0.15s ease' }}
+                    onMouseEnter={e => { if (activeWorkspace !== ws) (e.currentTarget as HTMLElement).style.color = '#E8DDD9'; }}
                     onMouseLeave={e => { if (activeWorkspace !== ws) (e.currentTarget as HTMLElement).style.color = '#6B5A56'; }}
                   >
                     {TAB_LABELS[ws]}
