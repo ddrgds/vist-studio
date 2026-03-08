@@ -381,3 +381,6 @@ npx tsc --noEmit       # Must return zero errors before every commit
 - [x] Bug #20 (P4): "Start Free" → "Start Creating" for authenticated users
 - [x] Bug #21 (P5): aria-labels added to 6 nav/sidebar/menu icon-only buttons
 - [x] LOGIC-002 (P1): Removed legacy create/video/influencer workspace (~2,760 lines dead code from App.tsx)
+- [x] SEO-001 (P5): Nav `<button>` → `<a href>` for crawleable links
+- [x] SEO-002 (P5): Dynamic `<title>` + meta description per workspace, OG tags + Twitter Card in index.html
+- [x] I18N-002 (P5): Download filenames "influencer-" → "vist-" across App.tsx + DetailModal

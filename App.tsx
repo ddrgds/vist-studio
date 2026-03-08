@@ -1,4 +1,4 @@
-import React, { useRef, useState, Suspense, lazy } from "react";
+import React, { useRef, useState, useEffect, Suspense, lazy } from "react";
 import JSZip from "jszip";
 import ApiKeyGuard from "./components/ApiKeyGuard";
 import AuthScreen from "./components/AuthScreen";
@@ -125,6 +125,28 @@ const AppInner: React.FC = () => {
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
+
+  // ─── Dynamic page title + meta description ──────────────────────────────
+  useEffect(() => {
+    const PAGE_META: Record<AppWorkspace, { title: string; description: string }> = {
+      explore: { title: 'VIST Studio — AI Character & Image Generator', description: 'Create AI-generated characters, images, and videos with multiple engines. Freestyle generation, character consistency, and storyboard planning.' },
+      generate: { title: 'Freestyle Generator — VIST Studio', description: 'Generate images instantly with Gemini, FLUX, GPT Image, Ideogram, and more AI engines.' },
+      director: { title: 'Director Studio — VIST Studio', description: 'Build consistent AI characters with face references, outfits, and scene control.' },
+      characters: { title: 'Character Library — VIST Studio', description: 'Manage your AI characters, browse generated images, and organize your creative assets.' },
+      storyboard: { title: 'Storyboard — VIST Studio', description: 'Plan content campaigns and organize your AI-generated images into sequences.' },
+      pricing: { title: 'Plans & Pricing — VIST Studio', description: 'Choose a plan for AI image and video generation. Free tier available. Pro, Studio, and Brand plans.' },
+      profile: { title: 'Profile — VIST Studio', description: 'Manage your VIST Studio account, subscription, and settings.' },
+    };
+    const meta = PAGE_META[activeWorkspace];
+    document.title = meta.title;
+    let descTag = document.querySelector('meta[name="description"]');
+    if (!descTag) {
+      descTag = document.createElement('meta');
+      descTag.setAttribute('name', 'description');
+      document.head.appendChild(descTag);
+    }
+    descTag.setAttribute('content', meta.description);
+  }, [activeWorkspace]);
 
   // ─── Handle Stripe checkout return ───────────────────────────────────────
   React.useEffect(() => {
@@ -499,7 +521,7 @@ const AppInner: React.FC = () => {
   ) => {
     e.stopPropagation();
     const ext = item.type === "video" ? "mp4" : "png";
-    const filename = `influencer-${item.id}.${ext}`;
+    const filename = `vist-${item.id}.${ext}`;
 
     try {
       // If it's already a local blob/data URL, skip the fetch
@@ -716,7 +738,7 @@ const AppInner: React.FC = () => {
       await Promise.all(
         items.map(async (item, i) => {
           const ext = item.type === "video" ? "mp4" : "png";
-          const filename = `influencer-${i + 1}-${item.id.slice(0, 8)}.${ext}`;
+          const filename = `vist-${i + 1}-${item.id.slice(0, 8)}.${ext}`;
           const resp = await fetch(item.url);
           const blob = await resp.blob();
           zip.file(filename, blob);
@@ -834,7 +856,7 @@ const AppInner: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `influencer-studio-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `vist-studio-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success("Backup exported successfully");
@@ -992,11 +1014,13 @@ const AppInner: React.FC = () => {
                   storyboard: "Content planner",
                   pricing: "Plans & features",
                 };
+                const href = ws === 'explore' ? '/' : `/${ws}`;
                 return (
-                  <button
+                  <a
                     key={ws}
-                    onClick={() => setActiveWorkspace(ws)}
-                    className="relative group px-4 py-2 text-xs font-semibold tracking-wide transition-all"
+                    href={href}
+                    onClick={(e) => { e.preventDefault(); setActiveWorkspace(ws); }}
+                    className="relative group px-4 py-2 text-xs font-semibold tracking-wide transition-all no-underline"
                     style={activeWorkspace === ws ? { color: '#FF5C35' } : { color: '#6B5A56' }}
                     onMouseEnter={e => { if (activeWorkspace !== ws) (e.currentTarget as HTMLElement).style.color = '#B8A9A5'; }}
                     onMouseLeave={e => { if (activeWorkspace !== ws) (e.currentTarget as HTMLElement).style.color = '#6B5A56'; }}
@@ -1012,7 +1036,7 @@ const AppInner: React.FC = () => {
                     >
                       {TAB_TIPS[ws]}
                     </span>
-                  </button>
+                  </a>
                 );
               })}
             </nav>

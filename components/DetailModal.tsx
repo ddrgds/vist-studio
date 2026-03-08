@@ -270,7 +270,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ item, onClose }) => {
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                 <a 
                     href={item.url} 
-                    download={`influencer-${item.id}.${item.type === 'video' ? 'mp4' : 'png'}`}
+                    download={`vist-${item.id}.${item.type === 'video' ? 'mp4' : 'png'}`}
                     className="px-6 py-2 bg-white text-black font-medium rounded-full hover:bg-zinc-200 transition-colors shadow-lg flex items-center gap-2"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
