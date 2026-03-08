@@ -6,6 +6,7 @@ interface AutocompleteInputProps {
   placeholder?: string;
   onKeyDown?: (e: React.KeyboardEvent) => void;
   className?: string;
+  style?: React.CSSProperties;
   suggestions?: string[];
 }
 
@@ -55,6 +56,7 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   placeholder,
   onKeyDown,
   className,
+  style,
   suggestions = DEFAULT_SUGGESTIONS,
 }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -142,6 +144,7 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className={className}
+        style={style}
         onKeyDown={handleKeyDown}
         onFocus={() => { if (filtered.length > 0) setShowSuggestions(true); }}
         autoComplete="off"

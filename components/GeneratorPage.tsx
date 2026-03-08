@@ -378,7 +378,7 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
 
         {displayItems.length > 0 ? (
           <>
-            {/* Tab switcher — flush left, minimal */}
+            {/* Tab switcher */}
             <div className="sticky top-0 z-10 flex items-center gap-1 px-2 py-1.5" style={{ background: '#0D0A0A' }}>
               {(['session', 'history'] as const).map(tab => (
                 <button
@@ -387,7 +387,7 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
                   className="px-2.5 py-1 rounded text-[10px] font-semibold font-jet transition-all"
                   style={galleryTab === tab
                     ? { color: '#FF5C35' }
-                    : { color: '#4A3A36' }
+                    : { color: '#8C7570' }
                   }
                 >
                   {tab === 'session' ? `Session ${sessionItems.length}` : `History ${allItems.length}`}
@@ -395,7 +395,7 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
               ))}
             </div>
 
-            {/* ── Session Timeline Strip ── */}
+            {/* Session Timeline Strip */}
             {galleryTab === 'session' && sessionItems.length > 0 && (
               <div className="flex gap-1 px-2 pb-2 overflow-x-auto custom-scrollbar">
                 {sessionItems.map((item, i) => (
@@ -412,7 +412,7 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
                       <img src={item.url} alt="" className="w-full h-full object-cover" loading="lazy" />
                     )}
                     <span className="absolute bottom-0 left-0 right-0 text-[6px] font-jet font-bold text-center py-px"
-                      style={{ background: 'rgba(0,0,0,0.6)', color: lightboxItem?.id === item.id ? '#FF5C35' : '#6B5A56' }}>
+                      style={{ background: 'rgba(0,0,0,0.6)', color: lightboxItem?.id === item.id ? '#FF5C35' : '#8C7570' }}>
                       {i + 1}
                     </span>
                   </button>
@@ -420,7 +420,7 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
               </div>
             )}
 
-            {/* Masonry grid — edge-to-edge, 3 columns, minimal gap */}
+            {/* Masonry grid */}
             <div className="columns-3 gap-0.5 px-0.5">
               {displayItems.map((item) => (
                 <div
@@ -442,7 +442,7 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
                   {/* Engine badge */}
                   {item.aiProvider && (
                     <div className="absolute top-1 left-1 px-1 py-px rounded text-[7px] font-jet font-bold"
-                      style={{ background: 'rgba(0,0,0,0.7)', color: '#6B5A56' }}
+                      style={{ background: 'rgba(0,0,0,0.7)', color: '#8C7570' }}
                     >
                       {item.aiProvider === AIProvider.Gemini ? 'Gemini' :
                        item.aiProvider === AIProvider.Fal ? 'FAL' :
@@ -473,84 +473,109 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
             </div>
           </>
         ) : (
-          /* ── Empty state — prompt suggestions ── */
-          <div className="flex flex-col items-center justify-center h-full text-center select-none px-4">
-            <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-5" style={{ background: 'rgba(255,92,53,0.08)' }}>
-              <Sparkles className="w-5 h-5" style={{ color: '#FF5C35', opacity: 0.6 }} />
+          /* ── Empty state — animated tech background + categorized prompts ── */
+          <div className="relative flex flex-col items-center justify-center h-full text-center select-none px-6 overflow-hidden">
+            {/* Animated tech-water background */}
+            <div className="absolute inset-0 z-0 freestyle-bg-anim">
+              <div className="freestyle-bg-anim-wave3" />
             </div>
-            <h3 className="text-lg font-bold font-display mb-1" style={{ color: '#F5EDE8' }}>
-              What will you create?
-            </h3>
-            <p className="text-xs mb-6" style={{ color: '#4A3A36' }}>
-              Choose a suggestion or write your own prompt
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-w-xl">
-              {[
-                "Editorial fashion shoot, golden hour lighting",
-                "Street style portrait, Tokyo neon nights",
-                "Cyberpunk character, cinematic rain",
-                "Luxury brand campaign, minimalist studio",
-                "Vintage film aesthetic, European café",
-                "Athletic wear, outdoor mountain scenery",
-                "Fantasy portrait, dramatic rim lighting",
-                "Casual summer outfit, tropical beach",
-              ].map((prompt) => (
-                <button
-                  key={prompt}
-                  onClick={() => {
-                    if (char0) form.updateCharacter(char0.id, "outfitDescription", prompt);
-                  }}
-                  className="px-4 py-2 rounded-full text-[11px] font-medium transition-all hover:scale-[1.03] active:scale-[0.97]"
-                  style={{ background: 'rgba(255,92,53,0.06)', border: '1px solid rgba(255,92,53,0.15)', color: '#B8A9A5' }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,92,53,0.4)';
-                    (e.currentTarget as HTMLElement).style.color = '#F5EDE8';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,92,53,0.15)';
-                    (e.currentTarget as HTMLElement).style.color = '#B8A9A5';
-                  }}
-                >
-                  {prompt}
-                </button>
-              ))}
+            {/* Radial overlay to darken edges */}
+            <div className="absolute inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 45%, transparent 0%, #0D0A0A 100%)' }} />
+
+            <div className="relative z-[2] flex flex-col items-center max-w-2xl">
+              {/* Icon */}
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6" style={{ background: 'rgba(255,92,53,0.1)', border: '1px solid rgba(255,92,53,0.15)' }}>
+                <Sparkles className="w-7 h-7" style={{ color: '#FF5C35' }} />
+              </div>
+
+              <h3 className="text-2xl font-bold font-display mb-2" style={{ color: '#FFFFFF' }}>
+                What will you create?
+              </h3>
+              <p className="text-sm mb-8" style={{ color: '#B8A9A5' }}>
+                Choose a suggestion or type your own prompt below
+              </p>
+
+              {/* Categorized prompt suggestions */}
+              <div className="w-full space-y-4">
+                {/* Fashion & Editorial */}
+                <div>
+                  <span className="text-[10px] font-jet font-bold uppercase tracking-widest block mb-2" style={{ color: '#8C7570' }}>Fashion & Editorial</span>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {[
+                      "Editorial fashion shoot, golden hour, 85mm lens",
+                      "Street style portrait, Tokyo neon nights",
+                      "Luxury brand campaign, minimalist studio",
+                      "High fashion magazine cover, dramatic lighting",
+                    ].map(p => <PromptChip key={p} text={p} onClick={() => char0 && form.updateCharacter(char0.id, "outfitDescription", p)} />)}
+                  </div>
+                </div>
+
+                {/* Creative & Cinematic */}
+                <div>
+                  <span className="text-[10px] font-jet font-bold uppercase tracking-widest block mb-2" style={{ color: '#8C7570' }}>Creative & Cinematic</span>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {[
+                      "Cyberpunk character, neon rain, cinematic",
+                      "Fantasy portrait, dramatic rim lighting",
+                      "Film noir aesthetic, black and white, moody",
+                      "Retro 70s vibe, warm color grading, bokeh",
+                    ].map(p => <PromptChip key={p} text={p} onClick={() => char0 && form.updateCharacter(char0.id, "outfitDescription", p)} />)}
+                  </div>
+                </div>
+
+                {/* Lifestyle */}
+                <div>
+                  <span className="text-[10px] font-jet font-bold uppercase tracking-widest block mb-2" style={{ color: '#8C7570' }}>Lifestyle & Outdoor</span>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {[
+                      "Athletic wear, outdoor mountain golden hour",
+                      "Casual summer outfit, tropical beach paradise",
+                      "Rooftop sunset, city skyline, warm tones",
+                      "Cozy café morning, natural window light",
+                    ].map(p => <PromptChip key={p} text={p} onClick={() => char0 && form.updateCharacter(char0.id, "outfitDescription", p)} />)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Reference hint */}
+              <div className="mt-8 flex items-center gap-2 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <ImagePlus className="w-4 h-4 flex-none" style={{ color: '#8C7570' }} />
+                <span className="text-xs" style={{ color: '#8C7570' }}>Add a reference image for face consistency</span>
+              </div>
             </div>
-            <p className="mt-6 text-[10px] flex items-center gap-1.5" style={{ color: '#2A1F1C' }}>
-              <ImagePlus className="w-3.5 h-3.5" /> Or add a reference image with the button below
-            </p>
           </div>
         )}
       </div>
 
       {/* ─── Bottom Bar ─── */}
-      <div className="flex-none border-t px-2 py-2 space-y-1.5" style={{ background: '#0D0A0A', borderColor: '#1A1210' }}>
+      <div className="flex-none border-t px-3 py-2.5 space-y-2" style={{ background: '#111010', borderColor: '#2A1F1C' }}>
         {/* Inline controls row — engine, aspect, resolution, variations */}
         {!isVideo && (
-          <div className="flex items-center gap-1.5 px-1 overflow-x-auto custom-scrollbar">
+          <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar">
             {/* Engine chip */}
             <button
               onClick={() => setShowSettings(!showSettings)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex-none"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#B8A9A5' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,92,53,0.4)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
+              style={{ background: 'rgba(255,92,53,0.06)', border: '1px solid rgba(255,92,53,0.15)', color: '#E8DDD9' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,92,53,0.4)'; (e.currentTarget as HTMLElement).style.background = 'rgba(255,92,53,0.1)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,92,53,0.15)'; (e.currentTarget as HTMLElement).style.background = 'rgba(255,92,53,0.06)'; }}
             >
               <span className="text-sm leading-none">{activeModel?.icon ?? '⚡'}</span>
               <span className="truncate max-w-[100px]">{activeModel?.name ?? 'NB2'}</span>
-              <ChevronDown className="w-3 h-3 flex-none" style={{ color: '#4A3A36' }} />
+              <ChevronDown className="w-3 h-3 flex-none" style={{ color: '#8C7570' }} />
             </button>
 
-            <div className="w-px h-4 flex-none" style={{ background: '#1A1210' }} />
+            <div className="w-px h-4 flex-none" style={{ background: '#2A1F1C' }} />
 
             {/* Aspect ratio chips */}
             {AR_OPTIONS.map((o) => (
               <button
                 key={o.value}
                 onClick={() => form.setAspectRatio(o.value)}
-                className="px-2 py-1 rounded-md text-[10px] font-semibold transition-all flex-none"
+                className="px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all flex-none"
                 style={form.aspectRatio === o.value
-                  ? { background: 'rgba(255,92,53,0.1)', color: '#FF5C35', border: '1px solid rgba(255,92,53,0.2)' }
-                  : { color: '#6B5A56', border: '1px solid rgba(255,255,255,0.04)' }
+                  ? { background: 'rgba(255,92,53,0.12)', color: '#FF5C35', border: '1px solid rgba(255,92,53,0.25)' }
+                  : { color: '#B8A9A5', border: '1px solid rgba(255,255,255,0.06)' }
                 }
                 title={o.desc}
               >
@@ -558,38 +583,38 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
               </button>
             ))}
 
-            <div className="w-px h-4 flex-none" style={{ background: '#1A1210' }} />
+            <div className="w-px h-4 flex-none" style={{ background: '#2A1F1C' }} />
 
             {/* Resolution chips */}
             {SIZE_OPTIONS.map((o) => (
               <button
                 key={o.value}
                 onClick={() => form.setImageSize(o.value)}
-                className="px-2 py-1 rounded-md text-[10px] font-semibold transition-all flex-none"
+                className="px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all flex-none"
                 style={form.imageSize === o.value
-                  ? { background: 'rgba(255,92,53,0.1)', color: '#FF5C35', border: '1px solid rgba(255,92,53,0.2)' }
-                  : { color: '#6B5A56', border: '1px solid rgba(255,255,255,0.04)' }
+                  ? { background: 'rgba(255,92,53,0.12)', color: '#FF5C35', border: '1px solid rgba(255,92,53,0.25)' }
+                  : { color: '#B8A9A5', border: '1px solid rgba(255,255,255,0.06)' }
                 }
               >
                 {o.label}
               </button>
             ))}
 
-            <div className="w-px h-4 flex-none" style={{ background: '#1A1210' }} />
+            <div className="w-px h-4 flex-none" style={{ background: '#2A1F1C' }} />
 
             {/* Variations inline */}
             <div className="flex items-center gap-1 flex-none">
               <button onClick={() => form.setNumberOfImages(Math.max(1, form.numberOfImages - 1))}
                 className="w-5 h-5 rounded flex items-center justify-center"
-                style={{ background: 'rgba(255,255,255,0.04)', color: '#6B5A56' }}>
+                style={{ background: 'rgba(255,255,255,0.06)', color: '#B8A9A5' }}>
                 <Minus className="w-2.5 h-2.5" />
               </button>
-              <span className="text-[10px] font-bold w-4 text-center font-jet" style={{ color: '#B8A9A5' }}>
+              <span className="text-[10px] font-bold w-4 text-center font-jet" style={{ color: '#E8DDD9' }}>
                 {form.numberOfImages}
               </span>
               <button onClick={() => form.setNumberOfImages(Math.min(4, form.numberOfImages + 1))}
                 className="w-5 h-5 rounded flex items-center justify-center"
-                style={{ background: 'rgba(255,255,255,0.04)', color: '#6B5A56' }}>
+                style={{ background: 'rgba(255,255,255,0.06)', color: '#B8A9A5' }}>
                 <Plus className="w-2.5 h-2.5" />
               </button>
             </div>
@@ -597,30 +622,31 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
         )}
 
         {/* Main prompt row */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {/* Reference image button */}
           <button
             onClick={() => refInputRef.current?.click()}
-            className="flex items-center justify-center w-9 h-9 rounded-lg flex-none transition-all"
+            className="flex items-center justify-center w-10 h-10 rounded-xl flex-none transition-all"
             style={char0 && char0.modelImages.length > 0
-              ? { background: 'rgba(255,92,53,0.1)', border: '1px solid rgba(255,92,53,0.2)', color: '#FF5C35' }
-              : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: '#4A3A36' }
+              ? { background: 'rgba(255,92,53,0.12)', border: '1px solid rgba(255,92,53,0.25)', color: '#FF5C35' }
+              : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#8C7570' }
             }
             title="Add reference image"
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#B8A9A5'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = char0 && char0.modelImages.length > 0 ? '#FF5C35' : '#4A3A36'; }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#E8DDD9'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,92,53,0.3)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = char0 && char0.modelImages.length > 0 ? '#FF5C35' : '#8C7570'; (e.currentTarget as HTMLElement).style.borderColor = char0 && char0.modelImages.length > 0 ? 'rgba(255,92,53,0.25)' : 'rgba(255,255,255,0.08)'; }}
           >
             <ImagePlus className="w-4 h-4" />
           </button>
 
-          {/* Prompt input */}
+          {/* Prompt input — wider, taller, clearer */}
           <div
             ref={promptBarRef}
-            className="flex-1 flex items-center rounded-lg px-3 transition-all"
+            className="flex-1 flex items-center rounded-xl px-4 transition-all"
             style={{
-              background: 'rgba(255,255,255,0.03)',
-              border: promptShake ? '1px solid rgba(239,68,68,0.6)' : '1px solid rgba(255,255,255,0.06)',
+              background: 'rgba(255,255,255,0.04)',
+              border: promptShake ? '1px solid rgba(239,68,68,0.6)' : '1px solid rgba(255,255,255,0.1)',
               animation: promptShake ? 'prompt-shake 0.4s ease-out' : undefined,
+              boxShadow: '0 0 0 1px rgba(255,255,255,0.02) inset',
             }}
           >
             {isVideo ? (
@@ -628,7 +654,8 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
                 value={form.videoPrompt}
                 onChange={(e) => form.setVideoPrompt(e.target.value)}
                 placeholder="Describe the motion and scene..."
-                className="flex-1 bg-transparent text-sm text-white outline-none py-2.5 placeholder:text-zinc-700 font-light"
+                className="flex-1 bg-transparent text-sm text-white outline-none py-3 font-light placeholder:text-zinc-500"
+                style={{ color: '#F5EDE8' }}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !isGenerating) { e.preventDefault(); handleGenerate(); } }}
               />
             ) : (
@@ -636,31 +663,32 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
                 value={form.characters[0]?.outfitDescription ?? ""}
                 onChange={(v) => char0 && form.updateCharacter(char0.id, "outfitDescription", v)}
                 placeholder="Describe your image..."
-                className="flex-1 bg-transparent text-sm text-white outline-none py-2.5 placeholder:text-zinc-700 font-light"
+                className="flex-1 bg-transparent text-sm outline-none py-3 font-light placeholder:text-zinc-500"
+                style={{ color: '#F5EDE8' }}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !isGenerating) { e.preventDefault(); handleGenerate(); } }}
               />
             )}
             {char0 && char0.modelImages.length > 0 && (
-              <span className="text-[9px] font-jet ml-1.5 px-1.5 py-0.5 rounded flex-none"
-                style={{ background: 'rgba(255,92,53,0.1)', color: '#FF5C35' }}
+              <span className="text-[9px] font-jet ml-2 px-2 py-0.5 rounded-md flex-none"
+                style={{ background: 'rgba(255,92,53,0.12)', color: '#FF5C35' }}
               >
-                @{char0.modelImages.length}
+                @{char0.modelImages.length} ref
               </span>
             )}
           </div>
 
-          {/* Advanced settings — opens popover upward */}
+          {/* Advanced settings */}
           <div className="relative" ref={settingsRef}>
             <button
               onClick={() => setShowSettings(!showSettings)}
-              className="flex items-center justify-center w-9 h-9 rounded-lg flex-none transition-all"
+              className="flex items-center justify-center w-10 h-10 rounded-xl flex-none transition-all"
               style={showSettings
-                ? { background: 'rgba(255,92,53,0.1)', border: '1px solid rgba(255,92,53,0.2)', color: '#FF5C35' }
-                : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: '#4A3A36' }
+                ? { background: 'rgba(255,92,53,0.12)', border: '1px solid rgba(255,92,53,0.25)', color: '#FF5C35' }
+                : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#8C7570' }
               }
               title="Advanced settings"
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#B8A9A5'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = showSettings ? '#FF5C35' : '#4A3A36'; }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#E8DDD9'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = showSettings ? '#FF5C35' : '#8C7570'; }}
             >
               <Settings className="w-4 h-4" />
             </button>
@@ -668,21 +696,21 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
             {/* Settings popover */}
             {showSettings && (
               <div className="absolute bottom-full mb-2 right-0 w-[340px] rounded-xl shadow-2xl overflow-hidden z-50"
-                style={{ background: '#0D0A0A', border: '1px solid #1A1210' }}
+                style={{ background: '#111010', border: '1px solid #2A1F1C' }}
               >
                 <div className="p-3 space-y-4">
                   {/* Engine selector */}
                   <div>
-                    <label className="text-[9px] font-jet font-bold uppercase tracking-widest block mb-2" style={{ color: '#4A3A36' }}>Engine</label>
-                    <div className="flex items-center gap-2 rounded-lg px-3 py-1.5 mb-2" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <Search className="w-3 h-3 flex-none" style={{ color: '#4A3A36' }} />
+                    <label className="text-[9px] font-jet font-bold uppercase tracking-widest block mb-2" style={{ color: '#8C7570' }}>Engine</label>
+                    <div className="flex items-center gap-2 rounded-lg px-3 py-1.5 mb-2" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <Search className="w-3 h-3 flex-none" style={{ color: '#8C7570' }} />
                       <input
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search..."
-                        className="flex-1 bg-transparent text-[11px] text-white outline-none placeholder:text-zinc-700"
+                        placeholder="Search engines..."
+                        className="flex-1 bg-transparent text-[11px] text-white outline-none placeholder:text-zinc-600"
                       />
-                      {searchQuery && <button onClick={() => setSearchQuery("")}><X className="w-3 h-3" style={{ color: '#4A3A36' }} /></button>}
+                      {searchQuery && <button onClick={() => setSearchQuery("")}><X className="w-3 h-3" style={{ color: '#8C7570' }} /></button>}
                     </div>
                     <div className="max-h-[200px] overflow-y-auto custom-scrollbar space-y-0.5">
                       {featuredModels.length > 0 && (
@@ -706,41 +734,41 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
 
                   {/* Advanced — CFG, Steps, Seed, Negative */}
                   <div>
-                    <label className="text-[9px] font-jet font-bold uppercase tracking-widest block mb-2" style={{ color: '#4A3A36' }}>Advanced</label>
+                    <label className="text-[9px] font-jet font-bold uppercase tracking-widest block mb-2" style={{ color: '#8C7570' }}>Advanced</label>
                     <div className="grid grid-cols-3 gap-2">
                       <div>
-                        <label className="text-[8px] uppercase block mb-1" style={{ color: '#4A3A36' }} title="Controls how closely the image follows your prompt. Higher = more literal">CFG (1-20)</label>
+                        <label className="text-[8px] uppercase block mb-1" style={{ color: '#8C7570' }} title="Controls how closely the image follows your prompt. Higher = more literal">CFG (1-20)</label>
                         <AdvStepper value={form.cfg} min={1} max={20} step={0.5} onChange={form.setCfg} />
                       </div>
                       <div>
-                        <label className="text-[8px] uppercase block mb-1" style={{ color: '#4A3A36' }} title="More steps = higher quality but slower generation">Steps (10-100)</label>
+                        <label className="text-[8px] uppercase block mb-1" style={{ color: '#8C7570' }} title="More steps = higher quality but slower generation">Steps (10-100)</label>
                         <AdvStepper value={form.steps} min={10} max={100} step={5} onChange={form.setSteps} />
                       </div>
                       <div>
-                        <label className="text-[8px] uppercase block mb-1" style={{ color: '#4A3A36' }}>Seed</label>
+                        <label className="text-[8px] uppercase block mb-1" style={{ color: '#8C7570' }}>Seed</label>
                         <input
                           type="number"
                           value={form.seed ?? ""}
                           onChange={(e) => form.setSeed(e.target.value === "" ? undefined : parseInt(e.target.value))}
                           placeholder="Seed (random)"
-                          className="w-full bg-transparent rounded px-1.5 py-1 text-[10px] text-white outline-none placeholder:text-zinc-700 font-jet"
-                          style={{ border: '1px solid rgba(255,255,255,0.06)' }}
+                          className="w-full bg-transparent rounded px-1.5 py-1 text-[10px] text-white outline-none placeholder:text-zinc-600 font-jet"
+                          style={{ border: '1px solid rgba(255,255,255,0.08)' }}
                         />
                       </div>
                       <div className="col-span-2">
-                        <label className="text-[8px] uppercase block mb-1" style={{ color: '#4A3A36' }}>Negative</label>
+                        <label className="text-[8px] uppercase block mb-1" style={{ color: '#8C7570' }}>Negative</label>
                         <input
                           value={form.negativePrompt}
                           onChange={(e) => form.setNegativePrompt(e.target.value)}
                           placeholder="Things to avoid..."
-                          className="w-full bg-transparent rounded px-1.5 py-1 text-[10px] text-white outline-none placeholder:text-zinc-700 font-jet"
-                          style={{ border: '1px solid rgba(255,255,255,0.06)' }}
+                          className="w-full bg-transparent rounded px-1.5 py-1 text-[10px] text-white outline-none placeholder:text-zinc-600 font-jet"
+                          style={{ border: '1px solid rgba(255,255,255,0.08)' }}
                         />
                       </div>
                       <div>
                         <label className="flex items-center gap-1.5 cursor-pointer mt-1" title="Minimizes common AI artifacts like distorted features">
                           <input type="checkbox" checked={form.antiFisheye} onChange={(e) => form.setAntiFisheye(e.target.checked)} className="w-3 h-3 accent-orange-500" />
-                          <span className="text-[9px]" style={{ color: '#6B5A56' }}>Reduce artifacts</span>
+                          <span className="text-[9px]" style={{ color: '#B8A9A5' }}>Reduce artifacts</span>
                         </label>
                       </div>
                     </div>
@@ -750,18 +778,18 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
             )}
           </div>
 
-          {/* Generate button — with credit cost inside */}
+          {/* Generate button */}
           <button
             onClick={isGenerating ? onStopGeneration : handleGenerate}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-bold transition-all active:scale-[0.97] flex-none text-white"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-[0.97] flex-none text-white"
             style={isGenerating
               ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)' }
               : promptIsEmpty && !isGenerating
-                ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', opacity: 0.5, cursor: 'not-allowed', boxShadow: 'none' }
-                : { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', boxShadow: '0 2px 12px rgba(255,92,53,0.25)' }
+                ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', opacity: 0.4, cursor: 'not-allowed', boxShadow: 'none' }
+                : { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', boxShadow: '0 2px 16px rgba(255,92,53,0.3)' }
             }
-            onMouseEnter={e => { if (!promptIsEmpty && !isGenerating) { (e.currentTarget as HTMLElement).style.filter = 'brightness(1.1)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(255,92,53,0.35)'; } }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.filter = ''; (e.currentTarget as HTMLElement).style.boxShadow = promptIsEmpty ? 'none' : '0 2px 12px rgba(255,92,53,0.25)'; }}
+            onMouseEnter={e => { if (!promptIsEmpty && !isGenerating) { (e.currentTarget as HTMLElement).style.filter = 'brightness(1.1)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 24px rgba(255,92,53,0.4)'; } }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.filter = ''; (e.currentTarget as HTMLElement).style.boxShadow = promptIsEmpty ? 'none' : '0 2px 16px rgba(255,92,53,0.3)'; }}
           >
             {isGenerating ? (
               <>
@@ -769,7 +797,7 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
                 Stop
               </>
             ) : (
-              <>Generate <span className="text-[10px] font-jet opacity-70">⚡{genCreditCost}</span></>
+              <>Generate <span className="text-[10px] font-jet opacity-80">⚡{genCreditCost}</span></>
             )}
           </button>
         </div>
@@ -831,6 +859,26 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
 
+const PromptChip: React.FC<{ text: string; onClick: () => void }> = ({ text, onClick }) => (
+  <button
+    onClick={onClick}
+    className="px-4 py-2 rounded-full text-[11px] font-medium transition-all hover:scale-[1.02] active:scale-[0.97]"
+    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#D4C8C4' }}
+    onMouseEnter={(e) => {
+      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,92,53,0.4)';
+      (e.currentTarget as HTMLElement).style.color = '#FFFFFF';
+      (e.currentTarget as HTMLElement).style.background = 'rgba(255,92,53,0.08)';
+    }}
+    onMouseLeave={(e) => {
+      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
+      (e.currentTarget as HTMLElement).style.color = '#D4C8C4';
+      (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
+    }}
+  >
+    {text}
+  </button>
+);
+
 const MiniAction: React.FC<{ icon: React.ReactNode; onClick: (e: React.MouseEvent) => void; title?: string }> = ({ icon, onClick, title }) => (
   <button
     onClick={onClick}
@@ -883,8 +931,8 @@ interface EngineSectionProps {
 
 const EngineSection: React.FC<EngineSectionProps> = ({ title, models, form, onSelect }) => (
   <div>
-    <div className="px-4 py-2 border-b" style={{ borderColor: '#1A1210' }}>
-      <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: '#4A3A36' }}>{title}</span>
+    <div className="px-4 py-2 border-b" style={{ borderColor: '#2A1F1C' }}>
+      <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: '#8C7570' }}>{title}</span>
     </div>
     {models.map((model) => {
       const active = model.isActive(form);
@@ -910,7 +958,7 @@ const EngineSection: React.FC<EngineSectionProps> = ({ title, models, form, onSe
               <span className="text-[12px] font-semibold truncate" style={{ color: active ? '#FF5C35' : '#E8DDD9' }}>{model.name}</span>
               {model.badge && <Badge text={model.badge} />}
             </div>
-            <p className="text-[10px] truncate mt-0.5" style={{ color: '#4A3A36' }}>{model.tagline}</p>
+            <p className="text-[10px] truncate mt-0.5" style={{ color: '#8C7570' }}>{model.tagline}</p>
           </div>
           <span className="text-[9px] font-jet flex-none" style={{ color: '#FFB347' }}>{model.creditCost}</span>
           {active && <span className="text-xs flex-none ml-1" style={{ color: '#FF5C35' }}>✓</span>}
