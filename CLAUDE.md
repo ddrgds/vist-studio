@@ -232,9 +232,9 @@ Credits 3000:   1374291  |  Store ID:      308321
 |---|---|---|---|
 | 1 | 🔴 CRITICAL | `decrement_credits` RPC missing in Supabase | ✅ FIXED — RPC created |
 | 2 | 🔴 CRITICAL | ProtectedRoute redirects before `getSession()` resolves | ✅ FIXED — `.catch()/.finally()` added to AuthContext |
-| 3 | 🟡 MEDIUM | `/pricing` inside AuthGuard — anonymous users get redirected silently | OPEN |
-| 4 | 🟡 MEDIUM | Hero images reference private Supabase Storage bucket — render black | OPEN |
-| 5 | 🟡 MEDIUM | 4+ Supabase queries fire simultaneously on every route change | OPEN |
+| 3 | 🟡 MEDIUM | `/pricing` inside AuthGuard — anonymous users get redirected silently | ✅ FIXED — pricing in PUBLIC_WORKSPACES |
+| 4 | 🟡 MEDIUM | Hero images reference private Supabase Storage bucket — render black | ✅ FIXED — static assets in /public/demo/ |
+| 5 | 🟡 MEDIUM | 4+ Supabase queries fire simultaneously on every route change | ✅ FIXED — stable user ref, parallel load, deduplicated sync |
 | 6 | 🟢 MINOR | "Start Free" button on landing has no onClick handler | ✅ VERIFIED — already works |
 | 7 | 🔴 CRITICAL | 5 modals called APIs without deducting credits | ✅ FIXED — all modals enforce credits |
 | 8 | 🔴 CRITICAL | API keys (Gemini, FAL, ModelsLab) baked into client bundle | ✅ FIXED — server-side proxies |
@@ -306,16 +306,15 @@ Credits 3000:   1374291  |  Store ID:      308321
 - Brand tier price ($149 vs Higgsfield $249)
 
 **Gaps to close (prioritized):**
-1. Library doesn't show generated images — only characters
-2. No community/explore feed for organic discovery
+1. ~~Library doesn't show generated images — only characters~~ ✅ Images tab added
+2. ~~No community/explore feed for organic discovery~~ ✅ Community feed + share action added
 
 ---
 
 ## 🔨 Build Commands
 
 ```bash
-npm run build          # Vite production build
-                       # pre-existing 1.2MB chunk warning is expected, not a bug
+npm run build          # Vite production build (main chunk ~856KB after code splitting)
 npx tsc --noEmit       # Must return zero errors before every commit
 ```
 
@@ -342,18 +341,26 @@ npx tsc --noEmit       # Must return zero errors before every commit
 - [x] Bottom bar: Generate button shows ⚡ prefix on credit cost
 
 ### 🟡 Open (next up)
-- [ ] Bug #3: Move `/pricing` outside AuthGuard
-- [ ] Bug #4: Replace hero images with static assets in `/public/demo/`
+- [x] Bug #3: `/pricing` already in PUBLIC_WORKSPACES — verified working
+- [x] Bug #4: Hero images moved to `/public/demo/` (6 static JPGs, no external dependency)
 - [x] Bug #6: "Start Free" button already has onClick → navigates to generate workspace
-- [ ] Library: add [Images] tab showing all gallery_items
-- [ ] gallery_items: add `source TEXT DEFAULT 'director'` column
-- [ ] Generate: save generated images to gallery_items with source='generate'
+- [x] Library: add [Images] tab showing all gallery_items (Characters | Images tabs with search/filter)
+- [x] gallery_items: add `source TEXT DEFAULT 'director'` column (code done, SQL pending user execution)
+- [x] Generate: save generated images to gallery_items with source='generate' (already implemented in useGeneration.ts)
 
-### 🧊 Deferred (backlog)
-- [ ] Memory leaks (inspiration blob URLs, DetailModal)
-- [ ] `as any` cleanup in falService
-- [ ] N+1 gallery save
-- [ ] Photo session credit undercharge
-- [ ] Cloud sync retry logic
-- [ ] Image compression
-- [ ] `.env.example` creation
+### 🧊 Deferred (backlog) — all resolved
+- [x] Memory leaks — blob URL revocation added (inspiration, history, falService, PoseAssistant, DirectorStudio BlobImg)
+- [~] `as any` in falService — won't fix: SDK types lag API spec (see Known Pitfalls), custom types would be fragile
+- [x] N+1 gallery save — parallelized with Promise.allSettled, failed items fallback to IndexedDB
+- [x] Photo session credit undercharge — now charges photoSession (10) × photoSessionCount
+- [x] Cloud sync retry — background sync uploads local-only items to Supabase on login
+- [x] Image compression — WebP (q=0.82) before Supabase Storage upload, skips if result is larger
+- [x] `.env.example` created with all env vars documented
+
+### 🚀 Growth & UX (new sprint)
+- [x] Bug #5: Supabase query storm — stable user ref, parallel load, deduplicated sync
+- [x] Community feed — `community_shares` table + CommunityFeed component + "Share to Community" in gallery menu
+- [x] Pricing CTA for anónimos — sign-up prompt + sessionStorage checkout intent + auto-checkout after login
+- [x] Library Images lightbox — click-to-preview with download, source badge, provider info
+- [x] Onboarding welcome modal — 3-slide tour (Freestyle, Director, Library), shown once on first login
+- [x] Code splitting — React.lazy for 6 workspaces + 12 modals/components + manualChunks for vendors → main chunk 1,422→856KB (-40%)

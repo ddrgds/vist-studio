@@ -84,7 +84,7 @@ async function pollForResult(
     // status === 'processing' → continue polling
   }
 
-  throw new Error('ModelsLab: timeout (>2 min) esperando generación');
+  throw new Error('ModelsLab: timeout (>2 min) waiting for generation');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -159,7 +159,7 @@ export async function editImageWithModelsLab(
     const id: string | undefined =
       data.id ??
       (typeof data.fetch_result === 'string' ? data.fetch_result.split('/').pop() : undefined);
-    if (!id) throw new Error('ModelsLab img2img: no ID para polling');
+    if (!id) throw new Error('ModelsLab img2img: no ID for polling');
     onProgress(30);
     outputUrls = await pollForResult(id, onProgress, signal);
   }
@@ -180,7 +180,7 @@ export async function generateWithModelsLab(
   const { width, height } = toDimensions(params.aspectRatio);
   const char = params.characters[0];
 
-  // Build prompt — características + outfit + escena + iluminación
+  // Build prompt — characteristics + outfit + scene + lighting
   const promptParts: string[] = [];
   if (char?.characteristics)   promptParts.push(char.characteristics);
   if (char?.outfitDescription) promptParts.push(char.outfitDescription);
@@ -231,7 +231,7 @@ export async function generateWithModelsLab(
   const data = await res.json();
   onProgress(20);
 
-  if (data.status === 'error') throw new Error(data.message || 'ModelsLab error desconocido');
+  if (data.status === 'error') throw new Error(data.message || 'ModelsLab unknown error');
 
   let outputUrls: string[];
 
@@ -244,7 +244,7 @@ export async function generateWithModelsLab(
       data.id ??
       (typeof data.fetch_result === 'string' ? data.fetch_result.split('/').pop() : undefined);
 
-    if (!id) throw new Error('ModelsLab: no devolvió ID para polling');
+    if (!id) throw new Error('ModelsLab: did not return ID for polling');
     onProgress(30);
     outputUrls = await pollForResult(id, onProgress, signal);
   }

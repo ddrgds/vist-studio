@@ -10,7 +10,7 @@ const BASE_URL = '/ideogram-api';
 // ─────────────────────────────────────────────
 
 /**
- * Mapea AspectRatio al formato de Ideogram V1/V2 (/generate).
+ * Maps AspectRatio to the Ideogram V1/V2 (/generate) format.
  */
 const toIdeogramAspectRatio = (ratio: AspectRatio): string => {
   const map: Record<AspectRatio, string> = {
@@ -24,8 +24,8 @@ const toIdeogramAspectRatio = (ratio: AspectRatio): string => {
 };
 
 /**
- * Mapea AspectRatio al formato de Ideogram V3 (/v1/ideogram-v3/generate).
- * El V3 usa formato "WxH" sin el prefijo ASPECT_.
+ * Maps AspectRatio to the Ideogram V3 (/v1/ideogram-v3/generate) format.
+ * V3 uses "WxH" format without the ASPECT_ prefix.
  */
 const toIdeogramAspectRatioV3 = (ratio: AspectRatio): string => {
   const map: Record<AspectRatio, string> = {
@@ -39,8 +39,8 @@ const toIdeogramAspectRatioV3 = (ratio: AspectRatio): string => {
 };
 
 /**
- * Elige el endpoint de generación según el modelo.
- * V3 usa /v1/ideogram-v3/generate; V1/V2 usan /generate.
+ * Selects the generation endpoint based on the model.
+ * V3 uses /v1/ideogram-v3/generate; V1/V2 use /generate.
  */
 const getEndpoint = (model: IdeogramModel): string => {
   if (model === IdeogramModel.V3) {
@@ -50,7 +50,7 @@ const getEndpoint = (model: IdeogramModel): string => {
 };
 
 /**
- * Convierte File a base64 data URI para imágenes de referencia de estilo.
+ * Converts File to base64 data URI for style reference images.
  */
 const fileToDataUri = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -62,13 +62,13 @@ const fileToDataUri = (file: File): Promise<string> => {
 };
 
 /**
- * Descarga una imagen desde URL y la convierte a data URL local.
- * Las URLs efímeras de Ideogram (ideogram.ai/api/images/ephemeral/...)
- * no tienen cabeceras CORS correctas, por lo que se enrutan a través
- * del proxy /ideogram-ephemeral definido en vite.config.ts.
+ * Downloads an image from URL and converts it to a local data URL.
+ * Ephemeral Ideogram URLs (ideogram.ai/api/images/ephemeral/...)
+ * don't have correct CORS headers, so they are routed through
+ * the /ideogram-ephemeral proxy defined in vite.config.ts.
  */
 const urlToDataUrl = async (url: string): Promise<string> => {
-  // Rutar URLs efímeras de Ideogram por proxy para evitar error CORS
+  // Route ephemeral Ideogram URLs through proxy to avoid CORS error
   const fetchUrl = url.startsWith('https://ideogram.ai/')
     ? url.replace('https://ideogram.ai', '/ideogram-ephemeral')
     : url;
@@ -83,7 +83,7 @@ const urlToDataUrl = async (url: string): Promise<string> => {
 };
 
 // ─────────────────────────────────────────────
-// Construcción del prompt
+// Prompt construction
 // ─────────────────────────────────────────────
 const buildPrompt = (params: InfluencerParams): string => {
   const character = params.characters[0];
@@ -127,9 +127,9 @@ const buildPrompt = (params: InfluencerParams): string => {
 };
 
 // ─────────────────────────────────────────────
-// Generación con Ideogram V3 (incluye character reference)
-// El endpoint /v1/ideogram-v3/generate usa body plano (sin wrapper
-// image_request), aspect_ratio en formato "WxH", y campo magic_prompt.
+// Generation with Ideogram V3 (includes character reference)
+// The /v1/ideogram-v3/generate endpoint uses a flat body (no wrapper
+// image_request), aspect_ratio in "WxH" format, and a magic_prompt field.
 // ─────────────────────────────────────────────
 const generateWithV3 = async (
   params: InfluencerParams,
@@ -159,7 +159,7 @@ const generateWithV3 = async (
   let response: Response;
 
   if (charRefFiles.length > 0) {
-    // V3 character_reference_images requiere multipart/form-data con binario
+    // V3 character_reference_images requires multipart/form-data with binary
     const formData = new FormData();
     for (const [key, value] of Object.entries(fields)) {
       formData.append(key, String(value));
@@ -202,7 +202,7 @@ const generateWithV3 = async (
 };
 
 // ─────────────────────────────────────────────
-// Generación con Ideogram V2 / V2A
+// Generation with Ideogram V2 / V2A
 // ─────────────────────────────────────────────
 const generateWithV2 = async (
   params: InfluencerParams,
@@ -258,7 +258,7 @@ const generateWithV2 = async (
 };
 
 // ─────────────────────────────────────────────
-// Punto de entrada público
+// Public entry point
 // ─────────────────────────────────────────────
 export const generateWithIdeogram = async (
   params: InfluencerParams,
@@ -278,7 +278,7 @@ export const generateWithIdeogram = async (
   }
 
   if (results.length === 0) {
-    throw new Error('Ideogram no devolvió ninguna imagen. Verifica tu API key y los parámetros.');
+    throw new Error('Ideogram did not return any images. Check your API key and parameters.');
   }
 
   if (onProgress) onProgress(100);

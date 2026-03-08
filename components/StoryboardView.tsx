@@ -7,7 +7,7 @@ interface StoryboardViewProps {
   onOpenMobileMenu: () => void;
 }
 
-// Fallback para ctx.roundRect (no disponible en Firefox < 112 / Safari < 15.4)
+// Fallback for ctx.roundRect (not available in Firefox < 112 / Safari < 15.4)
 const drawRoundRect = (
   ctx: CanvasRenderingContext2D,
   x: number, y: number, w: number, h: number, r: number
@@ -55,7 +55,7 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
 
   const handleClearAll = () => {
     storyboardIds.forEach(id => removeFromStoryboard(id));
-    toast.info('Storyboard vacío');
+    toast.info('Storyboard cleared');
   };
 
   const exportAsGrid = async () => {
@@ -89,7 +89,7 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
             img.src = item.url;
           });
 
-          // Draw image (cropped to square) — usando fallback manual en vez de roundRect
+          // Draw image (cropped to square) — using manual fallback instead of roundRect
           ctx.save();
           drawRoundRect(ctx, x, y, cellSize, cellSize, 8);
           ctx.clip();
@@ -122,10 +122,10 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        toast.success('Storyboard exportado como PNG');
+        toast.success('Storyboard exported as PNG');
       }, 'image/png');
     } catch (err: any) {
-      toast.error('Error al exportar: ' + (err?.message || ''));
+      toast.error('Export error: ' + (err?.message || ''));
     } finally {
       setExportingGrid(false);
     }
@@ -142,9 +142,9 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
             </div>
           </div>
           <div className="space-y-3 mb-4">
-            <h3 className="text-3xl font-bold text-white tracking-tight">Tu Storyboard está vacío</h3>
+            <h3 className="text-3xl font-bold text-white tracking-tight">Your Storyboard is empty</h3>
             <p className="text-base text-zinc-400 max-w-lg mx-auto">
-              Colecciona tus mejores generaciones aquí para armar secuencias, referencias visuales o crear tu propio cómic.
+              Collect your best generations here to build sequences, visual references, or create your own comic.
             </p>
           </div>
           <div className="p-6 bg-zinc-900/40 border border-zinc-800 rounded-2xl flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left mx-auto max-w-xl">
@@ -152,9 +152,9 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
               <span className="text-lg">💡</span>
             </div>
             <div>
-              <p className="text-sm text-white font-medium mb-1">¿Cómo añadir frames?</p>
+              <p className="text-sm text-white font-medium mb-1">How to add frames?</p>
               <p className="text-sm text-zinc-500 leading-relaxed">
-                Ve al <strong>Feed</strong> (Galería), abre el menú <span className="inline-flex items-center justify-center w-6 h-6 bg-zinc-800 rounded-full border border-zinc-700 text-white font-bold mx-1">⋯</span> en cualquier imagen y elige <strong>"Añadir al Storyboard"</strong>.
+                Go to the <strong>Feed</strong> (Gallery), open the menu <span className="inline-flex items-center justify-center w-6 h-6 bg-zinc-800 rounded-full border border-zinc-700 text-white font-bold mx-1">⋯</span> on any image and choose <strong>"Add to Storyboard"</strong>.
               </p>
             </div>
           </div>
@@ -163,7 +163,7 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
               onClick={onOpenMobileMenu}
               className="px-8 py-3 bg-white text-black text-sm font-semibold rounded-full hover:scale-105 active:scale-95 transition-all shadow-xl shadow-white/10"
             >
-              Comenzar a crear
+              Start creating
             </button>
           </div>
         </div>
@@ -176,7 +176,7 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
       {/* Toolbar */}
       <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
         <p className="text-xs text-zinc-500">
-          <span className="text-white font-semibold">{storyboardItems.length}</span> frames — arrastra para reordenar
+          <span className="text-white font-semibold">{storyboardItems.length}</span> frames — drag to reorder
         </p>
         <div className="flex gap-2">
           <button
@@ -187,13 +187,13 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
             {exportingGrid ? (
               <svg className="animate-spin" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
             ) : '🖼️'}
-            Exportar Grid
+            Export Grid
           </button>
           <button
             onClick={handleClearAll}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-red-900/30 hover:bg-red-900/50 text-red-400 text-xs rounded-lg transition-colors border border-red-800/30"
           >
-            🗑️ Vaciar
+            🗑️ Clear
           </button>
         </div>
       </div>
@@ -228,7 +228,7 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
                   <button
                     onClick={(e) => { e.stopPropagation(); handleMove(index, index - 1); }}
                     disabled={index === 0}
-                    aria-label="Mover izquierda"
+                    aria-label="Move left"
                     className="p-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 rounded-lg text-white transition-colors"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
@@ -236,7 +236,7 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
                   <button
                     onClick={(e) => { e.stopPropagation(); handleMove(index, index + 1); }}
                     disabled={index === storyboardItems.length - 1}
-                    aria-label="Mover derecha"
+                    aria-label="Move right"
                     className="p-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 rounded-lg text-white transition-colors"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
@@ -244,10 +244,10 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
                 </div>
                 <button
                   onClick={(e) => { e.stopPropagation(); removeFromStoryboard(item.id); }}
-                  aria-label="Quitar del storyboard"
+                  aria-label="Remove from storyboard"
                   className="px-2 py-1 bg-red-600/80 hover:bg-red-600 text-white text-[10px] rounded-lg transition-colors"
                 >
-                  Quitar
+                  Remove
                 </button>
               </div>
             </div>

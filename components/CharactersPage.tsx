@@ -1,7 +1,8 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Plus, Trash2, Pencil, ChevronRight, X, Check, Search } from 'lucide-react';
+import { Plus, Trash2, Pencil, ChevronRight, X, Check, Search, Image, Users, Download, Play } from 'lucide-react';
 import { useCharacterLibrary } from '../contexts/CharacterLibraryContext';
-import { SavedCharacter } from '../types';
+import { useGallery } from '../contexts/GalleryContext';
+import { SavedCharacter, GeneratedContent } from '../types';
 
 interface CharactersPageProps {
   onLoadCharacter?: (char: SavedCharacter) => void;
@@ -279,15 +280,118 @@ const StatChip: React.FC<{ value: string | number; label: string; accent?: boole
   </div>
 );
 
+// ─── Image Card ──────────────────────────────────────────────────────────────
+
+const ImageCard: React.FC<{
+  item: GeneratedContent;
+  onDelete: (id: string) => void;
+  onPreview: (item: GeneratedContent) => void;
+}> = ({ item, onDelete, onPreview }) => {
+  const isVideo = item.type === 'video';
+  const date = new Date(item.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+  const provider = item.aiProvider ?? '';
+  const source = item.source === 'generate' ? 'Freestyle' : 'Director';
+
+  const handleDownload = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const a = document.createElement('a');
+    a.href = item.url;
+    a.download = `vist-${item.id}.${isVideo ? 'mp4' : 'png'}`;
+    a.click();
+  };
+
+  return (
+    <div
+      className="group relative rounded-2xl overflow-hidden transition-all duration-200 cursor-pointer"
+      style={{ background: '#0D0A0A', border: '1px solid #1A1210' }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#2A1F1C'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#1A1210'; }}
+      onClick={() => onPreview(item)}
+    >
+      <div className="relative aspect-[3/4] overflow-hidden" style={{ background: '#161110' }}>
+        {isVideo ? (
+          <video src={item.url} className="w-full h-full object-cover" muted />
+        ) : (
+          <img src={item.url} alt="" className="w-full h-full object-cover" loading="lazy" />
+        )}
+
+        {isVideo && (
+          <div className="absolute top-2 left-2 w-6 h-6 rounded-full flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.6)' }}>
+            <Play className="w-3 h-3 text-white fill-white" />
+          </div>
+        )}
+
+        {/* Hover overlay */}
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end p-3"
+          style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)' }}>
+          <div className="flex items-center gap-1.5">
+            <button onClick={handleDownload}
+              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02] active:scale-95"
+              style={{ background: '#fff', color: '#000' }}>
+              <Download className="w-3 h-3" /> Save
+            </button>
+            <button onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
+              className="p-2 rounded-lg transition-all hover:scale-[1.02] active:scale-95"
+              style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171' }}>
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-3 py-2.5">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-jet px-1.5 py-0.5 rounded-full"
+            style={{ background: 'rgba(255,92,53,0.08)', color: '#FF5C35' }}>
+            {source}
+          </span>
+          {provider && (
+            <span className="text-[10px] font-jet capitalize" style={{ color: '#4A3A36' }}>
+              {provider}
+            </span>
+          )}
+        </div>
+        <span className="text-[10px] font-jet block mt-1" style={{ color: '#2A1F1C' }}>{date}</span>
+      </div>
+    </div>
+  );
+};
+
+// ─── Images Empty State ──────────────────────────────────────────────────────
+
+const ImagesEmptyState: React.FC = () => (
+  <div className="flex flex-col items-center justify-center py-24 gap-6 text-center">
+    <div className="w-20 h-20 rounded-2xl flex items-center justify-center"
+      style={{ background: 'rgba(255,92,53,0.06)', border: '1px dashed rgba(255,92,53,0.18)' }}>
+      <Image className="w-8 h-8" style={{ color: '#FF5C35', opacity: 0.5 }} />
+    </div>
+    <div>
+      <h2 className="text-xl font-bold mb-2" style={{ color: '#F5EDE8' }}>No images yet</h2>
+      <p className="text-sm max-w-sm leading-relaxed" style={{ color: '#4A3A36' }}>
+        Generate images in Freestyle or Director — they'll appear here automatically.
+      </p>
+    </div>
+  </div>
+);
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
+
+type LibraryTab = 'characters' | 'images';
 
 const CharactersPage: React.FC<CharactersPageProps> = ({ onLoadCharacter, onNewCharacter }) => {
   const { savedCharacters, deleteCharacter, renameCharacter, trainSoulId } = useCharacterLibrary();
+  const { generatedHistory, deleteItem } = useGallery();
 
+  const [activeTab, setActiveTab] = useState<LibraryTab>('characters');
   const [progressMap, setProgressMap] = useState<Record<string, number>>({});
   const abortRefs = useRef<Record<string, AbortController>>({});
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'trained' | 'untrained'>('all');
+  const [imageQuery, setImageQuery] = useState('');
+  const [imageFilter, setImageFilter] = useState<'all' | 'images' | 'videos'>('all');
+  const [previewItem, setPreviewItem] = useState<GeneratedContent | null>(null);
 
   const handleTrainSoulId = useCallback(async (id: string) => {
     abortRefs.current[id]?.abort();
@@ -318,6 +422,23 @@ const CharactersPage: React.FC<CharactersPageProps> = ({ onLoadCharacter, onNewC
     })
     .filter(c => !query || c.name.toLowerCase().includes(query.toLowerCase()));
 
+  // Images filter + search
+  const imageCount = generatedHistory.filter(i => i.type !== 'video').length;
+  const videoCount = generatedHistory.filter(i => i.type === 'video').length;
+  const visibleImages = generatedHistory
+    .filter(i => {
+      if (imageFilter === 'images') return i.type !== 'video';
+      if (imageFilter === 'videos') return i.type === 'video';
+      return true;
+    })
+    .filter(i => {
+      if (!imageQuery) return true;
+      const q = imageQuery.toLowerCase();
+      return (i.aiProvider ?? '').toLowerCase().includes(q)
+        || (i.source ?? '').toLowerCase().includes(q)
+        || (i.type ?? '').toLowerCase().includes(q);
+    });
+
   return (
     <div className="w-full h-full overflow-y-auto pb-16 lg:pb-0" style={{ background: '#080605' }}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-24">
@@ -326,17 +447,19 @@ const CharactersPage: React.FC<CharactersPageProps> = ({ onLoadCharacter, onNewC
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
           <div>
             <p className="text-[11px] font-jet uppercase tracking-widest mb-2" style={{ color: '#FF5C35' }}>
-              Character Library
+              Library
             </p>
             <h1 className="text-2xl font-black tracking-tight" style={{ color: '#F5EDE8' }}>
-              Your Cast
+              {activeTab === 'characters' ? 'Your Cast' : 'Your Images'}
             </h1>
             <p className="text-sm mt-1" style={{ color: '#4A3A36' }}>
-              Save face references, outfit, and identity — reuse forever.
+              {activeTab === 'characters'
+                ? 'Save face references, outfit, and identity — reuse forever.'
+                : 'All generated images and videos in one place.'}
             </p>
           </div>
 
-          {onNewCharacter && savedCharacters.length > 0 && (
+          {activeTab === 'characters' && onNewCharacter && savedCharacters.length > 0 && (
             <button
               onClick={onNewCharacter}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:scale-[1.02] active:scale-95 text-white shrink-0"
@@ -347,93 +470,245 @@ const CharactersPage: React.FC<CharactersPageProps> = ({ onLoadCharacter, onNewC
           )}
         </div>
 
-        {/* ── Stats row ── */}
-        {savedCharacters.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-6">
-            <StatChip value={savedCharacters.length} label="characters" accent />
-            {readyCount > 0 && <StatChip value={readyCount} label="Soul ID ready" />}
-            {trainingCount > 0 && <StatChip value={trainingCount} label="training" />}
-            {totalUses > 0 && <StatChip value={totalUses} label="total uses" />}
-          </div>
-        )}
-
-        {/* ── Soul ID banner ── */}
-        {savedCharacters.length > 0 && hasUntrained && (
-          <div
-            className="mb-6 p-4 rounded-xl flex items-start gap-3"
-            style={{ background: 'rgba(255,92,53,0.04)', border: '1px solid rgba(255,92,53,0.14)' }}
-          >
-            <span style={{ color: '#FF5C35', fontSize: 18, lineHeight: 1, marginTop: 2 }}>✦</span>
-            <div>
-              <p className="text-sm font-semibold mb-0.5" style={{ color: '#FF5C35' }}>
-                Train Soul ID for identity-consistent generation
-              </p>
-              <p className="text-xs leading-relaxed" style={{ color: '#6B5A56' }}>
-                Soul ID trains a personal LoRA on your character's face references, enabling perfect identity replication across any style, outfit, or scene. Click "Train" on any character to start.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* ── Search + filter bar ── */}
-        {savedCharacters.length > 0 && (
-          <div className="flex items-center gap-2 mb-6">
-            {/* Search */}
-            <div className="relative flex-1 max-w-xs">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: '#4A3A36' }} />
-              <input
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="Search characters…"
-                className="w-full pl-8 pr-3 py-2 rounded-xl text-[12px] outline-none"
-                style={{ background: '#0D0A0A', border: '1px solid #1A1210', color: '#F5EDE8' }}
-                onFocus={e => { (e.currentTarget as HTMLElement).style.borderColor = '#2A1F1C'; }}
-                onBlur={e => { (e.currentTarget as HTMLElement).style.borderColor = '#1A1210'; }}
-              />
-            </div>
-
-            {/* Filter chips */}
-            {(['all', 'trained', 'untrained'] as const).map(f => (
+        {/* ── Tabs ── */}
+        <div className="flex items-center gap-1 mb-6 p-1 rounded-xl w-fit" style={{ background: '#0D0A0A', border: '1px solid #1A1210' }}>
+          {([
+            { key: 'characters' as LibraryTab, label: 'Characters', icon: Users, count: savedCharacters.length },
+            { key: 'images' as LibraryTab, label: 'Images', icon: Image, count: generatedHistory.length },
+          ]).map(tab => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.key;
+            return (
               <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className="text-[10px] px-2.5 py-1.5 rounded-full font-jet transition-all capitalize"
-                style={filter === f
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all"
+                style={isActive
                   ? { background: '#FF5C35', color: '#fff' }
-                  : { color: '#4A3A36', border: '1px solid #1A1210' }}
+                  : { color: '#4A3A36' }}
+                onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.color = '#B8A9A5'; }}
+                onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.color = '#4A3A36'; }}
               >
-                {f === 'all' ? 'All' : f === 'trained' ? '✦ Soul ID' : 'Untrained'}
+                <Icon className="w-3.5 h-3.5" />
+                {tab.label}
+                <span className="text-[10px] font-jet ml-0.5 opacity-70">{tab.count}</span>
               </button>
-            ))}
-          </div>
+            );
+          })}
+        </div>
+
+        {/* ══════════ CHARACTERS TAB ══════════ */}
+        {activeTab === 'characters' && (
+          <>
+            {/* Stats row */}
+            {savedCharacters.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-6">
+                <StatChip value={savedCharacters.length} label="characters" accent />
+                {readyCount > 0 && <StatChip value={readyCount} label="Soul ID ready" />}
+                {trainingCount > 0 && <StatChip value={trainingCount} label="training" />}
+                {totalUses > 0 && <StatChip value={totalUses} label="total uses" />}
+              </div>
+            )}
+
+            {/* Soul ID banner */}
+            {savedCharacters.length > 0 && hasUntrained && (
+              <div
+                className="mb-6 p-4 rounded-xl flex items-start gap-3"
+                style={{ background: 'rgba(255,92,53,0.04)', border: '1px solid rgba(255,92,53,0.14)' }}
+              >
+                <span style={{ color: '#FF5C35', fontSize: 18, lineHeight: 1, marginTop: 2 }}>✦</span>
+                <div>
+                  <p className="text-sm font-semibold mb-0.5" style={{ color: '#FF5C35' }}>
+                    Train Soul ID for identity-consistent generation
+                  </p>
+                  <p className="text-xs leading-relaxed" style={{ color: '#6B5A56' }}>
+                    Soul ID trains a personal LoRA on your character's face references, enabling perfect identity replication across any style, outfit, or scene. Click "Train" on any character to start.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Search + filter bar */}
+            {savedCharacters.length > 0 && (
+              <div className="flex items-center gap-2 mb-6">
+                <div className="relative flex-1 max-w-xs">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: '#4A3A36' }} />
+                  <input
+                    value={query}
+                    onChange={e => setQuery(e.target.value)}
+                    placeholder="Search characters…"
+                    className="w-full pl-8 pr-3 py-2 rounded-xl text-[12px] outline-none"
+                    style={{ background: '#0D0A0A', border: '1px solid #1A1210', color: '#F5EDE8' }}
+                    onFocus={e => { (e.currentTarget as HTMLElement).style.borderColor = '#2A1F1C'; }}
+                    onBlur={e => { (e.currentTarget as HTMLElement).style.borderColor = '#1A1210'; }}
+                  />
+                </div>
+                {(['all', 'trained', 'untrained'] as const).map(f => (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    className="text-[10px] px-2.5 py-1.5 rounded-full font-jet transition-all capitalize"
+                    style={filter === f
+                      ? { background: '#FF5C35', color: '#fff' }
+                      : { color: '#4A3A36', border: '1px solid #1A1210' }}
+                  >
+                    {f === 'all' ? 'All' : f === 'trained' ? '✦ Soul ID' : 'Untrained'}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Grid or empty state */}
+            {savedCharacters.length === 0 ? (
+              <EmptyState onNewCharacter={onNewCharacter} />
+            ) : visible.length === 0 ? (
+              <div className="py-16 text-center">
+                <p className="text-sm" style={{ color: '#4A3A36' }}>No characters match "{query}"</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+                {visible.map(char => (
+                  <CharacterCard
+                    key={char.id}
+                    char={char}
+                    onDelete={deleteCharacter}
+                    onRename={renameCharacter}
+                    onLoadCharacter={onLoadCharacter}
+                    onTrainSoulId={handleTrainSoulId}
+                    trainingProgress={progressMap[char.id] ?? 0}
+                  />
+                ))}
+                {onNewCharacter && !query && filter === 'all' && (
+                  <NewCharacterCard onClick={onNewCharacter} />
+                )}
+              </div>
+            )}
+          </>
         )}
 
-        {/* ── Grid or empty state ── */}
-        {savedCharacters.length === 0 ? (
-          <EmptyState onNewCharacter={onNewCharacter} />
-        ) : visible.length === 0 ? (
-          <div className="py-16 text-center">
-            <p className="text-sm" style={{ color: '#4A3A36' }}>No characters match "{query}"</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-            {visible.map(char => (
-              <CharacterCard
-                key={char.id}
-                char={char}
-                onDelete={deleteCharacter}
-                onRename={renameCharacter}
-                onLoadCharacter={onLoadCharacter}
-                onTrainSoulId={handleTrainSoulId}
-                trainingProgress={progressMap[char.id] ?? 0}
-              />
-            ))}
-            {onNewCharacter && !query && filter === 'all' && (
-              <NewCharacterCard onClick={onNewCharacter} />
+        {/* ══════════ IMAGES TAB ══════════ */}
+        {activeTab === 'images' && (
+          <>
+            {/* Stats row */}
+            {generatedHistory.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-6">
+                <StatChip value={generatedHistory.length} label="total" accent />
+                {imageCount > 0 && <StatChip value={imageCount} label="images" />}
+                {videoCount > 0 && <StatChip value={videoCount} label="videos" />}
+              </div>
             )}
-          </div>
+
+            {/* Search + filter bar */}
+            {generatedHistory.length > 0 && (
+              <div className="flex items-center gap-2 mb-6">
+                <div className="relative flex-1 max-w-xs">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: '#4A3A36' }} />
+                  <input
+                    value={imageQuery}
+                    onChange={e => setImageQuery(e.target.value)}
+                    placeholder="Search by provider, source…"
+                    className="w-full pl-8 pr-3 py-2 rounded-xl text-[12px] outline-none"
+                    style={{ background: '#0D0A0A', border: '1px solid #1A1210', color: '#F5EDE8' }}
+                    onFocus={e => { (e.currentTarget as HTMLElement).style.borderColor = '#2A1F1C'; }}
+                    onBlur={e => { (e.currentTarget as HTMLElement).style.borderColor = '#1A1210'; }}
+                  />
+                </div>
+                {(['all', 'images', 'videos'] as const).map(f => (
+                  <button
+                    key={f}
+                    onClick={() => setImageFilter(f)}
+                    className="text-[10px] px-2.5 py-1.5 rounded-full font-jet transition-all capitalize"
+                    style={imageFilter === f
+                      ? { background: '#FF5C35', color: '#fff' }
+                      : { color: '#4A3A36', border: '1px solid #1A1210' }}
+                  >
+                    {f === 'all' ? 'All' : f === 'images' ? 'Images' : 'Videos'}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Grid or empty */}
+            {generatedHistory.length === 0 ? (
+              <ImagesEmptyState />
+            ) : visibleImages.length === 0 ? (
+              <div className="py-16 text-center">
+                <p className="text-sm" style={{ color: '#4A3A36' }}>No results match your search</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+                {visibleImages.map(item => (
+                  <ImageCard key={item.id} item={item} onDelete={deleteItem} onPreview={setPreviewItem} />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
+
+      {/* ── Image Preview Lightbox ── */}
+      {previewItem && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.85)' }}
+          onClick={() => setPreviewItem(null)}
+        >
+          <button
+            className="absolute top-4 right-4 p-2 rounded-full transition-colors"
+            style={{ color: '#6B5A56' }}
+            onClick={() => setPreviewItem(null)}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#fff'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#6B5A56'; }}
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          <div className="max-w-4xl max-h-[85vh] relative" onClick={e => e.stopPropagation()}>
+            {previewItem.type === 'video' ? (
+              <video
+                src={previewItem.url}
+                className="max-w-full max-h-[85vh] rounded-xl"
+                controls
+                autoPlay
+              />
+            ) : (
+              <img
+                src={previewItem.url}
+                alt=""
+                className="max-w-full max-h-[85vh] rounded-xl object-contain"
+              />
+            )}
+
+            {/* Bottom bar */}
+            <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between p-3 rounded-b-xl"
+              style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)' }}>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-jet px-1.5 py-0.5 rounded-full"
+                  style={{ background: 'rgba(255,92,53,0.15)', color: '#FF5C35' }}>
+                  {previewItem.source === 'generate' ? 'Freestyle' : 'Director'}
+                </span>
+                {previewItem.aiProvider && (
+                  <span className="text-[10px] font-jet capitalize" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                    {previewItem.aiProvider}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => {
+                  const a = document.createElement('a');
+                  a.href = previewItem.url;
+                  a.download = `vist-${previewItem.id}.${previewItem.type === 'video' ? 'mp4' : 'png'}`;
+                  a.click();
+                }}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
+                style={{ background: '#fff', color: '#000' }}
+              >
+                <Download className="w-3 h-3" /> Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

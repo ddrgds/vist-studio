@@ -14,7 +14,7 @@ fal.config({
 // ─────────────────────────────────────────────
 
 /**
- * Convierte un File a base64 data URI para pasarlo a fal.ai.
+ * Converts a File to a base64 data URI for passing to fal.ai.
  */
 const fileToDataUri = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -26,15 +26,15 @@ const fileToDataUri = (file: File): Promise<string> => {
 };
 
 /**
- * Sube un File a fal.storage y devuelve la URL pública.
- * Necesario para pasar múltiples imágenes de referencia (PuLID SDXL).
+ * Uploads a File to fal.storage and returns the public URL.
+ * Required for passing multiple reference images (PuLID SDXL).
  */
 const uploadToFalStorage = async (file: File): Promise<string> => {
   return await fal.storage.upload(file);
 };
 
 /**
- * Mapea AspectRatio de la app al formato que acepta fal.ai.
+ * Maps the app's AspectRatio to the format accepted by fal.ai.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const toFalImageSize = (ratio: AspectRatio): any => {
@@ -54,10 +54,12 @@ const toFalImageSize = (ratio: AspectRatio): any => {
 const resizeImageForPose = async (file: File, maxWidth = 1024): Promise<File> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.src = URL.createObjectURL(file);
+    const objUrl = URL.createObjectURL(file);
+    img.src = objUrl;
     img.onload = () => {
+      URL.revokeObjectURL(objUrl);
       if (img.width <= maxWidth && img.height <= maxWidth) {
-        resolve(file); // No necesita redimensionar
+        resolve(file);
         return;
       }
 
@@ -83,16 +85,16 @@ const resizeImageForPose = async (file: File, maxWidth = 1024): Promise<File> =>
         }
       }, file.type || 'image/jpeg', 0.85);
     };
-    img.onerror = reject;
+    img.onerror = (e) => { URL.revokeObjectURL(objUrl); reject(e); };
   });
 };
 
 /**
- * Convierte una foto de pose en un esqueleto de OpenPose (DWPose).
- * Esto evita que el modelo copie la ropa o cara de la foto original.
+ * Converts a pose photo into an OpenPose skeleton (DWPose).
+ * This prevents the model from copying the clothing or face from the original photo.
  */
 export const extractPoseSkeleton = async (file: File): Promise<File> => {
-  // Redimensionar antes de subir reduce drásticamente el tiempo de upload y procesamiento
+  // Resizing before upload drastically reduces upload and processing time
   const optimizedFile = await resizeImageForPose(file, 1024);
   const uploadedUrl = await uploadToFalStorage(optimizedFile);
 
@@ -100,28 +102,28 @@ export const extractPoseSkeleton = async (file: File): Promise<File> => {
     input: {
       image_url: uploadedUrl,
       draw_mode: "full-pose",
-      // draw_mode: "full-pose" extrae cuerpo (body), cara (face) y manos (hands).
+      // draw_mode: "full-pose" extracts body, face, and hands.
     },
   });
 
   const skeletonUrl = result.data?.image?.url || result.data?.images?.[0]?.url;
   if (!skeletonUrl) {
-    throw new Error('No se pudo generar el esqueleto de la pose.');
+    throw new Error('Could not generate the pose skeleton.');
   }
 
-  // Descargar la imagen resultante y convertirla a File
+  // Download the resulting image and convert it to a File
   const resp = await fetch(skeletonUrl);
   const blob = await resp.blob();
   return new File([blob], `skeleton-${Date.now()}.png`, { type: blob.type || 'image/png' });
 };
 
 // ─────────────────────────────────────────────
-// FLUX.2 Pro Edit — identidad multi-referencia, estado del arte (Nov 2025)
-// Acepta hasta 9 fotos de referencia del personaje vía image_urls[]
-// Backbone FLUX.2 de 32B parámetros — supera a FLUX PuLID y PuLID SDXL
+// FLUX.2 Pro Edit — multi-reference identity, state of the art (Nov 2025)
+// Accepts up to 9 reference photos of the character via image_urls[]
+// FLUX.2 backbone with 32B parameters — surpasses FLUX PuLID and PuLID SDXL
 // ─────────────────────────────────────────────
 // ─────────────────────────────────────────────
-// Mapea AspectRatio al formato aspect_ratio de Kontext Multi
+// Maps AspectRatio to Kontext Multi's aspect_ratio format
 // ─────────────────────────────────────────────
 const toKontextAspectRatio = (ratio: AspectRatio): string => {
   const map: Record<AspectRatio, string> = {
@@ -231,14 +233,14 @@ export const generateWithKontextMulti = async (
 
   const images: Array<{ url: string }> = result.data?.images ?? [];
   if (images.length === 0) {
-    throw new Error('Kontext Multi no devolvió ninguna imagen. Verifica tu API key y los parámetros.');
+    throw new Error('Kontext Multi did not return any images. Check your API key and parameters.');
   }
 
   const results: string[] = [];
   for (const img of images) {
     if (img.url) {
       const resp = await fetch(img.url);
-      if (!resp.ok) throw new Error(`Error al descargar imagen Kontext (${resp.status}).`);
+      if (!resp.ok) throw new Error(`Error downloading Kontext image (${resp.status}).`);
       const blob = await resp.blob();
       const dataUrl = await new Promise<string>((res) => {
         const reader = new FileReader();
@@ -254,8 +256,8 @@ export const generateWithKontextMulti = async (
 };
 
 // ─────────────────────────────────────────────
-// FLUX.2 Pro Edit — editor de imágenes multi-referencia
-// Mantener para uso en el panel de edición
+// FLUX.2 Pro Edit — multi-reference image editor
+// Keep for use in the editing panel
 // ─────────────────────────────────────────────
 export const generateWithFluxKontextMulti = async (
   params: InfluencerParams,
@@ -319,7 +321,7 @@ export const generateWithFluxKontextMulti = async (
     const imageUrl: string = result.data?.images?.[0]?.url;
     if (imageUrl) {
       const resp = await fetch(imageUrl);
-      if (!resp.ok) throw new Error(`Error al descargar imagen FLUX.2 Pro (${resp.status}).`);
+      if (!resp.ok) throw new Error(`Error downloading FLUX.2 Pro image (${resp.status}).`);
       const blob = await resp.blob();
       const dataUrl = await new Promise<string>((res) => {
         const reader = new FileReader();
@@ -331,7 +333,7 @@ export const generateWithFluxKontextMulti = async (
   }
 
   if (results.length === 0) {
-    throw new Error('Kontext Multi no devolvió ninguna imagen. Verifica tu API key.');
+    throw new Error('Kontext Multi did not return any images. Check your API key.');
   }
 
   if (onProgress) onProgress(100);
@@ -427,14 +429,14 @@ export const generateWithSeedream45 = async (
     }
   }
 
-  if (results.length === 0) throw new Error('Seedream 4.5 no devolvió ninguna imagen.');
+  if (results.length === 0) throw new Error('Seedream 4.5 did not return any images.');
   if (onProgress) onProgress(100);
   return results;
 };
 
 // ─────────────────────────────────────────────
-// Seedream 5.0 Lite — ByteDance, búsqueda web + razonamiento, 2K
-// Text-to-image de nueva generación, sin referencia de cara
+// Seedream 5.0 Lite — ByteDance, web search + reasoning, 2K
+// Next-gen text-to-image, no face reference
 // ─────────────────────────────────────────────
 export const generateWithSeedream50 = async (
   params: InfluencerParams,
@@ -510,9 +512,9 @@ export const generateWithSeedream50 = async (
     if (!imageUrl) {
       // If no image URL, check for NSFW concepts
       if (result.data?.has_nsfw_concepts?.[0]) {
-        throw new Error('Seedream 5.0 filtró el contenido. Prueba con un prompt más neutral.');
+        throw new Error('Seedream 5.0 filtered the content. Try a more neutral prompt.');
       }
-      throw new Error('Seedream 5.0 no devolvió ninguna imagen.');
+      throw new Error('Seedream 5.0 did not return any images.');
     }
 
     const resp = await fetch(imageUrl);
@@ -525,14 +527,14 @@ export const generateWithSeedream50 = async (
     results.push(dataUrl);
   }
 
-  if (results.length === 0) throw new Error('Seedream 5.0 no devolvió ninguna imagen.');
+  if (results.length === 0) throw new Error('Seedream 5.0 did not return any images.');
   if (onProgress) onProgress(100);
   return results;
 };
 
 // ─────────────────────────────────────────────
-// Leffa Pose Transfer — cambia pose por imagen de referencia
-// Auto-extrae esqueleto DWPose para evitar filtrado de cara/ropa
+// Leffa Pose Transfer — changes pose via reference image
+// Auto-extracts DWPose skeleton to avoid face/clothing leakage
 // Preserva cara, ropa y piel del modelo original
 // ─────────────────────────────────────────────
 export const poseTransferWithLeffa = async (
@@ -542,25 +544,25 @@ export const poseTransferWithLeffa = async (
 ): Promise<string[]> => {
   if (abortSignal?.aborted) throw new Error('Cancelado');
   if (!params.poseImages || params.poseImages.length === 0) {
-    throw new Error('Leffa requiere al menos una imagen de referencia de pose.');
+    throw new Error('Leffa requires at least one pose reference image.');
   }
 
   if (onProgress) onProgress(5);
 
-  // Paso 1: Extraer esqueleto DWPose de la imagen de referencia
-  // → evita que la cara/ropa del modelo de referencia "se filtre" al resultado
+  // Step 1: Extract DWPose skeleton from the reference image
+  // → prevents the reference model's face/clothing from "leaking" into the result
   let skeletonFile: File;
   try {
     skeletonFile = await extractPoseSkeleton(params.poseImages[0]);
     if (onProgress) onProgress(20);
   } catch {
-    // Si falla la extracción de esqueleto, usar la imagen original como fallback
-    console.warn('⚠️ No se pudo extraer esqueleto — usando imagen de referencia directamente');
+    // If skeleton extraction fails, use the original image as fallback
+    console.warn('⚠️ Could not extract skeleton — using reference image directly');
     skeletonFile = params.poseImages[0];
     if (onProgress) onProgress(20);
   }
 
-  // Paso 2: Subir persona e imagen de pose en paralelo
+  // Step 2: Upload person and pose image in parallel
   const [personUrl, poseUrl] = await Promise.all([
     uploadToFalStorage(params.baseImage),
     uploadToFalStorage(skeletonFile),
@@ -585,7 +587,7 @@ export const poseTransferWithLeffa = async (
   }) as any;
 
   const imageUrl: string = result.data?.image?.url || result.data?.images?.[0]?.url;
-  if (!imageUrl) throw new Error('Leffa no devolvió ninguna imagen.');
+  if (!imageUrl) throw new Error('Leffa did not return any images.');
 
   if (onProgress) onProgress(92);
   const resp = await fetch(imageUrl);
@@ -601,7 +603,7 @@ export const poseTransferWithLeffa = async (
 };
 
 // ─────────────────────────────────────────────
-// FLUX Kontext Pro — cambia pose por instrucción de texto
+// FLUX Kontext Pro — changes pose via text instruction
 // Preserva cara, ropa y piel con solo texto descriptivo
 // ─────────────────────────────────────────────
 export const poseEditWithFluxKontext = async (
@@ -610,7 +612,7 @@ export const poseEditWithFluxKontext = async (
   abortSignal?: AbortSignal
 ): Promise<string[]> => {
   if (!params.pose) {
-    throw new Error('FLUX Kontext requiere una descripción de texto de la pose.');
+    throw new Error('FLUX Kontext requires a text description of the pose.');
   }
   if (abortSignal?.aborted) throw new Error('Cancelado');
 
@@ -618,7 +620,7 @@ export const poseEditWithFluxKontext = async (
   const personUrl = await uploadToFalStorage(params.baseImage);
   if (onProgress) onProgress(25);
 
-  // Prompt detallado como descripción afirmativa de la imagen (FLUX funciona mejor con captions, no instrucciones)
+  // Detailed prompt as an affirmative image description (FLUX works better with captions, not instructions)
   const promptInstruction = [
     `The exact same person from the input image, preserving the original art style, medium, and aesthetic.`,
     `They are posing in the following way: ${params.pose}.`,
@@ -645,15 +647,15 @@ export const poseEditWithFluxKontext = async (
   }) as any;
 
   if (result.data?.has_nsfw_concepts?.[0]) {
-    throw new Error('FLUX Kontext filtró el contenido. Prueba con una instrucción más neutral o usa Gemini AI Edit.');
+    throw new Error('FLUX Kontext filtered the content. Try a more neutral instruction or use Gemini AI Edit.');
   }
 
   const imageUrl: string = result.data?.images?.[0]?.url;
-  if (!imageUrl) throw new Error('FLUX Kontext no devolvió ninguna imagen.');
+  if (!imageUrl) throw new Error('FLUX Kontext did not return any images.');
 
   if (onProgress) onProgress(90);
   const resp = await fetch(imageUrl);
-  if (!resp.ok) throw new Error(`Error al descargar imagen de FLUX Kontext (${resp.status}).`);
+  if (!resp.ok) throw new Error(`Error downloading FLUX Kontext image (${resp.status}).`);
   const blob = await resp.blob();
   const dataUrl = await new Promise<string>((res) => {
     const reader = new FileReader();
@@ -666,9 +668,9 @@ export const poseEditWithFluxKontext = async (
 };
 
 // ─────────────────────────────────────────────
-// Router de pose editing fal.ai
-// → Si hay sessionPoses: procesar cada pose por separado (batch)
-// → Si hay imagen de referencia: Leffa Pose Transfer (con auto-esqueleto DWPose)
+// Pose editing router for fal.ai
+// → If sessionPoses exist: process each pose separately (batch)
+// → If reference image exists: Leffa Pose Transfer (with auto-skeleton DWPose)
 // → Si solo hay texto: FLUX Kontext Pro
 // ─────────────────────────────────────────────
 export const editPoseWithFal = async (
@@ -717,8 +719,8 @@ export const editPoseWithFal = async (
 };
 
 // ─────────────────────────────────────────────
-// AuraSR — upscaling 4× de alta calidad
-// Ideal para ampliar imágenes de moda/retrato generadas
+// AuraSR — high quality 4× upscaling
+// Ideal for upscaling generated fashion/portrait images
 // ─────────────────────────────────────────────
 export const upscaleWithAuraSR = async (
   imageDataUrl: string,
@@ -728,7 +730,7 @@ export const upscaleWithAuraSR = async (
   if (abortSignal?.aborted) throw new Error('Cancelado');
   if (onProgress) onProgress(10);
 
-  // Si es data URL, convertir a File y subir a fal storage
+  // If data URL, convert to File and upload to fal storage
   let uploadUrl: string;
   if (imageDataUrl.startsWith('data:') || imageDataUrl.startsWith('blob:')) {
     const response = await fetch(imageDataUrl);
@@ -757,7 +759,7 @@ export const upscaleWithAuraSR = async (
   }) as any;
 
   const resultUrl: string = result.data?.image?.url;
-  if (!resultUrl) throw new Error('AuraSR no devolvió ninguna imagen.');
+  if (!resultUrl) throw new Error('AuraSR did not return any images.');
 
   if (onProgress) onProgress(92);
   const resp = await fetch(resultUrl);
@@ -773,8 +775,8 @@ export const upscaleWithAuraSR = async (
 };
 
 // ─────────────────────────────────────────────
-// FLUX Kontext Pro — edición de imagen por instrucción de texto (AI Edit mode)
-// Versión genérica para el modo "Editar con IA"
+// FLUX Kontext Pro — image editing via text instruction (AI Edit mode)
+// Generic version for "Edit with AI" mode
 // ─────────────────────────────────────────────
 export const editImageWithFluxKontext = async (
   baseImage: File,
@@ -785,7 +787,7 @@ export const editImageWithFluxKontext = async (
 ): Promise<string[]> => {
   if (abortSignal?.aborted) throw new Error('Cancelado');
   if (!instruction.trim()) {
-    throw new Error('FLUX Kontext requiere una instrucción de edición.');
+    throw new Error('FLUX Kontext requires an editing instruction.');
   }
 
   if (onProgress) onProgress(10);
@@ -816,15 +818,15 @@ export const editImageWithFluxKontext = async (
   }) as any;
 
   if (result.data?.has_nsfw_concepts?.[0]) {
-    throw new Error('FLUX Kontext filtró el contenido. Prueba con una instrucción más neutral o usa Gemini AI Edit.');
+    throw new Error('FLUX Kontext filtered the content. Try a more neutral instruction or use Gemini AI Edit.');
   }
 
   const resultUrl: string = result.data?.images?.[0]?.url;
-  if (!resultUrl) throw new Error('FLUX Kontext no devolvió ninguna imagen.');
+  if (!resultUrl) throw new Error('FLUX Kontext did not return any images.');
 
   if (onProgress) onProgress(92);
   const resp = await fetch(resultUrl);
-  if (!resp.ok) throw new Error(`Error al descargar imagen de FLUX Kontext (${resp.status}).`);
+  if (!resp.ok) throw new Error(`Error downloading FLUX Kontext image (${resp.status}).`);
   const blob = await resp.blob();
   const dataUrl = await new Promise<string>((resolve) => {
     const reader = new FileReader();
@@ -927,7 +929,7 @@ export const inpaintImage = async (
   });
 
   if (result.data?.has_nsfw_concepts?.[0]) {
-    throw new Error('FLUX Inpaint filtró el contenido. Prueba con una instrucción más neutral.');
+    throw new Error('FLUX Inpaint filtered the content. Try a more neutral instruction.');
   }
 
   const outputUrl: string = result.data?.images?.[0]?.url || result.data?.image?.url;
@@ -935,7 +937,7 @@ export const inpaintImage = async (
 
   if (onProgress) onProgress(90);
   const resp = await fetch(outputUrl);
-  if (!resp.ok) throw new Error(`Error al descargar imagen de Inpaint (${resp.status}).`);
+  if (!resp.ok) throw new Error(`Error downloading Inpaint image (${resp.status}).`);
   const blob = await resp.blob();
   const dataUrl = await new Promise<string>((resolve) => {
     const reader = new FileReader();
@@ -947,8 +949,8 @@ export const inpaintImage = async (
 };
 
 // ─────────────────────────────────────────────
-// Seedream 5.0 Lite Edit — edición multimodal con hasta 10 imágenes
-// Las imágenes se referencian en el prompt como "Figure 1", "Figure 2", etc.
+// Seedream 5.0 Lite Edit — multimodal editing with up to 10 images
+// Images are referenced in the prompt as "Figure 1", "Figure 2", etc.
 // Figure 1 = imagen base, Figure 2+ = referencias adicionales
 // ─────────────────────────────────────────────
 export const editImageWithSeedream5 = async (
@@ -961,12 +963,12 @@ export const editImageWithSeedream5 = async (
 ): Promise<string[]> => {
   if (abortSignal?.aborted) throw new Error('Cancelado');
   if (!instruction.trim()) {
-    throw new Error('Seedream 5 Edit requiere una instrucción de edición.');
+    throw new Error('Seedream 5 Edit requires an editing instruction.');
   }
 
   if (onProgress) onProgress(10);
 
-  // Subir imagen base + referencias en paralelo (máx 10 total)
+  // Upload base image + references in parallel (max 10 total)
   const allImages = [baseImage, ...referenceImages.slice(0, 9)];
   const imageUrls = await Promise.all(allImages.map(f => uploadToFalStorage(f)));
 
@@ -989,11 +991,11 @@ export const editImageWithSeedream5 = async (
   }) as any;
 
   const imageUrl: string = result.data?.images?.[0]?.url;
-  if (!imageUrl) throw new Error('Seedream 5 Edit no devolvió ninguna imagen.');
+  if (!imageUrl) throw new Error('Seedream 5 Edit did not return any images.');
 
   if (onProgress) onProgress(92);
   const resp = await fetch(imageUrl);
-  if (!resp.ok) throw new Error(`Error al descargar imagen de Seedream 5 Edit (${resp.status}).`);
+  if (!resp.ok) throw new Error(`Error downloading Seedream 5 Edit image (${resp.status}).`);
   const blob = await resp.blob();
   const dataUrl = await new Promise<string>((resolve) => {
     const reader = new FileReader();
@@ -1006,7 +1008,7 @@ export const editImageWithSeedream5 = async (
 };
 
 // ─────────────────────────────────────────────
-// FLUX.2 Pro Edit — AI editor con múltiples referencias
+// FLUX.2 Pro Edit — AI editor with multiple references
 // fal-ai/flux-2-pro/edit · image_urls[]
 // ─────────────────────────────────────────────
 export const editImageWithFlux2Pro = async (
@@ -1019,12 +1021,12 @@ export const editImageWithFlux2Pro = async (
 ): Promise<string[]> => {
   if (abortSignal?.aborted) throw new Error('Cancelado');
   if (!instruction.trim()) {
-    throw new Error('FLUX.2 Pro Edit requiere una instrucción de edición.');
+    throw new Error('FLUX.2 Pro Edit requires an editing instruction.');
   }
 
   if (onProgress) onProgress(10);
 
-  // La imagen base va primera; luego las referencias (máx 9 adicionales)
+  // Base image goes first; then references (max 9 additional)
   const allImages = [baseImage, ...referenceImages.slice(0, 9)];
   const imageUrls = await Promise.all(allImages.map(f => uploadToFalStorage(f)));
 
@@ -1045,11 +1047,11 @@ export const editImageWithFlux2Pro = async (
   }) as any;
 
   const imageUrl: string = result.data?.images?.[0]?.url;
-  if (!imageUrl) throw new Error('FLUX.2 Pro Edit no devolvió ninguna imagen.');
+  if (!imageUrl) throw new Error('FLUX.2 Pro Edit did not return any images.');
 
   if (onProgress) onProgress(92);
   const resp = await fetch(imageUrl);
-  if (!resp.ok) throw new Error(`Error al descargar imagen de FLUX.2 Pro Edit (${resp.status}).`);
+  if (!resp.ok) throw new Error(`Error downloading FLUX.2 Pro Edit image (${resp.status}).`);
   const blob = await resp.blob();
   const dataUrl = await new Promise<string>((resolve) => {
     const reader = new FileReader();
@@ -1062,7 +1064,7 @@ export const editImageWithFlux2Pro = async (
 };
 
 // ─────────────────────────────────────────────
-// Router principal — elige el modelo fal según configuración
+// Main router — selects the fal model based on configuration
 // ─────────────────────────────────────────────
 export const generateWithFal = async (
   params: InfluencerParams,
@@ -1136,7 +1138,7 @@ export const generateVideoWithKling = async (
   }) as any;
 
   const videoUrl: string = result.data?.video?.url || result.data?.url;
-  if (!videoUrl) throw new Error(`${params.engine} no devolvió ningún video.`);
+  if (!videoUrl) throw new Error(`${params.engine} did not return any video.`);
 
   if (onProgress) onProgress(100);
   return videoUrl;
@@ -1165,9 +1167,9 @@ export const faceSwapWithFal = async (
     input: {
       target_image_url: targetImageUrl,
       source_face_url: sourceFaceUrl,
-      // Opcional: enable_occlusion_prevention: false 
-      // Si la foto tiene brazos/pelo enfrente de la cara se puede activar
-      // y vale el doble. Aquí lo dejamos false por defecto.
+      // Optional: enable_occlusion_prevention: false
+      // If the photo has arms/hair in front of the face, this can be enabled
+      // but costs double. We leave it false by default.
     },
     onQueueUpdate: (update: any) => {
       if (update.status === 'IN_PROGRESS' && onProgress) {
@@ -1178,7 +1180,7 @@ export const faceSwapWithFal = async (
 
   // The output could be in image.url or directly in url
   const finalImageUrl: string = result.data?.image?.url || result.data?.url;
-  if (!finalImageUrl) throw new Error('No se devolvió la imagen de Face Swap.');
+  if (!finalImageUrl) throw new Error('Face Swap did not return an image.');
 
   if (onProgress) onProgress(100);
   return finalImageUrl;
@@ -1221,12 +1223,12 @@ export const editImageWithGrokFal = async (
   const images: any[] = result.data?.images ?? [];
   const urls: string[] = images.map((img: any) => img.url).filter(Boolean);
 
-  if (urls.length === 0) throw new Error('Grok Imagine Edit: no devolvió imagen. Verifica tu FAL_KEY de fal.ai.');
+  if (urls.length === 0) throw new Error('Grok Imagine Edit: did not return any images. Check your FAL_KEY for fal.ai.');
 
   // Convert to data URLs for persistence
   const dataUrls = await Promise.all(urls.map(async (url) => {
     const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`Error al descargar imagen de Grok (${resp.status}).`);
+    if (!resp.ok) throw new Error(`Error downloading Grok image (${resp.status}).`);
     const blob = await resp.blob();
     return new Promise<string>((res) => {
       const reader = new FileReader();
@@ -1275,7 +1277,7 @@ export const generatePhotoSessionWithGrok = async (
 
   const toDataUrl = async (url: string): Promise<string> => {
     const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`Error al descargar imagen de Grok (${resp.status}).`);
+    if (!resp.ok) throw new Error(`Error downloading Grok image (${resp.status}).`);
     const blob = await resp.blob();
     return new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
@@ -1302,13 +1304,13 @@ export const generatePhotoSessionWithGrok = async (
     }) as any;
 
     const imgUrl = result.data?.images?.[0]?.url;
-    if (!imgUrl) throw new Error(`Shot ${i + 1}: Grok no devolvió imagen.`);
+    if (!imgUrl) throw new Error(`Shot ${i + 1}: Grok did not return an image.`);
 
     results.push({ url: await toDataUrl(imgUrl), poseIndex: i });
     if (onProgress) onProgress(Math.round(15 + ((i + 1) / clampedCount) * 80));
   }
 
-  if (results.length === 0) throw new Error('Grok Photo Session: no se generó ninguna imagen.');
+  if (results.length === 0) throw new Error('Grok Photo Session: no images were generated.');
   if (onProgress) onProgress(100);
   return results;
 };
@@ -1434,13 +1436,13 @@ export const generateWithZImageTurbo = async (
   }) as any;
 
   const images: Array<{ url: string }> = result.data?.images ?? [];
-  if (images.length === 0) throw new Error('Z-Image Turbo no devolvió imágenes.');
+  if (images.length === 0) throw new Error('Z-Image Turbo did not return any images.');
 
   const results: string[] = [];
   for (const img of images) {
     if (img.url) {
       const resp = await fetch(img.url);
-      if (!resp.ok) throw new Error(`Error al descargar imagen Z-Image Turbo (${resp.status}).`);
+      if (!resp.ok) throw new Error(`Error downloading Z-Image Turbo image (${resp.status}).`);
       const blob = await resp.blob();
       const dataUrl = await new Promise<string>((res) => {
         const reader = new FileReader();
@@ -1502,7 +1504,7 @@ export const inpaintWithZImageTurbo = async (
 
   if (onProgress) onProgress(90);
   const resp = await fetch(outputUrl);
-  if (!resp.ok) throw new Error(`Error al descargar imagen de Inpaint (${resp.status}).`);
+  if (!resp.ok) throw new Error(`Error downloading Inpaint image (${resp.status}).`);
   const blob = await resp.blob();
   const dataUrl = await new Promise<string>((resolve) => {
     const reader = new FileReader();

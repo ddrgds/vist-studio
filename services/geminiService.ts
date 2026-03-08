@@ -9,8 +9,8 @@ const createGeminiClient = () =>
   new GoogleGenAI({ apiKey: 'PROXIED', httpOptions: { baseUrl: '/gemini-api' } });
 
 // ─────────────────────────────────────────────
-// Safety Settings relajados (lo máximo permitido
-// sin aprobación especial de Google)
+// Relaxed Safety Settings (maximum allowed
+// without special approval from Google)
 // ─────────────────────────────────────────────
 const relaxedSafetySettings = [
   {
@@ -32,9 +32,9 @@ const relaxedSafetySettings = [
 ];
 
 // ─────────────────────────────────────────────
-// Safety Settings al máximo (BLOCK_NONE) para
+// Maximum Safety Settings (BLOCK_NONE) for
 // Nano Banana 2 (gemini-3.1-flash-image-preview)
-// que soporta safetyFilterLevel: 6
+// which supports safetyFilterLevel: 6
 // ─────────────────────────────────────────────
 const zeroSafetySettings = [
   {
@@ -78,13 +78,13 @@ const fileToPart = async (file: File) => {
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
- * Determina si un error es un error de red transitorio (503, 429, etc.)
- * que amerita un reintento automático.
+ * Determines if an error is a transient network error (503, 429, etc.)
+ * that warrants an automatic retry.
  */
 const isRetryableError = (err: unknown): boolean => {
   if (!err) return false;
   const errStr = String(err);
-  // Detecta HTTP 503 (UNAVAILABLE) y 429 (RESOURCE_EXHAUSTED / Rate Limit)
+  // Detects HTTP 503 (UNAVAILABLE) and 429 (RESOURCE_EXHAUSTED / Rate Limit)
   return (
     errStr.includes('503') ||
     errStr.includes('UNAVAILABLE') ||
@@ -97,8 +97,8 @@ const isRetryableError = (err: unknown): boolean => {
 };
 
 /**
- * Exponential Backoff: reintenta una función async hasta maxRetries veces.
- * Espera 2^attempt * baseDelayMs entre intentos (ej: 1s, 2s, 4s, 8s).
+ * Exponential Backoff: retries an async function up to maxRetries times.
+ * Waits 2^attempt * baseDelayMs between attempts (e.g.: 1s, 2s, 4s, 8s).
  */
 const withExponentialBackoff = async <T>(
   fn: () => Promise<T>,
@@ -114,14 +114,14 @@ const withExponentialBackoff = async <T>(
       if (attempt === maxRetries) break;
 
       if (!isRetryableError(err)) {
-        // No es un error transitorio; propagar inmediatamente
+        // Not a transient error; propagate immediately
         throw err;
       }
 
       const delayMs = baseDelayMs * Math.pow(2, attempt);
       console.warn(
-        `⏳ Error transitorio (intento ${attempt + 1}/${maxRetries + 1}). ` +
-        `Reintentando en ${delayMs / 1000}s...`,
+        `⏳ Transient error (attempt ${attempt + 1}/${maxRetries + 1}). ` +
+        `Retrying in ${delayMs / 1000}s...`,
         err
       );
       await wait(delayMs);
@@ -131,8 +131,8 @@ const withExponentialBackoff = async <T>(
 };
 
 /**
- * Limita la ejecución de promesas concurrentes a `concurrency` a la vez.
- * Las promesas restantes se encolan y se ejecutan a medida que se liberan slots.
+ * Limits concurrent promise execution to `concurrency` at a time.
+ * Remaining promises are queued and run as slots become available.
  */
 const runWithConcurrencyLimit = async <T>(
   tasks: (() => Promise<T>)[],
@@ -154,27 +154,27 @@ const runWithConcurrencyLimit = async <T>(
 };
 
 /**
- * Reemplaza términos que suelen disparar los filtros de seguridad
- * por equivalentes más neutrales pero igualmente descriptivos.
+ * Replaces terms that commonly trigger safety filters
+ * with more neutral but equally descriptive equivalents.
  */
 const sanitizePromptForRetry = (text: string): string => {
   return text
-    // Solo términos genuinamente problemáticos — no tocar vocabulario editorial de moda
+    // Only genuinely problematic terms — do not touch editorial fashion vocabulary
     .replace(/\b(seductive|provocative)\b/gi, 'confident and stylish')
     .replace(/\b(skimpy|barely there)\b/gi, 'fashionable')
     .replace(/\b(erotic|explicit)\b/gi, 'artistic')
     .replace(/\b(naked|nude)\b/gi, 'fine art nude photography style')
     .replace(/\b(sexual)\b/gi, 'romantic');
-  // Términos que NO sanitizamos: sexy, hot, sensual, sultry, revealing, lingerie, intimate
+  // Terms we do NOT sanitize: sexy, hot, sensual, sultry, revealing, lingerie, intimate
 };
 
 /**
  * Wrapper sobre generateContent que:
- * 1. Usa safetySettings relajados.
+ * 1. Uses relaxed safetySettings.
  * 2. Implementa Exponential Backoff para errores 503/429.
  * 3. Si recibe un SAFETY block, sanitiza el prompt y reintenta.
- * 4. Si el modelo principal falla con error transitorio agotando reintentos,
- *    deriva al modelo Flash de respaldo.
+ * 4. If the primary model fails with a transient error exhausting retries,
+ *    falls back to the Flash model.
  */
 const generateWithFallback = async (
   ai: GoogleGenAI,
@@ -182,7 +182,7 @@ const generateWithFallback = async (
   parts: any[],
   imageConfig: { imageSize?: string; aspectRatio?: string }
 ) => {
-  // Nano Banana 2 soporta safetyFilterLevel numérico (0–6) y BLOCK_NONE
+  // Nano Banana 2 supports numeric safetyFilterLevel (0–6) and BLOCK_NONE
   const isNB2 = model === GeminiImageModel.Flash2;
   const config: any = {
     safetySettings: isNB2 ? zeroSafetySettings : relaxedSafetySettings,
@@ -190,7 +190,7 @@ const generateWithFallback = async (
     imageConfig: isNB2 ? { ...imageConfig, safetyFilterLevel: 6 } : imageConfig,
   };
 
-  // Función interna que hace UNA llamada al modelo indicado
+  // Internal function that makes ONE call to the specified model
   const callModel = (modelName: string, currentParts: any[]) =>
     withExponentialBackoff(() =>
       ai.models.generateContent({
@@ -205,13 +205,13 @@ const generateWithFallback = async (
   try {
     response = await callModel(model, parts);
   } catch (err) {
-    // Si el modelo principal agota todos sus reintentos (503/429 persistente),
-    // intentar con el modelo Flash (más disponible y rápido)
+    // If the primary model exhausts all retries (persistent 503/429),
+    // try with the Flash model (more available and faster)
     const fallbackModel = GeminiImageModel.Flash;
     if (isRetryableError(err) && model !== fallbackModel) {
       console.warn(
-        `🔄 Modelo principal "${model}" no disponible tras reintentos. ` +
-        `Derivando a "${fallbackModel}"...`
+        `🔄 Primary model "${model}" unavailable after retries. ` +
+        `Falling back to "${fallbackModel}"...`
       );
       response = await callModel(fallbackModel, parts);
     } else {
@@ -221,20 +221,20 @@ const generateWithFallback = async (
 
   const candidate = response.candidates?.[0];
 
-  // Bloqueo a nivel de PROMPT — API devuelve candidates vacío + promptFeedback.blockReason
+  // Prompt-level block — API returns empty candidates + promptFeedback.blockReason
   if (!response.candidates || response.candidates.length === 0) {
     const blockReason = response.promptFeedback?.blockReason;
     console.warn("⚠️ Prompt-level block. promptFeedback:", JSON.stringify(response.promptFeedback));
     if (blockReason) {
-      throw new Error(`Solicitud bloqueada (${blockReason}). Prueba con otro modelo o ajusta el contenido.`);
+      throw new Error(`Request blocked (${blockReason}). Try a different model or adjust the content.`);
     }
-    // Sin candidates y sin blockReason — respuesta inesperada, tratar como error transitorio
-    console.warn("⚠️ Respuesta sin candidates ni blockReason:", JSON.stringify(response));
-    throw new Error(`UNAVAILABLE: respuesta vacía del modelo "${model}". Reintentando...`);
+    // No candidates and no blockReason — unexpected response, treat as transient error
+    console.warn("⚠️ Response without candidates or blockReason:", JSON.stringify(response));
+    throw new Error(`UNAVAILABLE: empty response from model "${model}". Retrying...`);
   }
 
   if (candidate?.finishReason === 'SAFETY') {
-    console.warn("⚠️ Safety block detectado — reintentando con prompt sanitizado...");
+    console.warn("⚠️ Safety block detected — retrying with sanitized prompt...");
 
     const sanitizedParts = parts.map(p =>
       p.text ? { text: sanitizePromptForRetry(p.text) } : p
@@ -305,7 +305,7 @@ export const generateInfluencerImage = async (
   abortSignal?: AbortSignal
 ): Promise<string[]> => {
   const ai = createGeminiClient();
-  if (abortSignal?.aborted) throw new Error("Cancelado por el usuario.");
+  if (abortSignal?.aborted) throw new Error("Cancelled by user.");
 
   if (onProgress) onProgress(10);
 
@@ -452,10 +452,10 @@ ABSOLUTE CONSTRAINTS:
 
   const selectedModel = params.model ?? GeminiImageModel.Flash;
 
-  // Construir las tareas como funciones diferidas (no ejecutar aún)
+  // Build tasks as deferred functions (do not execute yet)
   const tasks = Array.from({ length: count }, (_, i) =>
     async () => {
-      // Escalonar ligeramente el inicio para no saturar (300ms entre tareas)
+      // Slightly stagger the start to avoid saturation (300ms between tasks)
       if (i > 0) await wait(i * 300);
       try {
         const response = await generateWithFallback(ai, selectedModel, parts, {
@@ -464,25 +464,25 @@ ABSOLUTE CONSTRAINTS:
         });
         return processResponse(response);
       } catch (err) {
-        console.error(`generateInfluencerImage: tarea ${i + 1} falló tras todos los reintentos`, err);
+        console.error(`generateInfluencerImage: task ${i + 1} failed after all retries`, err);
         throw err; // propagar para que runWithConcurrencyLimit lo capture
       }
     }
   );
 
   try {
-    // Máximo 3 peticiones simultáneas a la API
+    // Maximum 3 simultaneous API requests
     const results = await runWithConcurrencyLimit(tasks, 3);
     const allImages = results.flat();
 
     if (allImages.length === 0) {
-      throw new Error("No se pudo generar ninguna imagen. Por favor verifica tus entradas e inténtalo de nuevo.");
+      throw new Error("Could not generate any images. Please check your inputs and try again.");
     }
 
     if (onProgress) onProgress(100);
     return allImages;
   } catch (error) {
-    // Re-lanzar el error original con el status code real (503, 429, etc.)
+    // Re-throw the original error with the real status code (503, 429, etc.)
     throw error;
   } finally {
     clearInterval(progressInterval);
@@ -503,7 +503,7 @@ export const modifyInfluencerPose = async (
   abortSignal?: AbortSignal
 ): Promise<PoseGenerationResult[]> => {
   const ai = createGeminiClient();
-  if (abortSignal?.aborted) throw new Error("Cancelado por el usuario.");
+  if (abortSignal?.aborted) throw new Error("Cancelled by user.");
   if (onProgress) onProgress(10);
 
   const baseImagePart = await fileToPart(params.baseImage);
@@ -623,12 +623,12 @@ FORBIDDEN CHANGES (do not touch under any circumstance):
       if (images.length > 0) {
         return { url: images[0], poseIndex: index };
       } else {
-        // El candidato llegó pero sin inlineData — probablemente respuesta solo texto
+        // Candidate arrived but without inlineData — probably text-only response
         const parts = response.candidates?.[0]?.content?.parts || [];
         const responseText = parts.map((p: any) => p.text).filter(Boolean).join(" ");
         const finishReason = response.candidates?.[0]?.finishReason;
-        console.error("Pose — candidato sin imagen. finishReason:", finishReason, "| texto:", responseText || "(vacío)");
-        throw new Error(responseText ? `Gemini no devolvió imagen, respondió: ${responseText}` : "No image generated");
+        console.error("Pose — candidate without image. finishReason:", finishReason, "| text:", responseText || "(empty)");
+        throw new Error(responseText ? `Gemini did not return an image, responded: ${responseText}` : "No image generated");
       }
     });
   };
@@ -636,7 +636,7 @@ FORBIDDEN CHANGES (do not touch under any circumstance):
   const tasks = Array.from({ length: count }, (_, i) => buildTask(i));
 
   try {
-    // Máximo 3 peticiones simultáneas
+    // Maximum 3 simultaneous requests
     const results = await runWithConcurrencyLimit(tasks, 3);
     const successfulImages = results.filter((r): r is PoseGenerationResult => r !== null);
 
@@ -663,7 +663,7 @@ export const generateInfluencerVideo = async (
   abortSignal?: AbortSignal
 ): Promise<string> => {
   const ai = createGeminiClient();
-  if (abortSignal?.aborted) throw new Error("Cancelado por el usuario.");
+  if (abortSignal?.aborted) throw new Error("Cancelled by user.");
   if (onProgress) onProgress(5);
 
   let promptText = params.prompt;
@@ -742,12 +742,12 @@ export const generateBatchOutfits = async (
   abortSignal?: AbortSignal
 ): Promise<BatchOutfitResult[]> => {
   const ai = createGeminiClient();
-  if (abortSignal?.aborted) throw new Error("Cancelado por el usuario.");
+  if (abortSignal?.aborted) throw new Error("Cancelled by user.");
   if (onProgress) onProgress(5);
 
   const character = baseParams.characters[0];
 
-  // Partes compartidas (modelo/cara) — se reusan en cada tarea
+  // Shared parts (model/face) — reused in each task
   const sharedModelParts: any[] = [];
   if (character.modelImages && character.modelImages.length > 0) {
     for (const file of character.modelImages) {
@@ -771,7 +771,7 @@ export const generateBatchOutfits = async (
 
     const parts: any[] = [...sharedModelParts];
 
-    // Outfit específico de esta variación
+    // Specific outfit for this variation
     if (outfit.outfitImages.length > 0) {
       for (const file of outfit.outfitImages) {
         parts.push(await fileToPart(file));
@@ -839,7 +839,7 @@ ${outfit.outfitText && outfit.outfitImages.length > 0 ? `Additional outfit notes
     const successful = results.filter((r): r is BatchOutfitResult => r !== null);
 
     if (successful.length === 0) {
-      throw new Error("No se pudo generar ninguna variación de outfit.");
+      throw new Error("Could not generate any outfit variation.");
     }
 
     if (onProgress) onProgress(100);
@@ -861,7 +861,7 @@ export const generateWithImagen4 = async (
 ): Promise<string[]> => {
   const ai = createGeminiClient();
   const selectedModel = params.model ?? GeminiImageModel.Imagen4;
-  if (abortSignal?.aborted) throw new Error("Cancelado por el usuario.");
+  if (abortSignal?.aborted) throw new Error("Cancelled by user.");
 
   if (onProgress) onProgress(10);
 
@@ -941,7 +941,7 @@ export const generateWithImagen4 = async (
     }
 
     if (results.length === 0) {
-      throw new Error('Imagen 4 no devolvió imágenes. Verifica tu prompt e inténtalo de nuevo.');
+      throw new Error('Imagen 4 did not return any images. Check your prompt and try again.');
     }
 
     if (onProgress) onProgress(100);
@@ -961,7 +961,7 @@ export const editImageWithAI = async (
   abortSignal?: AbortSignal
 ): Promise<string[]> => {
   const ai = createGeminiClient();
-  if (abortSignal?.aborted) throw new Error("Cancelado por el usuario.");
+  if (abortSignal?.aborted) throw new Error("Cancelled by user.");
   if (onProgress) onProgress(10);
 
   const parts: any[] = [];
@@ -1047,7 +1047,7 @@ export const generatePhotoSession = async (
   abortSignal?: AbortSignal
 ): Promise<PoseGenerationResult[]> => {
   const ai = createGeminiClient();
-  if (abortSignal?.aborted) throw new Error('Cancelado por el usuario.');
+  if (abortSignal?.aborted) throw new Error('Cancelled by user.');
   if (onProgress) onProgress(5);
 
   const refPart = await fileToPart(referenceImage);
@@ -1058,7 +1058,7 @@ export const generatePhotoSession = async (
   const angles = Array.from({ length: clampedCount }, (_, i) => anglePool[i % anglePool.length]);
 
   const buildTask = (index: number) => async (): Promise<PoseGenerationResult | null> => {
-    if (abortSignal?.aborted) throw new Error('Cancelado por el usuario.');
+    if (abortSignal?.aborted) throw new Error('Cancelled by user.');
     if (index > 0) await wait(index * 300);
 
     const angle = angles[index];
@@ -1135,7 +1135,7 @@ export const faceSwapWithGemini = async (
     model: GeminiImageModel.Flash2,
   };
   const results = await editImageWithAI(params, onProgress, abortSignal);
-  if (results.length === 0) throw new Error('Face swap: Gemini no devolvió imagen. Prueba con fotos más claras.');
+  if (results.length === 0) throw new Error('Face swap: Gemini did not return an image. Try with clearer photos.');
   return results[0];
 };
 

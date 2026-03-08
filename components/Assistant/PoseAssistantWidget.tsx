@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { askOpenAIVision, ChatMessage } from '../../services/openaiService';
 
-// Ikonos (puedes usar lucide-react si lo tienes instalado o SVGs)
+// Icons (you can use lucide-react if installed, or SVGs)
 
 export const PoseAssistantWidget: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -18,7 +18,7 @@ export const PoseAssistantWidget: React.FC = () => {
             setMessages([
                 {
                     role: 'assistant',
-                    content: '¡Hola! Sube una foto de referencia y pregúntame cómo describir esa pose o el atuendo para generar un buen prompt.'
+                    content: 'Hi! Upload a reference photo and ask me how to describe that pose or outfit to generate a good prompt.'
                 }
             ]);
         }
@@ -30,15 +30,22 @@ export const PoseAssistantWidget: React.FC = () => {
 
     const toggleWidget = () => setIsOpen(!isOpen);
 
+    // Revoke blob URL on unmount
+    useEffect(() => {
+        return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
+    }, [previewUrl]);
+
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
             setSelectedImage(file);
+            if (previewUrl) URL.revokeObjectURL(previewUrl);
             setPreviewUrl(URL.createObjectURL(file));
         }
     };
 
     const removeImage = () => {
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
         setSelectedImage(null);
         setPreviewUrl(null);
     };
@@ -48,7 +55,7 @@ export const PoseAssistantWidget: React.FC = () => {
             const reader = new FileReader();
             reader.onloadend = () => {
                 const result = reader.result as string;
-                resolve(result.split(',')[1]); // remueve 'data:image/...;base64,'
+                resolve(result.split(',')[1]); // removes 'data:image/...;base64,'
             };
             reader.onerror = reject;
             reader.readAsDataURL(file);
@@ -75,31 +82,31 @@ export const PoseAssistantWidget: React.FC = () => {
         setIsLoading(true);
 
         try {
-            // Ocultar base64 interno cuando enviamos el historial completo a OpenAI
-            // para evitar re-enviar gigabytes de data inútilmente.
-            // El modelo vision de openai prefiere que la imagen se envíe en el último / actual prompt
+            // Hide internal base64 when sending the full history to OpenAI
+            // to avoid re-sending gigabytes of useless data.
+            // The OpenAI vision model prefers the image to be sent in the latest / current prompt
             const historyForApi: ChatMessage[] = messages.map(m => ({
                 role: m.role,
                 content: m.content
-                // Omite re-enviar las imagenes anteriores para no consumir demasiados tokens,
-                // a menos que sea el mensaje actual.
+                // Skip re-sending previous images to avoid consuming too many tokens,
+                // unless it is the current message.
             }));
 
-            // Añadimos el nuevo mensaje con la imagen actual si la hay
+            // Add the new message with the current image if present
             historyForApi.push({
                 role: newUserMsg.role,
                 content: newUserMsg.content,
-                // Solo para este mensaje enviamos la imagen base64 original:
+                // Only for this message we send the original base64 image:
                 imageBase64: base64Image
             });
 
-            // System prompt con contexto de la app VIST Influencer Studio
-            const systemPromptContent = `Estarás asistiendo a usuarios de la app "VIST Influencer Studio". 
-En esta app, los usuarios suben una "Foto Base" (para definir la cara e identidad de su influencer de IA) y "Fotos de Referencia" secundarias (para la pose o la ropa).
-Tu objetivo es analizar las fotos de referencia enviadas por el usuario y extraer descripciones textuales EXTREMADAMENTE PRECISAS de la ropa (outfits) o la postura corporal (poses).
-Regla de ORO: ENFÓCATE SÓLO EN EL CUERPO Y LA ROPA. Omitir, ignorar y jamás describir el rostro, la cabeza, el pelo o el tipo físico de la persona en la foto de referencia, ya que la cara de la imagen final vendrá de la "Foto Base" del usuario.
-Si te piden la ropa (outfit): Mándales un párrafo útil, directo al grano y muy descriptivo (color, corte, tela, textura) que puedan copiar y pegar en su parámetro "Outfit / Ropa".
-Si te piden la pose: Mándales un párrafo útil y descriptivo (ej. "Mujer sentada en el suelo con las rodillas recogidas abrazadas") para que copien en su parámetro "Pose".`;
+            // System prompt with context about the VIST Influencer Studio app
+            const systemPromptContent = `You will be assisting users of the "VIST Influencer Studio" app.
+In this app, users upload a "Base Photo" (to define the face and identity of their AI influencer) and secondary "Reference Photos" (for the pose or clothing).
+Your goal is to analyze the reference photos sent by the user and extract EXTREMELY PRECISE textual descriptions of the clothing (outfits) or body posture (poses).
+GOLDEN RULE: FOCUS ONLY ON THE BODY AND CLOTHING. Omit, ignore, and never describe the face, head, hair, or body type of the person in the reference photo, since the face of the final image will come from the user's "Base Photo".
+If they ask about the clothing (outfit): Send them a useful, straight-to-the-point, and very descriptive paragraph (color, cut, fabric, texture) that they can copy and paste into their "Outfit / Clothing" parameter.
+If they ask about the pose: Send them a useful and descriptive paragraph (e.g., "Woman sitting on the floor with knees pulled up and hugged") so they can copy it into their "Pose" parameter.`;
 
             const fullPrompt: ChatMessage[] = [
                 { role: 'system', content: systemPromptContent },
@@ -123,7 +130,7 @@ Si te piden la pose: Mándales un párrafo útil y descriptivo (ej. "Mujer senta
 
     return (
         <div className="fixed bottom-20 right-6 z-40 flex flex-col items-end">
-            {/* Botón Flotante */}
+            {/* Floating Button */}
             <button
                 onClick={toggleWidget}
                 className="w-12 h-12 rounded-full shadow-xl flex items-center justify-center text-white transition-all transform hover:scale-110"
@@ -136,22 +143,22 @@ Si te piden la pose: Mándales un párrafo útil y descriptivo (ej. "Mujer senta
                 )}
             </button>
 
-            {/* Ventana de Chat */}
+            {/* Chat Window */}
             {isOpen && (
                 <div className="absolute bottom-14 right-0 w-80 md:w-96 h-[500px] max-h-[80vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden"
                   style={{ background: '#0D0A0A', border: '1px solid #2A1F1C', boxShadow: '0 8px 40px rgba(0,0,0,0.7)' }}>
                     {/* Header */}
                     <div className="p-4 flex justify-between items-center" style={{ background: '#161110', borderBottom: '1px solid #2A1F1C' }}>
                         <div>
-                            <h3 className="text-white font-medium">Asistente de Poses (GPT-5 Nano)</h3>
-                            <p className="text-xs text-zinc-400">Sube fotos para describir ropa o poses</p>
+                            <h3 className="text-white font-medium">Pose Assistant (GPT-5 Nano)</h3>
+                            <p className="text-xs text-zinc-400">Upload photos to describe clothing or poses</p>
                         </div>
                         <button onClick={toggleWidget} className="text-zinc-400 hover:text-white">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                     </div>
 
-                    {/* Historial de Chat */}
+                    {/* Chat History */}
                     <div className="flex-1 overflow-y-auto p-4 space-y-4">
                         {messages.map((msg, idx) => (
                             <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -189,16 +196,16 @@ Si te piden la pose: Mándales un párrafo útil y descriptivo (ej. "Mujer senta
                         {/* Pre-baked action buttons */}
                         <div className="flex space-x-2 mb-2 overflow-x-auto pb-1 no-scrollbar">
                             <button
-                                onClick={() => setInputText("Describe detalladamente la pose en esta imagen (posición brazos, piernas, ángulo).")}
+                                onClick={() => setInputText("Describe the pose in this image in detail (arm position, legs, angle).")}
                                 className="text-xs whitespace-nowrap bg-zinc-700 hover:bg-zinc-600 text-zinc-300 px-3 py-1.5 rounded-full"
                             >
-                                🔍 Describir Pose
+                                🔍 Describe Pose
                             </button>
                             <button
-                                onClick={() => setInputText("Describe la ropa en esta imagen para poder replicarla.")}
+                                onClick={() => setInputText("Describe the clothing in this image so I can replicate it.")}
                                 className="text-xs whitespace-nowrap bg-zinc-700 hover:bg-zinc-600 text-zinc-300 px-3 py-1.5 rounded-full"
                             >
-                                👗 Describir Ropa
+                                👗 Describe Clothing
                             </button>
                         </div>
 
@@ -218,7 +225,7 @@ Si te piden la pose: Mándales un párrafo útil y descriptivo (ej. "Mujer senta
                         <div className="flex items-center space-x-2 relative">
                             <input
                                 type="text"
-                                placeholder="Pregunta o describe algo..."
+                                placeholder="Ask a question or describe something..."
                                 value={inputText}
                                 onChange={(e) => setInputText(e.target.value)}
                                 onKeyDown={handleKeyDown}

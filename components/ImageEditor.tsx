@@ -86,7 +86,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ src, onSave, onClose }) => {
   };
 
   const handleRestoreOriginal = () => {
-    if (confirm("¿Estás seguro? Esto descartará todos los cambios y recortes.")) {
+    if (confirm("Are you sure? This will discard all changes and crops.")) {
         setInternalSrc(src);
         setFilters(initialFilters);
         addToHistory(src, initialFilters);
@@ -96,8 +96,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ src, onSave, onClose }) => {
   };
 
   /**
-   * Si la URL no es ya un data URL, la descarga y la convierte.
-   * Esto evita el error "tainted canvas" cuando la imagen viene de un servidor externo.
+   * If the URL is not already a data URL, downloads and converts it.
+   * This prevents the "tainted canvas" error when the image comes from an external server.
    */
   const ensureDataUrl = async (url: string): Promise<string> => {
     if (url.startsWith('data:')) return url;
@@ -111,7 +111,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ src, onSave, onClose }) => {
   };
 
   /**
-   * Crea un HTMLImageElement a partir de un data URL y espera a que cargue.
+   * Creates an HTMLImageElement from a data URL and waits for it to load.
    */
   const loadImage = (dataUrl: string): Promise<HTMLImageElement> =>
     new Promise((resolve, reject) => {
@@ -136,7 +136,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ src, onSave, onClose }) => {
     if (!img) { setIsProcessing(false); return; }
 
     try {
-      // Convertir a data URL primero para evitar "tainted canvas" con URLs externas
+      // Convert to data URL first to avoid "tainted canvas" with external URLs
       const dataUrl = await ensureDataUrl(internalSrc);
       const drawableImg = await loadImage(dataUrl);
 
@@ -158,7 +158,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ src, onSave, onClose }) => {
         setIsProcessing(false);
       }, 'image/png');
     } catch (err) {
-      console.error('Error al guardar imagen:', err);
+      console.error('Error saving image:', err);
       setIsProcessing(false);
     }
   };
@@ -321,7 +321,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ src, onSave, onClose }) => {
       if (cropW < 1 || cropH < 1) return;
 
       try {
-        // Convertir a data URL para evitar "tainted canvas"
+        // Convert to data URL to avoid "tainted canvas"
         const dataUrl = await ensureDataUrl(internalSrc);
         const drawableImg = await loadImage(dataUrl);
 
@@ -349,7 +349,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ src, onSave, onClose }) => {
         setIsCropping(false);
         addToHistory(newUrl, initialFilters);
       } catch (err) {
-        console.error('Error al recortar imagen:', err);
+        console.error('Error cropping image:', err);
       }
   };
 
@@ -394,7 +394,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ src, onSave, onClose }) => {
   const renderPresetButton = (id: string, name: string, bgClass: string, overlayClass: string) => (
       <button 
         onClick={() => applyPreset(id)} 
-        title={`Aplicar filtro ${name}`} 
+        title={`Apply ${name} filter`} 
         className={`h-16 rounded-lg ${bgClass} border border-zinc-700 hover:border-zinc-500 transition-all overflow-hidden relative group`}
       >
           <div className={`absolute inset-0 ${overlayClass}`}></div>
@@ -419,7 +419,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ src, onSave, onClose }) => {
                         <button 
                             onClick={handleUndo} 
                             disabled={historyIndex <= 0}
-                            title="Deshacer (Ctrl+Z)"
+                            title="Undo (Ctrl+Z)"
                             className={`p-2 rounded-lg hover:bg-zinc-800 transition-colors ${historyIndex <= 0 ? 'text-zinc-600' : 'text-zinc-300'}`}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
@@ -427,7 +427,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ src, onSave, onClose }) => {
                         <button 
                             onClick={handleRedo} 
                             disabled={historyIndex >= history.length - 1}
-                            title="Rehacer (Ctrl+Y)"
+                            title="Redo (Ctrl+Y)"
                             className={`p-2 rounded-lg hover:bg-zinc-800 transition-colors ${historyIndex >= history.length - 1 ? 'text-zinc-600' : 'text-zinc-300'}`}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>
@@ -438,23 +438,23 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ src, onSave, onClose }) => {
                 <div className="flex gap-2 lg:gap-3">
                      <button 
                         onClick={handleRestoreOriginal}
-                        title="Descartar cambios"
+                        title="Discard changes"
                         className="px-3 py-2 text-xs lg:text-sm text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-colors"
                     >
-                        Restaurar
+                        Restore
                     </button>
                     <div className="w-px h-6 bg-zinc-800 my-auto hidden sm:block"></div>
-                    <button onClick={onClose} className="px-3 py-2 text-xs lg:text-sm text-zinc-400 hover:text-white transition-colors" title="Cerrar sin guardar">
-                        Cancelar
+                    <button onClick={onClose} className="px-3 py-2 text-xs lg:text-sm text-zinc-400 hover:text-white transition-colors" title="Close without saving">
+                        Cancel
                     </button>
                     <button 
                         onClick={handleSave} 
                         disabled={isProcessing || isCropping}
-                        title="Guardar copia"
+                        title="Save copy"
                         className={`px-4 py-2 text-xs lg:text-sm bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-lg transition-colors flex items-center gap-2 ${isCropping ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         {isProcessing && <div className="animate-spin h-3 w-3 border-2 border-white/30 border-t-white rounded-full"></div>}
-                        Guardar
+                        Save
                     </button>
                 </div>
             </div>
@@ -583,19 +583,19 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ src, onSave, onClose }) => {
                     {/* Crop Action Bar */}
                     {isCropping && (
                         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-zinc-900 border border-zinc-700 rounded-full px-4 py-2 flex items-center gap-3 shadow-xl z-30 animate-in slide-in-from-bottom-4 w-max max-w-[90%]" onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>
-                            <span className="text-xs text-zinc-300 font-medium px-2 whitespace-nowrap">Ajustar Recorte</span>
+                            <span className="text-xs text-zinc-300 font-medium px-2 whitespace-nowrap">Adjust Crop</span>
                             <div className="w-px h-4 bg-zinc-700"></div>
                             <button 
                                 onClick={() => toggleCropMode(false)}
                                 className="p-1 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-white transition-colors"
-                                title="Cancelar recorte"
+                                title="Cancel crop"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                             </button>
                             <button 
                                 onClick={applyCrop}
                                 className="p-1 hover:bg-zinc-800 rounded-full text-green-400 hover:text-green-300 transition-colors"
-                                title="Confirmar recorte"
+                                title="Confirm crop"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                             </button>
@@ -608,51 +608,51 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ src, onSave, onClose }) => {
                     <div className="p-5 flex-1 overflow-y-auto custom-scrollbar space-y-6">
                         {/* Tools Section */}
                         <div>
-                            <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Herramientas</h4>
+                            <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Tools</h4>
                             
                             {!isCropping ? (
                                 <button 
                                     onClick={() => toggleCropMode(true)}
-                                    title="Activar herramienta de recorte (Reinicia el zoom)"
+                                    title="Activate crop tool (Resets zoom)"
                                     className="w-full flex items-center justify-center p-4 rounded-xl border border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-white transition-all gap-2"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>
-                                    <span className="text-sm font-medium">Recortar Imagen</span>
+                                    <span className="text-sm font-medium">Crop Image</span>
                                 </button>
                             ) : (
                                 <div className="space-y-2">
-                                    <div className="text-xs text-purple-400 font-medium mb-2">Recorte Inteligente</div>
+                                    <div className="text-xs text-purple-400 font-medium mb-2">Smart Crop</div>
                                     <div className="grid grid-cols-2 gap-2">
                                         <button 
                                             onClick={() => applySmartCrop(1, 1)}
                                             className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 rounded text-xs text-zinc-300 border border-zinc-700"
                                         >
-                                            Cuadrado (1:1)
+                                            Square (1:1)
                                         </button>
                                         <button 
                                             onClick={() => applySmartCrop(4, 5)}
                                             className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 rounded text-xs text-zinc-300 border border-zinc-700"
                                         >
-                                            Retrato (4:5)
+                                            Portrait (4:5)
                                         </button>
                                         <button 
                                             onClick={() => applySmartCrop(16, 9)}
                                             className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 rounded text-xs text-zinc-300 border border-zinc-700"
                                         >
-                                            Paisaje (16:9)
+                                            Landscape (16:9)
                                         </button>
                                         <button 
                                             onClick={() => applySmartCrop(9, 16)}
                                             className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 rounded text-xs text-zinc-300 border border-zinc-700"
                                         >
-                                            Historia (9:16)
+                                            Story (9:16)
                                         </button>
                                     </div>
                                     <button 
                                         onClick={() => toggleCropMode(false)}
                                         className="w-full mt-2 py-2 text-xs text-zinc-500 hover:text-zinc-300 underline"
                                     >
-                                        Cancelar Recorte
+                                        Cancel Crop
                                     </button>
                                 </div>
                             )}
@@ -660,15 +660,15 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ src, onSave, onClose }) => {
 
                         {/* Presets */}
                         <div>
-                             <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Filtros Rápidos</h4>
+                             <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Quick Filters</h4>
                              <div className="grid grid-cols-2 gap-2">
                                  {renderPresetButton('bw', 'B&W', 'bg-zinc-800', 'bg-gradient-to-tr from-black to-transparent opacity-50')}
-                                 {renderPresetButton('warm', 'Cálido', 'bg-orange-900/30', 'bg-orange-500/10')}
-                                 {renderPresetButton('cool', 'Frío', 'bg-blue-900/30', 'bg-blue-500/10')}
+                                 {renderPresetButton('warm', 'Warm', 'bg-orange-900/30', 'bg-orange-500/10')}
+                                 {renderPresetButton('cool', 'Cool', 'bg-blue-900/30', 'bg-blue-500/10')}
                                  {renderPresetButton('vintage', 'Vintage', 'bg-amber-900/30', 'bg-amber-600/10')}
-                                 {renderPresetButton('cinematic', 'Cine', 'bg-teal-900/30', 'bg-teal-500/10')}
-                                 {renderPresetButton('vivid', 'Vívido', 'bg-pink-900/30', 'bg-pink-500/10')}
-                                 {renderPresetButton('matte', 'Mate', 'bg-stone-800', 'bg-stone-500/10')}
+                                 {renderPresetButton('cinematic', 'Cinema', 'bg-teal-900/30', 'bg-teal-500/10')}
+                                 {renderPresetButton('vivid', 'Vivid', 'bg-pink-900/30', 'bg-pink-500/10')}
+                                 {renderPresetButton('matte', 'Matte', 'bg-stone-800', 'bg-stone-500/10')}
                              </div>
                         </div>
 
@@ -680,7 +680,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ src, onSave, onClose }) => {
                                     onClick={() => toggleSection('light')}
                                     className="w-full flex items-center justify-between p-3 text-xs font-medium text-zinc-300 hover:bg-zinc-800 transition-colors"
                                 >
-                                    <span>Luz y Exposición</span>
+                                    <span>Light & Exposure</span>
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${openSection === 'light' ? 'rotate-180' : ''}`}><path d="m6 9 6 6 6-6"/></svg>
                                 </button>
                                 
@@ -688,7 +688,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ src, onSave, onClose }) => {
                                     <div className="p-4 pt-0 space-y-4 animate-in slide-in-from-top-2 duration-200">
                                         <div className="space-y-2 pt-2">
                                             <div className="flex justify-between text-xs">
-                                                <label className="text-zinc-400">Brillo</label>
+                                                <label className="text-zinc-400">Brightness</label>
                                                 <span className="text-zinc-500 tabular-nums">{filters.brightness}%</span>
                                             </div>
                                             <input 
@@ -702,7 +702,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ src, onSave, onClose }) => {
                                         </div>
                                         <div className="space-y-2">
                                             <div className="flex justify-between text-xs">
-                                                <label className="text-zinc-400">Contraste</label>
+                                                <label className="text-zinc-400">Contrast</label>
                                                 <span className="text-zinc-500 tabular-nums">{filters.contrast}%</span>
                                             </div>
                                             <input 
@@ -724,7 +724,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ src, onSave, onClose }) => {
                                     onClick={() => toggleSection('color')}
                                     className="w-full flex items-center justify-between p-3 text-xs font-medium text-zinc-300 hover:bg-zinc-800 transition-colors"
                                 >
-                                    <span>Color y Saturación</span>
+                                    <span>Color & Saturation</span>
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${openSection === 'color' ? 'rotate-180' : ''}`}><path d="m6 9 6 6 6-6"/></svg>
                                 </button>
                                 
@@ -732,7 +732,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ src, onSave, onClose }) => {
                                     <div className="p-4 pt-0 space-y-4 animate-in slide-in-from-top-2 duration-200">
                                         <div className="space-y-2 pt-2">
                                             <div className="flex justify-between text-xs">
-                                                <label className="text-zinc-400">Saturación</label>
+                                                <label className="text-zinc-400">Saturation</label>
                                                 <span className="text-zinc-500 tabular-nums">{filters.saturation}%</span>
                                             </div>
                                             <input 
@@ -741,7 +741,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ src, onSave, onClose }) => {
                                                 onChange={(e) => updateFilter('saturation', Number(e.target.value))}
                                                 onMouseUp={commitFilterChange}
                                                 onTouchEnd={commitFilterChange}
-                                                title="Ajustar la intensidad de los colores"
+                                                title="Adjust color intensity"
                                                 className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
                                             />
                                         </div>
@@ -755,7 +755,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ src, onSave, onClose }) => {
                                     onClick={() => toggleSection('effects')}
                                     className="w-full flex items-center justify-between p-3 text-xs font-medium text-zinc-300 hover:bg-zinc-800 transition-colors"
                                 >
-                                    <span>Efectos de Filtro</span>
+                                    <span>Filter Effects</span>
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${openSection === 'effects' ? 'rotate-180' : ''}`}><path d="m6 9 6 6 6-6"/></svg>
                                 </button>
                                 
@@ -772,13 +772,13 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ src, onSave, onClose }) => {
                                                 onChange={(e) => updateFilter('sepia', Number(e.target.value))}
                                                 onMouseUp={commitFilterChange}
                                                 onTouchEnd={commitFilterChange}
-                                                title="Añadir tono sepia (antiguo)"
+                                                title="Add sepia tone (vintage)"
                                                 className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
                                             />
                                         </div>
                                         <div className="space-y-2">
                                             <div className="flex justify-between text-xs">
-                                                <label className="text-zinc-400">Blanco y Negro</label>
+                                                <label className="text-zinc-400">Black & White</label>
                                                 <span className="text-zinc-500 tabular-nums">{filters.grayscale}%</span>
                                             </div>
                                             <input 
@@ -787,7 +787,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ src, onSave, onClose }) => {
                                                 onChange={(e) => updateFilter('grayscale', Number(e.target.value))}
                                                 onMouseUp={commitFilterChange}
                                                 onTouchEnd={commitFilterChange}
-                                                title="Convertir a escala de grises"
+                                                title="Convert to grayscale"
                                                 className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
                                             />
                                         </div>

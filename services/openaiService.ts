@@ -15,7 +15,7 @@ const fileToBase64 = (file: File): Promise<string> => {
     const reader = new FileReader();
     reader.onloadend = () => {
       const result = reader.result as string;
-      // Devuelve solo la parte base64 sin el prefijo data:...;base64,
+      // Returns only the base64 part without the data:...;base64, prefix
       resolve(result.split(',')[1]);
     };
     reader.onerror = reject;
@@ -24,7 +24,7 @@ const fileToBase64 = (file: File): Promise<string> => {
 };
 
 /**
- * Mapea AspectRatio al tamaño de imagen que acepta OpenAI.
+ * Maps AspectRatio to the image size accepted by OpenAI.
  */
 const toOpenAISize = (ratio: AspectRatio): '1024x1024' | '1024x1536' | '1536x1024' => {
   switch (ratio) {
@@ -40,13 +40,13 @@ const toOpenAISize = (ratio: AspectRatio): '1024x1024' | '1024x1536' | '1536x102
 };
 
 /**
- * Convierte base64 a data URL para consistencia con el resto de la app.
+ * Converts base64 to data URL for consistency with the rest of the app.
  */
 const b64ToDataUrl = (b64: string, mimeType = 'image/png'): string =>
   `data:${mimeType};base64,${b64}`;
 
 // ─────────────────────────────────────────────
-// Construcción del prompt
+// Prompt construction
 // ─────────────────────────────────────────────
 // ── GPT Image 1.5 prompt structure (research-backed 2026 best practices):
 // 6-part structure: subject → action/pose → environment → style → lighting → technical details
@@ -100,7 +100,7 @@ const buildPrompt = (params: InfluencerParams): string => {
 };
 
 // ─────────────────────────────────────────────
-// Generación de texto (sin imágenes de referencia)
+// Text generation (without reference images)
 // POST /v1/images/generations
 // ─────────────────────────────────────────────
 const generateFromText = async (
@@ -152,7 +152,7 @@ const generateFromText = async (
 };
 
 // ─────────────────────────────────────────────
-// Generación con imagen de referencia
+// Generation with reference image
 // POST /v1/images/edits (multipart/form-data)
 // ─────────────────────────────────────────────
 const generateFromReference = async (
@@ -177,8 +177,8 @@ const generateFromReference = async (
     formData.append('size', size);
     formData.append('quality', 'high');
 
-    // Agrega la principal imagen de referencia (cara/cuerpo, outfit, pose o escenario)
-    // El endpoint de OpenAI /v1/images/edits solo acepta un único archivo 'image'
+    // Add the main reference image (face/body, outfit, pose or scenario)
+    // The OpenAI /v1/images/edits endpoint only accepts a single 'image' file
     const allRefs: File[] = [
       ...(character.modelImages || []),
       ...(character.outfitImages || []),
@@ -187,11 +187,11 @@ const generateFromReference = async (
     ];
 
     if (allRefs.length > 0) {
-      // Usamos la primera imagen disponible (prioridad: modelo > outfit > pose > escenario)
+      // Use the first available image (priority: model > outfit > pose > scenario)
       const mainImg = allRefs[0];
       formData.append('image', mainImg, mainImg.name);
     } else {
-      throw new Error("Se requiere al menos una imagen de referencia para editar/generar con la API de OpenAI.");
+      throw new Error("At least one reference image is required to edit/generate with the OpenAI API.");
     }
 
     if (onProgress) onProgress(20 + (i / count) * 60);
@@ -217,7 +217,7 @@ const generateFromReference = async (
 };
 
 // ─────────────────────────────────────────────
-// Punto de entrada público
+// Public entry point
 // ─────────────────────────────────────────────
 export const generateWithOpenAI = async (
   params: InfluencerParams,
@@ -239,7 +239,7 @@ export const generateWithOpenAI = async (
   }
 
   if (results.length === 0) {
-    throw new Error('OpenAI no devolvió ninguna imagen. Verifica tu API key y los parámetros.');
+    throw new Error('OpenAI did not return any images. Check your API key and parameters.');
   }
 
   if (onProgress) onProgress(100);
@@ -247,7 +247,7 @@ export const generateWithOpenAI = async (
 };
 
 // ─────────────────────────────────────────────
-// Editor con GPT-image — AI editor
+// GPT-image editor — AI editor
 // POST /v1/images/edits (multipart/form-data)
 // ─────────────────────────────────────────────
 export const editImageWithGPT = async (
@@ -258,7 +258,7 @@ export const editImageWithGPT = async (
   abortSignal?: AbortSignal
 ): Promise<string[]> => {
   if (!instruction.trim()) {
-    throw new Error('GPT Image Edit requiere una instrucción de edición.');
+    throw new Error('GPT Image Edit requires an editing instruction.');
   }
 
   if (onProgress) onProgress(15);
@@ -307,7 +307,7 @@ export const editImageWithGPT = async (
   }
 
   if (results.length === 0) {
-    throw new Error('GPT Image Edit no devolvió ninguna imagen. Verifica tu API key.');
+    throw new Error('GPT Image Edit did not return any images. Check your API key.');
   }
 
   if (onProgress) onProgress(100);
@@ -315,12 +315,12 @@ export const editImageWithGPT = async (
 };
 
 // ─────────────────────────────────────────────
-// ChatGPT Vision (gpt-4o) para Asistente de Poses
+// ChatGPT Vision (gpt-4o) for Pose Assistant
 // ─────────────────────────────────────────────
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
-  imageBase64?: string; // Sin el prefijo data:...;base64,
+  imageBase64?: string; // Without the data:...;base64, prefix
 }
 
 export const askOpenAIVision = async (messages: ChatMessage[]): Promise<string> => {
@@ -330,7 +330,7 @@ export const askOpenAIVision = async (messages: ChatMessage[]): Promise<string> 
     if (msg.role !== 'user' || !msg.imageBase64) {
       return { role: msg.role, content: msg.content };
     }
-    // Si es un user con imagen, armar el formato multi-modal de OpenAI
+    // If it's a user with an image, build the OpenAI multi-modal format
     return {
       role: msg.role,
       content: [

@@ -38,8 +38,8 @@ export default defineConfig(({ mode }) => {
               });
             },
           },
-          // Proxy para URLs efímeras de imágenes de Ideogram
-          // (ideogram.ai/api/images/ephemeral/...) que no tienen CORS correcto
+          // Proxy for ephemeral Ideogram image URLs
+          // (ideogram.ai/api/images/ephemeral/...) that don't have correct CORS
           '/ideogram-ephemeral': {
             target: 'https://ideogram.ai',
             changeOrigin: true,
@@ -98,6 +98,17 @@ export default defineConfig(({ mode }) => {
         // Supabase public anon key — safe to expose
         'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL),
         'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY),
+      },
+      build: {
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              'vendor-supabase': ['@supabase/supabase-js'],
+              'vendor-fal': ['@fal-ai/client'],
+              'vendor-react': ['react', 'react-dom'],
+            },
+          },
+        },
       },
       resolve: {
         alias: {

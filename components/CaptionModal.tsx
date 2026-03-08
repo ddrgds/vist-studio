@@ -33,7 +33,7 @@ const CaptionModal: React.FC<CaptionModalProps> = ({ imageUrl, onClose }) => {
       const res = await generateCaption(imageUrl, platform, language, contextHint || undefined);
       setResult(res);
     } catch (err: any) {
-      toast.error(err?.message || 'Error al generar el caption');
+      toast.error(err?.message || 'Error generating the caption');
     } finally {
       setLoading(false);
     }
@@ -49,9 +49,9 @@ const CaptionModal: React.FC<CaptionModalProps> = ({ imageUrl, onClose }) => {
         setCopiedHashtags(true);
         setTimeout(() => setCopiedHashtags(false), 2000);
       }
-      toast.success('Copiado al portapapeles');
+      toast.success('Copied to clipboard');
     } catch {
-      toast.error('No se pudo copiar');
+      toast.error('Could not copy');
     }
   };
 
@@ -67,7 +67,7 @@ const CaptionModal: React.FC<CaptionModalProps> = ({ imageUrl, onClose }) => {
         <div className="flex items-center justify-between p-5 border-b border-zinc-800 shrink-0">
           <div className="flex items-center gap-2">
             <span className="text-lg">✍️</span>
-            <h2 className="text-base font-semibold text-white">Generador de Caption</h2>
+            <h2 className="text-base font-semibold text-white">Caption Generator</h2>
           </div>
           <button onClick={onClose} className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -84,7 +84,7 @@ const CaptionModal: React.FC<CaptionModalProps> = ({ imageUrl, onClose }) => {
 
           {/* Platform selector */}
           <div>
-            <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block mb-2">Plataforma</label>
+            <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block mb-2">Platform</label>
             <div className="grid grid-cols-3 gap-2">
               {(Object.entries(PLATFORM_INFO) as [Platform, typeof PLATFORM_INFO[Platform]][]).map(([key, info]) => (
                 <button
@@ -106,7 +106,7 @@ const CaptionModal: React.FC<CaptionModalProps> = ({ imageUrl, onClose }) => {
           {/* Language + context hint */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block mb-2">Idioma</label>
+              <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block mb-2">Language</label>
               <div className="grid grid-cols-2 gap-1">
                 {(['es', 'en'] as Language[]).map(lang => (
                   <button
@@ -124,12 +124,12 @@ const CaptionModal: React.FC<CaptionModalProps> = ({ imageUrl, onClose }) => {
               </div>
             </div>
             <div>
-              <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block mb-2">Tema / Contexto</label>
+              <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block mb-2">Topic / Context</label>
               <input
                 type="text"
                 value={contextHint}
                 onChange={e => setContextHint(e.target.value)}
-                placeholder="Ej: nueva colección, verano..."
+                placeholder="E.g. new collection, summer..."
                 className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs text-white placeholder-zinc-600 outline-none focus:border-purple-500"
               />
             </div>
@@ -144,9 +144,9 @@ const CaptionModal: React.FC<CaptionModalProps> = ({ imageUrl, onClose }) => {
             {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <svg className="animate-spin" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                Generando...
+                Generating...
               </span>
-            ) : '✨ Generar Caption'}
+            ) : '✨ Generate Caption'}
           </button>
 
           {/* Result */}
@@ -160,7 +160,7 @@ const CaptionModal: React.FC<CaptionModalProps> = ({ imageUrl, onClose }) => {
                     onClick={() => copyToClipboard(result.caption, 'caption')}
                     className="text-[10px] text-zinc-400 hover:text-white bg-zinc-700 hover:bg-zinc-600 px-2 py-1 rounded-lg transition-colors flex items-center gap-1"
                   >
-                    {copiedCaption ? '✓ Copiado' : '📋 Copiar'}
+                    {copiedCaption ? '✓ Copied' : '📋 Copy'}
                   </button>
                 </div>
                 <p className="text-sm text-zinc-200 whitespace-pre-wrap leading-relaxed">{result.caption}</p>
@@ -177,7 +177,7 @@ const CaptionModal: React.FC<CaptionModalProps> = ({ imageUrl, onClose }) => {
                       onClick={() => copyToClipboard(hashtagsText, 'hashtags')}
                       className="text-[10px] text-zinc-400 hover:text-white bg-zinc-700 hover:bg-zinc-600 px-2 py-1 rounded-lg transition-colors flex items-center gap-1"
                     >
-                      {copiedHashtags ? '✓ Copiado' : '📋 Copiar'}
+                      {copiedHashtags ? '✓ Copied' : '📋 Copy'}
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-1.5">

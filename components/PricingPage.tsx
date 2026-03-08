@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createCheckoutSession } from '../services/lemonSqueezyService';
 import { useProfile } from '../contexts/ProfileContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -198,26 +198,41 @@ interface PricingPageProps {
   onNavigate?: (workspace: string) => void;
 }
 
+const CHECKOUT_INTENT_KEY = 'vist_checkout_intent';
+
 const PricingPage: React.FC<PricingPageProps> = ({ onNavigate }) => {
   const [annual, setAnnual] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [showSignUpPrompt, setShowSignUpPrompt] = useState(false);
   const { profile } = useProfile();
   const { user } = useAuth();
   const { plan: currentPlan } = useSubscription();
+  const autoCheckoutDone = useRef(false);
 
-  const handleCheckout = async (plan: Plan) => {
-    // If not logged in, redirect to login (the auth gate will show)
-    if (!user) {
-      onNavigate?.('generate'); // triggers auth gate with context
-      return;
-    }
-    const variantId = annual ? plan.annualVariantId : plan.monthlyVariantId;
-    if (!variantId) {
-      setCheckoutError('Variant ID not configured. Set VITE_LS_*_VARIANT_ID in .env.local');
-      return;
-    }
-    setCheckoutLoading(plan.id);
+  // Auto-checkout: if the user just logged in and had a pending intent
+  useEffect(() => {
+    if (!user || autoCheckoutDone.current) return;
+    autoCheckoutDone.current = true;
+    const raw = sessionStorage.getItem(CHECKOUT_INTENT_KEY);
+    if (!raw) return;
+    sessionStorage.removeItem(CHECKOUT_INTENT_KEY);
+    try {
+      const intent = JSON.parse(raw) as { variantId: string; planId: string };
+      if (intent.variantId) {
+        setCheckoutLoading(intent.planId);
+        createCheckoutSession(intent.variantId)
+          .then(url => { window.location.href = url; })
+          .catch(err => {
+            setCheckoutError(err instanceof Error ? err.message : 'Checkout failed.');
+            setCheckoutLoading(null);
+          });
+      }
+    } catch { /* ignore bad data */ }
+  }, [user]);
+
+  const startCheckout = async (variantId: string, planId: string) => {
+    setCheckoutLoading(planId);
     setCheckoutError(null);
     try {
       const url = await createCheckoutSession(variantId);
@@ -226,6 +241,23 @@ const PricingPage: React.FC<PricingPageProps> = ({ onNavigate }) => {
       setCheckoutError(err instanceof Error ? err.message : 'Checkout failed. Please try again.');
       setCheckoutLoading(null);
     }
+  };
+
+  const handleCheckout = async (plan: Plan) => {
+    const variantId = annual ? plan.annualVariantId : plan.monthlyVariantId;
+    if (!variantId) {
+      setCheckoutError('Variant ID not configured. Set VITE_LS_*_VARIANT_ID in .env.local');
+      return;
+    }
+
+    if (!user) {
+      // Save intent so we can auto-checkout after login
+      sessionStorage.setItem(CHECKOUT_INTENT_KEY, JSON.stringify({ variantId, planId: plan.id }));
+      setShowSignUpPrompt(true);
+      return;
+    }
+
+    await startCheckout(variantId, plan.id);
   };
 
   return (
@@ -263,6 +295,27 @@ const PricingPage: React.FC<PricingPageProps> = ({ onNavigate }) => {
             </button>
           </div>
         </div>
+
+        {/* ── Sign-up prompt for anonymous users ── */}
+        {showSignUpPrompt && !user && (
+          <div className="mb-6 px-5 py-4 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3"
+            style={{ background: 'rgba(255,92,53,0.06)', border: '1px solid rgba(255,92,53,0.2)' }}>
+            <div>
+              <p className="text-[13px] font-semibold" style={{ color: '#F5EDE8' }}>
+                Create a free account to subscribe
+              </p>
+              <p className="text-[11px] mt-0.5" style={{ color: '#6B5A56' }}>
+                Sign up in seconds — you'll be redirected to checkout automatically.
+              </p>
+            </div>
+            <button
+              onClick={() => onNavigate?.('generate')}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white shrink-0 transition-all hover:scale-[1.02] active:scale-95"
+              style={{ background: 'linear-gradient(135deg,#FF5C35,#FFB347)' }}>
+              Sign up free
+            </button>
+          </div>
+        )}
 
         {/* ── Error ── */}
         {checkoutError && (
@@ -442,17 +495,13 @@ const PricingPage: React.FC<PricingPageProps> = ({ onNavigate }) => {
                 <div className="text-[11px] font-jet mb-5" style={{ color: '#4A3A36' }}>{pack.perCredit} / credit</div>
                 <button
                   onClick={async () => {
-                    if (!user) { onNavigate?.('generate'); return; }
                     if (!pack.variantId) { setCheckoutError('Credit pack variant ID not configured.'); return; }
-                    setCheckoutLoading(`pack-${pack.credits}`);
-                    setCheckoutError(null);
-                    try {
-                      const url = await createCheckoutSession(pack.variantId);
-                      window.location.href = url;
-                    } catch (err) {
-                      setCheckoutError(err instanceof Error ? err.message : 'Checkout failed.');
-                      setCheckoutLoading(null);
+                    if (!user) {
+                      sessionStorage.setItem(CHECKOUT_INTENT_KEY, JSON.stringify({ variantId: pack.variantId, planId: `pack-${pack.credits}` }));
+                      setShowSignUpPrompt(true);
+                      return;
                     }
+                    await startCheckout(pack.variantId, `pack-${pack.credits}`);
                   }}
                   disabled={checkoutLoading !== null}
                   className="w-full py-2.5 rounded-xl text-[13px] font-semibold transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"

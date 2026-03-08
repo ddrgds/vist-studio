@@ -58,12 +58,12 @@ const ABComparator: React.FC<ABComparatorProps> = ({ itemA, itemB, onClose }) =>
       {/* Header */}
       <div className="w-full max-w-5xl flex items-center justify-between mb-3 shrink-0">
         <div className="flex items-center gap-3">
-          <span className="text-white font-semibold text-sm">Comparador A/B</span>
-          <span className="text-[10px] text-zinc-500 bg-zinc-900 border border-zinc-700 px-2 py-0.5 rounded">Arrastra el divisor para comparar</span>
+          <span className="text-white font-semibold text-sm">A/B Comparator</span>
+          <span className="text-[10px] text-zinc-500 bg-zinc-900 border border-zinc-700 px-2 py-0.5 rounded">Drag the divider to compare</span>
         </div>
         <button
           onClick={onClose}
-          aria-label="Cerrar comparador"
+          aria-label="Close comparator"
           className="p-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-full transition-colors"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -83,7 +83,7 @@ const ABComparator: React.FC<ABComparatorProps> = ({ itemA, itemB, onClose }) =>
         {/* Image B (right / full width background) */}
         <img
           src={itemB.url}
-          alt="Imagen B"
+          alt="Image B"
           className="absolute inset-0 w-full h-full object-contain"
           draggable={false}
         />
@@ -95,7 +95,7 @@ const ABComparator: React.FC<ABComparatorProps> = ({ itemA, itemB, onClose }) =>
         >
           <img
             src={itemA.url}
-            alt="Imagen A"
+            alt="Image A"
             className="absolute inset-0 w-full h-full object-contain"
             style={{ width: `${(100 / dividerX) * 100}%`, maxWidth: 'none' }}
             draggable={false}
@@ -132,12 +132,12 @@ const ABComparator: React.FC<ABComparatorProps> = ({ itemA, itemB, onClose }) =>
       <div className="mt-3 flex gap-6 text-[11px] text-zinc-500 shrink-0">
         <span className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-purple-500 inline-block"/>
-          A — {itemA.type === 'create' ? 'Creado' : itemA.type === 'edit' ? 'Editado' : 'Video'}
+          A — {itemA.type === 'create' ? 'Created' : itemA.type === 'edit' ? 'Edited' : 'Video'}
           {' '}{new Date(itemA.timestamp).toLocaleDateString()}
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-blue-500 inline-block"/>
-          B — {itemB.type === 'create' ? 'Creado' : itemB.type === 'edit' ? 'Editado' : 'Video'}
+          B — {itemB.type === 'create' ? 'Created' : itemB.type === 'edit' ? 'Edited' : 'Video'}
           {' '}{new Date(itemB.timestamp).toLocaleDateString()}
         </span>
       </div>

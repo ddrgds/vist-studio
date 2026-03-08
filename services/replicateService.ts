@@ -33,8 +33,8 @@ const replicate = new Replicate({
 // ─────────────────────────────────────────────
 
 /**
- * Convierte un File a base64 data URI.
- * Replicate acepta data URIs directamente como parámetros de imagen.
+ * Converts a File to base64 data URI.
+ * Replicate accepts data URIs directly as image parameters.
  */
 const fileToDataUri = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -46,8 +46,8 @@ const fileToDataUri = (file: File): Promise<string> => {
 };
 
 /**
- * Descarga una imagen desde URL y la convierte a data URL local.
- * Replicate devuelve URLs temporales — las convertimos para consistencia.
+ * Downloads an image from URL and converts it to a local data URL.
+ * Replicate returns temporary URLs — we convert them for consistency.
  */
 const urlToDataUrl = async (url: string): Promise<string> => {
   const resp = await fetch(url);
@@ -60,7 +60,7 @@ const urlToDataUrl = async (url: string): Promise<string> => {
 };
 
 /**
- * Mapea AspectRatio al formato que acepta FLUX.2 [max] y FLUX.2 Pro.
+ * Maps AspectRatio to the format accepted by FLUX.2 [max] and FLUX.2 Pro.
  */
 const toFluxAspectRatio = (ratio: AspectRatio): string => {
   const map: Record<AspectRatio, string> = {
@@ -74,8 +74,8 @@ const toFluxAspectRatio = (ratio: AspectRatio): string => {
 };
 
 /**
- * Mapea AspectRatio al formato de Gen-4 Image.
- * Gen-4 soporta: "1:1" | "16:9" | "9:16" | "4:3" | "3:4"
+ * Maps AspectRatio to the Gen-4 Image format.
+ * Gen-4 supports: "1:1" | "16:9" | "9:16" | "4:3" | "3:4"
  */
 const toGen4AspectRatio = (ratio: AspectRatio): string => {
   const map: Record<AspectRatio, string> = {
@@ -89,9 +89,9 @@ const toGen4AspectRatio = (ratio: AspectRatio): string => {
 };
 
 // ─────────────────────────────────────────────
-// FLUX.2 [max] — máxima fidelidad, hasta 8 refs
-// Modelo de Black Forest Labs, Ene 2026
-// Deployment-style endpoint (sin version hash)
+// FLUX.2 [max] — maximum fidelity, up to 8 refs
+// Black Forest Labs model, Jan 2026
+// Deployment-style endpoint (no version hash)
 // ─────────────────────────────────────────────
 export const generateWithFlux2Max = async (
   params: InfluencerParams,
@@ -137,8 +137,8 @@ export const generateWithFlux2Max = async (
   prompt += ' The image features sharp facial detail, natural skin texture, no watermarks, and no text.';
   const count = params.numberOfImages || 1;
 
-  // Convierte imágenes de referencia a data URI (hasta 8)
-  // FLUX.2 [max] usa campos separados: image_prompt, image_prompt_2 ... image_prompt_8
+  // Convert reference images to data URI (up to 8)
+  // FLUX.2 [max] uses separate fields: image_prompt, image_prompt_2 ... image_prompt_8
   const refDataUris: string[] = [];
   if (character.modelImages && character.modelImages.length > 0) {
     if (onProgress) onProgress(20);
@@ -158,11 +158,11 @@ export const generateWithFlux2Max = async (
       aspect_ratio: toFluxAspectRatio(params.aspectRatio),
       output_format: 'jpg',
       output_quality: 90,
-      safety_tolerance: 5,  // máximo permitido en Replicate (rango 1–5)
+      safety_tolerance: 5,  // maximum allowed on Replicate (range 1–5)
       ...(params.seed !== undefined && { seed: params.seed }),
     };
 
-    // FLUX.2 [max] acepta refs como campos individuales: image_prompt, image_prompt_2 … image_prompt_8
+    // FLUX.2 [max] accepts refs as individual fields: image_prompt, image_prompt_2 ... image_prompt_8
     if (refDataUris.length > 0) input.image_prompt = refDataUris[0];
     if (refDataUris.length > 1) input.image_prompt_2 = refDataUris[1];
     if (refDataUris.length > 2) input.image_prompt_3 = refDataUris[2];
@@ -187,7 +187,7 @@ export const generateWithFlux2Max = async (
   }
 
   if (results.length === 0) {
-    throw new Error('FLUX.2 [max] no devolvió ninguna imagen. Verifica tu API key de Replicate.');
+    throw new Error('FLUX.2 [max] did not return any images. Check your Replicate API key.');
   }
 
   if (onProgress) onProgress(100);
@@ -196,7 +196,7 @@ export const generateWithFlux2Max = async (
 
 // ─────────────────────────────────────────────
 // Runway Gen-4 Image — character + location consistency
-// Hasta 3 imágenes de referencia, Jul 2025
+// Up to 3 reference images, Jul 2025
 // Supports @tagname notation in prompts
 // ─────────────────────────────────────────────
 export const generateWithGen4Image = async (
@@ -207,22 +207,22 @@ export const generateWithGen4Image = async (
   const character = params.characters[0];
 
   if (!character.modelImages || character.modelImages.length === 0) {
-    throw new Error('Gen-4 Image requiere al menos una foto de referencia del modelo.');
+    throw new Error('Gen-4 Image requires at least one model reference photo.');
   }
 
   if (onProgress) onProgress(10);
 
-  // Gen-4 acepta hasta 3 referencias
+  // Gen-4 accepts up to 3 references
   const refFiles = character.modelImages.slice(0, 3);
   const refDataUris = await Promise.all(refFiles.map(fileToDataUri));
 
-  // Crea tags para cada referencia (alfanumérico, 3–15 chars, inicia con letra)
+  // Create tags for each reference (alphanumeric, 3–15 chars, starts with letter)
   const refTags = refDataUris.map((_, idx) => `model${idx > 0 ? idx + 1 : ''}`);
   // refTags = ["model", "model2", "model3"]
 
   if (onProgress) onProgress(20);
 
-  // El primer tag es el personaje principal — úsalo en el prompt
+  // The first tag is the main character — use it in the prompt
   const characterTag = refTags[0]; // "model"
 
   let prompt = `An ultra-photorealistic fashion editorial photograph of @${characterTag}. The photo is taken with a Sony A7R V camera and an 85mm f/1.4 portrait lens, shot with Vogue magazine quality.`;
@@ -288,7 +288,7 @@ export const generateWithGen4Image = async (
   }
 
   if (results.length === 0) {
-    throw new Error('Gen-4 Image no devolvió ninguna imagen. Verifica tu API key de Replicate.');
+    throw new Error('Gen-4 Image did not return any images. Check your Replicate API key.');
   }
 
   if (onProgress) onProgress(100);
@@ -297,14 +297,14 @@ export const generateWithGen4Image = async (
 
 // ─────────────────────────────────────────────
 // IDM-VTON — Virtual Try-On
-// ⚠️ Licencia no-comercial: CC BY-NC-SA 4.0 (KAIST)
-// Coloca una prenda específica sobre la foto de la persona
-// Requiere: foto de persona + foto de prenda + categoría
+// Non-commercial license: CC BY-NC-SA 4.0 (KAIST)
+// Places a specific garment onto the person's photo
+// Requires: person photo + garment photo + category
 // ─────────────────────────────────────────────
 export interface VTONParams {
-  personImage: File;           // Foto de la persona (idealmente ratio 3:4)
-  garmentImage: File;          // Foto de la prenda (producto o usada)
-  garmentDescription: string;  // Descripción textual de la prenda
+  personImage: File;           // Person photo (ideally 3:4 ratio)
+  garmentImage: File;          // Garment photo (product or worn)
+  garmentDescription: string;  // Text description of the garment
   category: 'upper_body' | 'lower_body' | 'dresses';
 }
 
@@ -330,7 +330,7 @@ export const generateVirtualTryOn = async (
         garm_img: garmentDataUri,
         garment_des: vtonParams.garmentDescription,
         category: vtonParams.category,
-        crop: true,   // Auto-crop si el ratio no es 3:4
+        crop: true,   // Auto-crop if the ratio is not 3:4
         force_dc: false,
         steps: 30,
         seed: 42,
@@ -340,7 +340,7 @@ export const generateVirtualTryOn = async (
   ) as unknown as string;
 
   if (!output) {
-    throw new Error('IDM-VTON no devolvió resultado. Verifica las imágenes e intenta de nuevo.');
+    throw new Error('IDM-VTON did not return a result. Check the images and try again.');
   }
 
   if (onProgress) onProgress(90);
@@ -353,7 +353,7 @@ export const generateVirtualTryOn = async (
 // ─────────────────────────────────────────────
 // Face Swap — codeplugtech/face-swap (InsightFace / inswapper_128)
 // ~1.8M runs · ~$0.003/run · ~28 s
-// swap_image = cara fuente · target_image = foto de destino
+// swap_image = source face · target_image = target photo
 // ─────────────────────────────────────────────
 export const faceSwapWithReplicate = async (
   targetFile: File,
@@ -374,8 +374,8 @@ export const faceSwapWithReplicate = async (
     'codeplugtech/face-swap' as `${string}/${string}`,
     {
       input: {
-        swap_image: sourceDataUri,    // cara a insertar (fuente)
-        target_image: targetDataUri,  // imagen sobre la que se aplica
+        swap_image: sourceDataUri,    // face to insert (source)
+        target_image: targetDataUri,  // image to apply onto
       },
       signal: abortSignal,
     }
@@ -388,7 +388,7 @@ export const faceSwapWithReplicate = async (
         ? (output as string[])[0]
         : (output as any)?.output ?? (output as any)?.image?.url;
 
-  if (!imageUrl) throw new Error('Face swap: no se recibió imagen. Verifica las fotos e intenta de nuevo.');
+  if (!imageUrl) throw new Error('Face swap: no image received. Check the photos and try again.');
 
   if (onProgress) onProgress(90);
   const dataUrl = await urlToDataUrl(imageUrl);
@@ -402,8 +402,8 @@ export const faceSwapWithReplicate = async (
 // ─────────────────────────────────────────────
 
 /**
- * Mapea AspectRatio a los ratios que soporta Grok Imagine.
- * Soportados: 2:1, 20:9, 19.5:9, 16:9, 4:3, 3:2, 1:1, 2:3, 3:4, 9:16, 9:19.5, 9:20, 1:2
+ * Maps AspectRatio to the ratios supported by Grok Imagine.
+ * Supported: 2:1, 20:9, 19.5:9, 16:9, 4:3, 3:2, 1:1, 2:3, 3:4, 9:16, 9:19.5, 9:20, 1:2
  */
 const toGrokAspectRatio = (ratio: AspectRatio): string => {
   const map: Record<AspectRatio, string> = {
@@ -479,7 +479,7 @@ export const generateWithGrokImagine = async (
   }
 
   if (rawUrls.length === 0) {
-    throw new Error('Grok Imagine no devolvió ninguna imagen. Verifica tu API key de Replicate.');
+    throw new Error('Grok Imagine did not return any images. Check your Replicate API key.');
   }
 
   const results = await Promise.all(rawUrls.map(urlToDataUrl));
@@ -488,7 +488,7 @@ export const generateWithGrokImagine = async (
 };
 
 // ─────────────────────────────────────────────
-// Router principal
+// Main router
 // ─────────────────────────────────────────────
 export const generateWithReplicate = async (
   params: InfluencerParams,
@@ -504,7 +504,7 @@ export const generateWithReplicate = async (
     case ReplicateModel.GrokImagine:
       return generateWithGrokImagine(params, onProgress, abortSignal);
     case ReplicateModel.IDMVTON:
-      throw new Error('Para Virtual Try-On usa generateVirtualTryOn() directamente.');
+      throw new Error('For Virtual Try-On use generateVirtualTryOn() directly.');
     default:
       return generateWithFlux2Max(params, onProgress);
   }

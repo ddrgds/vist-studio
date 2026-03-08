@@ -1,32 +1,37 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, Suspense, lazy } from "react";
 import JSZip from "jszip";
 import ApiKeyGuard from "./components/ApiKeyGuard";
 import AuthScreen from "./components/AuthScreen";
 import UploadZone from "./components/UploadZone";
-import DetailModal from "./components/DetailModal";
 import ImageModal from "./components/ImageModal";
 import EnhancedInput from "./components/EnhancedInput";
 import CharacteristicsInput from "./components/CharacteristicsInput";
 import ReferenceInput from "./components/ReferenceInput";
-import ImageEditor from "./components/ImageEditor";
 import ProgressBar from "./components/ProgressBar";
-import InspirationBoard from "./components/InspirationBoard";
-import CustomPresets from "./components/CustomPresets";
-import GalleryGrid from "./components/Gallery/GalleryGrid";
-import ABComparator from "./components/ABComparator";
-import CaptionModal from "./components/CaptionModal";
-import FaceSwapModal from "./components/FaceSwapModal";
-import TryOnModal from "./components/TryOnModal";
-import SkinEnhancerModal from "./components/SkinEnhancerModal";
-import RelightModal from "./components/RelightModal";
-import InpaintingModal from "./components/InpaintingModal";
-import StoryboardView from "./components/StoryboardView";
 import ExplorePage from "./components/ExplorePage";
-import GeneratorPage from "./components/GeneratorPage";
-import DirectorStudio from "./components/DirectorStudio";
-import CharactersPage from "./components/CharactersPage";
-import PricingPage from "./components/PricingPage";
-import ProfilePage from "./components/ProfilePage";
+
+// Lazy-loaded workspace components for code splitting
+const GeneratorPage = lazy(() => import("./components/GeneratorPage"));
+const DirectorStudio = lazy(() => import("./components/DirectorStudio"));
+const CharactersPage = lazy(() => import("./components/CharactersPage"));
+const StoryboardView = lazy(() => import("./components/StoryboardView"));
+const PricingPage = lazy(() => import("./components/PricingPage"));
+const ProfilePage = lazy(() => import("./components/ProfilePage"));
+
+// Lazy-loaded modals & heavy components (only rendered on demand)
+const DetailModal = lazy(() => import("./components/DetailModal"));
+const ImageEditor = lazy(() => import("./components/ImageEditor"));
+const GalleryGrid = lazy(() => import("./components/Gallery/GalleryGrid"));
+const InspirationBoard = lazy(() => import("./components/InspirationBoard"));
+const CustomPresets = lazy(() => import("./components/CustomPresets"));
+const ABComparator = lazy(() => import("./components/ABComparator"));
+const CaptionModal = lazy(() => import("./components/CaptionModal"));
+const FaceSwapModal = lazy(() => import("./components/FaceSwapModal"));
+const TryOnModal = lazy(() => import("./components/TryOnModal"));
+const SkinEnhancerModal = lazy(() => import("./components/SkinEnhancerModal"));
+const RelightModal = lazy(() => import("./components/RelightModal"));
+const InpaintingModal = lazy(() => import("./components/InpaintingModal"));
+import WelcomeModal, { ONBOARDING_KEY } from "./components/WelcomeModal";
 
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { GalleryProvider, useGallery } from "./contexts/GalleryContext";
@@ -102,7 +107,7 @@ import {
 const STYLE_PRESETS: Preset[] = [
   {
     id: "realistic",
-    name: "Fotorrealista",
+    name: "Photorealistic",
     icon: "📸",
     data: {
       characteristics:
@@ -132,7 +137,7 @@ const STYLE_PRESETS: Preset[] = [
   },
   {
     id: "painting",
-    name: "Óleo",
+    name: "Oil Painting",
     icon: "🎨",
     data: {
       characteristics:
@@ -144,46 +149,46 @@ const STYLE_PRESETS: Preset[] = [
 
 const LIGHTING_PRESETS = [
   {
-    label: "Luz natural",
+    label: "Natural Light",
     value: "soft natural light, golden hour, sun-kissed",
   },
   {
-    label: "Estudio clásico",
+    label: "Classic Studio",
     value: "professional studio lighting, softbox, rim light",
   },
   {
-    label: "Cinematográfica",
+    label: "Cinematic",
     value: "cinematic lighting, dramatic shadows, moody atmosphere",
   },
   {
-    label: "Luz de neon",
+    label: "Neon Light",
     value: "neon lighting, cyberpunk glow, vivid colors",
   },
 ];
 
 const SCENARIO_PRESETS = [
   {
-    label: "Estudio neutro",
+    label: "Neutral Studio",
     value: "clean neutral studio background, seamless paper backdrop",
   },
   {
-    label: "Naturaleza",
+    label: "Nature",
     value: "lush green forest, outdoors, natural environment",
   },
-  { label: "Urbano", value: "busy city street, urban environment, neon signs" },
+  { label: "Urban", value: "busy city street, urban environment, neon signs" },
   {
-    label: "Interiores",
+    label: "Interiors",
     value: "luxurious modern living room, stylish interior",
   },
 ];
 
 const CAMERA_PRESETS = [
   {
-    label: "Retrato 85mm",
+    label: "Portrait 85mm",
     value: "shot on 85mm lens, shallow depth of field, beautiful bokeh",
   },
   {
-    label: "Gran Angular",
+    label: "Wide Angle",
     value: "24mm wide angle lens, dynamic perspective, immersive view",
   },
   {
@@ -191,26 +196,26 @@ const CAMERA_PRESETS = [
     value: "macro photography, extreme close up, sharp microdetails",
   },
   {
-    label: "Cámara antigua",
+    label: "Vintage Camera",
     value:
       "vintage film camera look, 35mm film, subtle grain, analog photography",
   },
   {
-    label: "Cámara Polar",
+    label: "Polaroid Camera",
     value: "polaroid style, instant photo aesthetic, vintage colors",
   },
 ];
 
 const POSE_PRESETS = [
   {
-    label: "De pie firme",
+    label: "Standing Firm",
     value: "standing straight, firm posture, facing camera",
   },
-  { label: "Mano en la cadera", value: "hand on hip, confident stance" },
-  { label: "Caminando", value: "walking towards camera, dynamic movement" },
-  { label: "Mirando hombro", value: "looking over shoulder, profile view" },
-  { label: "Sentado elegante", value: "sitting elegantly, crossed legs" },
-  { label: "Apoyado", value: "leaning against wall, relaxed pose" },
+  { label: "Hand on Hip", value: "hand on hip, confident stance" },
+  { label: "Walking", value: "walking towards camera, dynamic movement" },
+  { label: "Over Shoulder", value: "looking over shoulder, profile view" },
+  { label: "Elegant Sitting", value: "sitting elegantly, crossed legs" },
+  { label: "Leaning", value: "leaning against wall, relaxed pose" },
 ];
 
 // ─────────────────────────────────────────────
@@ -260,7 +265,7 @@ const getProviderCaps = (
     };
   }
   if (aiProvider === AIProvider.Replicate) {
-    // FLUX.2 Max — requiere foto de referencia; Gen-4 Image — requiere al menos 1 foto
+    // FLUX.2 Max — requires reference photo; Gen-4 Image — requires at least 1 photo
     return {
       outfitImage: false,
       poseImage: false,
@@ -270,7 +275,7 @@ const getProviderCaps = (
     };
   }
   if (aiProvider === AIProvider.OpenAI) {
-    // GPT Image 1.5 — acepta fotos de referencia opcionales
+    // GPT Image 1.5 — accepts optional reference photos
     return {
       outfitImage: true,
       poseImage: true,
@@ -318,6 +323,11 @@ const AppInner: React.FC = () => {
   const charLib = useCharacterLibrary();
   const profileCtx = useProfile();
   const sub = useSubscription();
+
+  // ─── Onboarding ────────────────────────────────────────────────────────
+  const [showWelcome, setShowWelcome] = useState(() => {
+    return !localStorage.getItem(ONBOARDING_KEY);
+  });
 
   // Map URL paths to workspaces
   const PATH_TO_WORKSPACE: Record<string, AppWorkspace> = {
@@ -457,12 +467,12 @@ const AppInner: React.FC = () => {
       const response = await fetch(item.url);
       const blob = await response.blob();
       const file = new File([blob], `director-ref-${item.id}.jpg`, { type: blob.type || "image/jpeg" });
-      // Cargar como imagen base para edición en el editor VIST
+      // Load as base image for editing in the VIST editor
       form.setBaseImageForEdit(file);
       form.setActiveMode("edit");
       setActiveWorkspace("influencer");
     } catch {
-      toast.error("No se pudo cargar la imagen para el editor.");
+      toast.error("Could not load the image for the editor.");
     }
   };
 
@@ -491,7 +501,7 @@ const AppInner: React.FC = () => {
       form.setCfg(p.cfg || 7);
       if (p.seed !== undefined) form.setSeed(p.seed);
       if (p.imageBoost) form.setImageBoost(p.imageBoost);
-      // Restaurar proveedor y modelo
+      // Restore provider and model
       if (item.aiProvider) {
         form.setAiProvider(item.aiProvider);
         if (item.falModel) form.setFalModel(item.falModel);
@@ -599,7 +609,7 @@ const AppInner: React.FC = () => {
     const character = form.characters[0];
     if (!character || (character.modelImages?.length ?? 0) === 0) {
       setBatchError(
-        "Sube al menos una foto de referencia del modelo (Cara/Cuerpo) antes de usar el modo Batch.",
+        "Upload at least one reference photo of the model (Face/Body) before using Batch mode.",
       );
       return;
     }
@@ -608,7 +618,7 @@ const AppInner: React.FC = () => {
     );
     if (validOutfits.length < 1) {
       setBatchError(
-        "Añade al menos un outfit (imagen o descripción) para generar variaciones.",
+        "Add at least one outfit (image or description) to generate variations.",
       );
       return;
     }
@@ -652,10 +662,10 @@ const AppInner: React.FC = () => {
       }));
 
       await gallery.addItems(items);
-      toast.success(`${results.length} variaciones de outfit generadas`);
+      toast.success(`${results.length} outfit variations generated`);
     } catch (err: any) {
       setBatchError(
-        err?.message || "Error al generar variaciones. Inténtalo de nuevo.",
+        err?.message || "Error generating variations. Please try again.",
       );
     } finally {
       setIsBatchGenerating(false);
@@ -687,9 +697,9 @@ const AppInner: React.FC = () => {
         const sidebar = document.querySelector("aside .overflow-y-auto");
         if (sidebar) sidebar.scrollTo({ top: 0, behavior: "smooth" });
       }, 100);
-      toast.info("Imagen cargada — describe o sube la nueva pose");
+      toast.info("Image loaded — describe or upload the new pose");
     } catch {
-      toast.error("No se pudo cargar la imagen para editar la pose.");
+      toast.error("Could not load the image to edit the pose.");
     }
   };
 
@@ -697,7 +707,7 @@ const AppInner: React.FC = () => {
   const handleUpscale = async (item: GeneratedContent) => {
     if (item.type === "video" || upscalingId) return;
     setUpscalingId(item.id);
-    toast.info("Mejorando resolución 4×… puede tardar ~30 segundos");
+    toast.info("Upscaling resolution 4×… may take ~30 seconds");
     try {
       const upscaledUrl = await upscaleWithAuraSR(item.url);
       const newItem: GeneratedContent = {
@@ -708,10 +718,10 @@ const AppInner: React.FC = () => {
         type: item.type,
       };
       await gallery.addItems([newItem]);
-      toast.success("Imagen mejorada guardada en la galería");
+      toast.success("Upscaled image saved to gallery");
     } catch (err: any) {
       toast.error(
-        err?.message || "Error al mejorar la resolución. Verifica tu FAL_KEY.",
+        err?.message || "Error upscaling resolution. Check your FAL_KEY.",
       );
     } finally {
       setUpscalingId(null);
@@ -732,7 +742,7 @@ const AppInner: React.FC = () => {
     };
     setEditingItem(null);
     await addItems([newItem]);
-    toast.success("Imagen guardada en la galería");
+    toast.success("Image saved to gallery");
   };
 
   // ─── Download ─────────────────────────────
@@ -771,7 +781,7 @@ const AppInner: React.FC = () => {
       // Revoke after a short delay to let the download start
       setTimeout(() => URL.revokeObjectURL(blobUrl), 10_000);
     } catch {
-      toast.error("No se pudo descargar el archivo. Inténtalo de nuevo.");
+      toast.error("Could not download the file. Please try again.");
     }
   };
 
@@ -781,7 +791,7 @@ const AppInner: React.FC = () => {
     if (selectedIds.size === 0) return;
     if (
       window.confirm(
-        `¿Estás seguro de que quieres eliminar ${selectedIds.size} elementos seleccionados permanentemente?`,
+        `Are you sure you want to permanently delete ${selectedIds.size} selected items?`,
       )
     ) {
       await batchDeleteItems(Array.from(selectedIds));
@@ -791,11 +801,11 @@ const AppInner: React.FC = () => {
   // ─── Copy to Clipboard ────────────────────
   const handleCopyToClipboard = async (item: GeneratedContent) => {
     if (item.type === "video") {
-      toast.error("No se pueden copiar videos al portapapeles");
+      toast.error("Cannot copy videos to clipboard");
       return;
     }
     try {
-      // Obtener el blob de la imagen (soporta data URLs y URLs remotas)
+      // Get the image blob (supports data URLs and remote URLs)
       let blob: Blob;
       if (item.url.startsWith("data:")) {
         const res = await fetch(item.url);
@@ -805,7 +815,7 @@ const AppInner: React.FC = () => {
         blob = await resp.blob();
       }
 
-      // Convertir a PNG si es necesario (Clipboard API solo acepta image/png)
+      // Convert to PNG if needed (Clipboard API only accepts image/png)
       let pngBlob: Blob;
       if (blob.type === "image/png") {
         pngBlob = blob;
@@ -820,7 +830,7 @@ const AppInner: React.FC = () => {
               ctx.drawImage(bmp, 0, 0);
               canvas.toBlob((b) => {
                 if (b) resolve(b);
-                else reject(new Error("No se pudo convertir la imagen a PNG"));
+                else reject(new Error("Could not convert the image to PNG"));
               }, "image/png");
             })
             .catch(reject);
@@ -829,16 +839,16 @@ const AppInner: React.FC = () => {
 
       if (!navigator.clipboard?.write) {
         throw new Error(
-          "Tu navegador no soporta copiar imágenes al portapapeles",
+          "Your browser does not support copying images to clipboard",
         );
       }
       await navigator.clipboard.write([
         new ClipboardItem({ "image/png": pngBlob }),
       ]);
-      toast.success("Imagen copiada al portapapeles");
+      toast.success("Image copied to clipboard");
     } catch (err: any) {
       toast.error(
-        "No se pudo copiar: " + (err?.message || "Error desconocido"),
+        "Could not copy: " + (err?.message || "Unknown error"),
       );
     }
   };
@@ -847,7 +857,7 @@ const AppInner: React.FC = () => {
   const handleRemoveBg = async (item: GeneratedContent) => {
     if (item.type === "video" || removingBgId) return;
     setRemovingBgId(item.id);
-    toast.info("Quitando fondo… puede tardar ~20 segundos");
+    toast.info("Removing background… may take ~20 seconds");
     try {
       const dataUrl = await removeBackground(item.url);
       const newItem: GeneratedContent = {
@@ -856,13 +866,13 @@ const AppInner: React.FC = () => {
         params: item.params,
         timestamp: Date.now(),
         type: item.type,
-        tags: [...(item.tags || []), "sin-fondo"],
+        tags: [...(item.tags || []), "no-background"],
       };
       await gallery.addItems([newItem]);
-      toast.success("Fondo eliminado — guardado en galería");
+      toast.success("Background removed — saved to gallery");
     } catch (err: any) {
       toast.error(
-        err?.message || "Error al quitar el fondo. Verifica tu FAL_KEY.",
+        err?.message || "Error removing background. Check your FAL_KEY.",
       );
     } finally {
       setRemovingBgId(null);
@@ -946,7 +956,7 @@ const AppInner: React.FC = () => {
   // ─── Add to Storyboard ────────────────────
   const handleAddToStoryboard = (item: GeneratedContent) => {
     gallery.addToStoryboard(item.id);
-    toast.success("Añadido al storyboard");
+    toast.success("Added to storyboard");
   };
 
   // ─── Batch ZIP Download ───────────────────
@@ -954,7 +964,7 @@ const AppInner: React.FC = () => {
     const { selectedIds, generatedHistory } = gallery;
     if (selectedIds.size === 0) return;
     setBatchZipLoading(true);
-    toast.info(`Preparando ZIP con ${selectedIds.size} archivos…`);
+    toast.info(`Preparing ZIP with ${selectedIds.size} files…`);
     try {
       const zip = new JSZip();
       const items = generatedHistory.filter((item) => selectedIds.has(item.id));
@@ -976,9 +986,9 @@ const AppInner: React.FC = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast.success(`ZIP con ${items.length} archivos descargado`);
+      toast.success(`ZIP with ${items.length} files downloaded`);
     } catch (err: any) {
-      toast.error("Error al crear el ZIP: " + (err?.message || ""));
+      toast.error("Error creating ZIP: " + (err?.message || ""));
     } finally {
       setBatchZipLoading(false);
     }
@@ -1024,7 +1034,7 @@ const AppInner: React.FC = () => {
     form.setActiveMode("create");
     setIsMobileMenuOpen(true);
     toast.info(
-      `"${image.name}" añadida a ${target === "scenario" ? "escenario" : target}`,
+      `"${image.name}" added to ${target === "scenario" ? "scenario" : target}`,
     );
     if (window.innerWidth < 1024) {
       setTimeout(() => setIsMobileMenuOpen(false), 1500);
@@ -1033,11 +1043,11 @@ const AppInner: React.FC = () => {
 
   // ─── Preset save ──────────────────────────
   const handleSavePreset = async () => {
-    const name = prompt("Dale un nombre a tu preset:");
+    const name = prompt("Give your preset a name:");
     if (name && name.trim() && form.characters.length > 0) {
       const firstChar = form.characters[0];
 
-      // Genera thumbnail desde la primera imagen del modelo (si existe)
+      // Generate thumbnail from the first model image (if it exists)
       let thumbnail: string | undefined;
       if (firstChar.modelImages && firstChar.modelImages.length > 0) {
         try {
@@ -1047,7 +1057,7 @@ const AppInner: React.FC = () => {
             reader.readAsDataURL(firstChar.modelImages![0]);
           });
         } catch {
-          // Si falla, seguimos sin thumbnail
+          // If it fails, continue without thumbnail
         }
       }
 
@@ -1072,7 +1082,7 @@ const AppInner: React.FC = () => {
         data: presetData,
       };
       await gallery.savePreset(newPreset);
-      toast.success(`Preset "${name.trim()}" guardado`);
+      toast.success(`Preset "${name.trim()}" saved`);
     }
   };
 
@@ -1086,7 +1096,7 @@ const AppInner: React.FC = () => {
     a.download = `influencer-studio-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success("Backup exportado correctamente");
+    toast.success("Backup exported successfully");
   };
 
   const handleExportBigQuery = async () => {
@@ -1099,7 +1109,7 @@ const AppInner: React.FC = () => {
     a.click();
     URL.revokeObjectURL(url);
     alert(
-      "Archivo .jsonl descargado. Puedes subir este archivo directamente a una tabla de BigQuery para analizar tu historial.",
+      ".jsonl file downloaded. You can upload this file directly to a BigQuery table to analyze your history.",
     );
   };
 
@@ -1112,11 +1122,11 @@ const AppInner: React.FC = () => {
         if (typeof reader.result === "string") {
           await importDatabaseFromJson(reader.result);
           await gallery.refreshHistory();
-          toast.success("Base de datos restaurada correctamente");
+          toast.success("Database restored successfully");
           setShowDbManager(false);
         }
       } catch {
-        toast.error("Error al importar: archivo inválido o corrupto");
+        toast.error("Import error: invalid or corrupt file");
       }
     };
     reader.readAsText(file);
@@ -1125,7 +1135,7 @@ const AppInner: React.FC = () => {
   const handleSwitchKey = async () => {
     const aistudio = (window as any).aistudio;
     if (aistudio?.openSelectKey) await aistudio.openSelectKey();
-    else alert("La selección de API Key no está disponible.");
+    else alert("API Key selection is not available.");
   };
 
   // ─── Auth loading spinner ────────────────
@@ -1169,7 +1179,13 @@ const AppInner: React.FC = () => {
     // Protected workspace — redirect to login with context
     const intendedWorkspace = activeWorkspace;
     return <AuthScreen onAuthenticated={() => {
-      if (intendedWorkspace) setActiveWorkspace(intendedWorkspace);
+      // Check if there's a checkout intent → go back to pricing
+      const checkoutIntent = sessionStorage.getItem('vist_checkout_intent');
+      if (checkoutIntent) {
+        setActiveWorkspace('pricing');
+      } else if (intendedWorkspace) {
+        setActiveWorkspace(intendedWorkspace);
+      }
     }} intendedWorkspace={intendedWorkspace} />;
   }
 
@@ -1213,8 +1229,8 @@ const AppInner: React.FC = () => {
               form.aspectRatio !== AspectRatio.Wide &&
               form.aspectRatio !== AspectRatio.Tall && (
                 <p className="text-[10px] text-amber-500">
-                  Nota: El video usará 16:9 por defecto si el formato
-                  seleccionado no es compatible.
+                  Note: Video will use 16:9 by default if the selected
+                  format is not compatible.
                 </p>
               )}
           </div>
@@ -1228,8 +1244,8 @@ const AppInner: React.FC = () => {
                 onChange={(e) => form.setImageSize(e.target.value as ImageSize)}
                 className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm outline-none"
               >
-                <option value={ImageSize.Size1K}>1K Estándar</option>
-                <option value={ImageSize.Size2K}>2K Alta Res</option>
+                <option value={ImageSize.Size1K}>1K Standard</option>
+                <option value={ImageSize.Size2K}>2K High Res</option>
                 <option value={ImageSize.Size4K}>4K Ultra</option>
               </select>
             </div>
@@ -1311,10 +1327,10 @@ const AppInner: React.FC = () => {
                           ? " NB2"
                           : "Pro";
                       const desc = isFlash
-                        ? "Rápido y eficiente"
+                        ? "Fast and efficient"
                         : isFlash2
-                          ? "Económico"
-                          : "Máximo detalle";
+                          ? "Economical"
+                          : "Maximum detail";
 
                       return (
                         <button
@@ -1342,9 +1358,9 @@ const AppInner: React.FC = () => {
                 {/* Group 2: Imagen 4 (dedicated diffusion — superior photorealism) */}
                 <div className="space-y-1.5">
                   <p className="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold flex items-center gap-1.5">
-                    Imagen 4 — Difusión Pura
+                    Imagen 4 — Pure Diffusion
                     <span className="px-1.5 py-0.5 text-[8px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded font-bold">
-                      NUEVO
+                      NEW
                     </span>
                   </p>
                   <div className="grid grid-cols-3 gap-1.5">
@@ -1360,17 +1376,17 @@ const AppInner: React.FC = () => {
                         [GeminiImageModel.Imagen4]: {
                           icon: "🎨",
                           name: "Imagen 4",
-                          sub: "Equilibrado",
+                          sub: "Balanced",
                         },
                         [GeminiImageModel.Imagen4Ultra]: {
                           icon: "✨",
                           name: "Ultra",
-                          sub: "Max fidelidad",
+                          sub: "Max fidelity",
                         },
                         [GeminiImageModel.Imagen4Fast]: {
                           icon: "🚀",
                           name: "Fast",
-                          sub: "Rapidísimo",
+                          sub: "Ultra fast",
                         },
                       } as Record<
                         string,
@@ -1402,17 +1418,17 @@ const AppInner: React.FC = () => {
                   </div>
                   {IMAGEN4_MODELS.has(form.geminiModel) && (
                     <p className="text-[10px] text-emerald-400/80">
-                      🎨 Imagen 4 genera solo desde texto — las fotos de
-                      referencia no se usan como contexto visual, pero el
-                      outfit/personaje se describe en el prompt.
+                      🎨 Imagen 4 generates from text only — reference photos
+                      are not used as visual context, but the
+                      outfit/character is described in the prompt.
                     </p>
                   )}
                 </div>
 
                 {form.geminiModel === GeminiImageModel.Pro && (
                   <p className="text-[10px] text-amber-400/80">
-                    ⚠️ Pro puede ser más lento y está sujeto a mayor demanda del
-                    servidor.
+                    ⚠️ Pro may be slower and is subject to higher server
+                    demand.
                   </p>
                 )}
               </div>
@@ -1446,8 +1462,8 @@ const AppInner: React.FC = () => {
                   })}
                 </div>
                 <p className="text-[10px] text-blue-400/80">
-                  ⚡ fal.ai requiere foto de referencia del modelo para
-                  preservar identidad.
+                  ⚡ fal.ai requires a reference photo of the model to
+                  preserve identity.
                 </p>
               </div>
             )}
@@ -1486,14 +1502,14 @@ const AppInner: React.FC = () => {
                 </div>
                 {form.replicateModel === ReplicateModel.Flux2Max ? (
                   <p className="text-[10px] text-amber-400/80">
-                    ✨ FLUX.2 [max] — hasta 8 fotos de referencia para máxima
-                    fidelidad de identidad.
+                    ✨ FLUX.2 [max] — up to 8 reference photos for maximum
+                    identity fidelity.
                   </p>
                 ) : (
                   <p className="text-[10px] text-purple-400/80">
-                    🎯 Gen-4 Image — requiere al menos 1 foto. Usa{" "}
-                    <strong>@model</strong> en el prompt para referenciar al
-                    personaje.
+                    🎯 Gen-4 Image — requires at least 1 photo. Use{" "}
+                    <strong>@model</strong> in the prompt to reference the
+                    character.
                   </p>
                 )}
               </div>
@@ -1527,8 +1543,8 @@ const AppInner: React.FC = () => {
                   })}
                 </div>
                 <p className="text-[10px] text-emerald-400/80">
-                  🤖 Con foto de referencia usa el modo edición multimodal. Sin
-                  foto genera desde texto.
+                  🤖 With a reference photo it uses multimodal editing mode.
+                  Without a photo it generates from text.
                 </p>
               </div>
             )}
@@ -1564,8 +1580,8 @@ const AppInner: React.FC = () => {
                 </div>
                 {form.ideogramModel === IdeogramModel.V3 && (
                   <p className="text-[10px] text-blue-400/80">
-                    💡 V3 soporta character reference — agrega fotos para
-                    mantener consistencia facial.
+                    💡 V3 supports character reference — add photos to
+                    maintain facial consistency.
                   </p>
                 )}
               </div>
@@ -1597,7 +1613,7 @@ const AppInner: React.FC = () => {
           <div className="space-y-1 col-span-2">
             <div className="flex justify-between text-sm items-center mb-1">
               <label className="font-medium text-zinc-400">
-                Fotos en Sesión
+                Photos per Session
               </label>
               <span
                 className={`text-[10px] px-2 py-0.5 rounded ${form.editNumberOfImages > 1 ? "bg-purple-500/20 text-purple-300" : "bg-zinc-800 text-zinc-500"}`}
@@ -1618,8 +1634,8 @@ const AppInner: React.FC = () => {
             />
             <p className="text-[10px] text-zinc-500 mt-1">
               {form.editNumberOfImages === 1
-                ? "Modo Simple: 1 Pose"
-                : "Define una pose diferente para cada foto."}
+                ? "Simple Mode: 1 Pose"
+                : "Define a different pose for each photo."}
             </p>
           </div>
         )}
@@ -1633,15 +1649,15 @@ const AppInner: React.FC = () => {
               progress={progress}
               label={
                 activeMode === "video"
-                  ? "Renderizando video..."
-                  : "Generando imágenes..."
+                  ? "Rendering video..."
+                  : "Generating images..."
               }
               onCancel={stopGeneration}
             />
             <p className="text-[10px] text-zinc-500 text-center mt-2 animate-pulse">
               {activeMode === "video"
-                ? "Esto puede tardar unos minutos"
-                : "Creando detalles de alta fidelidad"}
+                ? "This may take a few minutes"
+                : "Creating high-fidelity details"}
             </p>
           </div>
         ) : (
@@ -1651,14 +1667,14 @@ const AppInner: React.FC = () => {
             className={`w-full py-4 rounded-xl font-semibold text-white shadow-lg transition-all active:scale-[0.98] ${activeMode === "edit" && form.editSubMode === "ai" ? "bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 shadow-violet-900/30" : "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500"}`}
           >
             {activeMode === "create"
-              ? "Generar Imagen"
+              ? "Generate Image"
               : activeMode === "edit"
                 ? form.editSubMode === "ai"
-                  ? "✨ Aplicar Edición con IA"
+                  ? "✨ Apply AI Edit"
                   : form.editNumberOfImages > 1
-                    ? `Generar Sesión (${form.editNumberOfImages})`
-                    : "Generar Pose"
-                : "Crear Video"}
+                    ? `Generate Session (${form.editNumberOfImages})`
+                    : "Generate Pose"
+                : "Create Video"}
           </button>
         )}
         {gallery.error && (
@@ -1952,6 +1968,15 @@ const AppInner: React.FC = () => {
             </div>
           )}
 
+          {/* Suspense boundary for lazy-loaded workspaces */}
+          <Suspense fallback={
+            <div className="absolute inset-0 z-0 flex items-center justify-center" style={{ background: '#0D0A0A' }}>
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#FF5C35', borderTopColor: 'transparent' }} />
+                <span className="text-xs font-jet" style={{ color: '#6B5A56' }}>Loading workspace…</span>
+              </div>
+            </div>
+          }>
           {/* ────── WORKSPACE: GENERATE ────── */}
           {activeWorkspace === "generate" && (
             <div className="absolute inset-0 z-0 overflow-hidden">
@@ -2088,8 +2113,8 @@ const AppInner: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => signOut()}
-                        title={`Cerrar sesión (${user?.email})`}
-                        aria-label="Cerrar sesión"
+                        title={`Sign out (${user?.email})`}
+                        aria-label="Sign out"
                         className="p-2 text-zinc-500 hover:text-red-400 transition-colors rounded-lg hover:bg-zinc-900"
                       >
                         <svg
@@ -2140,7 +2165,7 @@ const AppInner: React.FC = () => {
                       onClick={() => setMainView("gallery")}
                       className={`flex-1 py-2 text-xs font-medium rounded-md transition-all ${mainView === "gallery" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300"}`}
                     >
-                      Galería
+                      Gallery
                     </button>
                     <button
                       onClick={() => setMainView("inspiration")}
@@ -2209,7 +2234,7 @@ const AppInner: React.FC = () => {
                         onClick={() => setActiveMode("create")}
                         className={`px-4 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all duration-300 ${activeMode === "create" ? "bg-white text-black shadow-md" : "text-zinc-400 hover:text-white hover:bg-white/5"}`}
                       >
-                        🎨 Crear Personaje
+                        🎨 Create Character
                       </button>
                       <button
                         onClick={() => { setActiveMode("edit"); form.setEditSubMode("poses"); }}
@@ -2412,13 +2437,13 @@ const AppInner: React.FC = () => {
                       onClick={() => setActiveMode("create")}
                       className={`flex-1 py-1.5 text-[11px] font-medium rounded transition-all ${activeMode === "create" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300"}`}
                     >
-                      Creación
+                      Create
                     </button>
                     <button
                       onClick={() => setActiveMode("edit")}
                       className={`flex-1 py-1.5 text-[11px] font-medium rounded transition-all ${activeMode === "edit" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300"}`}
                     >
-                      Poses(Edición)
+                      Poses (Edit)
                     </button>
                     <button
                       onClick={() => setActiveMode("video")}
@@ -2442,10 +2467,10 @@ const AppInner: React.FC = () => {
                         >
                           <div className="flex justify-between text-sm items-center mb-1">
                             <label className="font-medium text-zinc-400 flex items-center gap-1.5">
-                              Número de Personajes
+                              Number of Characters
                               {!caps.multiCharacter && (
                                 <span className="text-[9px] bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded">
-                                  Solo Gemini
+                                  Gemini only
                                 </span>
                               )}
                             </label>
@@ -2476,7 +2501,7 @@ const AppInner: React.FC = () => {
                           >
                             <div className="flex justify-between items-center">
                               <h3 className="text-sm font-semibold text-purple-300 uppercase tracking-wider">
-                                Personaje {index + 1}
+                                Character {index + 1}
                               </h3>
                             </div>
 
@@ -2484,7 +2509,7 @@ const AppInner: React.FC = () => {
                             {caps.faceImage ? (
                               <>
                                 <UploadZone
-                                  label="Modelo (Cara/Cuerpo)"
+                                  label="Model (Face/Body)"
                                   files={char.modelImages}
                                   onFilesChange={(f) =>
                                     form.updateCharacter(
@@ -2506,17 +2531,17 @@ const AppInner: React.FC = () => {
                                     color: string;
                                   }[] = [
                                     {
-                                      label: "1 foto",
+                                      label: "1 photo",
                                       active: count >= 1,
                                       color: "bg-amber-500",
                                     },
                                     {
-                                      label: "2 fotos",
+                                      label: "2 photos",
                                       active: count >= 2,
                                       color: "bg-yellow-400",
                                     },
                                     {
-                                      label: "3+ fotos",
+                                      label: "3+ photos",
                                       active: count >= 3,
                                       color: "bg-emerald-500",
                                     },
@@ -2524,16 +2549,16 @@ const AppInner: React.FC = () => {
                                   const msg =
                                     count >= 3
                                       ? {
-                                          text: "Identidad óptima",
+                                          text: "Optimal identity",
                                           color: "text-emerald-400",
                                         }
                                       : count === 2
                                         ? {
-                                            text: "Buena referencia — añade 1 más para mejorar",
+                                            text: "Good reference — add 1 more to improve",
                                             color: "text-yellow-400",
                                           }
                                         : {
-                                            text: "Mínimo — añade más ángulos para mejor fidelidad",
+                                            text: "Minimum — add more angles for better fidelity",
                                             color: "text-amber-400",
                                           };
                                   return (
@@ -2557,8 +2582,8 @@ const AppInner: React.FC = () => {
                               <div className="flex items-center gap-2 p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg">
                                 <span className="text-base">🎨</span>
                                 <p className="text-[11px] text-zinc-500">
-                                  Este motor genera desde texto — describe las
-                                  características del personaje abajo.
+                                  This engine generates from text — describe the
+                                  character traits below.
                                 </p>
                               </div>
                             )}
@@ -2566,7 +2591,7 @@ const AppInner: React.FC = () => {
                             {/* Outfit — image + text for Gemini, text-only for others */}
                             {caps.outfitImage ? (
                               <ReferenceInput
-                                label="Outfit / Ropa"
+                                label="Outfit / Clothing"
                                 textValue={char.outfitDescription ?? ""}
                                 onTextChange={(v) =>
                                   form.updateCharacter(
@@ -2585,15 +2610,15 @@ const AppInner: React.FC = () => {
                                 }
                                 onImagePreview={gallery.setPreviewImage}
                                 multiple={true}
-                                category="Outfit / Ropa"
-                                placeholder="Ej. vestido rojo ajustado con escote en V, tacones negros..."
+                                category="Outfit / Clothing"
+                                placeholder="E.g. tight red V-neck dress, black heels..."
                               />
                             ) : (
                               <div className="space-y-1">
                                 <label className="text-sm font-medium text-zinc-400 flex items-center gap-1.5">
-                                  Outfit / Ropa
+                                  Outfit / Clothing
                                   <span className="text-[9px] bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded">
-                                    Solo texto
+                                    Text only
                                   </span>
                                 </label>
                                 <textarea
@@ -2605,12 +2630,12 @@ const AppInner: React.FC = () => {
                                       e.target.value,
                                     )
                                   }
-                                  placeholder="Describe el outfit: Ej. vestido rojo ajustado con escote en V, tacones negros..."
+                                  placeholder="Describe the outfit: E.g. tight red V-neck dress, black heels..."
                                   className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm focus:ring-2 focus:ring-purple-500 outline-none resize-none h-16 placeholder:text-zinc-600 transition-all"
                                 />
                                 <p className="text-[10px] text-zinc-500">
-                                  Las fotos de outfit no son compatibles con
-                                  este motor — descríbelo en texto.
+                                  Outfit photos are not compatible with this
+                                  engine — describe it in text.
                                 </p>
                               </div>
                             )}
@@ -2649,21 +2674,21 @@ const AppInner: React.FC = () => {
                                 }
                                 onImagePreview={gallery.setPreviewImage}
                                 presets={POSE_PRESETS}
-                                category="Pose Fotográfica"
-                                placeholder="Ej. Caminando, sentada, de espaldas mirando al horizonte..."
+                                category="Photo Pose"
+                                placeholder="E.g. Walking, sitting, back turned looking at the horizon..."
                                 disableImage={!caps.poseImage}
-                                disableImageTooltip="Solo Gemini soporta foto de pose"
+                                disableImageTooltip="Only Gemini supports pose photos"
                               />
                               {caps.poseImage && char.poseImage && (
                                 <div className="mt-3 flex flex-col gap-3">
                                   <div className="flex items-center justify-between p-2.5 bg-indigo-500/5 border border-indigo-500/20 rounded-lg">
                                     <div className="space-y-0.5">
                                       <p className="text-xs font-semibold text-indigo-300">
-                                        Evitar interferencias
+                                        Avoid interference
                                       </p>
                                       <p className="text-[10px] text-zinc-400">
-                                        Extrae el esqueleto para que la IA no
-                                        copie la ropa ni la cara de esta foto.
+                                        Extract the skeleton so the AI doesn't
+                                        copy the clothing or face from this photo.
                                       </p>
                                     </div>
                                     <button
@@ -2671,7 +2696,7 @@ const AppInner: React.FC = () => {
                                         e.preventDefault();
                                         try {
                                           toast.info(
-                                            "Analizando pose (incluyendo manos y rostro)...",
+                                            "Analyzing pose (including hands and face)...",
                                           );
                                           const skeleton =
                                             await extractPoseSkeleton(
@@ -2683,18 +2708,18 @@ const AppInner: React.FC = () => {
                                             skeleton,
                                           );
                                           toast.success(
-                                            "Pose convertida a esqueleto con éxito",
+                                            "Pose successfully converted to skeleton",
                                           );
                                         } catch (err) {
                                           console.error(err);
                                           toast.error(
-                                            "Error al generar el esqueleto.",
+                                            "Error generating the skeleton.",
                                           );
                                         }
                                       }}
                                       className="px-3 py-1.5 text-[11px] font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded-md transition-colors whitespace-nowrap"
                                     >
-                                      🪄 Extraer Esqueleto
+                                      🪄 Extract Skeleton
                                     </button>
                                   </div>
                                   <div className="flex items-center gap-2">
@@ -2715,7 +2740,7 @@ const AppInner: React.FC = () => {
                                       htmlFor={`usePoseAsOutfit-${char.id}`}
                                       className="text-xs text-zinc-400 select-none cursor-pointer"
                                     >
-                                      Copiar outfit de esta foto de pose
+                                      Copy outfit from this pose photo
                                     </label>
                                   </div>
                                 </div>
@@ -2723,7 +2748,7 @@ const AppInner: React.FC = () => {
                             </div>
 
                             <ReferenceInput
-                              label="Objeto / Accesorio"
+                              label="Object / Accessory"
                               textValue={char.accessory}
                               onTextChange={(v) =>
                                 form.updateCharacter(char.id, "accessory", v)
@@ -2741,11 +2766,11 @@ const AppInner: React.FC = () => {
                                       )
                                   : undefined
                               }
-                              category="Accesorio / Objeto"
-                              placeholder="Ej. Sosteniendo un café..."
+                              category="Accessory / Object"
+                              placeholder="E.g. Holding a coffee..."
                               multiple={true}
                               disableImage={!caps.poseImage}
-                              disableImageTooltip="Solo Gemini soporta foto de accesorio"
+                              disableImageTooltip="Only Gemini supports accessory photos"
                             />
                           </div>
                         ))}
@@ -2753,18 +2778,18 @@ const AppInner: React.FC = () => {
                         <div className="space-y-4 pt-6 border-t border-zinc-800">
                           <div className="flex justify-between items-center">
                             <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                              Escena Compartida
+                              Shared Scene
                             </h2>
                             <button
                               onClick={handleSavePreset}
                               className="px-2 py-1 text-[10px] bg-purple-500/10 border border-purple-500/20 text-purple-300 rounded hover:bg-purple-500/20"
                             >
-                              Guardar Preset
+                              Save Preset
                             </button>
                           </div>
                           {/* Scenario — image + text for Gemini, text-only for others */}
                           <ReferenceInput
-                            label="Escenario / Fondo"
+                            label="Scenario / Background"
                             textValue={form.scenario}
                             onTextChange={form.setScenario}
                             imageValue={
@@ -2782,34 +2807,34 @@ const AppInner: React.FC = () => {
                                     )
                                 : undefined
                             }
-                            category="Escenario"
-                            placeholder="Ej. Café en París, playa al atardecer..."
+                            category="Scenario"
+                            placeholder="E.g. Café in Paris, sunset beach..."
                             presets={SCENARIO_PRESETS}
                             multiple={true}
                             disableImage={!caps.scenarioImage}
-                            disableImageTooltip="Solo Gemini soporta foto de escenario"
+                            disableImageTooltip="Only Gemini supports scenario photos"
                           />
                           <EnhancedInput
-                            label="Iluminación"
+                            label="Lighting"
                             value={form.lighting}
                             onChange={form.setLighting}
-                            category="Iluminación"
-                            placeholder="Ej. Hora dorada, luz de estudio..."
+                            category="Lighting"
+                            placeholder="E.g. Golden hour, studio light..."
                             presets={LIGHTING_PRESETS}
                           />
                           <EnhancedInput
-                            label="Cámara y Lente"
+                            label="Camera & Lens"
                             value={form.camera}
                             onChange={form.setCamera}
-                            category="Fotografía"
-                            placeholder="Ej. Lente 85mm, estilo analógico, cámara polaroid..."
+                            category="Photography"
+                            placeholder="E.g. 85mm lens, analog style, polaroid camera..."
                             presets={CAMERA_PRESETS}
                           />
 
                           {/* ── Image Boost ─────────────────────── */}
                           <div className="space-y-1.5">
                             <label className="text-sm font-medium text-zinc-400 flex items-center gap-1.5">
-                              ✨ Potenciador de Imagen
+                              ✨ Image Boost
                               <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded font-semibold">
                                 BOOST
                               </span>
@@ -2819,19 +2844,19 @@ const AppInner: React.FC = () => {
                               onChange={(e) =>
                                 form.setImageBoost(e.target.value)
                               }
-                              placeholder="Ej. 3D CGI render, Octane render style, subsurface scattering, ultra-detailed textures, volumetric lighting..."
+                              placeholder="E.g. 3D CGI render, Octane render style, subsurface scattering, ultra-detailed textures, volumetric lighting..."
                               className="w-full bg-zinc-900 border border-amber-500/20 rounded-lg p-3 text-sm focus:ring-2 focus:ring-amber-500/50 outline-none resize-none h-16 placeholder:text-zinc-600 transition-all"
                             />
                             <p className="text-[10px] text-zinc-500">
-                              Keywords de calidad, estilo o renderizado que se
-                              añaden al final del prompt.
+                              Quality, style, or rendering keywords appended
+                              to the end of the prompt.
                             </p>
                           </div>
 
                           <div className="pt-2">
                             <div className="flex items-center justify-between">
                               <label className="text-sm font-medium text-zinc-400">
-                                Prompt Negativo (Opcional)
+                                Negative Prompt (Optional)
                               </label>
                               <div
                                 className="flex items-center gap-2 px-2 py-1 bg-zinc-900/50 rounded border border-zinc-800/50 cursor-pointer hover:bg-zinc-800 transition-colors"
@@ -2843,7 +2868,7 @@ const AppInner: React.FC = () => {
                                   htmlFor="antiFisheye"
                                   className="text-xs text-zinc-400 cursor-pointer select-none font-medium"
                                 >
-                                  Evitar Ojo de Pez
+                                  Avoid Fisheye
                                 </label>
                                 <input
                                   type="checkbox"
@@ -2862,12 +2887,12 @@ const AppInner: React.FC = () => {
                               onChange={(e) =>
                                 form.setNegativePrompt(e.target.value)
                               }
-                              placeholder="Ej. deformado, borroso, baja calidad, texto, marcas de agua, manos extrañas..."
+                              placeholder="E.g. deformed, blurry, low quality, text, watermarks, weird hands..."
                               className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm focus:ring-2 focus:ring-purple-500 outline-none resize-none h-20 placeholder:text-zinc-600 mt-2 transition-all"
                             />
                             <p className="text-[10px] text-zinc-500 mt-1">
-                              Describe lo que NO quieres que aparezca en la
-                              imagen.
+                              Describe what you do NOT want to appear in the
+                              image.
                             </p>
                           </div>
 
@@ -2885,7 +2910,7 @@ const AppInner: React.FC = () => {
                               <div className="space-y-1">
                                 <div className="flex justify-between text-xs">
                                   <label className="font-medium text-zinc-400">
-                                    Guía (CFG Scale)
+                                    Guidance (CFG Scale)
                                   </label>
                                   <span className="text-purple-400 font-mono">
                                     {form.guidanceScale}
@@ -2905,8 +2930,8 @@ const AppInner: React.FC = () => {
                                   className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
                                 />
                                 <p className="text-[9px] text-zinc-500 leading-tight">
-                                  Adherencia al prompt (valores altos = más
-                                  estricto).
+                                  Prompt adherence (higher values = more
+                                  strict).
                                 </p>
                               </div>
 
@@ -2931,15 +2956,15 @@ const AppInner: React.FC = () => {
                                   className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
                                 />
                                 <p className="text-[9px] text-zinc-500 leading-tight">
-                                  Intervención de IA vs Imagen Base (0.4-0.7
-                                  recomendado).
+                                  AI intervention vs Base Image (0.4-0.7
+                                  recommended).
                                 </p>
                               </div>
                             </div>
 
                             <div className="space-y-1">
                               <label className="text-xs font-medium text-zinc-400">
-                                Semilla Aleatoria (Seed)
+                                Random Seed
                               </label>
                               <input
                                 type="number"
@@ -2951,13 +2976,12 @@ const AppInner: React.FC = () => {
                                       : undefined,
                                   )
                                 }
-                                placeholder="Ej. 123456 (Dejar vacío para aleatorio)"
+                                placeholder="E.g. 123456 (Leave empty for random)"
                                 className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-purple-500 outline-none placeholder:text-zinc-600 transition-all font-mono"
                               />
                               <p className="text-[9px] text-zinc-500 leading-tight">
-                                Mantén este campo vacío para resultados
-                                aleatorios o usa un número para
-                                reproducibilidad.
+                                Keep this field empty for random results
+                                or use a number for reproducibility.
                               </p>
                             </div>
                           </div>
@@ -2980,17 +3004,17 @@ const AppInner: React.FC = () => {
                             onClick={() => form.setEditSubMode("ai")}
                             className={`flex-1 py-1.5 text-[11px] font-medium rounded-md transition-all flex items-center justify-center gap-1.5 ${form.editSubMode === "ai" ? "bg-violet-600 text-white shadow-sm shadow-violet-900/50" : "text-zinc-500 hover:text-zinc-300"}`}
                           >
-                            ✨ Editar con IA
+                            ✨ AI Edit
                           </button>
                         </div>
 
                         {/* Shared: base image upload */}
                         <div className="space-y-4">
                           <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-                            Imagen Base
+                            Base Image
                           </h2>
                           <UploadZone
-                            label="Foto Original"
+                            label="Original Photo"
                             files={form.baseImageForEdit}
                             onFilesChange={(f) =>
                               form.setBaseImageForEdit(f as File | null)
@@ -3002,17 +3026,17 @@ const AppInner: React.FC = () => {
                         {/* ── AI Edit sub-mode ── */}
                         {form.editSubMode === "ai" && (
                           <div className="space-y-4">
-                            {/* Motor de edición IA — arriba para que los campos se adapten */}
+                            {/* AI editing engine — placed on top so fields adapt */}
                             <div className="space-y-1.5">
                               <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                                Motor de Edición
+                                Editing Engine
                               </h2>
                               <div className="flex gap-1 p-1 bg-zinc-900 rounded-lg border border-zinc-800">
                                 <button
                                   onClick={() =>
                                     form.setAiEditEngine(AIEditEngine.Gemini)
                                   }
-                                  title="Gemini — multimodal, acepta imagen de referencia"
+                                  title="Gemini — multimodal, accepts reference image"
                                   className={`flex-1 py-1.5 text-[11px] font-medium rounded-md transition-all flex items-center justify-center gap-1 ${form.aiEditEngine === AIEditEngine.Gemini ? "bg-violet-700 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300"}`}
                                 >
                                   <span>✦</span> Gemini
@@ -3024,7 +3048,7 @@ const AppInner: React.FC = () => {
                                         AIEditEngine.GPTImageEdit,
                                       )
                                     }
-                                    title="GPT Image 1 — edición por instrucción de texto con OpenAI"
+                                    title="GPT Image 1 — text instruction editing with OpenAI"
                                     className={`flex-1 py-1.5 text-[11px] font-medium rounded-md transition-all flex items-center justify-center gap-1 ${form.aiEditEngine === AIEditEngine.GPTImageEdit ? "bg-emerald-700 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300"}`}
                                   >
                                     <span>🤖</span> GPT
@@ -3038,7 +3062,7 @@ const AppInner: React.FC = () => {
                                           AIEditEngine.FluxKontext,
                                         )
                                       }
-                                      title="FLUX Kontext Pro — edición precisa por texto, preserva identidad"
+                                      title="FLUX Kontext Pro — precise text editing, preserves identity"
                                       className={`flex-1 py-1.5 text-[11px] font-medium rounded-md transition-all flex items-center justify-center gap-1 ${form.aiEditEngine === AIEditEngine.FluxKontext ? "bg-blue-700 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300"}`}
                                     >
                                       <span>⚡</span> FLUX
@@ -3049,7 +3073,7 @@ const AppInner: React.FC = () => {
                                           AIEditEngine.Flux2ProEdit,
                                         )
                                       }
-                                      title="FLUX.2 Pro Edit — multi-referencia, ideal para 2D→3D y escenarios"
+                                      title="FLUX.2 Pro Edit — multi-reference, ideal for 2D→3D and scenarios"
                                       className={`flex-1 py-1.5 text-[11px] font-medium rounded-md transition-all flex items-center justify-center gap-1 ${form.aiEditEngine === AIEditEngine.Flux2ProEdit ? "bg-sky-700 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300"}`}
                                     >
                                       <span>🔥</span> FLUX.2
@@ -3060,7 +3084,7 @@ const AppInner: React.FC = () => {
                                           AIEditEngine.Seedream5Edit,
                                         )
                                       }
-                                      title="Seedream 5 Edit — edición multimodal con hasta 9 imágenes de referencia"
+                                      title="Seedream 5 Edit — multimodal editing with up to 9 reference images"
                                       className={`flex-1 py-1.5 text-[11px] font-medium rounded-md transition-all flex items-center justify-center gap-1 ${form.aiEditEngine === AIEditEngine.Seedream5Edit ? "bg-orange-700 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300"}`}
                                     >
                                       <span>🌊</span> Seedream
@@ -3071,7 +3095,7 @@ const AppInner: React.FC = () => {
                                           AIEditEngine.FaceSwapFal,
                                         )
                                       }
-                                      title="Face Swap — intercambio de caras puro con fal.ai"
+                                      title="Face Swap — pure face swap with fal.ai"
                                       className={`flex-1 py-1.5 text-[11px] font-medium rounded-md transition-all flex items-center justify-center gap-1 ${form.aiEditEngine === AIEditEngine.FaceSwapFal ? "bg-rose-700 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300"}`}
                                     >
                                       <span>🎭</span> Face Swap
@@ -3079,14 +3103,14 @@ const AppInner: React.FC = () => {
                                   </>
                                 )}
                               </div>
-                              {/* Descripción del motor seleccionado */}
+                              {/* Selected engine description */}
                               {form.aiEditEngine === AIEditEngine.Gemini && (
                                 <p className="text-[10px] text-zinc-500 leading-relaxed px-0.5">
                                   <span className="text-violet-400 font-medium">
                                     Gemini
                                   </span>{" "}
-                                  — multimodal, acepta imagen de referencia
-                                  opcional para guiar el efecto.
+                                  — multimodal, accepts optional reference
+                                  image to guide the effect.
                                 </p>
                               )}
                               {form.aiEditEngine ===
@@ -3095,8 +3119,8 @@ const AppInner: React.FC = () => {
                                   <span className="text-emerald-400 font-medium">
                                     GPT Image 1
                                   </span>{" "}
-                                  — edición precisa por instrucción de texto.
-                                  Sin referencias adicionales.
+                                  — precise text instruction editing.
+                                  No additional references.
                                 </p>
                               )}
                               {form.aiEditEngine ===
@@ -3105,8 +3129,8 @@ const AppInner: React.FC = () => {
                                   <span className="text-blue-400 font-medium">
                                     FLUX Kontext Pro
                                   </span>{" "}
-                                  — preserva cara e identidad. Solo texto, sin
-                                  imagen de referencia.
+                                  — preserves face and identity. Text only, no
+                                  reference image.
                                 </p>
                               )}
                               {form.aiEditEngine ===
@@ -3115,9 +3139,9 @@ const AppInner: React.FC = () => {
                                   <span className="text-sky-400 font-medium">
                                     FLUX.2 Pro Edit
                                   </span>{" "}
-                                  — multi-referencia. Ideal para 2D→3D, cambio
-                                  de escenario, transformación de estilo. Sube
-                                  fotos del personaje u outfit como referencias.
+                                  — multi-reference. Ideal for 2D→3D, scenario
+                                  change, style transformation. Upload character
+                                  or outfit photos as references.
                                 </p>
                               )}
                               {form.aiEditEngine ===
@@ -3126,9 +3150,9 @@ const AppInner: React.FC = () => {
                                   <span className="text-orange-400 font-medium">
                                     Seedream 5 Edit
                                   </span>{" "}
-                                  — hasta 9 referencias. En el prompt usa
-                                  "Figure 1" para la base y "Figure 2", "Figure
-                                  3"… para las referencias.
+                                  — up to 9 references. In the prompt use
+                                  "Figure 1" for the base and "Figure 2",
+                                  "Figure 3"… for the references.
                                 </p>
                               )}
                               {form.aiEditEngine ===
@@ -3137,19 +3161,18 @@ const AppInner: React.FC = () => {
                                   <span className="text-rose-400 font-medium">
                                     Face Swap
                                   </span>{" "}
-                                  — intercambio de caras. Sube la foto del
-                                  Influencer a continuación para ponerla en la
-                                  foto de destino.
+                                  — face swap. Upload the Influencer's photo
+                                  below to place it on the target photo.
                                 </p>
                               )}
                             </div>
 
-                            {/* Instrucción (Oculto para FaceSwap) */}
+                            {/* Instruction (Hidden for FaceSwap) */}
                             {form.aiEditEngine !== AIEditEngine.FaceSwapFal && (
                               <>
                                 <div className="flex items-center gap-2">
                                   <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                                    Instrucción de Edición
+                                    Editing Instruction
                                   </h2>
                                   <span className="text-[9px] bg-violet-500/20 text-violet-300 border border-violet-500/30 px-1.5 py-0.5 rounded font-semibold">
                                     IA
@@ -3164,38 +3187,38 @@ const AppInner: React.FC = () => {
                                     placeholder={
                                       form.aiEditEngine ===
                                       AIEditEngine.Seedream5Edit
-                                        ? "Ej. Change the outfit in Figure 1 to the outfit shown in Figure 2. Keep the same pose, face and background."
+                                        ? "E.g. Change the outfit in Figure 1 to the outfit shown in Figure 2. Keep the same pose, face and background."
                                         : form.aiEditEngine ===
                                             AIEditEngine.Flux2ProEdit
-                                          ? "Ej. Transform this 2D character into a 3D photorealistic portrait in a cyberpunk city at night. Keep the exact same face and costume design."
-                                          : "Ej. Agrega un halo de luz dorada alrededor de la cabeza, añade partículas brillantes en el aire, pon gotas de lluvia cayendo, agrega un reflejo de neón azul en la ropa..."
+                                          ? "E.g. Transform this 2D character into a 3D photorealistic portrait in a cyberpunk city at night. Keep the exact same face and costume design."
+                                          : "E.g. Add a golden light halo around the head, add sparkle particles in the air, put falling rain drops, add a blue neon reflection on the clothing..."
                                     }
                                     className="w-full bg-zinc-900 border border-violet-500/20 rounded-lg p-3 text-sm focus:ring-2 focus:ring-violet-500/50 outline-none resize-none h-24 placeholder:text-zinc-600 transition-all"
                                   />
                                   <p className="text-[10px] text-zinc-500">
                                     {form.aiEditEngine ===
                                     AIEditEngine.Seedream5Edit
-                                      ? 'Referencia la imagen base como "Figure 1" y las referencias adicionales como "Figure 2", "Figure 3", etc.'
+                                      ? 'Reference the base image as "Figure 1" and additional references as "Figure 2", "Figure 3", etc.'
                                       : form.aiEditEngine ===
                                           AIEditEngine.Flux2ProEdit
-                                        ? "Describe la transformación. El modelo usará tu imagen base + las referencias adicionales para generar el resultado."
-                                        : "Describe qué quieres agregar o modificar. El resto de la imagen se preserva exactamente."}
+                                        ? "Describe the transformation. The model will use your base image + additional references to generate the result."
+                                        : "Describe what you want to add or modify. The rest of the image is preserved exactly."}
                                   </p>
                                 </div>
                               </>
                             )}
 
-                            {/* Imagen de referencia / Cara — Gemini / FaceSwap */}
+                            {/* Reference image / Face — Gemini / FaceSwap */}
                             {form.aiEditEngine === AIEditEngine.Gemini && (
                               <div className="space-y-1.5">
                                 <label className="text-sm font-medium text-zinc-400">
-                                  Imagen de Referencia{" "}
+                                  Reference Image{" "}
                                   <span className="text-zinc-600 text-[10px]">
-                                    (Opcional)
+                                    (Optional)
                                   </span>
                                 </label>
                                 <UploadZone
-                                  label="Referencia visual del efecto"
+                                  label="Visual reference of the effect"
                                   files={form.aiEditReferenceImage}
                                   onFilesChange={(f) =>
                                     form.setAiEditReferenceImage(
@@ -3205,23 +3228,23 @@ const AppInner: React.FC = () => {
                                   onImagePreview={gallery.setPreviewImage}
                                 />
                                 <p className="text-[10px] text-zinc-500">
-                                  Sube una imagen de referencia del elemento que
-                                  quieres agregar (ej. un tipo de luz, textura,
-                                  objeto).
+                                  Upload a reference image of the element you
+                                  want to add (e.g. a type of light, texture,
+                                  object).
                                 </p>
                               </div>
                             )}
-                            {/* Cara para FaceSwap */}
+                            {/* Face for FaceSwap */}
                             {form.aiEditEngine === AIEditEngine.FaceSwapFal && (
                               <div className="space-y-1.5">
                                 <label className="text-sm font-medium text-zinc-400">
-                                  Foto del Influencer{" "}
+                                  Influencer Photo{" "}
                                   <span className="text-zinc-600 text-[10px]">
-                                    (Cara a aplicar)
+                                    (Face to apply)
                                   </span>
                                 </label>
                                 <UploadZone
-                                  label="Sube un plano cerrado de la cara"
+                                  label="Upload a close-up of the face"
                                   files={form.aiEditReferenceImage}
                                   onFilesChange={(f) =>
                                     form.setAiEditReferenceImage(
@@ -3231,23 +3254,23 @@ const AppInner: React.FC = () => {
                                   onImagePreview={gallery.setPreviewImage}
                                 />
                                 <p className="text-[10px] text-zinc-500">
-                                  Se detectará la cara en esta foto y se
-                                  reemplazará en la foto de destino (arriba).
+                                  The face in this photo will be detected and
+                                  replaced in the target photo (above).
                                 </p>
                               </div>
                             )}
-                            {/* Imágenes de referencia — Seedream 5 Edit */}
+                            {/* Reference images — Seedream 5 Edit */}
                             {form.aiEditEngine ===
                               AIEditEngine.Seedream5Edit && (
                               <div className="space-y-1.5">
                                 <label className="text-sm font-medium text-zinc-400">
-                                  Imágenes de Referencia{" "}
+                                  Reference Images{" "}
                                   <span className="text-zinc-600 text-[10px]">
-                                    (Figure 2, 3… — hasta 9)
+                                    (Figure 2, 3… — up to 9)
                                   </span>
                                 </label>
                                 <UploadZone
-                                  label="Outfit, estilo, producto, etc."
+                                  label="Outfit, style, product, etc."
                                   files={form.aiEditReferenceImages}
                                   onFilesChange={(f) =>
                                     form.setAiEditReferenceImages(
@@ -3258,25 +3281,24 @@ const AppInner: React.FC = () => {
                                   multiple={true}
                                 />
                                 <p className="text-[10px] text-zinc-500">
-                                  Estas imágenes se pasan como Figure 2, Figure
-                                  3, etc. El modelo las puede usar para cambiar
-                                  outfit, reemplazar producto, copiar estilo,
-                                  etc.
+                                  These images are passed as Figure 2, Figure
+                                  3, etc. The model can use them to change
+                                  outfit, replace product, copy style, etc.
                                 </p>
                               </div>
                             )}
-                            {/* Imágenes de referencia — FLUX.2 Pro Edit */}
+                            {/* Reference images — FLUX.2 Pro Edit */}
                             {form.aiEditEngine ===
                               AIEditEngine.Flux2ProEdit && (
                               <div className="space-y-1.5">
                                 <label className="text-sm font-medium text-zinc-400">
-                                  Imágenes de Referencia{" "}
+                                  Reference Images{" "}
                                   <span className="text-zinc-600 text-[10px]">
-                                    (Opcional — hasta 9)
+                                    (Optional — up to 9)
                                   </span>
                                 </label>
                                 <UploadZone
-                                  label="Personaje, outfit, escenario de referencia…"
+                                  label="Character, outfit, scenario reference…"
                                   files={form.aiEditReferenceImages}
                                   onFilesChange={(f) =>
                                     form.setAiEditReferenceImages(
@@ -3287,27 +3309,27 @@ const AppInner: React.FC = () => {
                                   multiple={true}
                                 />
                                 <p className="text-[10px] text-zinc-500">
-                                  Sube fotos del personaje, outfit o escenario
-                                  que quieres usar como referencia. FLUX.2 Pro
-                                  las combina con la imagen base.
+                                  Upload character, outfit, or scenario photos
+                                  to use as reference. FLUX.2 Pro combines them
+                                  with the base image.
                                 </p>
                               </div>
                             )}
 
-                            {/* Ideas — según motor */}
+                            {/* Ideas — per engine */}
                             {(form.aiEditEngine === AIEditEngine.Gemini ||
                               form.aiEditEngine === AIEditEngine.GPTImageEdit ||
                               form.aiEditEngine ===
                                 AIEditEngine.FluxKontext) && (
                               <div className="p-3 bg-violet-500/5 border border-violet-500/15 rounded-lg space-y-1">
                                 <p className="text-[10px] text-violet-300 font-semibold">
-                                  💡 Ideas de edición
+                                  💡 Edit ideas
                                 </p>
                                 <p className="text-[10px] text-zinc-500">
-                                  Halo de luz · Partículas brillantes · Lluvia ·
-                                  Fuego · Humo · Reflejo de neón · Glitter ·
-                                  Piercings · Tatuajes · Gotas de agua · Flores
-                                  · Sombras dramáticas
+                                  Light halo · Sparkle particles · Rain ·
+                                  Fire · Smoke · Neon reflection · Glitter ·
+                                  Piercings · Tattoos · Water drops · Flowers
+                                  · Dramatic shadows
                                 </p>
                               </div>
                             )}
@@ -3315,13 +3337,13 @@ const AppInner: React.FC = () => {
                               AIEditEngine.Flux2ProEdit && (
                               <div className="p-3 bg-sky-500/5 border border-sky-500/15 rounded-lg space-y-1">
                                 <p className="text-[10px] text-sky-300 font-semibold">
-                                  💡 Ideas para FLUX.2 Pro Edit
+                                  💡 FLUX.2 Pro Edit ideas
                                 </p>
                                 <p className="text-[10px] text-zinc-500">
-                                  2D → 3D fotorrealista · Cambiar escenario ·
-                                  Aplicar outfit de referencia · Transformar
-                                  estilo artístico · Insertar personaje en
-                                  entorno nuevo · Combinar varios looks
+                                  2D → 3D photorealistic · Change scenario ·
+                                  Apply reference outfit · Transform art style
+                                  · Insert character in new environment ·
+                                  Combine multiple looks
                                 </p>
                               </div>
                             )}
@@ -3329,13 +3351,13 @@ const AppInner: React.FC = () => {
                               AIEditEngine.Seedream5Edit && (
                               <div className="p-3 bg-orange-500/5 border border-orange-500/15 rounded-lg space-y-1">
                                 <p className="text-[10px] text-orange-300 font-semibold">
-                                  💡 Ideas para Seedream 5 Edit
+                                  💡 Seedream 5 Edit ideas
                                 </p>
                                 <p className="text-[10px] text-zinc-500">
-                                  Cambiar outfit (Figure 2) · Reemplazar
-                                  producto · Fusionar estilo de dos imágenes ·
-                                  Cambiar fondo · Aplicar textura de referencia
-                                  · Combinar elementos de múltiples fotos
+                                  Change outfit (Figure 2) · Replace product ·
+                                  Merge style from two images · Change
+                                  background · Apply reference texture ·
+                                  Combine elements from multiple photos
                                 </p>
                               </div>
                             )}
@@ -3345,10 +3367,10 @@ const AppInner: React.FC = () => {
                         {/* ── Poses sub-mode ── */}
                         {form.editSubMode === "poses" && (
                           <div className="space-y-4">
-                            {/* Motor de poses */}
+                            {/* Pose engine */}
                             <div className="space-y-1.5">
                               <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                                Motor de Poses
+                                Pose Engine
                               </h2>
                               <div className="flex gap-1 p-1 bg-zinc-900 rounded-lg border border-zinc-800">
                                 {Object.values(PoseEngine)
@@ -3395,11 +3417,11 @@ const AppInner: React.FC = () => {
                                   <span className="text-yellow-400 font-medium">
                                     Leffa
                                   </span>{" "}
-                                  si subes imagen de pose ·{" "}
+                                  if you upload a pose image ·{" "}
                                   <span className="text-blue-400 font-medium">
                                     FLUX Kontext
                                   </span>{" "}
-                                  si escribes texto
+                                  if you write text
                                 </p>
                               )}
                               {form.poseEngine === PoseEngine.Flux2ProEdit && (
@@ -3407,9 +3429,9 @@ const AppInner: React.FC = () => {
                                   <span className="text-sky-400 font-medium">
                                     FLUX.2 Pro Edit
                                   </span>{" "}
-                                  — la imagen de pose se pasa como referencia
-                                  junto a la instrucción. Ideal para
-                                  transformaciones complejas con múltiples refs.
+                                  — the pose image is passed as a reference
+                                  along with the instruction. Ideal for complex
+                                  transformations with multiple refs.
                                 </p>
                               )}
                               {form.poseEngine === PoseEngine.GPTImageEdit && (
@@ -3417,20 +3439,20 @@ const AppInner: React.FC = () => {
                                   <span className="text-emerald-400 font-medium">
                                     GPT Image 1
                                   </span>{" "}
-                                  — edita por instrucción de texto. Sin imagen
-                                  de referencia de pose; describe la postura con
-                                  palabras.
+                                  — edits by text instruction. No pose
+                                  reference image; describe the posture with
+                                  words.
                                 </p>
                               )}
                             </div>
 
                             <div className="flex justify-between items-center">
                               <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                                Poses de Sesión
+                                Session Poses
                               </h2>
                               {form.editNumberOfImages > 1 && (
                                 <span className="text-[10px] text-purple-400 font-bold bg-purple-900/30 px-2 py-0.5 rounded border border-purple-500/30">
-                                  Modo Sesión
+                                  Session Mode
                                 </span>
                               )}
                             </div>
@@ -3460,12 +3482,12 @@ const AppInner: React.FC = () => {
                                           <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                                           <polyline points="22 4 12 14.01 9 11.01" />
                                         </svg>
-                                        Imagen cargada
+                                        Image loaded
                                       </span>
                                     )}
                                   </div>
                                   <ReferenceInput
-                                    label="Descripción o Imagen"
+                                    label="Description or Image"
                                     textValue={item.text}
                                     onTextChange={(val) =>
                                       form.updateSessionPose(index, "text", val)
@@ -3485,7 +3507,7 @@ const AppInner: React.FC = () => {
                                     onImagePreview={gallery.setPreviewImage}
                                     presets={POSE_PRESETS}
                                     category="Pose"
-                                    placeholder="Ej. De pie, mirando a la izquierda..."
+                                    placeholder="E.g. Standing, looking to the left..."
                                     multiline={true}
                                     multiple={true}
                                   />
@@ -3494,11 +3516,11 @@ const AppInner: React.FC = () => {
                                       <div className="flex items-center justify-between p-2.5 bg-indigo-500/5 border border-indigo-500/20 rounded-lg">
                                         <div className="space-y-0.5">
                                           <p className="text-xs font-semibold text-indigo-300">
-                                            Evitar interferencias
+                                            Avoid interference
                                           </p>
                                           <p className="text-[10px] text-zinc-400">
-                                            Extrae el esqueleto para no copiar
-                                            la ropa ni la cara de esta foto.
+                                            Extract the skeleton to avoid copying
+                                            the clothing or face from this photo.
                                           </p>
                                         </div>
                                         <button
@@ -3506,7 +3528,7 @@ const AppInner: React.FC = () => {
                                             e.preventDefault();
                                             try {
                                               toast.info(
-                                                "Extrayendo esqueleto de la pose...",
+                                                "Extracting pose skeleton...",
                                               );
                                               const skeleton =
                                                 await extractPoseSkeleton(
@@ -3518,18 +3540,18 @@ const AppInner: React.FC = () => {
                                                 [skeleton],
                                               );
                                               toast.success(
-                                                "Pose convertida a esqueleto con éxito",
+                                                "Pose successfully converted to skeleton",
                                               );
                                             } catch (err) {
                                               console.error(err);
                                               toast.error(
-                                                "Error al generar el esqueleto.",
+                                                "Error generating the skeleton.",
                                               );
                                             }
                                           }}
                                           className="px-3 py-1.5 text-[11px] font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded-md transition-colors whitespace-nowrap"
                                         >
-                                          🪄 Extraer Esqueleto
+                                          🪄 Extract Skeleton
                                         </button>
                                       </div>
                                       {form.characters.length > 0 && (
@@ -3553,7 +3575,7 @@ const AppInner: React.FC = () => {
                                             htmlFor={`usePoseAsOutfit-${index}`}
                                             className="text-xs text-zinc-400 select-none cursor-pointer"
                                           >
-                                            Copiar Outfit de esta referencia
+                                            Copy Outfit from this reference
                                           </label>
                                         </div>
                                       )}
@@ -3561,7 +3583,7 @@ const AppInner: React.FC = () => {
                                   )}
                                   <div className="pt-2 border-t border-zinc-800/50">
                                     <ReferenceInput
-                                      label="Objeto / Accesorio (Opcional)"
+                                      label="Object / Accessory (Optional)"
                                       textValue={item.accessory || ""}
                                       onTextChange={(val) =>
                                         form.updateSessionPose(
@@ -3582,8 +3604,8 @@ const AppInner: React.FC = () => {
                                               : [],
                                         )
                                       }
-                                      category="Objeto"
-                                      placeholder="Ej. Sosteniendo un teléfono..."
+                                      category="Object"
+                                      placeholder="E.g. Holding a phone..."
                                       multiple={true}
                                     />
                                   </div>
@@ -3596,7 +3618,7 @@ const AppInner: React.FC = () => {
                         <div className="pt-6 border-t border-zinc-800/50 mt-4 space-y-4">
                           <div className="flex items-center justify-between">
                             <label className="text-sm font-medium text-zinc-400">
-                              Prompt Negativo (Opcional)
+                              Negative Prompt (Optional)
                             </label>
                             <div
                               className="flex items-center gap-2 px-2 py-1 bg-zinc-900/50 rounded border border-zinc-800/50 cursor-pointer hover:bg-zinc-800 transition-colors"
@@ -3608,7 +3630,7 @@ const AppInner: React.FC = () => {
                                 htmlFor="antiFisheyeEdit"
                                 className="text-xs text-zinc-400 cursor-pointer select-none font-medium"
                               >
-                                Evitar Ojo de Pez
+                                Avoid Fisheye
                               </label>
                               <input
                                 type="checkbox"
@@ -3627,12 +3649,12 @@ const AppInner: React.FC = () => {
                             onChange={(e) =>
                               form.setNegativePrompt(e.target.value)
                             }
-                            placeholder="Ej. deformado, borroso, baja calidad, texto, marcas de agua, manos extrañas..."
+                            placeholder="E.g. deformed, blurry, low quality, text, watermarks, weird hands..."
                             className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm focus:ring-2 focus:ring-purple-500 outline-none resize-none h-20 placeholder:text-zinc-600 mt-2 transition-all"
                           />
                           <p className="text-[10px] text-zinc-500 mt-1">
-                            Describe lo que NO quieres que aparezca en la imagen
-                            editada.
+                            Describe what you do NOT want to appear in the edited
+                            image.
                           </p>
                         </div>
                       </>
@@ -3643,7 +3665,7 @@ const AppInner: React.FC = () => {
                       <>
                         <div className="space-y-4">
                           <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-                            Motor de Video
+                            Video Engine
                           </h2>
                           <div className="grid grid-cols-2 gap-2">
                             {Object.values(VideoEngine).map((engine) => {
@@ -3668,11 +3690,11 @@ const AppInner: React.FC = () => {
                         </div>
                         <div className="space-y-4">
                           <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-                            Imágenes / Video Base
+                            Images / Base Video
                           </h2>
                           <div className="grid grid-cols-2 gap-4">
                             <UploadZone
-                              label="Foto del Influencer"
+                              label="Influencer Photo"
                               files={form.videoImage}
                               onFilesChange={(f) =>
                                 form.setVideoImage(f as File | null)
@@ -3682,13 +3704,13 @@ const AppInner: React.FC = () => {
                             {form.videoEngine === VideoEngine.KlingStandard ||
                             form.videoEngine === VideoEngine.KlingPro ? (
                               <UploadZone
-                                label="Video de Referencia (Movimiento)"
+                                label="Reference Video (Motion)"
                                 files={form.referenceVideo}
                                 onFilesChange={(f) =>
                                   form.setReferenceVideo(f as File | null)
                                 }
                                 accept="video/*"
-                                hint="Opcional. Kling extraerá el movimiento."
+                                hint="Optional. Kling will extract the motion."
                               />
                             ) : (
                               <div className="border-2 border-dashed border-zinc-800/30 rounded-xl p-6 flex flex-col items-center justify-center text-center opacity-50 bg-zinc-900/20">
@@ -3696,10 +3718,10 @@ const AppInner: React.FC = () => {
                                   ▶️
                                 </span>
                                 <span className="text-sm font-medium text-zinc-500">
-                                  Motion Control NO disponible
+                                  Motion Control NOT available
                                 </span>
                                 <span className="text-xs text-zinc-600 mt-1">
-                                  Solo Kling soporta videos de referencia.
+                                  Only Kling supports reference videos.
                                 </span>
                               </div>
                             )}
@@ -3707,32 +3729,32 @@ const AppInner: React.FC = () => {
                         </div>
                         <div className="space-y-4">
                           <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-                            Acción y Diálogo
+                            Action & Dialogue
                           </h2>
                           <EnhancedInput
-                            label="¿Qué sucede en el video?"
+                            label="What happens in the video?"
                             value={form.videoPrompt}
                             onChange={form.setVideoPrompt}
-                            category="Acción Cinematográfica"
-                            placeholder="Ej. Saluda a la cámara..."
+                            category="Cinematic Action"
+                            placeholder="E.g. Waves at the camera..."
                             multiline={true}
                           />
                           <div className="space-y-1">
                             <label className="text-sm font-medium text-zinc-400">
-                              Diálogo
+                              Dialogue
                             </label>
                             <textarea
                               value={form.videoDialogue}
                               onChange={(e) =>
                                 form.setVideoDialogue(e.target.value)
                               }
-                              placeholder="Escribe lo que el personaje debe decir..."
+                              placeholder="Write what the character should say..."
                               className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-sm focus:ring-2 focus:ring-purple-500 outline-none resize-none h-20 placeholder:text-zinc-600"
                             />
                           </div>
                           <div className="space-y-1">
                             <label className="text-sm font-medium text-zinc-400">
-                              Voz (Opcional)
+                              Voice (Optional)
                             </label>
                             <input
                               type="file"
@@ -3748,12 +3770,12 @@ const AppInner: React.FC = () => {
                         </div>
                         <div className="space-y-4">
                           <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-                            Configuración
+                            Settings
                           </h2>
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
                               <label className="text-sm font-medium text-zinc-400">
-                                Calidad
+                                Quality
                               </label>
                               <select
                                 value={form.videoResolution}
@@ -3782,9 +3804,9 @@ const AppInner: React.FC = () => {
                       <div className="space-y-4 pt-6 border-t border-zinc-800">
                         <div className="flex items-center justify-between">
                           <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-                            <span>Batch de Outfits</span>
+                            <span>Outfit Batch</span>
                             <span className="px-1.5 py-0.5 text-[9px] bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded font-bold">
-                              NUEVO
+                              NEW
                             </span>
                           </h2>
                           <button
@@ -3794,7 +3816,7 @@ const AppInner: React.FC = () => {
                               )
                             }
                             className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${form.batchOutfitEnabled ? "bg-purple-600" : "bg-zinc-700"}`}
-                            aria-label="Activar batch de outfits"
+                            aria-label="Enable outfit batch"
                           >
                             <span
                               className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${form.batchOutfitEnabled ? "translate-x-[18px]" : "translate-x-0.5"}`}
@@ -3804,8 +3826,8 @@ const AppInner: React.FC = () => {
                         {form.batchOutfitEnabled && (
                           <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
                             <p className="text-[10px] text-zinc-500">
-                              Genera la misma cara con múltiples outfits en una
-                              sola operación. Sube fotos o describe cada outfit.
+                              Generate the same face with multiple outfits in a
+                              single operation. Upload photos or describe each outfit.
                             </p>
                             {form.batchOutfits.map((outfit, idx) => (
                               <div
@@ -3822,7 +3844,7 @@ const AppInner: React.FC = () => {
                                         form.removeBatchOutfit(outfit.id)
                                       }
                                       className="text-zinc-600 hover:text-red-400 transition-colors"
-                                      title="Eliminar"
+                                      title="Delete"
                                     >
                                       <svg
                                         xmlns="http://www.w3.org/2000/svg"
@@ -3859,8 +3881,8 @@ const AppInner: React.FC = () => {
                                       Array.isArray(v) ? v : v ? [v] : [],
                                     )
                                   }
-                                  category="Outfit / Ropa"
-                                  placeholder="Describe el outfit o sube una foto de referencia..."
+                                  category="Outfit / Clothing"
+                                  placeholder="Describe the outfit or upload a reference photo..."
                                   multiple={true}
                                 />
                               </div>
@@ -3884,17 +3906,17 @@ const AppInner: React.FC = () => {
                                   <line x1="12" y1="5" x2="12" y2="19" />
                                   <line x1="5" y1="12" x2="19" y2="12" />
                                 </svg>
-                                Añadir outfit
+                                Add outfit
                               </button>
                             )}
                             {isBatchGenerating ? (
                               <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
                                 <ProgressBar
                                   progress={batchProgress}
-                                  label={`Generando ${form.batchOutfits.filter((o) => o.outfitImages.length > 0 || o.outfitText.trim()).length} variaciones...`}
+                                  label={`Generating ${form.batchOutfits.filter((o) => o.outfitImages.length > 0 || o.outfitText.trim()).length} variations...`}
                                 />
                                 <p className="text-[10px] text-zinc-500 text-center mt-2 animate-pulse">
-                                  Procesando outfits en paralelo
+                                  Processing outfits in parallel
                                 </p>
                               </div>
                             ) : (
@@ -3919,7 +3941,7 @@ const AppInner: React.FC = () => {
                                   <rect x="14" y="14" width="7" height="7" />
                                   <rect x="3" y="14" width="7" height="7" />
                                 </svg>
-                                Generar Batch (
+                                Generate Batch (
                                 {
                                   form.batchOutfits.filter(
                                     (o) =>
@@ -3964,7 +3986,7 @@ const AppInner: React.FC = () => {
                       <>
                         <div className="space-y-4 pt-6 border-t border-zinc-800">
                           <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-                            Estilos Rápidos (Presets)
+                            Quick Styles (Presets)
                           </h2>
                           <div className="grid grid-cols-2 gap-2">
                             {STYLE_PRESETS.map((preset) => (
@@ -4033,9 +4055,11 @@ const AppInner: React.FC = () => {
               <ProfilePage onNavigate={(ws) => setActiveWorkspace(ws as AppWorkspace)} />
             </div>
           )}
+          </Suspense>
         </div>
 
-        {/* Modals */}
+        {/* Modals (lazy-loaded — Suspense with null fallback since modals overlay) */}
+        <Suspense fallback={null}>
         {gallery.selectedItem && (
           <DetailModal
             item={gallery.selectedItem}
@@ -4127,9 +4151,21 @@ const AppInner: React.FC = () => {
             }
             return null;
           })()}
+        </Suspense>
 
         {/* Floating Pose Assistant */}
         <PoseAssistantWidget />
+
+        {/* Welcome onboarding modal — first visit only */}
+        {showWelcome && user && (
+          <WelcomeModal
+            onClose={() => setShowWelcome(false)}
+            onNavigate={(ws, mode) => {
+              setActiveWorkspace(ws as AppWorkspace);
+              if (mode && ws === 'generate') form.setActiveMode(mode as any);
+            }}
+          />
+        )}
       </div>
     </ApiKeyGuard>
   );

@@ -23,12 +23,12 @@ export const IMAGEN4_MODELS = new Set<GeminiImageModel>([
 ]);
 
 export const GEMINI_IMAGE_MODEL_LABELS: Record<GeminiImageModel, string> = {
-  [GeminiImageModel.Flash]: '⚡ Flash — Rápido y eficiente',
-  [GeminiImageModel.Flash2]: '🍌 NB2 — Nano Banana 2 · Económico',
-  [GeminiImageModel.Pro]: '🔬 Pro — Máxima calidad',
-  [GeminiImageModel.Imagen4]: '🎨 Imagen 4 — Ultra fotorrealista',
-  [GeminiImageModel.Imagen4Ultra]: '✨ Imagen 4 Ultra — Máxima fidelidad',
-  [GeminiImageModel.Imagen4Fast]: '🚀 Imagen 4 Fast — Rapidísimo',
+  [GeminiImageModel.Flash]: '⚡ Flash — Fast and efficient',
+  [GeminiImageModel.Flash2]: '🍌 NB2 — Nano Banana 2 · Economical',
+  [GeminiImageModel.Pro]: '🔬 Pro — Maximum quality',
+  [GeminiImageModel.Imagen4]: '🎨 Imagen 4 — Ultra photorealistic',
+  [GeminiImageModel.Imagen4Ultra]: '✨ Imagen 4 Ultra — Maximum fidelity',
+  [GeminiImageModel.Imagen4Fast]: '🚀 Imagen 4 Fast — Blazing fast',
 };
 
 export enum AspectRatio {
@@ -141,7 +141,7 @@ export interface GeneratedContent {
   tags?: string[];
   /** Which workspace produced this item */
   source?: 'generate' | 'director';
-  // Modelo/proveedor usado — para restaurar en "Reutilizar ajustes"
+  // Model/provider used — for restoring in "Reuse settings"
   aiProvider?: AIProvider;
   falModel?: FalModel;
   replicateModel?: ReplicateModel;
@@ -169,11 +169,11 @@ export interface Preset {
 export interface CustomPreset {
   id: string;
   name: string;
-  thumbnail?: string; // base64 data URL — preview del primer model image
+  thumbnail?: string; // base64 data URL — preview of first model image
   data: Partial<InfluencerParams & CharacterParams & { outfitDescription: string }>;
 }
 
-// Motor para el modo "Editar con IA"
+// Engine for "AI Edit" mode
 export enum AIEditEngine {
   Gemini = 'gemini',
   FluxKontext = 'flux-kontext',
@@ -231,25 +231,25 @@ export enum AIProvider {
 }
 
 export const AI_PROVIDER_LABELS: Record<AIProvider, { name: string; icon: string; description: string }> = {
-  [AIProvider.Gemini]: { name: 'Gemini', icon: '✦', description: 'Multi-personaje, escenas complejas' },
-  [AIProvider.Fal]: { name: 'fal.ai', icon: '⚡', description: 'FLUX.1 Kontext — identidad multi-referencia · 2026' },
+  [AIProvider.Gemini]: { name: 'Gemini', icon: '✦', description: 'Multi-character, complex scenes' },
+  [AIProvider.Fal]: { name: 'fal.ai', icon: '⚡', description: 'FLUX.1 Kontext — multi-reference identity · 2026' },
   [AIProvider.Replicate]: { name: 'Replicate', icon: '👗', description: 'FLUX.2 Max + Gen-4 Image + Virtual Try-On' },
-  [AIProvider.OpenAI]: { name: 'GPT Image', icon: '🤖', description: 'GPT Image 1.5 — multimodal con referencia' },
-  [AIProvider.Ideogram]: { name: 'Ideogram', icon: '💡', description: 'Ideogram V3 — tipografía y estilo avanzado' },
-  [AIProvider.ModelsLab]: { name: 'ModelsLab', icon: '🔞', description: 'NSFW sin censura — Lustify SDXL + 10K modelos' },
+  [AIProvider.OpenAI]: { name: 'GPT Image', icon: '🤖', description: 'GPT Image 1.5 — multimodal with reference' },
+  [AIProvider.Ideogram]: { name: 'Ideogram', icon: '💡', description: 'Ideogram V3 — advanced typography and style' },
+  [AIProvider.ModelsLab]: { name: 'ModelsLab', icon: '🔞', description: 'Uncensored NSFW — Lustify SDXL + 10K models' },
 };
 
-// Modelos disponibles por proveedor
+// Available models per provider
 export enum FalModel {
   KontextMulti = 'fal-ai/flux-pro/kontext/multi',      // FLUX.1 Kontext — multi-ref identity gen · 2026
-  KontextMaxMulti = 'fal-ai/flux-pro/kontext/max/multi',  // FLUX.1 Kontext Max — máxima calidad · 2026
-  Flux2Pro = 'fal-ai/flux-2-pro/edit',                    // FLUX.2 Pro Edit — editor de imágenes multi-ref
-  Seedream45 = 'fal-ai/bytedance/seedream/v4.5/text-to-image',   // ByteDance — fotorrealismo 4K
-  Seedream50 = 'fal-ai/bytedance/seedream/v5/lite/text-to-image', // ByteDance — web search + razonamiento
+  KontextMaxMulti = 'fal-ai/flux-pro/kontext/max/multi',  // FLUX.1 Kontext Max — maximum quality · 2026
+  Flux2Pro = 'fal-ai/flux-2-pro/edit',                    // FLUX.2 Pro Edit — multi-ref image editor
+  Seedream45 = 'fal-ai/bytedance/seedream/v4.5/text-to-image',   // ByteDance — photorealism 4K
+  Seedream50 = 'fal-ai/bytedance/seedream/v5/lite/text-to-image', // ByteDance — web search + reasoning
   ZImageTurbo = 'fal-ai/z-image/turbo',                  // Alibaba Tongyi-MAI 6B — uncensored, $0.005/mp · 2025
 }
 
-// Modelos mostrados en el panel de generación
+// Models displayed in the generation panel
 export const FAL_GENERATION_MODELS: FalModel[] = [
   FalModel.KontextMulti,
   FalModel.KontextMaxMulti,
@@ -258,17 +258,17 @@ export const FAL_GENERATION_MODELS: FalModel[] = [
   FalModel.Seedream50,
 ];
 
-// Motor para el editor de poses
+// Engine for pose editor
 export enum PoseEngine {
-  Gemini = 'gemini',               // Default — multimodal, texto + imagen
-  FalAI = 'fal',                   // Leffa (imagen ref) o FLUX Kontext Pro (texto)
-  Flux2ProEdit = 'flux2-pro-edit', // FLUX.2 Pro Edit — multi-referencia · fal.ai
-  GPTImageEdit = 'gpt-image-edit', // GPT Image 1 — instrucción de texto · OpenAI
-  GrokImagine = 'grok-imagine',    // Grok Imagine — xAI Aurora, ~4s, imagen + texto · 2026
+  Gemini = 'gemini',               // Default — multimodal, text + image
+  FalAI = 'fal',                   // Leffa (ref image) or FLUX Kontext Pro (text)
+  Flux2ProEdit = 'flux2-pro-edit', // FLUX.2 Pro Edit — multi-reference · fal.ai
+  GPTImageEdit = 'gpt-image-edit', // GPT Image 1 — text instruction · OpenAI
+  GrokImagine = 'grok-imagine',    // Grok Imagine — xAI Aurora, ~4s, image + text · 2026
 }
 
 export enum ReplicateModel {
-  Flux2Max = 'black-forest-labs/flux-2-max',          // FLUX.2 [max] — máxima fidelidad, hasta 8 refs · Ene 2026
+  Flux2Max = 'black-forest-labs/flux-2-max',          // FLUX.2 [max] — maximum fidelity, up to 8 refs · Jan 2026
   Gen4Image = 'runwayml/gen4-image',                  // Runway Gen-4 — char + location consistency · Jul 2025
   IDMVTON = 'cuuupid/idm-vton',                       // Virtual try-on ⚠️ licencia no-comercial (CC BY-NC-SA 4.0)
   GrokImagine = 'xai/grok-imagine-image',             // Grok Imagine — xAI SOTA, ~4s/img, 13 aspect ratios · 2026
@@ -281,32 +281,32 @@ export enum OpenAIModel {
 
 
 export enum IdeogramModel {
-  V3 = 'V_3',         // Ideogram 3.0 — último, soporta character reference
+  V3 = 'V_3',         // Ideogram 3.0 — latest, supports character reference
   V2A = 'V_2A',        // Ideogram 2A
-  V2ATurbo = 'V_2A_TURBO',  // Ideogram 2A Turbo — rápido
+  V2ATurbo = 'V_2A_TURBO',  // Ideogram 2A Turbo — fast
 }
 
 export const FAL_MODEL_LABELS: Record<FalModel, { name: string; description: string }> = {
-  [FalModel.KontextMulti]: { name: 'Kontext Multi', description: 'FLUX.1 — identidad multi-ref, veloz · 2026' },
-  [FalModel.KontextMaxMulti]: { name: 'Kontext Max Multi', description: 'FLUX.1 — identidad multi-ref, máx calidad · 2026' },
-  [FalModel.Flux2Pro]: { name: 'FLUX.2 Pro Edit', description: 'Multi-ref · 2D→3D · escenarios · Nov 2025' },
-  [FalModel.Seedream45]: { name: 'Seedream 4.5', description: 'ByteDance — fotorrealismo excepcional, 4K' },
-  [FalModel.Seedream50]: { name: 'Seedream 5.0', description: 'ByteDance — búsqueda web + razonamiento, 2K' },
-  [FalModel.ZImageTurbo]: { name: 'Z-Image Turbo', description: 'Alibaba — sin censura · 8 steps · $0.005/mp' },
+  [FalModel.KontextMulti]: { name: 'Kontext Multi', description: 'FLUX.1 — multi-ref identity, fast · 2026' },
+  [FalModel.KontextMaxMulti]: { name: 'Kontext Max Multi', description: 'FLUX.1 — multi-ref identity, max quality · 2026' },
+  [FalModel.Flux2Pro]: { name: 'FLUX.2 Pro Edit', description: 'Multi-ref · 2D→3D · scenarios · Nov 2025' },
+  [FalModel.Seedream45]: { name: 'Seedream 4.5', description: 'ByteDance — exceptional photorealism, 4K' },
+  [FalModel.Seedream50]: { name: 'Seedream 5.0', description: 'ByteDance — web search + reasoning, 2K' },
+  [FalModel.ZImageTurbo]: { name: 'Z-Image Turbo', description: 'Alibaba — uncensored · 8 steps · $0.005/mp' },
 };
 
 export const POSE_ENGINE_LABELS: Record<PoseEngine, { name: string; icon: string; description: string }> = {
-  [PoseEngine.Gemini]: { name: 'Gemini', icon: '✦', description: 'Multimodal — texto e imagen de referencia' },
-  [PoseEngine.FalAI]: { name: 'fal.ai', icon: '⚡', description: 'Leffa (con imagen) · FLUX Kontext (texto)' },
-  [PoseEngine.Flux2ProEdit]: { name: 'FLUX.2', icon: '🔥', description: 'FLUX.2 Pro Edit — pose multi-referencia · fal.ai' },
-  [PoseEngine.GPTImageEdit]: { name: 'GPT', icon: '🤖', description: 'GPT Image 1 — edición por instrucción de texto' },
-  [PoseEngine.GrokImagine]: { name: 'Grok', icon: '𝕏', description: 'Grok Imagine — xAI Aurora · rápido · ~4s · 2026' },
+  [PoseEngine.Gemini]: { name: 'Gemini', icon: '✦', description: 'Multimodal — text and reference image' },
+  [PoseEngine.FalAI]: { name: 'fal.ai', icon: '⚡', description: 'Leffa (with image) · FLUX Kontext (text)' },
+  [PoseEngine.Flux2ProEdit]: { name: 'FLUX.2', icon: '🔥', description: 'FLUX.2 Pro Edit — multi-reference pose · fal.ai' },
+  [PoseEngine.GPTImageEdit]: { name: 'GPT', icon: '🤖', description: 'GPT Image 1 — text instruction editing' },
+  [PoseEngine.GrokImagine]: { name: 'Grok', icon: '𝕏', description: 'Grok Imagine — xAI Aurora · fast · ~4s · 2026' },
 };
 
 export const REPLICATE_MODEL_LABELS: Record<ReplicateModel, { name: string; description: string }> = {
-  [ReplicateModel.Flux2Max]: { name: 'FLUX.2 [max]', description: 'Máxima fidelidad · hasta 8 refs · Ene 2026' },
+  [ReplicateModel.Flux2Max]: { name: 'FLUX.2 [max]', description: 'Maximum fidelity · up to 8 refs · Jan 2026' },
   [ReplicateModel.Gen4Image]: { name: 'Gen-4 Image', description: 'Runway — char + location · Jul 2025' },
-  [ReplicateModel.IDMVTON]: { name: 'Virtual Try-On', description: 'Prueba de ropa ⚠️ no-comercial' },
+  [ReplicateModel.IDMVTON]: { name: 'Virtual Try-On', description: 'Clothing try-on ⚠️ non-commercial' },
   [ReplicateModel.GrokImagine]: { name: 'Grok Imagine', description: 'xAI SOTA · ~4s · 13 aspect ratios · 2026' },
 };
 
@@ -322,28 +322,28 @@ export enum ModelsLabModel {
 
 export const MODELSLAB_MODEL_LABELS: Record<ModelsLabModel, { name: string; description: string }> = {
   [ModelsLabModel.NsfwSdxl]:    { name: 'NSFW SDXL',     description: 'General purpose NSFW · photoreal · SDXL' },
-  [ModelsLabModel.LustifySdxl]: { name: 'Lustify SDXL',  description: 'Photoreal NSFW · escenas explícitas · SDXL' },
-  [ModelsLabModel.WaiNsfw]:     { name: 'WAI Illustrious', description: 'NSFW ilustrado / anime · SDXL · alta calidad' },
-  [ModelsLabModel.FluxNsfw]:    { name: 'FLUX NSFW',      description: 'FLUX Dev fine-tuned para contenido adulto' },
+  [ModelsLabModel.LustifySdxl]: { name: 'Lustify SDXL',  description: 'Photoreal NSFW · explicit scenes · SDXL' },
+  [ModelsLabModel.WaiNsfw]:     { name: 'WAI Illustrious', description: 'Illustrated / anime NSFW · SDXL · high quality' },
+  [ModelsLabModel.FluxNsfw]:    { name: 'FLUX NSFW',      description: 'FLUX Dev fine-tuned for adult content' },
 };
 
 export const OPENAI_MODEL_LABELS: Record<OpenAIModel, { name: string; description: string }> = {
-  [OpenAIModel.GptImage15]: { name: 'GPT Image 1.5', description: 'Más rápido, acepta imágenes de referencia' },
-  [OpenAIModel.GptImage1]: { name: 'GPT Image 1', description: 'Original, alta fidelidad, acepta referencias' },
+  [OpenAIModel.GptImage15]: { name: 'GPT Image 1.5', description: 'Faster, accepts reference images' },
+  [OpenAIModel.GptImage1]: { name: 'GPT Image 1', description: 'Original, high fidelity, accepts references' },
 };
 
 
 export const IDEOGRAM_MODEL_LABELS: Record<IdeogramModel, { name: string; description: string }> = {
-  [IdeogramModel.V3]: { name: 'V3', description: 'Último modelo, character reference, mejor calidad' },
-  [IdeogramModel.V2A]: { name: 'V2A', description: 'Equilibrado, tipografía avanzada' },
-  [IdeogramModel.V2ATurbo]: { name: 'V2A Turbo', description: 'Rápido y económico' },
+  [IdeogramModel.V3]: { name: 'V3', description: 'Latest model, character reference, best quality' },
+  [IdeogramModel.V2A]: { name: 'V2A', description: 'Balanced, advanced typography' },
+  [IdeogramModel.V2ATurbo]: { name: 'V2A Turbo', description: 'Fast and economical' },
 };
 
 export const VIDEO_ENGINE_LABELS: Record<VideoEngine, { name: string; icon: string; description: string }> = {
-  [VideoEngine.KlingStandard]: { name: 'Kling 1.5 Standard', icon: '🎥', description: 'Rápido, 5s. Soporta Motion Control.' },
-  [VideoEngine.KlingPro]: { name: 'Kling 1.5 Pro', icon: '🎬', description: 'Alta calidad, 1080p. Soporta Motion Control.' },
-  [VideoEngine.RunwayGen3]: { name: 'Runway Gen-3', icon: '🏃', description: 'Consistencia excepcional de fotogramas' },
-  [VideoEngine.LumaDreamMachine]: { name: 'Luma', icon: '✨', description: 'Movimientos de cámara fluidos y dinámicos' },
+  [VideoEngine.KlingStandard]: { name: 'Kling 1.5 Standard', icon: '🎥', description: 'Fast, 5s. Supports Motion Control.' },
+  [VideoEngine.KlingPro]: { name: 'Kling 1.5 Pro', icon: '🎬', description: 'High quality, 1080p. Supports Motion Control.' },
+  [VideoEngine.RunwayGen3]: { name: 'Runway Gen-3', icon: '🏃', description: 'Exceptional frame consistency' },
+  [VideoEngine.LumaDreamMachine]: { name: 'Luma', icon: '✨', description: 'Smooth and dynamic camera movements' },
 };
 
 // ─────────────────────────────────────────────

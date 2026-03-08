@@ -84,7 +84,7 @@ OUTPUT: Return the complete photograph. Only the skin quality changes.`;
       setResult(results[0]);
     } catch (err: any) {
       restoreCredits(cost);
-      toast.error(err?.message || 'Error al mejorar la piel');
+      toast.error(err?.message || 'Error enhancing the skin');
     } finally {
       setLoading(false);
     }
@@ -94,10 +94,10 @@ OUTPUT: Return the complete photograph. Only the skin quality changes.`;
     if (!result) return;
     try {
       await onSave(result, targetItem.id);
-      toast.success('Imagen guardada en la galería');
+      toast.success('Image saved to gallery');
       onClose();
     } catch {
-      toast.error('Error al guardar');
+      toast.error('Error saving');
     }
   };
 

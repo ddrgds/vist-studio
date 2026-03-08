@@ -21,7 +21,7 @@ const FaceSwapModal: React.FC<FaceSwapModalProps> = ({ targetItem, onClose, onSa
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
 
-  // Revocar object URLs cuando cambian o al desmontar el modal
+  // Revoke object URLs when they change or when the modal unmounts
   useEffect(() => {
     return () => {
       if (sourceFacePreview) URL.revokeObjectURL(sourceFacePreview);
@@ -48,7 +48,7 @@ const FaceSwapModal: React.FC<FaceSwapModalProps> = ({ targetItem, onClose, onSa
   };
 
   const handleGenerate = async () => {
-    if (!sourceFaceFile) { toast.error('Sube una foto de la cara a usar'); return; }
+    if (!sourceFaceFile) { toast.error('Upload a photo of the face to use'); return; }
 
     const cost = OPERATION_CREDIT_COSTS.faceSwap;
     const hasCredits = await decrementCredits(cost);
@@ -58,7 +58,7 @@ const FaceSwapModal: React.FC<FaceSwapModalProps> = ({ targetItem, onClose, onSa
     setProgress(0);
     setResult(null);
     try {
-      // Convertir URL del target a File
+      // Convert target URL to File
       const resp = await fetch(targetItem.url);
       const blob = await resp.blob();
       const targetFile = new File([blob], `target-${targetItem.id}.png`, { type: blob.type || 'image/png' });
@@ -67,7 +67,7 @@ const FaceSwapModal: React.FC<FaceSwapModalProps> = ({ targetItem, onClose, onSa
       setResult(dataUrl);
     } catch (err: any) {
       restoreCredits(cost);
-      toast.error(err?.message || 'Error al hacer el face swap');
+      toast.error(err?.message || 'Error performing the face swap');
     } finally {
       setLoading(false);
     }
@@ -77,10 +77,10 @@ const FaceSwapModal: React.FC<FaceSwapModalProps> = ({ targetItem, onClose, onSa
     if (!result) return;
     try {
       await onSave(result, targetItem.id);
-      toast.success('Face swap guardado en la galería');
+      toast.success('Face swap saved to gallery');
       onClose();
     } catch {
-      toast.error('Error al guardar');
+      toast.error('Error saving');
     }
   };
 
@@ -98,9 +98,9 @@ const FaceSwapModal: React.FC<FaceSwapModalProps> = ({ targetItem, onClose, onSa
 
         <div className="w-full max-w-3xl aspect-square rounded-2xl overflow-hidden shadow-2xl relative flex items-center justify-center bg-black border border-white/5">
           {result ? (
-            <img src={result} alt="Resultado Face Swap" className="w-full h-full object-contain" />
+            <img src={result} alt="Face Swap Result" className="w-full h-full object-contain" />
           ) : (
-            <img src={targetItem.url} alt="Destino" className="w-full h-full object-contain" />
+            <img src={targetItem.url} alt="Target" className="w-full h-full object-contain" />
           )}
 
           {/* Processing Overlay */}
@@ -145,7 +145,7 @@ const FaceSwapModal: React.FC<FaceSwapModalProps> = ({ targetItem, onClose, onSa
             >
               {sourceFacePreview ? (
                 <div className="relative w-full h-full group">
-                  <img src={sourceFacePreview} alt="Cara fuente" className="w-full h-full object-cover" />
+                  <img src={sourceFacePreview} alt="Source face" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <span className="text-white text-sm font-medium">Change Photo</span>
                   </div>

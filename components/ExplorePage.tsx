@@ -10,6 +10,7 @@ import {
   Video as VideoIcon,
 } from "lucide-react";
 import { useGallery } from "../contexts/GalleryContext";
+import CommunityFeed from "./CommunityFeed";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -87,12 +88,12 @@ const PLACEHOLDERS = [
 
 // Demo images shown in the hero when the user has no generated content
 const DEMO_IMAGES = [
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80&auto=format',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80&auto=format',
-  'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=80&auto=format',
-  'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&q=80&auto=format',
-  'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&q=80&auto=format',
-  'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&q=80&auto=format',
+  '/demo/hero-1.jpg',
+  '/demo/hero-2.jpg',
+  '/demo/hero-3.jpg',
+  '/demo/hero-4.jpg',
+  '/demo/hero-5.jpg',
+  '/demo/hero-6.jpg',
 ];
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
@@ -282,6 +283,10 @@ const ExplorePage: React.FC<ExplorePageProps> = ({ onNavigate }) => {
           </div>
         </section>
       )}
+
+      {/* ── COMMUNITY FEED ──────────────────────────────────────────────── */}
+      <div className="mx-8 accent-line" />
+      <CommunityFeed onNavigate={onNavigate} />
 
       {/* ── SOCIAL PROOF ─────────────────────────────────────────────────── */}
       <section className="px-4 sm:px-8 pb-12 max-w-[1400px] mx-auto">

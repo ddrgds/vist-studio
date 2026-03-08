@@ -7,58 +7,58 @@ interface CharacteristicsInputProps {
 }
 
 const SUGGESTIONS = {
-  'Rostro': [
-    { label: 'Ojos azules', value: 'ojos azules cristalinos' },
-    { label: 'Ojos verdes', value: 'ojos verdes esmeralda' },
-    { label: 'Ojos marrones', value: 'ojos marrones profundos' },
-    { label: 'Pecas', value: 'pecas sutiles en la nariz y mejillas' },
-    { label: 'Labios carnosos', value: 'labios carnosos y definidos' },
-    { label: 'Mandíbula marcada', value: 'línea de la mandíbula definida' },
-    { label: 'Sonrisa leve', value: 'una leve sonrisa misteriosa' },
-    { label: 'Mirada intensa', value: 'mirada intensa y directa a la cámara' },
-    { label: 'Piel bronceada', value: 'piel bronceada y brillante' },
+  'Face': [
+    { label: 'Blue eyes', value: 'crystal blue eyes' },
+    { label: 'Green eyes', value: 'emerald green eyes' },
+    { label: 'Brown eyes', value: 'deep brown eyes' },
+    { label: 'Freckles', value: 'subtle freckles on nose and cheeks' },
+    { label: 'Full lips', value: 'full and defined lips' },
+    { label: 'Strong jawline', value: 'defined jawline' },
+    { label: 'Slight smile', value: 'a slight mysterious smile' },
+    { label: 'Intense gaze', value: 'intense gaze looking directly at the camera' },
+    { label: 'Tanned skin', value: 'tanned and glowing skin' },
   ],
-  'Pelo': [
-    { label: 'Largo y ondulado', value: 'pelo largo y ondulado color castaño' },
-    { label: 'Corte Bob', value: 'corte de pelo bob, liso y elegante' },
-    { label: 'Rubio platino', value: 'pelo rubio platino' },
-    { label: 'Pelirrojo', value: 'pelo rojo vibrante' },
-    { label: 'Recogido', value: 'pelo recogido en un moño desordenado' },
-    { label: 'Flequillo', value: 'flequillo recto sobre los ojos' },
-    { label: 'Pelo rizado', value: 'pelo rizado y voluminoso' },
-    { label: 'Coleta alta', value: 'coleta alta y pulida' },
-    { label: 'Negro azabache', value: 'pelo negro azabache' },
+  'Hair': [
+    { label: 'Long & wavy', value: 'long wavy brown hair' },
+    { label: 'Bob cut', value: 'sleek and elegant bob haircut' },
+    { label: 'Platinum blonde', value: 'platinum blonde hair' },
+    { label: 'Redhead', value: 'vibrant red hair' },
+    { label: 'Updo', value: 'hair pulled up in a messy bun' },
+    { label: 'Bangs', value: 'straight bangs over the eyes' },
+    { label: 'Curly hair', value: 'curly and voluminous hair' },
+    { label: 'High ponytail', value: 'sleek high ponytail' },
+    { label: 'Jet black', value: 'jet black hair' },
   ],
-  'Detalles': [
-    { label: 'Piel perfecta', value: 'piel de porcelana, poros de piel detallados' },
-    { label: 'Iluminación suave', value: 'iluminación de estudio suave' },
-    { label: 'Luz dorada', value: 'luz de la hora dorada' },
-    { label: 'Cinemático', value: 'aspecto cinematográfico, grano de película sutil' },
-    { label: 'Hiperrealista', value: 'hiperrealista, 4k, octane render' },
-    { label: 'Lente 85mm', value: 'disparado con una lente de 85 mm, f/1.8' },
-    { label: 'Fondo Bokeh', value: 'fondo desenfocado con bokeh' },
-    { label: 'Luz de neón', value: 'iluminación de neón' },
-    { label: 'Estilo Vogue', value: 'estilo editorial de Vogue' },
+  'Details': [
+    { label: 'Flawless skin', value: 'porcelain skin, detailed skin pores' },
+    { label: 'Soft lighting', value: 'soft studio lighting' },
+    { label: 'Golden light', value: 'golden hour light' },
+    { label: 'Cinematic', value: 'cinematic look, subtle film grain' },
+    { label: 'Hyperrealistic', value: 'hyperrealistic, 4k, octane render' },
+    { label: '85mm lens', value: 'shot with an 85mm lens, f/1.8' },
+    { label: 'Bokeh background', value: 'blurred background with bokeh' },
+    { label: 'Neon light', value: 'neon lighting' },
+    { label: 'Vogue style', value: 'Vogue editorial style' },
   ],
-  'Realismo': [
-    { label: 'Pelos sueltos', value: 'messy flyaway hairs' },
-    { label: 'Textura en labios', value: 'dry skin texture on lips' },
-    { label: 'Ropa arrugada', value: 'slightly wrinkled clothes' },
-    { label: 'Mejillas sonrojadas', value: 'flushed cheeks' },
-    { label: 'Brillo de sudor', value: 'subtle sweat sheen on forehead' },
-    { label: 'Poros visibles', value: 'detailed skin pores, realistic skin texture' },
-    { label: 'Vello facial', value: 'subtle peach fuzz on the face' },
-    { label: 'Reflejo en ojos', value: 'detailed catchlight in the eyes' },
+  'Realism': [
+    { label: 'Flyaway hairs', value: 'messy flyaway hairs' },
+    { label: 'Lip texture', value: 'dry skin texture on lips' },
+    { label: 'Wrinkled clothes', value: 'slightly wrinkled clothes' },
+    { label: 'Flushed cheeks', value: 'flushed cheeks' },
+    { label: 'Sweat sheen', value: 'subtle sweat sheen on forehead' },
+    { label: 'Visible pores', value: 'detailed skin pores, realistic skin texture' },
+    { label: 'Peach fuzz', value: 'subtle peach fuzz on the face' },
+    { label: 'Eye catchlight', value: 'detailed catchlight in the eyes' },
   ],
-  'Maquillaje': [
-    { label: 'Ojos ahumados', value: 'smokey eyeshadow' },
-    { label: 'Labial rojo', value: 'bold red lipstick' },
-    { label: 'Look natural', value: 'natural no-makeup makeup look' },
-    { label: 'Sombra con glitter', value: 'glitter eyeshadow' },
-    { label: 'Delineado Cat Eye', value: 'sharp winged eyeliner' },
-    { label: 'Labios Glossy', value: 'glossy lips' },
-    { label: 'Piel Dewy', value: 'dewy skin finish, glass skin' },
-    { label: 'Cejas laminadas', value: 'laminated brows' },
+  'Makeup': [
+    { label: 'Smokey eyes', value: 'smokey eyeshadow' },
+    { label: 'Red lipstick', value: 'bold red lipstick' },
+    { label: 'Natural look', value: 'natural no-makeup makeup look' },
+    { label: 'Glitter shadow', value: 'glitter eyeshadow' },
+    { label: 'Cat eye liner', value: 'sharp winged eyeliner' },
+    { label: 'Glossy lips', value: 'glossy lips' },
+    { label: 'Dewy skin', value: 'dewy skin finish, glass skin' },
+    { label: 'Laminated brows', value: 'laminated brows' },
   ]
 };
 
@@ -66,13 +66,13 @@ type SuggestionCategory = keyof typeof SUGGESTIONS;
 
 const CharacteristicsInput: React.FC<CharacteristicsInputProps> = ({ value, onChange }) => {
   const [isEnhancing, setIsEnhancing] = useState(false);
-  const [activeCategory, setActiveCategory] = useState<SuggestionCategory>('Rostro');
+  const [activeCategory, setActiveCategory] = useState<SuggestionCategory>('Face');
 
   const handleEnhance = async () => {
     if (!value.trim()) return;
     setIsEnhancing(true);
     try {
-      const enhanced = await enhancePrompt(value, "Apariencia Física del Modelo");
+      const enhanced = await enhancePrompt(value, "Model Physical Appearance");
       onChange(enhanced);
     } catch (e) {
       console.error(e);
@@ -101,21 +101,21 @@ const CharacteristicsInput: React.FC<CharacteristicsInputProps> = ({ value, onCh
     <div className="space-y-3 p-3 bg-zinc-900/50 rounded-xl border border-zinc-800">
       <div className="space-y-1">
         <div className="flex justify-between items-center">
-          <label htmlFor="characteristics-input" className="text-sm font-medium text-zinc-400">Características Físicas</label>
+          <label htmlFor="characteristics-input" className="text-sm font-medium text-zinc-400">Physical Characteristics</label>
         </div>
         <div className="relative group">
           <textarea
             id="characteristics-input"
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="Ej. rubia, ojos azules, pecas..."
-            aria-label="Describe las características físicas del modelo"
+            placeholder="E.g. blonde, blue eyes, freckles..."
+            aria-label="Describe the model's physical characteristics"
             className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 pr-10 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none resize-none h-24 placeholder:text-zinc-600 transition-all"
           />
           <button
             onClick={handleEnhance}
             disabled={isEnhancing || !value.trim()}
-            aria-label={isEnhancing ? 'Mejorando prompt con IA...' : 'Mejorar descripción con IA'}
+            aria-label={isEnhancing ? 'Enhancing prompt with AI...' : 'Enhance description with AI'}
             className={`
               absolute top-3 right-3 p-1 rounded-md transition-all duration-200
               ${!value.trim() ? 'text-zinc-700 cursor-not-allowed' : 'text-purple-500 hover:bg-purple-500/10 hover:text-purple-400 cursor-pointer'}
@@ -137,8 +137,8 @@ const CharacteristicsInput: React.FC<CharacteristicsInputProps> = ({ value, onCh
       </div>
       
       <div className="pt-2">
-        <p id="suggestions-label" className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Sugerencias</p>
-        <div role="tablist" aria-label="Categorías de sugerencias" className="flex border-b border-zinc-800 text-xs mt-2 overflow-x-auto">
+        <p id="suggestions-label" className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Suggestions</p>
+        <div role="tablist" aria-label="Suggestion categories" className="flex border-b border-zinc-800 text-xs mt-2 overflow-x-auto">
           {(Object.keys(SUGGESTIONS) as SuggestionCategory[]).map(category => (
             <button
               key={category}
@@ -160,7 +160,7 @@ const CharacteristicsInput: React.FC<CharacteristicsInputProps> = ({ value, onCh
             <button
               key={suggestion.label}
               onClick={() => addSuggestion(suggestion.value)}
-              aria-label={`Agregar sugerencia: ${suggestion.label}`}
+              aria-label={`Add suggestion: ${suggestion.label}`}
               className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-full text-xs transition-colors"
             >
               + {suggestion.label}

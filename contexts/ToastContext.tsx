@@ -104,7 +104,7 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onDismiss, onUndo }) => (
     )}
     <button
       onClick={() => onDismiss(toast.id)}
-      aria-label="Cerrar notificación"
+      aria-label="Close notification"
       className="shrink-0 opacity-50 hover:opacity-100 transition-opacity"
     >
       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -163,7 +163,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       {/* Toast container — fixed, bottom-right */}
       {toasts.length > 0 && (
         <div
-          aria-label="Notificaciones"
+          aria-label="Notifications"
           className="fixed bottom-6 right-6 z-[200] flex flex-col gap-2 items-end pointer-events-none"
         >
           {toasts.map(toast => (

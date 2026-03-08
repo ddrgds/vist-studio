@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase, signOut as supabaseSignOut } from '../services/supabaseService';
 
@@ -25,17 +25,27 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const userIdRef = useRef<string | null>(null);
+
+  // Stable setter — only updates state when user identity actually changes
+  const stableSetUser = (newUser: User | null) => {
+    const newId = newUser?.id ?? null;
+    if (newId !== userIdRef.current) {
+      userIdRef.current = newId;
+      setUser(newUser);
+    }
+  };
 
   useEffect(() => {
-    // Obtener sesión actual al montar
+    // Get current session on mount
     supabase.auth.getSession()
-      .then(({ data: { session } }) => setUser(session?.user ?? null))
+      .then(({ data: { session } }) => stableSetUser(session?.user ?? null))
       .catch(err => console.warn('Failed to restore session:', err))
       .finally(() => setAuthLoading(false));
 
-    // Escuchar cambios de sesión en tiempo real
+    // Listen for session changes in real time
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      stableSetUser(session?.user ?? null);
     });
 
     return () => subscription.unsubscribe();

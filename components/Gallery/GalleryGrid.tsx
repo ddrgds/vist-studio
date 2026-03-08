@@ -4,6 +4,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { GeneratedContent, InfluencerParams, PoseModificationParams, VideoParams, ImageSize, AspectRatio, AIProvider } from '../../types';
 import { useGallery } from '../../contexts/GalleryContext';
 import { useForm } from '../../contexts/FormContext';
+import { useProfile } from '../../contexts/ProfileContext';
 import CompareSliderModal from '../CompareSliderModal';
 
 // ─────────────────────────────────────────────
@@ -49,7 +50,7 @@ const CardDetails: React.FC<{ item: GeneratedContent }> = ({ item }) => {
   return (
     <>
       <p className="truncate"><span className="text-zinc-500">Prompt:</span> {p.prompt || 'N/A'}</p>
-      <p className="truncate"><span className="text-zinc-500">Diálogo:</span> {p.dialogue || 'N/A'}</p>
+      <p className="truncate"><span className="text-zinc-500">Dialogue:</span> {p.dialogue || 'N/A'}</p>
     </>
   );
 };
@@ -146,11 +147,11 @@ const TagEditor: React.FC<TagEditorProps> = ({ item, onClose }) => {
           </div>
         )}
 
-        <p className="text-[10px] text-zinc-600">Enter o coma para añadir. Backspace para borrar el último.</p>
+        <p className="text-[10px] text-zinc-600">Press Enter or comma to add. Backspace to remove the last one.</p>
 
         <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 py-2 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl transition-colors">Cancelar</button>
-          <button onClick={handleSave} className="flex-1 py-2 text-xs bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-medium transition-colors">Guardar</button>
+          <button onClick={onClose} className="flex-1 py-2 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl transition-colors">Cancel</button>
+          <button onClick={handleSave} className="flex-1 py-2 text-xs bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-medium transition-colors">Save</button>
         </div>
       </div>
     </div>
@@ -180,12 +181,14 @@ interface MoreOptionsMenuProps {
   onEdit: () => void;
   onUpscale: () => void;
   upscalingId: string | null;
+  onShare: () => void;
+  isShared: boolean;
 }
 
 const MoreOptionsMenu: React.FC<MoreOptionsMenuProps> = ({
   item, anchorRect, onClose,
   onCaption, onRemoveBg, onFaceSwap, onTryOn, onSkinEnhance, onRelight, onInpaint, onStoryboard, onCopyToClipboard, onEditTags,
-  onReuse, onChangePose, onEdit, onUpscale, upscalingId,
+  onReuse, onChangePose, onEdit, onUpscale, upscalingId, onShare, isShared,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const MENU_WIDTH = 208; // w-52 = 13rem = 208px
@@ -220,23 +223,24 @@ const MoreOptionsMenu: React.FC<MoreOptionsMenuProps> = ({
 
   const actions = [
     ...(item.type !== 'video' ? [
-      { icon: '🎭', label: 'Cambiar Pose', onClick: onChangePose, mobileOnly: true },
-      { icon: '✏️', label: 'Editor de Imagen', onClick: onEdit, mobileOnly: true },
-      { icon: '♻️', label: 'Reutilizar Parámetros', onClick: onReuse, mobileOnly: true },
-      { icon: '⬆️', label: upscalingId ? 'Mejorando...' : 'Mejorar 4×', onClick: onUpscale, mobileOnly: true },
+      { icon: '🎭', label: 'Change Pose', onClick: onChangePose, mobileOnly: true },
+      { icon: '✏️', label: 'Image Editor', onClick: onEdit, mobileOnly: true },
+      { icon: '♻️', label: 'Reuse Parameters', onClick: onReuse, mobileOnly: true },
+      { icon: '⬆️', label: upscalingId ? 'Upscaling...' : 'Upscale 4×', onClick: onUpscale, mobileOnly: true },
     ] : []),
     ...(item.type !== 'video' ? [
-      { icon: '✍️', label: 'Generar Caption', onClick: onCaption },
-      { icon: '📋', label: 'Copiar al Portapapeles', onClick: onCopyToClipboard },
-      { icon: '✂️', label: 'Quitar Fondo', onClick: onRemoveBg },
+      { icon: '✍️', label: 'Generate Caption', onClick: onCaption },
+      { icon: '📋', label: 'Copy to Clipboard', onClick: onCopyToClipboard },
+      { icon: '✂️', label: 'Remove Background', onClick: onRemoveBg },
       { icon: '🔄', label: 'Face Swap', onClick: onFaceSwap },
       { icon: '👗', label: 'Virtual Try-On', onClick: onTryOn },
       { icon: '✨', label: 'Skin Enhancer', onClick: () => onSkinEnhance(item) },
       { icon: '☀️', label: 'Relight', onClick: () => onRelight(item) },
       { icon: '🎨', label: 'Inpainting', onClick: onInpaint },
     ] : []),
-    { icon: '🎬', label: 'Añadir al Storyboard', onClick: onStoryboard },
-    { icon: '🏷️', label: 'Editar Tags', onClick: onEditTags },
+    { icon: '🎬', label: 'Add to Storyboard', onClick: onStoryboard },
+    { icon: isShared ? '🔗' : '🌐', label: isShared ? 'Unshare from Community' : 'Share to Community', onClick: onShare },
+    { icon: '🏷️', label: 'Edit Tags', onClick: onEditTags },
   ];
 
   const mobileOnlyActions = actions.filter(a => (a as any).mobileOnly);
@@ -313,7 +317,9 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
     toggleSelection, setSelectedItem,
     deleteItem,
     toggleFavorite, addToStoryboard,
+    sharedIds, toggleShare,
   } = useGallery();
+  const { profile } = useProfile();
   const toast = useToast();
 
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -435,7 +441,7 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
           {item.type === 'video' ? (
             <video
               src={item.url}
-              aria-label="Video generado"
+              aria-label="Generated video"
               className="w-full h-full object-cover"
               loop
               muted
@@ -445,12 +451,12 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
           ) : imgError ? (
             <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-zinc-900 text-zinc-600">
               <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
-              <span className="text-[10px]">Imagen no disponible</span>
+              <span className="text-[10px]">Image not available</span>
             </div>
           ) : (
             <img
               src={item.url}
-              alt={item.type === 'edit' ? 'Imagen editada' : 'Imagen generada'}
+              alt={item.type === 'edit' ? 'Edited image' : 'Generated image'}
               className="w-full h-full object-cover cursor-pointer"
               onError={() => setImgError(true)}
             />
@@ -474,7 +480,7 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
               {/* Download */}
               <button
                 onClick={(e) => onDownload(e, item)}
-                aria-label="Descargar"
+                aria-label="Download"
                 className="p-2 bg-emerald-600/90 hover:bg-emerald-500 rounded-full text-white shadow-lg transition-transform hover:scale-110 active:scale-95"
               >
                 <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -488,7 +494,7 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
               {item.type !== 'video' && (
                 <button
                   onClick={() => onEdit(item)}
-                  aria-label="Editar imagen"
+                  aria-label="Edit image"
                   className="p-2 bg-blue-600/90 hover:bg-blue-500 rounded-full text-white shadow-lg transition-transform hover:scale-110 active:scale-95"
                 >
                   <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -502,8 +508,8 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
               {item.type !== 'video' && (
                 <button
                   onClick={() => onChangePose(item)}
-                  aria-label="Cambiar pose"
-                  title="Cambiar pose"
+                  aria-label="Change pose"
+                  title="Change pose"
                   className="p-2 bg-violet-600/90 hover:bg-violet-500 rounded-full text-white shadow-lg transition-transform hover:scale-110 active:scale-95"
                 >
                   <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -520,7 +526,7 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
               {/* Reuse params */}
               <button
                 onClick={() => onReuse(item)}
-                aria-label="Reutilizar parámetros"
+                aria-label="Reuse parameters"
                 className="p-2 bg-purple-600/90 hover:bg-purple-500 rounded-full text-white shadow-lg transition-transform hover:scale-110 active:scale-95"
               >
                 <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -535,8 +541,8 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
               {item.type !== 'video' && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onUpscale(item); }}
-                  aria-label="Mejorar resolución 4×"
-                  title="Mejorar resolución 4×"
+                  aria-label="Upscale 4×"
+                  title="Upscale 4×"
                   disabled={isUpscaling}
                   className="p-2 bg-amber-600/90 hover:bg-amber-500 disabled:bg-zinc-700 disabled:cursor-not-allowed rounded-full text-white shadow-lg transition-transform hover:scale-110 active:scale-95"
                 >
@@ -555,8 +561,8 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
               {/* ⋯ More options */}
               <button
                 onClick={openMoreMenu}
-                aria-label="Más opciones"
-                title="Más opciones"
+                aria-label="More options"
+                title="More options"
                 className="p-2 bg-zinc-700/90 hover:bg-zinc-600 rounded-full text-white shadow-lg transition-transform hover:scale-110 active:scale-95"
               >
                 <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -583,6 +589,8 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
                   onEdit={() => onEdit(item)}
                   onUpscale={() => onUpscale(item)}
                   upscalingId={upscalingId}
+                  onShare={() => { setShowMoreMenu(false); toggleShare(item, profile?.displayName ?? 'Anonymous', profile?.avatarUrl ?? null); }}
+                  isShared={sharedIds.has(item.id)}
                 />
               )}
             </div>
@@ -607,7 +615,7 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
           <div className="absolute bottom-0 left-0 right-0 z-10 p-2 rounded-b-2xl bg-gradient-to-t from-black/80 to-transparent flex justify-end gap-2 lg:hidden pointer-events-auto">
             <button
               onClick={(e) => onDownload(e, item)}
-              aria-label="Descargar"
+              aria-label="Download"
               className="p-2 bg-emerald-600/90 hover:bg-emerald-500 rounded-full text-white shadow-lg active:scale-95"
             >
               <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -618,7 +626,7 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
             </button>
             <button
               onClick={openMoreMenu}
-              aria-label="Más opciones"
+              aria-label="More options"
               className="p-2 bg-zinc-700/90 hover:bg-zinc-600 rounded-full text-white shadow-lg active:scale-95"
             >
               <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -645,8 +653,8 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
         {!isSelectionMode && (
           <button
             onClick={(e) => { e.stopPropagation(); toggleFavorite(item.id); }}
-            aria-label={isFavorite ? 'Quitar de favoritos' : 'Marcar como favorito'}
-            title={isFavorite ? 'Quitar de favoritos' : 'Marcar como favorito'}
+            aria-label={isFavorite ? 'Remove from favorites' : 'Mark as favorite'}
+            title={isFavorite ? 'Remove from favorites' : 'Mark as favorite'}
             className={`absolute top-2 z-30 w-8 h-8 flex items-center justify-center rounded-full shadow-lg transition-all duration-200 hover:scale-110 active:scale-95 ${isFavorite
               ? 'left-10 bg-amber-500 text-white opacity-100'
               : 'left-10 bg-black/60 text-zinc-400 hover:bg-black/80 hover:text-amber-400 opacity-0 group-hover:opacity-100'
@@ -672,7 +680,7 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
         <div className={`absolute top-2 left-2 z-50 transition-all duration-300 ${isSelectionMode ? '' : 'pt-8'} ${isSelected ? 'opacity-100' : 'opacity-100 lg:opacity-0 lg:group-hover:opacity-100'}`}>
           <button
             onClick={(e) => { e.stopPropagation(); toggleSelection(item.id); }}
-            aria-label={isSelected ? 'Deseleccionar' : 'Seleccionar'}
+            aria-label={isSelected ? 'Deselect' : 'Select'}
             className={`w-8 h-8 rounded-full border flex items-center justify-center transition-colors shadow-lg ${isSelected ? 'bg-purple-600 border-purple-500' : 'bg-black/60 border-white/40 hover:bg-black/80'}`}
           >
             {isSelected ? (
@@ -813,29 +821,29 @@ const GalleryGrid: React.FC<GalleryGridProps> = ({
               <span className="text-4xl opacity-50">🖼️</span>
             </div>
             <h2 className="text-4xl font-bold text-white tracking-tight">Studio Gallery</h2>
-            <p className="text-zinc-400 text-base max-w-lg mx-auto">Tus creaciones aparecerán aquí. Selecciona una herramienta de la izquierda para comenzar a generar.</p>
+            <p className="text-zinc-400 text-base max-w-lg mx-auto">Your creations will appear here. Select a tool on the left to start generating.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div onClick={() => { setActiveMode('create'); onOpenMobileMenu(); }} className="group cursor-pointer p-8 rounded-2xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all text-center">
               <span className="text-3xl block mb-4 group-hover:scale-110 transition-transform">✨</span>
-              <h3 className="text-zinc-200 font-medium mb-2">Creación IA</h3>
-              <p className="text-sm text-zinc-500">Genera imágenes de alta calidad con Flux, Ideogram y más.</p>
+              <h3 className="text-zinc-200 font-medium mb-2">AI Creation</h3>
+              <p className="text-sm text-zinc-500">Generate high-quality images with Flux, Ideogram and more.</p>
             </div>
             <div onClick={() => { setActiveMode('edit'); onOpenMobileMenu(); }} className="group cursor-pointer p-8 rounded-2xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all text-center">
               <span className="text-3xl block mb-4 group-hover:scale-110 transition-transform">✂️</span>
-              <h3 className="text-zinc-200 font-medium mb-2">Edición Mágica</h3>
-              <p className="text-sm text-zinc-500">Modifica poses, quita fondos o intercambia rostros.</p>
+              <h3 className="text-zinc-200 font-medium mb-2">Magic Editing</h3>
+              <p className="text-sm text-zinc-500">Modify poses, remove backgrounds or swap faces.</p>
             </div>
             <div onClick={() => { setActiveMode('video'); onOpenMobileMenu(); }} className="group cursor-pointer p-8 rounded-2xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all text-center">
               <span className="text-3xl block mb-4 group-hover:scale-110 transition-transform">🎬</span>
               <h3 className="text-zinc-200 font-medium mb-2">Video Motion</h3>
-              <p className="text-sm text-zinc-500">Dale vida a tus imágenes con Luma y Kling.</p>
+              <p className="text-sm text-zinc-500">Bring your images to life with Luma and Kling.</p>
             </div>
             <div onClick={() => uploadInputRef.current?.click()} className="group cursor-pointer p-8 rounded-2xl bg-zinc-900 border border-zinc-800 border-dashed hover:border-sky-700 hover:bg-sky-950/20 transition-all text-center">
               <span className="text-3xl block mb-4 group-hover:scale-110 transition-transform">📷</span>
-              <h3 className="text-zinc-200 font-medium mb-2">Importar Foto</h3>
-              <p className="text-sm text-zinc-500">Sube fotos para editar con Skin Enhancer, Face Swap y más.</p>
+              <h3 className="text-zinc-200 font-medium mb-2">Import Photo</h3>
+              <p className="text-sm text-zinc-500">Upload photos to edit with Skin Enhancer, Face Swap and more.</p>
             </div>
           </div>
         </div>

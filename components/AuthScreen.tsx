@@ -3,11 +3,11 @@ import React, { useState } from 'react';
 import { signInWithEmail, signUpWithEmail, supabase } from '../services/supabaseService';
 
 const CONTEXT_BANNERS: Record<string, string> = {
-  director: 'Inicia sesión para acceder al Director Studio',
-  generate: 'Inicia sesión para generar imágenes con IA',
-  characters: 'Inicia sesión para gestionar tu librería de personajes',
-  storyboard: 'Inicia sesión para crear storyboards',
-  profile: 'Inicia sesión para ver tu perfil',
+  director: 'Sign in to access Director Studio',
+  generate: 'Sign in to generate AI images',
+  characters: 'Sign in to manage your character library',
+  storyboard: 'Sign in to create storyboards',
+  profile: 'Sign in to view your profile',
 };
 
 interface AuthScreenProps {
@@ -56,25 +56,25 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, intendedWorksp
           redirectTo: window.location.origin,
         });
         if (resetError) throw resetError;
-        setSuccessMessage('¡Listo! Revisa tu email para el enlace de recuperación.');
+        setSuccessMessage('Done! Check your email for the recovery link.');
         setMode('login');
       } else if (mode === 'login') {
         await signInWithEmail(email, password);
         onAuthenticated();
       } else {
         await signUpWithEmail(email, password);
-        setSuccessMessage('¡Cuenta creada! Revisa tu email para confirmar tu cuenta, luego inicia sesión.');
+        setSuccessMessage('Account created! Check your email to confirm your account, then sign in.');
         setMode('login');
       }
     } catch (err: any) {
-      const msg = err?.message || 'Error desconocido';
+      const msg = err?.message || 'Unknown error';
       if (msg.includes('Invalid login credentials')) {
-        setError('Email o contraseña incorrectos.');
+        setError('Incorrect email or password.');
       } else if (msg.includes('User already registered')) {
-        setError('Este email ya está registrado. Inicia sesión.');
+        setError('This email is already registered. Sign in instead.');
         setMode('login');
       } else if (msg.includes('Password should be at least')) {
-        setError('La contraseña debe tener al menos 6 caracteres.');
+        setError('Password must be at least 6 characters.');
       } else {
         setError(msg);
       }
@@ -85,7 +85,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, intendedWorksp
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-950 p-4">
-      {/* Logo / título */}
+      {/* Logo / title */}
       <div className="mb-8 text-center">
         <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-purple-900/40">
           <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -116,10 +116,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, intendedWorksp
                 className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors mb-4"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6" /></svg>
-                Volver al inicio de sesión
+                Back to sign in
               </button>
-              <h2 className="text-lg font-semibold text-white">Recuperar contraseña</h2>
-              <p className="text-xs text-zinc-500 mt-1">Ingresa tu email y te enviaremos un enlace.</p>
+              <h2 className="text-lg font-semibold text-white">Reset password</h2>
+              <p className="text-xs text-zinc-500 mt-1">Enter your email and we'll send you a link.</p>
             </div>
 
             {error && (
@@ -143,7 +143,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, intendedWorksp
                   onChange={handleEmailChange}
                   required
                   autoComplete="email"
-                  placeholder="tu@email.com"
+                  placeholder="you@email.com"
                   className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
                 />
               </div>
@@ -158,9 +158,9 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, intendedWorksp
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    Enviando...
+                    Sending...
                   </>
-                ) : 'Enviar enlace de recuperación'}
+                ) : 'Send recovery link'}
               </button>
             </form>
           </>
@@ -176,7 +176,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, intendedWorksp
                 className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${mode === 'login' ? 'bg-zinc-700 text-white shadow' : 'text-zinc-500 hover:text-zinc-300'
                   }`}
               >
-                Iniciar sesión
+                Sign in
               </button>
               <button
                 role="tab"
@@ -185,11 +185,11 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, intendedWorksp
                 className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${mode === 'register' ? 'bg-zinc-700 text-white shadow' : 'text-zinc-500 hover:text-zinc-300'
                   }`}
               >
-                Crear cuenta
+                Create account
               </button>
             </div>
 
-            {/* Mensajes */}
+            {/* Messages */}
             {error && (
               <div role="alert" className="mb-4 p-3 bg-red-900/20 border border-red-500/30 rounded-lg text-red-400 text-sm">
                 {error}
@@ -201,7 +201,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, intendedWorksp
               </div>
             )}
 
-            {/* Formulario */}
+            {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="auth-email" className="block text-xs font-medium text-zinc-400 mb-1.5">
@@ -214,14 +214,14 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, intendedWorksp
                   onChange={handleEmailChange}
                   required
                   autoComplete="email"
-                  placeholder="tu@email.com"
+                  placeholder="you@email.com"
                   className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
                 />
               </div>
 
               <div>
                 <label htmlFor="auth-password" className="block text-xs font-medium text-zinc-400 mb-1.5">
-                  Contraseña
+                  Password
                 </label>
                 <div className="relative">
                   <input
@@ -231,13 +231,13 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, intendedWorksp
                     onChange={handlePasswordChange}
                     required
                     autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                    placeholder={mode === 'register' ? 'Mínimo 6 caracteres' : '••••••••'}
+                    placeholder={mode === 'register' ? 'Minimum 6 characters' : '••••••••'}
                     className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 pr-10 text-sm text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(v => !v)}
-                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
                   >
                     {showPassword ? (
@@ -249,7 +249,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, intendedWorksp
                 </div>
               </div>
 
-              {/* Olvidé mi contraseña (solo en login) */}
+              {/* Forgot password (login only) */}
               {mode === 'login' && (
                 <div className="text-right -mt-1">
                   <button
@@ -257,7 +257,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, intendedWorksp
                     onClick={() => switchMode('forgot')}
                     className="text-xs text-zinc-500 hover:text-purple-400 transition-colors"
                   >
-                    ¿Olvidaste tu contraseña?
+                    Forgot your password?
                   </button>
                 </div>
               )}
@@ -274,10 +274,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, intendedWorksp
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    {mode === 'login' ? 'Entrando...' : 'Creando cuenta...'}
+                    {mode === 'login' ? 'Signing in...' : 'Creating account...'}
                   </>
                 ) : (
-                  mode === 'login' ? 'Entrar' : 'Crear cuenta'
+                  mode === 'login' ? 'Sign in' : 'Create account'
                 )}
               </button>
 
@@ -288,7 +288,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, intendedWorksp
                   onClick={(e) => { e.preventDefault(); onAuthenticated(); }}
                   className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 font-medium text-xs rounded-lg transition-colors border border-zinc-700 mt-2"
                 >
-                  [DEV] Saltar Login
+                  [DEV] Skip Login
                 </button>
               )}
             </form>
@@ -297,7 +297,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, intendedWorksp
       </div>
 
       <p className="mt-6 text-xs text-zinc-600 text-center">
-        Tus imágenes y presets se guardan de forma segura en la nube.
+        Your images and presets are securely saved in the cloud.
       </p>
     </div>
   );

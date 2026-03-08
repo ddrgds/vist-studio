@@ -131,14 +131,14 @@ const InpaintingModal: React.FC<InpaintingModalProps> = ({ item, onClose, onSave
 
     return new Promise<File>((resolve, reject) => {
       offscreen.toBlob((blob) => {
-        if (!blob) { reject(new Error('No se pudo exportar la máscara del canvas')); return; }
+        if (!blob) { reject(new Error('Could not export the mask from the canvas')); return; }
         resolve(new File([blob], `mask-${Date.now()}.png`, { type: 'image/png' }));
       }, 'image/png');
     });
   };
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) { toast.error('Describe qué quieres generar en el área marcada'); return; }
+    if (!prompt.trim()) { toast.error('Describe what you want to generate in the marked area'); return; }
 
     const cost = OPERATION_CREDIT_COSTS.inpaint;
     const hasCredits = await decrementCredits(cost);
@@ -160,7 +160,7 @@ const InpaintingModal: React.FC<InpaintingModalProps> = ({ item, onClose, onSave
       setResult(dataUrl);
     } catch (err: any) {
       restoreCredits(cost);
-      toast.error(err?.message || 'Error al hacer el inpainting');
+      toast.error(err?.message || 'Error performing the inpainting');
     } finally {
       setLoading(false);
     }
@@ -170,10 +170,10 @@ const InpaintingModal: React.FC<InpaintingModalProps> = ({ item, onClose, onSave
     if (!result) return;
     try {
       await onSave(result, item.id);
-      toast.success('Imagen guardada en la galería');
+      toast.success('Image saved to gallery');
       onClose();
     } catch {
-      toast.error('Error al guardar');
+      toast.error('Error saving');
     }
   };
 
@@ -192,7 +192,7 @@ const InpaintingModal: React.FC<InpaintingModalProps> = ({ item, onClose, onSave
         <div className="w-full max-w-3xl flex items-center justify-center relative shadow-2xl">
           {result ? (
             <div className="rounded-xl overflow-hidden shadow-2xl border border-white/5 max-h-[80vh]">
-              <img src={result} alt="Resultado Inpainting" className="w-full h-full object-contain" />
+              <img src={result} alt="Inpainting Result" className="w-full h-full object-contain" />
             </div>
           ) : (
             <div ref={containerRef} className="relative mx-auto rounded-xl overflow-hidden border border-white/5 shadow-2xl cursor-crosshair bg-black" style={{ width: canvasSize.w, maxWidth: '100%' }}>

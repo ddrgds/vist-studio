@@ -111,14 +111,14 @@ const UploadZone: React.FC<UploadZoneProps> = ({
       <div className="flex justify-between items-baseline">
         <span className="text-sm font-medium text-zinc-400">{label}</span>
         {multiple && fileArray.length > 0 && (
-            <span className="text-[10px] text-zinc-500">{fileArray.length} archivos</span>
+            <span className="text-[10px] text-zinc-500">{fileArray.length} files</span>
         )}
       </div>
       
       <div
         role="button"
         tabIndex={0}
-        aria-label={multiple ? `${label}. ${fileArray.length > 0 ? `${fileArray.length} archivos seleccionados.` : 'Haz clic o arrastra imágenes aquí.'}` : `${label}. ${fileArray.length > 0 ? 'Imagen seleccionada.' : 'Haz clic para subir una imagen.'}`}
+        aria-label={multiple ? `${label}. ${fileArray.length > 0 ? `${fileArray.length} files selected.` : 'Click or drag images here.'}` : `${label}. ${fileArray.length > 0 ? 'Image selected.' : 'Click to upload an image.'}`}
         onClick={() => inputRef.current?.click()}
         onKeyDown={handleKeyDown}
         onDragOver={handleDragOver}
@@ -147,7 +147,7 @@ const UploadZone: React.FC<UploadZoneProps> = ({
                 <div key={idx} className="relative aspect-square rounded-lg overflow-hidden group/item border border-zinc-700/50">
                     <img
                       src={src}
-                      alt={fileArray[idx] ? `Imagen ${idx + 1}: ${fileArray[idx].name}` : `Imagen subida ${idx + 1}`}
+                      alt={fileArray[idx] ? `Image ${idx + 1}: ${fileArray[idx].name}` : `Uploaded image ${idx + 1}`}
                       className="w-full h-full object-cover"
                     />
 
@@ -155,7 +155,7 @@ const UploadZone: React.FC<UploadZoneProps> = ({
                          {onImagePreview && (
                             <button
                                 onClick={(e) => handlePreviewClick(e, src)}
-                                aria-label={`Ver imagen ${idx + 1}`}
+                                aria-label={`View image ${idx + 1}`}
                                 className="p-1.5 bg-white/20 hover:bg-white/40 rounded-full text-white transition-colors"
                             >
                                 <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
@@ -163,7 +163,7 @@ const UploadZone: React.FC<UploadZoneProps> = ({
                         )}
                         <button
                             onClick={(e) => removeFile(e, idx)}
-                            aria-label={`Eliminar imagen ${idx + 1}`}
+                            aria-label={`Remove image ${idx + 1}`}
                             className="p-1.5 bg-red-500/80 hover:bg-red-500 rounded-full text-white transition-colors"
                         >
                             <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -183,8 +183,8 @@ const UploadZone: React.FC<UploadZoneProps> = ({
             {icon || (
               <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mb-2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
             )}
-            <span className="text-xs font-medium mt-2">{isDragging ? 'Suelta los archivos' : multiple ? 'Elige una o más imágenes' : 'Click para subir imagen'}</span>
-            <span className="text-[10px] text-zinc-600 mt-1">{multiple ? 'Soporta selección múltiple' : 'JPG, PNG'}</span>
+            <span className="text-xs font-medium mt-2">{isDragging ? 'Drop files here' : multiple ? 'Choose one or more images' : 'Click to upload image'}</span>
+            <span className="text-[10px] text-zinc-600 mt-1">{multiple ? 'Supports multiple selection' : 'JPG, PNG'}</span>
           </div>
         )}
       </div>

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
   X,
@@ -440,6 +440,14 @@ const SURPRISE_PRESETS = [
   { ch: "23yo, Finnish, porcelain skin, ice-blonde pixie cut",         outfit: "Forest green turtleneck, tailored wool trousers, white sneakers",            scenario: "Birch forest in winter, pale Nordic light filtering through snow",    lighting: "soft natural light, golden hour, sun-kissed",             camera: "vintage film camera look, 35mm film, subtle grain" },
   { ch: "30yo, Peruvian, copper skin, long dark straight hair",        outfit: "Bold geometric print jumpsuit, statement earrings, strappy heels",           scenario: "Machu Picchu ruins with dramatic clouds and Andean mountains",        lighting: "golden hour light, warm tones, soft shadows",             camera: "anamorphic lens, cinematic aspect ratio, film look" },
 ];
+
+// ─── Blob-safe <img> — creates + revokes object URL automatically ────────────
+
+const BlobImg: React.FC<{ file: Blob; className?: string; alt?: string }> = ({ file, className, alt }) => {
+  const url = useMemo(() => URL.createObjectURL(file), [file]);
+  useEffect(() => () => URL.revokeObjectURL(url), [url]);
+  return <img src={url} alt={alt ?? ''} className={className} />;
+};
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 
@@ -1026,10 +1034,9 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                     {/* Selected image thumbnails */}
                     {savingImages.map((f, i) => (
                       <div key={i} className="relative flex-none w-8 h-8">
-                        <img
-                          src={URL.createObjectURL(f)}
+                        <BlobImg
+                          file={f}
                           className="w-8 h-8 rounded-full object-cover border border-zinc-700"
-                          alt=""
                         />
                         <button
                           onClick={() => setSavingImages(prev => prev.filter((_, idx) => idx !== i))}
@@ -1835,7 +1842,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                 <div className="flex flex-wrap gap-2">
                   {form.aiEditReferenceImages.map((f, i) => (
                     <div key={i} className="relative w-[56px] h-[56px] rounded-xl overflow-hidden border-2 border-zinc-800 group">
-                      <img src={URL.createObjectURL(f)} alt="" className="w-full h-full object-cover" />
+                      <BlobImg file={f} className="w-full h-full object-cover" />
                       <button
                         onClick={() => form.setAiEditReferenceImages((prev) => prev.filter((_, j) => j !== i))}
                         className="absolute inset-0 bg-black/0 group-hover:bg-black/50 flex items-center justify-center transition-colors"

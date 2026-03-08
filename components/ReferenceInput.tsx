@@ -122,9 +122,9 @@ const ReferenceInput: React.FC<ReferenceInputProps> = ({
             <div className="p-1 bg-zinc-800/50 rounded">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
             </div>
-            <span className="line-through opacity-50">{multiple ? 'Añadir imágenes' : 'Añadir imagen'}</span>
+            <span className="line-through opacity-50">{multiple ? 'Add images' : 'Add image'}</span>
             {disableImageTooltip && (
-              <span className="text-[9px] bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded no-underline" style={{ textDecoration: 'none' }}>Solo texto</span>
+              <span className="text-[9px] bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded no-underline" style={{ textDecoration: 'none' }}>Text only</span>
             )}
           </div>
         ) : fileArray.length === 0 && (
@@ -135,7 +135,7 @@ const ReferenceInput: React.FC<ReferenceInputProps> = ({
             <div className="p-1 bg-zinc-800 rounded group-hover:bg-zinc-700">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
             </div>
-            <span>{multiple ? 'Añadir imágenes (Opcional)' : 'Añadir imagen (Opcional)'}</span>
+            <span>{multiple ? 'Add images (Optional)' : 'Add image (Optional)'}</span>
           </button>
         )}
 
@@ -151,7 +151,7 @@ const ReferenceInput: React.FC<ReferenceInputProps> = ({
                       onImagePreview(url);
                     }}
                     className="p-1 bg-white/20 hover:bg-white/40 text-white rounded-full shadow-sm"
-                    title="Ver imagen"
+                    title="View image"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
                   </button>
@@ -162,7 +162,7 @@ const ReferenceInput: React.FC<ReferenceInputProps> = ({
                     removeImage(idx);
                   }}
                   className="p-1 bg-red-500/80 hover:bg-red-500 text-white rounded-full shadow-sm"
-                  title="Eliminar referencia"
+                  title="Remove reference"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
@@ -182,7 +182,7 @@ const ReferenceInput: React.FC<ReferenceInputProps> = ({
           <button
             onClick={() => fileInputRef.current?.click()}
             className="h-16 w-16 flex flex-col items-center justify-center gap-1 bg-zinc-900 border border-zinc-800 border-dashed rounded-lg text-zinc-600 hover:text-zinc-400 hover:bg-zinc-800 transition-colors"
-            title="Añadir más"
+            title="Add more"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           </button>

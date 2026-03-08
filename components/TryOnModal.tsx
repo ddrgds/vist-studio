@@ -58,8 +58,8 @@ const TryOnModal: React.FC<TryOnModalProps> = ({ targetItem, onClose, onSave }) 
   };
 
   const handleGenerate = async () => {
-    if (!garmentFile) { toast.error('Sube una foto de la prenda'); return; }
-    if (!garmentDesc.trim()) { toast.error('Describe la prenda brevemente'); return; }
+    if (!garmentFile) { toast.error('Upload a photo of the garment'); return; }
+    if (!garmentDesc.trim()) { toast.error('Briefly describe the garment'); return; }
 
     const cost = OPERATION_CREDIT_COSTS.virtualTryOn;
     const hasCredits = await decrementCredits(cost);
@@ -82,7 +82,7 @@ const TryOnModal: React.FC<TryOnModalProps> = ({ targetItem, onClose, onSave }) 
       setResult(dataUrl);
     } catch (err: any) {
       restoreCredits(cost);
-      toast.error(err?.message || 'Error al aplicar el try-on');
+      toast.error(err?.message || 'Error applying the try-on');
     } finally {
       setLoading(false);
     }
@@ -92,10 +92,10 @@ const TryOnModal: React.FC<TryOnModalProps> = ({ targetItem, onClose, onSave }) 
     if (!result) return;
     try {
       await onSave(result, targetItem.id);
-      toast.success('Try-on guardado en la galería');
+      toast.success('Try-on saved to gallery');
       onClose();
     } catch {
-      toast.error('Error al guardar');
+      toast.error('Error saving');
     }
   };
 
@@ -185,7 +185,7 @@ const TryOnModal: React.FC<TryOnModalProps> = ({ targetItem, onClose, onSave }) 
             >
               {garmentPreview ? (
                 <div className="relative w-full h-full group">
-                  <img src={garmentPreview} alt="Prenda" className="w-full h-full object-contain p-2" />
+                  <img src={garmentPreview} alt="Garment" className="w-full h-full object-contain p-2" />
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-2xl">
                     <span className="text-white text-sm font-medium">Change Photo</span>
                   </div>
@@ -242,7 +242,7 @@ const TryOnModal: React.FC<TryOnModalProps> = ({ targetItem, onClose, onSave }) 
               </button>
             )}
             <p className="text-[10px] text-zinc-700 text-center">
-              ⚠️ IDM-VTON es solo para uso no-comercial (CC BY-NC-SA 4.0)
+              ⚠️ IDM-VTON is for non-commercial use only (CC BY-NC-SA 4.0)
             </p>
           </div>
 

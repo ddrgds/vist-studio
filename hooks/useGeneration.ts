@@ -40,11 +40,11 @@ import { useProfile } from '../contexts/ProfileContext';
 
 const parseGenerationError = (err: unknown): string => {
   const msg = err instanceof Error ? err.message : typeof err === 'string' ? err : '';
-  if (msg.includes('403')) return 'Acceso denegado. Verifica el estado de facturación de tu API Key.';
-  if (msg.includes('429')) return 'Cuota excedida. Inténtalo más tarde.';
+  if (msg.includes('403')) return 'Access denied. Check your API Key billing status.';
+  if (msg.includes('429')) return 'Quota exceeded. Try again later.';
   if (msg.includes('503') || msg.includes('network') || msg.toLowerCase().includes('fetch'))
-    return 'Error de red. Verifica tu conexión e inténtalo de nuevo.';
-  return msg || 'Error al generar contenido. Por favor, intenta de nuevo.';
+    return 'Network error. Check your connection and try again.';
+  return msg || 'Error generating content. Please try again.';
 };
 
 // ─────────────────────────────────────────────
@@ -80,23 +80,39 @@ export const useGeneration = (onGenerateStart?: () => void) => {
       return CREDIT_COSTS[videoEngine as string] ?? 50;
     }
     if (activeMode === 'edit') {
-      // AI edit ops are 1 credit-unit each; face swap costs more
+      if (editSubMode === 'session') return OPERATION_CREDIT_COSTS.photoSession * photoSessionCount;
       if (editSubMode === 'ai' && aiEditEngine === AIEditEngine.FaceSwapFal) return OPERATION_CREDIT_COSTS.faceSwap;
       return OPERATION_CREDIT_COSTS.upscale; // cheap edit default (8)
     }
     // create mode — cost per model × numberOfImages
-    let costPerImage = 5;
+    let costPerImage = 2;
     if (aiProvider === AIProvider.Fal) costPerImage = CREDIT_COSTS[falModel] ?? 10;
     else if (aiProvider === AIProvider.Replicate) costPerImage = CREDIT_COSTS[replicateModel] ?? 15;
     else if (aiProvider === AIProvider.OpenAI) costPerImage = CREDIT_COSTS[openaiModel] ?? 20;
     else if (aiProvider === AIProvider.Ideogram) costPerImage = CREDIT_COSTS[ideogramModel] ?? 10;
     else if (aiProvider === AIProvider.ModelsLab) costPerImage = CREDIT_COSTS[modelsLabModel] ?? 5;
-    else costPerImage = CREDIT_COSTS[geminiModel] ?? 5;
+    else costPerImage = CREDIT_COSTS[geminiModel] ?? 2;
     return costPerImage * numberOfImages;
   };
 
   const handleGenerate = async () => {
     setError(null);
+
+    // ── Validate that the user provided *something* to generate ────────
+    if (activeMode === 'create') {
+      const hasPrompt = characters.some(c => c.characteristics?.trim() || c.outfitDescription?.trim());
+      const hasImages = characters.some(c => c.modelImages?.length);
+      const hasScenario = !!scenario?.trim() || !!scenarioImage;
+      if (!hasPrompt && !hasImages && !hasScenario) {
+        toast.error('Please describe your image or add a reference photo.');
+        return;
+      }
+    } else if (activeMode === 'video') {
+      if (!videoPrompt?.trim() && !videoImage) {
+        toast.error('Please describe the video or add a reference image.');
+        return;
+      }
+    }
 
     // ── Deduct credits before API call ──────────────────────────────────
     const creditCost = computeCreditCost();
@@ -124,7 +140,7 @@ export const useGeneration = (onGenerateStart?: () => void) => {
           ? (negativePrompt ? `${negativePrompt}, fisheye lens, distorted perspective, wide angle distortion, warped anatomy` : 'fisheye lens, distorted perspective, wide angle distortion, warped anatomy')
           : negativePrompt;
 
-        // Si DirectorStudio cargó fotos de cara, inyectarlas en el primer personaje
+        // If DirectorStudio loaded face photos, inject them into the first character
         const effectiveCharacters = directorFaceImages.length > 0
           ? characters.map((c, i) => i === 0 ? { ...c, modelImages: directorFaceImages } : c)
           : characters;
@@ -156,13 +172,13 @@ export const useGeneration = (onGenerateStart?: () => void) => {
         } else if (aiProvider === AIProvider.Fal) {
           // All other fal.ai models require at least 1 reference photo for identity
           if (!characters[0]?.modelImages?.length) {
-            throw new Error('fal.ai requiere al menos una foto de referencia del modelo para preservar la identidad.');
+            throw new Error('fal.ai requires at least one model reference photo to preserve identity.');
           }
           urls = await generateWithFal(params, falModel, (p) => setProgress(p), abortSignal);
         } else if (aiProvider === AIProvider.Replicate) {
           const replicateNoRefNeeded = replicateModel === ReplicateModel.Flux2Max || replicateModel === ReplicateModel.GrokImagine;
           if (!replicateNoRefNeeded && !characters[0]?.modelImages?.length) {
-            throw new Error('Replicate requiere al menos una foto de referencia del modelo para preservar la identidad.');
+            throw new Error('Replicate requires at least one model reference photo to preserve identity.');
           }
           urls = await generateWithReplicate(params, replicateModel as ReplicateModel, (p) => setProgress(p), abortSignal);
         } else if (aiProvider === AIProvider.OpenAI) {
@@ -194,7 +210,7 @@ export const useGeneration = (onGenerateStart?: () => void) => {
         }));
 
       } else if (activeMode === 'edit') {
-        if (!baseImageForEdit) throw new Error('Debes subir una imagen base.');
+        if (!baseImageForEdit) throw new Error('You must upload a base image.');
 
         if (editSubMode === 'session') {
           // ── Photo Session mode ─────────────────────────────
@@ -230,10 +246,10 @@ export const useGeneration = (onGenerateStart?: () => void) => {
         } else if (editSubMode === 'ai') {
           // ── AI Edit mode ──────────────────────────────────
           if (aiEditEngine !== AIEditEngine.FaceSwapFal && !aiEditInstruction.trim()) {
-            throw new Error('Describe qué quieres agregar o modificar en la imagen.');
+            throw new Error('Describe what you want to add or modify in the image.');
           }
           if (aiEditEngine === AIEditEngine.FaceSwapFal && !aiEditReferenceImage) {
-            throw new Error('Debes subir una foto con la cara que deseas intercambiar (Imagen de Referencia).');
+            throw new Error('You must upload a photo with the face you want to swap (Reference Image).');
           }
 
           params = {
@@ -247,7 +263,7 @@ export const useGeneration = (onGenerateStart?: () => void) => {
 
           let aiEditUrls: string[];
           if (aiEditEngine === AIEditEngine.FluxKontext) {
-            // FLUX Kontext Pro — edición por instrucción de texto (fal.ai)
+            // FLUX Kontext Pro — text instruction editing (fal.ai)
             aiEditUrls = await editImageWithFluxKontext(
               baseImageForEdit,
               aiEditInstruction,
@@ -256,7 +272,7 @@ export const useGeneration = (onGenerateStart?: () => void) => {
               abortSignal
             );
           } else if (aiEditEngine === AIEditEngine.Seedream5Edit) {
-            // Seedream 5 Edit — edición multimodal con referencias (fal.ai)
+            // Seedream 5 Edit — multimodal editing with references (fal.ai)
             aiEditUrls = await editImageWithSeedream5(
               baseImageForEdit,
               aiEditInstruction,
@@ -275,7 +291,7 @@ export const useGeneration = (onGenerateStart?: () => void) => {
             );
             aiEditUrls = [url];
           } else if (aiEditEngine === AIEditEngine.Flux2ProEdit) {
-            // FLUX.2 Pro Edit — edición multi-referencia (fal.ai)
+            // FLUX.2 Pro Edit — multi-reference editing (fal.ai)
             aiEditUrls = await editImageWithFlux2Pro(
               baseImageForEdit,
               aiEditInstruction,
@@ -285,7 +301,7 @@ export const useGeneration = (onGenerateStart?: () => void) => {
               abortSignal
             );
           } else if (aiEditEngine === AIEditEngine.GPTImageEdit) {
-            // GPT Image Edit — edición con OpenAI (proxy Vite)
+            // GPT Image Edit — editing with OpenAI (Vite proxy)
             aiEditUrls = await editImageWithGPT(
               baseImageForEdit,
               aiEditInstruction,
@@ -328,11 +344,11 @@ export const useGeneration = (onGenerateStart?: () => void) => {
           // ── Pose edit mode ────────────────────────────────
           if (editNumberOfImages === 1) {
             if (!sessionPoses[0].text && sessionPoses[0].images.length === 0)
-              throw new Error('Debes describir la nueva pose o subir una imagen de referencia.');
+              throw new Error('You must describe the new pose or upload a reference image.');
           } else {
             const missingIndex = sessionPoses.findIndex(p => !p.text && p.images.length === 0);
             if (missingIndex !== -1) {
-              throw new Error(`La Foto #${missingIndex + 1} de la sesión no tiene ninguna pose definida(texto o imagen).Por favor completa todos los campos.`);
+              throw new Error(`Photo #${missingIndex + 1} in the session has no pose defined (text or image). Please fill in all fields.`);
             }
           }
 
@@ -350,7 +366,7 @@ export const useGeneration = (onGenerateStart?: () => void) => {
             model: geminiModel,
           } as PoseModificationParams;
 
-          // Rutear por motor de pose seleccionado
+          // Route by selected pose engine
           let results: PoseGenerationResult[];
           if (poseEngine === PoseEngine.FalAI) {
             // fal.ai: Leffa (si hay imagen ref) o FLUX Kontext (si solo texto)
@@ -368,7 +384,7 @@ export const useGeneration = (onGenerateStart?: () => void) => {
               const session = sessions[i];
               const sessionProgress = (p: number) => setProgress(Math.round((i / total + p / 100 / total) * 100));
 
-              // Construir instrucción a partir del texto de pose + accesorio
+              // Build instruction from pose text + accessory
               const instructionParts: string[] = [
                 session.text
                   ? `Change the pose of the person to: ${session.text}.`
@@ -439,8 +455,8 @@ export const useGeneration = (onGenerateStart?: () => void) => {
 
       } else {
         // Video — always Gemini/Veo
-        if (!videoImage) throw new Error('Debes subir una imagen inicial para el video.');
-        if (!videoPrompt && !videoDialogue) throw new Error('Describe qué sucede en el video o añade un diálogo.');
+        if (!videoImage) throw new Error('You must upload an initial image for the video.');
+        if (!videoPrompt && !videoDialogue) throw new Error('Describe what happens in the video or add dialogue.');
 
         params = {
           baseImage: videoImage,
@@ -456,7 +472,7 @@ export const useGeneration = (onGenerateStart?: () => void) => {
         if (videoEngine === VideoEngine.KlingStandard || videoEngine === VideoEngine.KlingPro) {
           videoUrl = await generateVideoWithKling(params, (p) => setProgress(p), abortSignal);
         } else if (videoEngine === VideoEngine.LumaDreamMachine || videoEngine === VideoEngine.RunwayGen3) {
-          throw new Error(`El motor ${VIDEO_ENGINE_LABELS[videoEngine].name} todavía no está implementado.`);
+          throw new Error(`The ${VIDEO_ENGINE_LABELS[videoEngine].name} engine is not yet implemented.`);
         } else {
           // Default to Gemini (Veo)
           videoUrl = await generateInfluencerVideo(params, (p) => setProgress(p), abortSignal);
@@ -470,7 +486,7 @@ export const useGeneration = (onGenerateStart?: () => void) => {
         }];
       }
 
-      if (newItems.length === 0) throw new Error('No se generaron imágenes. Inténtalo de nuevo.');
+      if (newItems.length === 0) throw new Error('No images were generated. Try again.');
 
       // Tag source workspace
       const itemSource = directorFaceImages.length > 0 ? 'director' : 'generate';

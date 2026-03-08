@@ -10,6 +10,7 @@ import {
   saveGalleryItem, loadGalleryItems, deleteGalleryItem,
   savePresetToCloud, loadPresetsFromCloud, deletePresetFromCloud,
   updateGalleryItem,
+  shareToCommunity, unshareFromCommunity, loadUserSharedIds,
 } from '../services/supabaseService';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
@@ -75,6 +76,10 @@ interface GalleryContextValue {
   addInspiration: (file: File, name: string) => Promise<void>;
   deleteInspiration: (id: string) => Promise<void>;
 
+  // Community sharing
+  sharedIds: Set<string>;
+  toggleShare: (item: GeneratedContent, displayName: string, avatarUrl: string | null) => Promise<void>;
+
   // Error
   error: string | null;
   setError: React.Dispatch<React.SetStateAction<string | null>>;
@@ -111,6 +116,9 @@ export const GalleryProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // ─── Inspiration ───────────────────────────
   const [inspirationImages, setInspirationImages] = useState<InspirationImage[]>([]);
 
+  // ─── Community sharing ───────────────────────
+  const [sharedIds, setSharedIds] = useState<Set<string>>(new Set());
+
   // ─── Storyboard ────────────────────────────
   const STORYBOARD_KEY = 'vist_storyboard_ids';
   const [storyboardIds, setStoryboardIds] = useState<string[]>(() => {
@@ -127,46 +135,136 @@ export const GalleryProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // ─── Loaders ───────────────────────────────
   const refreshHistory = async () => {
+    setGeneratedHistory(prev => {
+      prev.forEach(item => { if (item.url?.startsWith('blob:')) URL.revokeObjectURL(item.url); });
+      return prev;
+    });
     if (user) {
       try {
-        const items = await loadGalleryItems(user.id);
-        setGeneratedHistory(items);
+        setGeneratedHistory(await loadGalleryItems(user.id));
       } catch {
-        // Fallback silencioso a IndexedDB si Supabase no está disponible
-        const items = await loadHistoryItems();
-        setGeneratedHistory(items);
+        setGeneratedHistory(await loadHistoryItems());
       }
     } else {
-      const items = await loadHistoryItems();
-      setGeneratedHistory(items);
+      setGeneratedHistory(await loadHistoryItems());
     }
   };
 
   const refreshCustomPresets = async () => {
     if (user) {
       try {
-        const items = await loadPresetsFromCloud(user.id);
-        setCustomPresets(items);
+        setCustomPresets(await loadPresetsFromCloud(user.id));
       } catch {
-        const items = await loadCustomPresets();
-        setCustomPresets(items);
+        setCustomPresets(await loadCustomPresets());
       }
     } else {
-      const items = await loadCustomPresets();
-      setCustomPresets(items);
+      setCustomPresets(await loadCustomPresets());
     }
   };
 
   const refreshInspiration = async () => {
-    const items = await loadInspirationImages();
-    setInspirationImages(items);
+    setInspirationImages(prev => {
+      prev.forEach(img => { if (img.url?.startsWith('blob:')) URL.revokeObjectURL(img.url); });
+      return prev;
+    });
+    setInspirationImages(await loadInspirationImages());
   };
 
-  // Recargar cuando cambie el usuario
+  // Reload when the user changes + cloud sync retry
   useEffect(() => {
-    refreshHistory();
-    refreshCustomPresets();
-    refreshInspiration();
+    let cancelled = false;
+
+    const load = async () => {
+      // 1. Load all data in parallel
+      const [historyResult] = await Promise.allSettled([
+        (async () => {
+          // Revoke old blob URLs
+          setGeneratedHistory(prev => {
+            prev.forEach(item => { if (item.url?.startsWith('blob:')) URL.revokeObjectURL(item.url); });
+            return prev;
+          });
+          if (user) {
+            try {
+              const items = await loadGalleryItems(user.id);
+              if (!cancelled) setGeneratedHistory(items);
+              return items;
+            } catch {
+              const items = await loadHistoryItems();
+              if (!cancelled) setGeneratedHistory(items);
+              return null; // null = cloud unavailable
+            }
+          } else {
+            const items = await loadHistoryItems();
+            if (!cancelled) setGeneratedHistory(items);
+            return null;
+          }
+        })(),
+        (async () => {
+          if (user) {
+            try {
+              const items = await loadPresetsFromCloud(user.id);
+              if (!cancelled) setCustomPresets(items);
+            } catch {
+              const items = await loadCustomPresets();
+              if (!cancelled) setCustomPresets(items);
+            }
+          } else {
+            const items = await loadCustomPresets();
+            if (!cancelled) setCustomPresets(items);
+          }
+        })(),
+        (async () => {
+          setInspirationImages(prev => {
+            prev.forEach(img => { if (img.url?.startsWith('blob:')) URL.revokeObjectURL(img.url); });
+            return prev;
+          });
+          const items = await loadInspirationImages();
+          if (!cancelled) setInspirationImages(items);
+        })(),
+        (async () => {
+          if (user) {
+            try {
+              const ids = await loadUserSharedIds(user.id);
+              if (!cancelled) setSharedIds(ids);
+            } catch { /* silent */ }
+          } else {
+            setSharedIds(new Set());
+          }
+        })(),
+      ]);
+
+      // 2. Cloud sync retry (only if logged in and cloud was reachable)
+      if (!user || cancelled) return;
+      const cloudItems = historyResult.status === 'fulfilled' ? historyResult.value : null;
+      if (!cloudItems) return; // Cloud was unreachable
+
+      try {
+        const localItems = await loadHistoryItems();
+        if (localItems.length === 0 || cancelled) return;
+
+        const cloudIds = new Set(cloudItems.map(i => i.id));
+        const pending = localItems.filter(i => !cloudIds.has(i.id));
+        if (pending.length === 0) return;
+
+        let synced = 0;
+        for (const item of pending) {
+          if (cancelled) break;
+          try {
+            await saveGalleryItem(item, user.id);
+            await deleteHistoryItem(item.id);
+            synced++;
+          } catch { /* skip, retry next session */ }
+        }
+        if (synced > 0 && !cancelled) {
+          console.info(`Cloud sync: uploaded ${synced}/${pending.length} local items`);
+          const items = await loadGalleryItems(user.id);
+          if (!cancelled) setGeneratedHistory(items);
+        }
+      } catch { /* silent */ }
+    };
+
+    load();
+    return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
@@ -197,19 +295,21 @@ export const GalleryProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // ─── Gallery Mutations ─────────────────────
   const addItems = async (items: GeneratedContent[]) => {
     setGeneratedHistory(prev => [...items, ...prev]);
-    for (const item of items) {
-      if (user) {
-        try {
-          await saveGalleryItem(item, user.id);
-        } catch (saveErr) {
-          // Fallback: guardar localmente si Supabase falla
-          await saveHistoryItem(item);
-          console.warn('Supabase save failed, saved locally instead:', saveErr);
-          toast.warning('Sin conexión a la nube — guardado localmente');
-        }
-      } else {
-        await saveHistoryItem(item);
+    if (user) {
+      const results = await Promise.allSettled(
+        items.map(item => saveGalleryItem(item, user.id))
+      );
+      // Fallback failed items to IndexedDB
+      const failed = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+      if (failed.length > 0) {
+        await Promise.allSettled(
+          items.filter((_, i) => results[i].status === 'rejected').map(item => saveHistoryItem(item))
+        );
+        console.warn(`${failed.length}/${items.length} cloud saves failed, saved locally`, failed[0].reason);
+        toast.warning('Some items saved locally (cloud unavailable)');
       }
+    } else {
+      await Promise.allSettled(items.map(item => saveHistoryItem(item)));
     }
   };
 
@@ -227,7 +327,7 @@ export const GalleryProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     } catch (err) {
       setGeneratedHistory(backup);
-      toast.error('No se pudo eliminar. Los cambios han sido revertidos.');
+      toast.error('Could not delete. Changes have been reverted.');
     }
   };
 
@@ -240,11 +340,11 @@ export const GalleryProvider: React.FC<{ children: React.ReactNode }> = ({ child
       await Promise.all(ids.map(id =>
         user ? deleteGalleryItem(id, user.id) : deleteHistoryItem(id)
       ));
-      toast.success(`${ids.length} ${ids.length === 1 ? 'elemento eliminado' : 'elementos eliminados'}`);
+      toast.success(`${ids.length} ${ids.length === 1 ? 'item deleted' : 'items deleted'}`);
     } catch (err) {
       setGeneratedHistory(backup);
       setSelectedIds(new Set(ids));
-      toast.error('Error al eliminar. Los elementos han sido restaurados.');
+      toast.error('Error deleting. Items have been restored.');
     }
   };
 
@@ -370,6 +470,20 @@ export const GalleryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     await refreshInspiration();
   };
 
+  // ─── Community sharing ───────────────────────
+  const toggleShare = async (item: GeneratedContent, displayName: string, avatarUrl: string | null) => {
+    if (!user) return;
+    if (sharedIds.has(item.id)) {
+      await unshareFromCommunity(item.id, user.id);
+      setSharedIds(prev => { const next = new Set(prev); next.delete(item.id); return next; });
+      toast.info('Removed from community');
+    } else {
+      await shareToCommunity(item, user.id, displayName, avatarUrl);
+      setSharedIds(prev => new Set(prev).add(item.id));
+      toast.success('Shared to community!');
+    }
+  };
+
   return (
     <GalleryContext.Provider value={{
       generatedHistory, setGeneratedHistory,
@@ -388,6 +502,7 @@ export const GalleryProvider: React.FC<{ children: React.ReactNode }> = ({ child
       previewImage, setPreviewImage,
       customPresets, refreshCustomPresets, savePreset, deletePreset,
       inspirationImages, refreshInspiration, addInspiration, deleteInspiration,
+      sharedIds, toggleShare,
       error, setError,
     }}>
       {children}
