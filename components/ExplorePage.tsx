@@ -19,11 +19,10 @@ type AppWorkspace =
   | "explore"
   | "generate"
   | "director"
+  | "characters"
   | "storyboard"
-  | "create"
-  | "video"
-  | "influencer"
-  | "pricing";
+  | "pricing"
+  | "profile";
 
 interface ExplorePageProps {
   onNavigate: (workspace: AppWorkspace, mode?: string, modelId?: string) => void;
@@ -60,8 +59,7 @@ const FEATURES = [
     subtitle: "Kling AI & Runway Gen-3",
     description:
       "Turn still images into cinematic video clips with smooth motion and consistent character identity across frames.",
-    workspace: "generate" as AppWorkspace,
-    mode: "video",
+    workspace: "director" as AppWorkspace,
     accent: "#FF7A5A",
   },
   {
@@ -137,7 +135,7 @@ const ExplorePage: React.FC<ExplorePageProps> = ({ onNavigate }) => {
           {/* Left: headline + CTAs */}
           <div className="w-full sm:flex-shrink-0 sm:max-w-[320px]">
             <p
-              className="text-[11px] font-bold tracking-[0.2em] uppercase mb-4 font-jet"
+              className="text-[11px] font-black tracking-widest uppercase mb-4 font-display"
               style={{ color: "#FF5C35" }}
             >
               AI Influencer Studio
@@ -230,7 +228,20 @@ const ExplorePage: React.FC<ExplorePageProps> = ({ onNavigate }) => {
       <div className="mx-8 accent-line" />
 
       {/* ── GALLERY (Your Creations) ──────────────────────────────────────── */}
-      {hasImages && (
+      {gallery.galleryLoading ? (
+        /* Skeleton while gallery loads — prevents flash/alternation */
+        <section className="px-4 sm:px-8 pt-10 pb-12 max-w-[1400px] mx-auto">
+          <div className="mb-6">
+            <div className="w-28 h-3 rounded skeleton-shimmer mb-2" />
+            <div className="w-40 h-2.5 rounded skeleton-shimmer" />
+          </div>
+          <div className="columns-2 md:columns-3 lg:columns-4 gap-2">
+            {[180, 240, 160, 200, 220, 150].map((h, i) => (
+              <div key={i} className="mb-2 rounded-xl skeleton-shimmer" style={{ height: h }} />
+            ))}
+          </div>
+        </section>
+      ) : hasImages ? (
         <section className="px-4 sm:px-8 pt-10 pb-12 max-w-[1400px] mx-auto">
           <div className="flex items-end justify-between mb-6">
             <div>
@@ -282,7 +293,7 @@ const ExplorePage: React.FC<ExplorePageProps> = ({ onNavigate }) => {
             ))}
           </div>
         </section>
-      )}
+      ) : null}
 
       {/* ── COMMUNITY FEED ──────────────────────────────────────────────── */}
       <div className="mx-8 accent-line" />
@@ -332,7 +343,7 @@ const ExplorePage: React.FC<ExplorePageProps> = ({ onNavigate }) => {
       {/* ── HOW IT WORKS ───────────────────────────────────────────────── */}
       <section className="px-4 sm:px-8 py-16 max-w-[1400px] mx-auto">
         <div className="text-center mb-12">
-          <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-3 font-jet" style={{ color: '#FF5C35' }}>How it works</p>
+          <p className="text-[11px] font-black tracking-widest uppercase mb-3 font-display" style={{ color: '#FF5C35' }}>How it works</p>
           <h2 className="text-[28px] sm:text-[36px] font-black tracking-tight font-display" style={{ color: '#F5EDE8' }}>
             Three steps to your AI character
           </h2>
@@ -359,7 +370,7 @@ const ExplorePage: React.FC<ExplorePageProps> = ({ onNavigate }) => {
       {/* ── PRICING PREVIEW ──────────────────────────────────────────────── */}
       <section className="px-4 sm:px-8 py-16 max-w-[1400px] mx-auto">
         <div className="text-center mb-10">
-          <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-3 font-jet" style={{ color: '#FF5C35' }}>Pricing</p>
+          <p className="text-[11px] font-black tracking-widest uppercase mb-3 font-display" style={{ color: '#FF5C35' }}>Pricing</p>
           <h2 className="text-[28px] sm:text-[36px] font-black tracking-tight font-display" style={{ color: '#F5EDE8' }}>
             Simple, transparent pricing
           </h2>
@@ -507,13 +518,15 @@ const FeatureCard: React.FC<{
 }> = ({ feature, onNavigate }) => (
   <button
     onClick={() => onNavigate(feature.workspace, feature.mode)}
-    className="text-left p-5 rounded-2xl border transition-all group hover:-translate-y-0.5 active:scale-[0.98]"
+    className="text-left p-5 rounded-2xl border transition-all duration-200 ease-out group hover:-translate-y-0.5 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
     style={{ background: "#161110", border: "1px solid #2A1F1C" }}
     onMouseEnter={(e) => {
       (e.currentTarget as HTMLElement).style.borderColor = `${feature.accent}40`;
+      (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 32px ${feature.accent}15`;
     }}
     onMouseLeave={(e) => {
       (e.currentTarget as HTMLElement).style.borderColor = "#2A1F1C";
+      (e.currentTarget as HTMLElement).style.boxShadow = "none";
     }}
   >
     {/* Icon */}

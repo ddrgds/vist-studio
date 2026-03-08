@@ -12,6 +12,7 @@ import {
   ChevronDown,
   Image,
 } from "lucide-react";
+import AutocompleteInput from "./AutocompleteInput";
 import { useForm } from "../contexts/FormContext";
 import { useGallery } from "../contexts/GalleryContext";
 import {
@@ -231,7 +232,7 @@ const Badge: React.FC<{ text: string }> = ({ text }) => {
     <span
       className="text-[7px] font-black px-1 py-px rounded leading-none tracking-wider font-jet text-white"
       style={
-        isNew      ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)' } :
+        isNew      ? { background: 'linear-gradient(135deg,#34d399,#2dd4bf)', color: '#022c22' } :
         isPremium  ? { background: 'rgba(255,92,53,0.2)', color: '#FF5C35', border: '1px solid rgba(255,92,53,0.3)' } :
                     { background: 'rgba(255,255,255,0.1)', color: '#B8A9A5' }
       }
@@ -377,6 +378,31 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
               ))}
             </div>
 
+            {/* ── Session Timeline Strip ── */}
+            {galleryTab === 'session' && sessionItems.length > 0 && (
+              <div className="flex gap-1 px-2 pb-2 overflow-x-auto custom-scrollbar">
+                {sessionItems.map((item, i) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setLightboxItem(item)}
+                    className={`relative flex-shrink-0 w-11 h-11 rounded-lg overflow-hidden border transition-all ${
+                      lightboxItem?.id === item.id ? 'border-[#FF5C35] scale-105' : 'border-transparent hover:border-zinc-600'
+                    }`}
+                  >
+                    {item.type === 'video' ? (
+                      <video src={item.url} className="w-full h-full object-cover" muted />
+                    ) : (
+                      <img src={item.url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                    )}
+                    <span className="absolute bottom-0 left-0 right-0 text-[6px] font-jet font-bold text-center py-px"
+                      style={{ background: 'rgba(0,0,0,0.6)', color: lightboxItem?.id === item.id ? '#FF5C35' : '#6B5A56' }}>
+                      {i + 1}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* Masonry grid — edge-to-edge, 3 columns, minimal gap */}
             <div className="columns-3 gap-0.5 px-0.5">
               {displayItems.map((item) => (
@@ -430,14 +456,48 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
             </div>
           </>
         ) : (
-          /* ── Empty state — minimal ── */
-          <div className="flex flex-col items-center justify-center h-full text-center select-none">
-            <div className="w-6 h-6 mb-4">
-              <Image className="w-6 h-6" style={{ color: '#FF5C35', opacity: 0.4 }} />
+          /* ── Empty state — prompt suggestions ── */
+          <div className="flex flex-col items-center justify-center h-full text-center select-none px-4">
+            <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-5" style={{ background: 'rgba(255,92,53,0.08)' }}>
+              <Sparkles className="w-5 h-5" style={{ color: '#FF5C35', opacity: 0.6 }} />
             </div>
-            <p className="text-sm" style={{ color: '#4A3A36' }}>
-              Describe what you want to create
+            <h3 className="text-lg font-bold font-display mb-1" style={{ color: '#F5EDE8' }}>
+              What will you create?
+            </h3>
+            <p className="text-xs mb-6" style={{ color: '#4A3A36' }}>
+              Pick a prompt to get started, or write your own below
             </p>
+            <div className="flex flex-wrap justify-center gap-2 max-w-xl">
+              {[
+                "Editorial fashion shoot, golden hour lighting",
+                "Street style portrait, Tokyo neon nights",
+                "Luxury brand campaign, minimalist studio",
+                "Athletic wear, outdoor mountain scenery",
+                "Vintage film aesthetic, European caf\u00e9",
+                "Fantasy character, dramatic cinematic lighting",
+                "Casual chic, rooftop sunset city skyline",
+                "Swimwear editorial, tropical beach paradise",
+              ].map((prompt) => (
+                <button
+                  key={prompt}
+                  onClick={() => {
+                    if (char0) form.updateCharacter(char0.id, "outfitDescription", prompt);
+                  }}
+                  className="px-3 py-1.5 rounded-full text-[11px] font-medium transition-all hover:scale-[1.03] active:scale-[0.97]"
+                  style={{ background: 'rgba(255,92,53,0.06)', border: '1px solid rgba(255,92,53,0.15)', color: '#B8A9A5' }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,92,53,0.4)';
+                    (e.currentTarget as HTMLElement).style.color = '#F5EDE8';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,92,53,0.15)';
+                    (e.currentTarget as HTMLElement).style.color = '#B8A9A5';
+                  }}
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -471,9 +531,9 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !isGenerating) { e.preventDefault(); onGenerate(); } }}
               />
             ) : (
-              <input
+              <AutocompleteInput
                 value={form.characters[0]?.outfitDescription ?? ""}
-                onChange={(e) => char0 && form.updateCharacter(char0.id, "outfitDescription", e.target.value)}
+                onChange={(v) => char0 && form.updateCharacter(char0.id, "outfitDescription", v)}
                 placeholder="Describe your image..."
                 className="flex-1 bg-transparent text-sm text-white outline-none py-2.5 placeholder:text-zinc-700 font-light"
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !isGenerating) { e.preventDefault(); onGenerate(); } }}

@@ -6,7 +6,7 @@ import { InfluencerParams, PoseModificationParams, VideoParams, GeminiImageModel
 // We pass a placeholder apiKey (the SDK requires a non-empty string)
 // and route all requests through the proxy via httpOptions.baseUrl.
 const createGeminiClient = () =>
-  new GoogleGenAI({ apiKey: 'PROXIED', httpOptions: { baseUrl: '/gemini-api' } });
+  new GoogleGenAI({ apiKey: 'PROXIED', httpOptions: { baseUrl: `${window.location.origin}/gemini-api` } });
 
 // ─────────────────────────────────────────────
 // Relaxed Safety Settings (maximum allowed

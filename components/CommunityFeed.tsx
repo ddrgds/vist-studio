@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight, Loader2, Users } from 'lucide-react';
 import { loadCommunityFeed, CommunityShare } from '../services/supabaseService';
 
 interface CommunityFeedProps {
@@ -43,9 +43,6 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ onNavigate }) => {
     setLoadingMore(false);
   }, [items.length, loadingMore, hasMore]);
 
-  // Don't render the section at all if empty and not loading
-  if (!loading && items.length === 0) return null;
-
   return (
     <section className="px-4 sm:px-8 pt-10 pb-12 max-w-[1400px] mx-auto">
       <div className="flex items-end justify-between mb-6">
@@ -79,8 +76,32 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ onNavigate }) => {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#4A3A36' }} />
+        /* Skeleton grid instead of spinner */
+        <div className="columns-2 md:columns-3 lg:columns-4 gap-2">
+          {[200, 260, 180, 240, 220, 190, 250, 170].map((h, i) => (
+            <div key={i} className="mb-2 rounded-xl skeleton-shimmer" style={{ height: h }} />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
+        /* Empty state — no community shares yet */
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'rgba(255,92,53,0.06)' }}>
+            <Users className="w-6 h-6" style={{ color: '#FF5C35', opacity: 0.4 }} />
+          </div>
+          <h3 className="text-sm font-bold font-display mb-1" style={{ color: '#F5EDE8' }}>
+            Community gallery
+          </h3>
+          <p className="text-xs mb-5 max-w-xs" style={{ color: '#4A3A36' }}>
+            Be the first to share your creations with the community. Open any image and tap "Share".
+          </p>
+          <button
+            onClick={() => onNavigate('generate', 'create')}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:scale-[1.02] active:scale-[0.97]"
+            style={{ background: 'rgba(255,92,53,0.1)', border: '1px solid rgba(255,92,53,0.2)', color: '#FF5C35' }}
+          >
+            Start creating
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         </div>
       ) : (
         <>

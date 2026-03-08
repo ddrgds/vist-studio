@@ -80,6 +80,9 @@ interface GalleryContextValue {
   sharedIds: Set<string>;
   toggleShare: (item: GeneratedContent, displayName: string, avatarUrl: string | null) => Promise<void>;
 
+  // Loading
+  galleryLoading: boolean;
+
   // Error
   error: string | null;
   setError: React.Dispatch<React.SetStateAction<string | null>>;
@@ -130,7 +133,8 @@ export const GalleryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   });
 
-  // ─── Errors ────────────────────────────────
+  // ─── Loading / Errors ─────────────────────────
+  const [galleryLoading, setGalleryLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // ─── Loaders ───────────────────────────────
@@ -232,6 +236,8 @@ export const GalleryProvider: React.FC<{ children: React.ReactNode }> = ({ child
           }
         })(),
       ]);
+
+      if (!cancelled) setGalleryLoading(false);
 
       // 2. Cloud sync retry (only if logged in and cloud was reachable)
       if (!user || cancelled) return;
@@ -503,6 +509,7 @@ export const GalleryProvider: React.FC<{ children: React.ReactNode }> = ({ child
       customPresets, refreshCustomPresets, savePreset, deletePreset,
       inspirationImages, refreshInspiration, addInspiration, deleteInspiration,
       sharedIds, toggleShare,
+      galleryLoading,
       error, setError,
     }}>
       {children}

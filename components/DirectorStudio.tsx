@@ -31,6 +31,7 @@ import {
   SavedCharacter,
 } from "../types";
 import GalleryGrid from "./Gallery/GalleryGrid";
+import CharacteristicsInput from "./CharacteristicsInput";
 import InspirationBoard from "./InspirationBoard";
 import { InspirationImage, CREDIT_COSTS, OPERATION_CREDIT_COSTS, VideoEngine } from "../types";
 import { useSubscription } from "../hooks/useSubscription";
@@ -167,6 +168,20 @@ interface SessionPreset {
   label: string;
   shots: string[];
 }
+
+const PRESET_TOOLTIPS: Record<string, string> = {
+  selfie: "Close-up self-portrait, natural lighting, phone camera feel",
+  grwm: "Get Ready With Me — mirror shots, getting dressed sequence",
+  stories: "Vertical 9:16 clips, casual talking-to-camera energy",
+  editorial: "High fashion magazine spread, professional studio lighting",
+  portrait: "Classic studio portraits, 85mm bokeh, timeless quality",
+  street: "Urban outdoor fashion, candid city vibes",
+  creator: "Influencer-style content, engaging and relatable",
+  lifestyle: "Everyday moments — café, park, home, natural light",
+  fitness: "Athletic action shots, gym and outdoor energy",
+  nightout: "Evening glamour, neon lights, nightlife atmosphere",
+  fotodump: "Casual mixed collection, authentic unfiltered moments",
+};
 
 const PHOTO_SESSION_PRESETS: SessionPreset[] = [
   {
@@ -373,7 +388,7 @@ const Badge: React.FC<{ text: string }> = ({ text }) => {
     text === "FAST" ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', color: '#fff' } :
     text === "PRO"  ? { background: 'rgba(255,92,53,0.18)', color: '#FF5C35', border: '1px solid rgba(255,92,53,0.3)' } :
     text === "4K"   ? { background: 'rgba(96,165,250,0.2)', color: '#93C5FD' } :
-    text === "NEW"  ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', color: '#fff' } :
+    text === "NEW"  ? { background: 'linear-gradient(135deg,#34d399,#2dd4bf)', color: '#022c22' } :
     text === "MAX"  ? { background: 'rgba(255,179,71,0.2)', color: '#FFB347' } :
     text === "ID"   ? { background: 'rgba(251,146,60,0.2)', color: '#FB923C' } :
     text === "BEST" ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', color: '#fff' } :
@@ -1188,30 +1203,12 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                 </p>
               </div>
 
-              {/* Characteristics */}
+              {/* Characteristics — Visual Builder */}
               <div className="px-4 pb-3">
-                <textarea
+                <CharacteristicsInput
                   value={char0?.characteristics ?? ""}
-                  onChange={(e) => char0 && form.updateCharacter(char0.id, "characteristics", e.target.value)}
-                  placeholder="Age, ethnicity, features... e.g. 25yo, Asian, almond eyes"
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 text-[11px] text-zinc-300 outline-none resize-none placeholder:text-zinc-700 focus:border-zinc-600 transition-colors leading-relaxed"
-                  rows={2}
+                  onChange={(v) => char0 && form.updateCharacter(char0.id, "characteristics", v)}
                 />
-                {/* Quick chips */}
-                <div className="flex flex-wrap gap-1 mt-1.5">
-                  {['Korean, 20s', 'Latina, 25yo', 'African, athletic', 'European blonde'].map((chip) => (
-                    <button
-                      key={chip}
-                      onClick={() => char0 && form.updateCharacter(char0.id, 'characteristics', chip)}
-                      className="text-[9px] px-2 py-0.5 rounded-full transition-colors font-jet"
-                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid #2A1F1C', color: '#6B5A56' }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#B8A9A5'; (e.currentTarget as HTMLElement).style.borderColor = '#4A3A36'; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#6B5A56'; (e.currentTarget as HTMLElement).style.borderColor = '#2A1F1C'; }}
-                    >
-                      {chip}
-                    </button>
-                  ))}
-                </div>
               </div>
             </AccordionSection>
             </div>{/* end Identity order wrapper */}
@@ -1650,6 +1647,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                     <button
                       key={preset.id}
                       onClick={() => togglePreset(preset.id)}
+                      title={PRESET_TOOLTIPS[preset.id] || preset.label}
                       className={`flex flex-col items-center gap-1 py-2.5 px-2 rounded-xl border text-center transition-all ${
                         isActive
                           ? "bg-white/10 border-zinc-400 text-white"

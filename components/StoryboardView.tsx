@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { GeneratedContent } from '../types';
 import { useGallery } from '../contexts/GalleryContext';
 import { useToast } from '../contexts/ToastContext';
@@ -29,7 +29,9 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
   const { storyboardIds, removeFromStoryboard, reorderStoryboard, generatedHistory } = useGallery();
   const toast = useToast();
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [selectedFrame, setSelectedFrame] = useState(0);
   const [exportingGrid, setExportingGrid] = useState(false);
+  const timelineRef = useRef<HTMLDivElement>(null);
 
   // Resolve IDs to items (filter out deleted ones)
   const storyboardItems: GeneratedContent[] = storyboardIds
@@ -42,6 +44,7 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
     const [moved] = newIds.splice(fromIndex, 1);
     newIds.splice(toIndex, 0, moved);
     reorderStoryboard(newIds);
+    setSelectedFrame(toIndex);
   };
 
   const handleDragStart = (index: number) => setDragIndex(index);
@@ -55,6 +58,7 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
 
   const handleClearAll = () => {
     storyboardIds.forEach(id => removeFromStoryboard(id));
+    setSelectedFrame(0);
     toast.info('Storyboard cleared');
   };
 
@@ -71,7 +75,7 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
       canvas.width = cols * cellSize + (cols + 1) * padding;
       canvas.height = rows * (cellSize + labelH) + (rows + 1) * padding;
       const ctx = canvas.getContext('2d')!;
-      ctx.fillStyle = '#09090b';
+      ctx.fillStyle = '#0D0A0A';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       await Promise.all(
@@ -89,7 +93,6 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
             img.src = item.url;
           });
 
-          // Draw image (cropped to square) — using manual fallback instead of roundRect
           ctx.save();
           drawRoundRect(ctx, x, y, cellSize, cellSize, 8);
           ctx.clip();
@@ -100,7 +103,6 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
           ctx.drawImage(img, sx, sy, sw, sh, x, y, cellSize, cellSize);
           ctx.restore();
 
-          // Frame number label
           ctx.fillStyle = 'rgba(0,0,0,0.7)';
           ctx.fillRect(x, y + cellSize, cellSize, labelH);
           ctx.fillStyle = '#ffffff';
@@ -111,13 +113,12 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
         })
       );
 
-      // Trigger download
       canvas.toBlob(blob => {
         if (!blob) return;
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `storyboard-${Date.now()}.png`;
+        a.download = `vist-storyboard-${Date.now()}.png`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -131,37 +132,40 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
     }
   };
 
+  // ─── Empty State ───────────────────────────────────────────────────────────
   if (storyboardItems.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-8">
-        <div className="max-w-3xl w-full px-6 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 text-center">
-          <div className="relative w-32 h-32 mx-auto">
-            <div className="absolute inset-0 bg-gradient-to-tr from-zinc-800 to-zinc-900 rounded-3xl rotate-6 animate-pulse" />
-            <div className="absolute inset-0 bg-zinc-950 border border-zinc-800 rounded-3xl -rotate-3 flex flex-col items-center justify-center shadow-2xl">
-              <span className="text-5xl opacity-50">🎬</span>
-            </div>
+      <div className="h-full flex flex-col items-center justify-center p-8" style={{ background: '#0D0A0A' }}>
+        <div className="max-w-lg w-full text-center">
+          <div className="w-16 h-16 rounded-2xl mx-auto mb-6 flex items-center justify-center" style={{ background: 'rgba(255,92,53,0.06)' }}>
+            <span className="text-3xl">🎬</span>
           </div>
-          <div className="space-y-3 mb-4">
-            <h3 className="text-3xl font-bold text-white tracking-tight">Your Storyboard is empty</h3>
-            <p className="text-base text-zinc-400 max-w-lg mx-auto">
-              Collect your best generations here to build sequences, visual references, or create your own comic.
-            </p>
-          </div>
-          <div className="p-6 bg-zinc-900/40 border border-zinc-800 rounded-2xl flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left mx-auto max-w-xl">
-            <div className="w-10 h-10 rounded-full bg-zinc-800 text-zinc-400 flex items-center justify-center flex-shrink-0">
-              <span className="text-lg">💡</span>
+          <h3 className="text-xl font-bold font-display mb-2" style={{ color: '#F5EDE8' }}>
+            Your Storyboard is empty
+          </h3>
+          <p className="text-sm mb-8" style={{ color: '#6B5A56' }}>
+            Collect your best generations here to build sequences, visual references, or create your own comic.
+          </p>
+
+          <div className="p-5 rounded-2xl flex items-start gap-4 text-left mx-auto max-w-md"
+            style={{ background: '#161110', border: '1px solid #2A1F1C' }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ background: 'rgba(255,179,71,0.1)' }}>
+              <span className="text-sm">💡</span>
             </div>
             <div>
-              <p className="text-sm text-white font-medium mb-1">How to add frames?</p>
-              <p className="text-sm text-zinc-500 leading-relaxed">
-                Go to the <strong>Feed</strong> (Gallery), open the menu <span className="inline-flex items-center justify-center w-6 h-6 bg-zinc-800 rounded-full border border-zinc-700 text-white font-bold mx-1">⋯</span> on any image and choose <strong>"Add to Storyboard"</strong>.
+              <p className="text-xs font-semibold mb-1" style={{ color: '#F5EDE8' }}>How to add frames</p>
+              <p className="text-[11px] leading-relaxed" style={{ color: '#6B5A56' }}>
+                Open any image from your gallery, tap the <strong style={{ color: '#B8A9A5' }}>menu ⋯</strong> and choose <strong style={{ color: '#FF5C35' }}>"Add to Storyboard"</strong>.
               </p>
             </div>
           </div>
-          <div className="pt-6 flex justify-center lg:hidden">
+
+          <div className="mt-8 lg:hidden">
             <button
               onClick={onOpenMobileMenu}
-              className="px-8 py-3 bg-white text-black text-sm font-semibold rounded-full hover:scale-105 active:scale-95 transition-all shadow-xl shadow-white/10"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] active:scale-[0.97]"
+              style={{ background: 'linear-gradient(135deg, #FF5C35, #FFB347)', boxShadow: '0 4px 24px rgba(255,92,53,0.35)' }}
             >
               Start creating
             </button>
@@ -171,86 +175,153 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
     );
   }
 
+  // ─── Active Frame ──────────────────────────────────────────────────────────
+  const activeItem = storyboardItems[Math.min(selectedFrame, storyboardItems.length - 1)];
+  const activeIndex = Math.min(selectedFrame, storyboardItems.length - 1);
+
   return (
-    <div className="flex flex-col h-full">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-        <p className="text-xs text-zinc-500">
-          <span className="text-white font-semibold">{storyboardItems.length}</span> frames — drag to reorder
-        </p>
+    <div className="flex flex-col h-full" style={{ background: '#0D0A0A' }}>
+      {/* ── Toolbar ── */}
+      <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: '#1A1210' }}>
+        <div className="flex items-center gap-3">
+          <h2 className="text-xs font-black tracking-widest uppercase font-display" style={{ color: '#FF5C35' }}>
+            Storyboard
+          </h2>
+          <span className="text-[10px] font-jet" style={{ color: '#6B5A56' }}>
+            {storyboardItems.length} frame{storyboardItems.length !== 1 ? 's' : ''}
+          </span>
+        </div>
         <div className="flex gap-2">
           <button
             onClick={exportAsGrid}
             disabled={exportingGrid}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs rounded-lg transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold rounded-lg transition-all hover:scale-[1.02]"
+            style={{ background: 'rgba(255,92,53,0.08)', border: '1px solid rgba(255,92,53,0.15)', color: '#FF5C35' }}
           >
             {exportingGrid ? (
               <svg className="animate-spin" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
-            ) : '🖼️'}
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+            )}
             Export Grid
           </button>
           <button
             onClick={handleClearAll}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-900/30 hover:bg-red-900/50 text-red-400 text-xs rounded-lg transition-colors border border-red-800/30"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold rounded-lg transition-all"
+            style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)', color: '#EF4444' }}
           >
-            🗑️ Clear
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Clear
           </button>
         </div>
       </div>
 
-      {/* Filmstrip */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-          {storyboardItems.map((item, index) => (
-            <div
-              key={item.id}
-              draggable
-              onDragStart={() => handleDragStart(index)}
-              onDragOver={(e) => handleDragOver(e, index)}
-              onDragEnd={handleDragEnd}
-              className={`relative group rounded-xl overflow-hidden border aspect-square cursor-grab active:cursor-grabbing transition-all ${dragIndex === index ? 'opacity-50 border-purple-500 scale-95' : 'border-zinc-800 hover:border-zinc-600'
-                }`}
-            >
-              {item.type === 'video' ? (
-                <video src={item.url} className="w-full h-full object-cover" loop muted />
-              ) : (
-                <img src={item.url} alt={`Frame ${index + 1}`} className="w-full h-full object-cover" />
-              )}
+      {/* ── Preview Area ── */}
+      <div className="flex-1 flex items-center justify-center p-4 overflow-hidden relative min-h-0">
+        {activeItem && (
+          <div className="relative max-h-full max-w-full flex flex-col items-center">
+            {/* Navigation arrows */}
+            {activeIndex > 0 && (
+              <button
+                onClick={() => setSelectedFrame(activeIndex - 1)}
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110"
+                style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}
+                aria-label="Previous frame"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+              </button>
+            )}
+            {activeIndex < storyboardItems.length - 1 && (
+              <button
+                onClick={() => setSelectedFrame(activeIndex + 1)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110"
+                style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}
+                aria-label="Next frame"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+              </button>
+            )}
 
-              {/* Frame number badge */}
-              <div className="absolute top-2 left-2 z-10 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded">
-                {index + 1}
-              </div>
+            {activeItem.type === 'video' ? (
+              <video
+                src={activeItem.url}
+                className="max-h-full max-w-full rounded-xl object-contain"
+                style={{ maxHeight: 'calc(100vh - 280px)' }}
+                controls
+                loop
+              />
+            ) : (
+              <img
+                src={activeItem.url}
+                alt={`Frame ${activeIndex + 1}`}
+                className="max-h-full max-w-full rounded-xl object-contain"
+                style={{ maxHeight: 'calc(100vh - 280px)' }}
+              />
+            )}
 
-              {/* Controls overlay */}
-              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 z-10">
-                <div className="flex gap-1">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleMove(index, index - 1); }}
-                    disabled={index === 0}
-                    aria-label="Move left"
-                    className="p-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 rounded-lg text-white transition-colors"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleMove(index, index + 1); }}
-                    disabled={index === storyboardItems.length - 1}
-                    aria-label="Move right"
-                    className="p-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 rounded-lg text-white transition-colors"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-                  </button>
-                </div>
-                <button
-                  onClick={(e) => { e.stopPropagation(); removeFromStoryboard(item.id); }}
-                  aria-label="Remove from storyboard"
-                  className="px-2 py-1 bg-red-600/80 hover:bg-red-600 text-white text-[10px] rounded-lg transition-colors"
-                >
-                  Remove
-                </button>
-              </div>
+            {/* Frame info */}
+            <div className="mt-3 flex items-center gap-3">
+              <span className="text-[10px] font-jet font-bold px-2 py-0.5 rounded" style={{ background: 'rgba(255,92,53,0.1)', color: '#FF5C35' }}>
+                Frame {activeIndex + 1} / {storyboardItems.length}
+              </span>
+              <span className="text-[10px] font-jet" style={{ color: '#6B5A56' }}>
+                {activeItem.type === 'video' ? '🎬 Video' : '🖼 Image'}
+              </span>
+              <button
+                onClick={() => { removeFromStoryboard(activeItem.id); if (selectedFrame >= storyboardItems.length - 1) setSelectedFrame(Math.max(0, selectedFrame - 1)); }}
+                className="text-[10px] font-semibold transition-colors ml-2"
+                style={{ color: '#EF4444' }}
+              >
+                Remove
+              </button>
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Timeline Strip ── */}
+      <div className="border-t px-2 py-3" style={{ borderColor: '#1A1210', background: '#161110' }}>
+        <div
+          ref={timelineRef}
+          className="flex gap-1.5 overflow-x-auto pb-1 custom-scrollbar"
+          style={{ scrollBehavior: 'smooth' }}
+        >
+          {storyboardItems.map((item, index) => (
+            <React.Fragment key={item.id}>
+              <button
+                draggable
+                onDragStart={() => handleDragStart(index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDragEnd={handleDragEnd}
+                onClick={() => setSelectedFrame(index)}
+                className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all cursor-grab active:cursor-grabbing ${
+                  dragIndex === index ? 'opacity-40 scale-90' : ''
+                }`}
+                style={{
+                  borderColor: activeIndex === index ? '#FF5C35' : '#2A1F1C',
+                  boxShadow: activeIndex === index ? '0 0 0 1px rgba(255,92,53,0.3), 0 4px 12px rgba(255,92,53,0.15)' : 'none',
+                }}
+              >
+                {item.type === 'video' ? (
+                  <video src={item.url} className="w-full h-full object-cover" muted />
+                ) : (
+                  <img src={item.url} alt="" className="w-full h-full object-cover" />
+                )}
+                {/* Frame number */}
+                <span
+                  className="absolute bottom-0.5 left-0.5 text-[8px] font-jet font-bold px-1 rounded"
+                  style={{ background: 'rgba(0,0,0,0.7)', color: activeIndex === index ? '#FF5C35' : '#B8A9A5' }}
+                >
+                  {index + 1}
+                </span>
+                {/* Video indicator */}
+                {item.type === 'video' && (
+                  <span className="absolute top-0.5 right-0.5 text-[8px] px-1 rounded" style={{ background: 'rgba(0,0,0,0.7)', color: '#FFB347' }}>
+                    ▶
+                  </span>
+                )}
+              </button>
+            </React.Fragment>
           ))}
         </div>
       </div>
