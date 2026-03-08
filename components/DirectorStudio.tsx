@@ -8,6 +8,7 @@ import {
   ChevronDown,
   Upload,
   ImageIcon,
+  AlertTriangle,
 } from "lucide-react";
 import { useForm } from "../contexts/FormContext";
 import { useGallery } from "../contexts/GalleryContext";
@@ -486,6 +487,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
 
   // Studio mode: create | poses | ai | session
   const [studioMode, setStudioMode] = useState<"create" | "poses" | "ai" | "session">("create");
+  const [showNoFaceWarning, setShowNoFaceWarning] = useState(false);
 
   // ─── Character Library state ───────────────────────────────────────────────
   const charLib = useCharacterLibrary();
@@ -830,6 +832,18 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
         return;
       }
     }
+
+    // In create mode, warn if no face reference uploaded (credits will be spent)
+    if (studioMode === "create") {
+      const char0 = form.characters[0];
+      const hasFace = char0 && char0.modelImages.length > 0;
+      if (!hasFace && !showNoFaceWarning) {
+        setShowNoFaceWarning(true);
+        return;
+      }
+      setShowNoFaceWarning(false);
+    }
+
     onGenerate();
   };
 
@@ -2339,6 +2353,45 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#6B5A56'; }}
               >
                 Start from scratch
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+      {/* ─── No-face warning modal ─── */}
+      {showNoFaceWarning && createPortal(
+        <div
+          className="fixed inset-0 z-[300] flex items-center justify-center p-6"
+          style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}
+          onClick={() => setShowNoFaceWarning(false)}
+        >
+          <div
+            className="relative w-full max-w-sm rounded-2xl p-7 animate-in zoom-in-95 fade-in duration-300"
+            style={{ background: '#0D0A0A', border: '1px solid #2A1F1C' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ background: '#FF5C3515', color: '#FF5C35' }}>
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-bold mb-2" style={{ color: '#F5EDE8' }}>No face reference uploaded</h3>
+            <p className="text-sm mb-5" style={{ color: '#6B5A56' }}>
+              Without reference photos, the AI won't maintain character consistency. The result will be a random face. Credits will still be consumed.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowNoFaceWarning(false)}
+                className="flex-1 py-2.5 rounded-xl text-xs font-semibold transition-colors"
+                style={{ color: '#6B5A56', border: '1px solid #2A1F1C' }}
+              >
+                Upload Photos
+              </button>
+              <button
+                onClick={() => { setShowNoFaceWarning(false); onGenerate(); }}
+                className="flex-1 py-2.5 rounded-xl text-xs font-semibold text-white transition-all hover:scale-[1.02] active:scale-95"
+                style={{ background: 'linear-gradient(135deg,#FF5C35,#FFB347)' }}
+              >
+                Continue Anyway
               </button>
             </div>
           </div>

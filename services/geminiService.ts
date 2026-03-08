@@ -728,7 +728,7 @@ export const generateInfluencerVideo = async (
 
 // ─────────────────────────────────────────────
 // Generate Batch Outfits
-// Misma cara/personaje, N outfits distintos en paralelo
+// Same face/character, N different outfits in parallel
 // ─────────────────────────────────────────────
 export interface BatchOutfitResult {
   url: string;

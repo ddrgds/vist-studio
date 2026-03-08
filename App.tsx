@@ -470,7 +470,7 @@ const AppInner: React.FC = () => {
       // Load as base image for editing in the VIST editor
       form.setBaseImageForEdit(file);
       form.setActiveMode("edit");
-      setActiveWorkspace("influencer");
+      setActiveWorkspace("director");
     } catch {
       toast.error("Could not load the image for the editor.");
     }
@@ -981,7 +981,7 @@ const AppInner: React.FC = () => {
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `galeria-${Date.now()}.zip`;
+      a.download = `gallery-${Date.now()}.zip`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -1593,7 +1593,7 @@ const AppInner: React.FC = () => {
           <div className="space-y-4 pt-4 border-t border-zinc-800/50">
             <div className="space-y-1">
               <div className="flex justify-between text-sm">
-                <label className="font-medium text-zinc-400">Variaciones</label>
+                <label className="font-medium text-zinc-400">Variations</label>
                 <span className="text-zinc-500">{form.numberOfImages}</span>
               </div>
               <input
@@ -1740,6 +1740,7 @@ const AppInner: React.FC = () => {
             <button
               onClick={() => setIsMobileMenuOpen(true)}
               className="p-2 bg-zinc-800 rounded-lg text-white"
+              aria-label="Open mobile menu"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -2054,6 +2055,7 @@ const AppInner: React.FC = () => {
                   onClick={() => setShowLeftDrawer(!showLeftDrawer)}
                   className="text-zinc-400 hover:text-white transition-colors"
                   title="Assets & History"
+                  aria-label="Toggle assets and history"
                 >
                   <svg
                     width="24"
@@ -2088,6 +2090,7 @@ const AppInner: React.FC = () => {
                         setShowLeftDrawer(false);
                       }}
                       className="absolute top-4 right-4 p-2 text-zinc-500 hover:text-white lg:block hidden"
+                      aria-label="Close sidebar"
                     >
                       <svg
                         width="20"
@@ -2136,6 +2139,7 @@ const AppInner: React.FC = () => {
                       <button
                         onClick={() => setIsMobileMenuOpen(false)}
                         className="lg:hidden p-2 text-zinc-400 hover:text-white"
+                        aria-label="Close mobile menu"
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -2413,6 +2417,7 @@ const AppInner: React.FC = () => {
                 <button
                   onClick={() => setShowAdvancedConfig(false)}
                   className="absolute top-4 left-4 p-2 text-zinc-500 hover:text-white z-50 bg-white/5 rounded-full backdrop-blur-md transition-colors hover:bg-white/10"
+                  aria-label="Close settings panel"
                 >
                   <svg
                     width="20"

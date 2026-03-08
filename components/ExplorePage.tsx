@@ -10,6 +10,7 @@ import {
   Video as VideoIcon,
 } from "lucide-react";
 import { useGallery } from "../contexts/GalleryContext";
+import { useAuth } from "../contexts/AuthContext";
 import CommunityFeed from "./CommunityFeed";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -104,6 +105,7 @@ const BASE_COUNT = 12_400; // "seed" number for social proof
 
 const ExplorePage: React.FC<ExplorePageProps> = ({ onNavigate }) => {
   const gallery = useGallery();
+  const { user } = useAuth();
   const examplesRef = useRef<HTMLElement>(null);
 
   const realImages = gallery.generatedHistory
@@ -164,30 +166,28 @@ const ExplorePage: React.FC<ExplorePageProps> = ({ onNavigate }) => {
                 }}
               >
                 <Sparkles className="w-4 h-4" />
-                Start Free
+                {user ? 'Start Creating' : 'Start Free'}
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
 
-              {hasImages && (
-                <button
-                  onClick={scrollToExamples}
-                  className="flex items-center gap-1.5 text-sm font-medium transition-colors"
-                  style={{ color: "#6B5A56" }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.color = "#B8A9A5";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.color = "#6B5A56";
-                  }}
-                >
-                  See examples
-                  <ChevronDown className="w-3.5 h-3.5" />
-                </button>
-              )}
+              <button
+                onClick={scrollToExamples}
+                className="flex items-center gap-1.5 text-sm font-medium transition-colors"
+                style={{ color: "#6B5A56" }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.color = "#B8A9A5";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.color = "#6B5A56";
+                }}
+              >
+                See examples
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
             </div>
 
             {/* Micro-stat */}
-            <p className="mt-6 text-[11px] font-jet" style={{ color: "#4A3A36" }}>
+            <p className="mt-6 text-[11px] font-jet" style={{ color: "#8B7A76" }}>
               {totalGenerated.toLocaleString()}+ images created
             </p>
           </div>
@@ -229,9 +229,9 @@ const ExplorePage: React.FC<ExplorePageProps> = ({ onNavigate }) => {
       {/* ── Divider ──────────────────────────────────────────────────────── */}
       <div className="mx-8 accent-line" />
 
-      {/* ── GALLERY (Examples) ────────────────────────────────────────────── */}
+      {/* ── GALLERY (Your Creations) ──────────────────────────────────────── */}
       {hasImages && (
-        <section ref={examplesRef} className="px-4 sm:px-8 pt-10 pb-12 max-w-[1400px] mx-auto">
+        <section className="px-4 sm:px-8 pt-10 pb-12 max-w-[1400px] mx-auto">
           <div className="flex items-end justify-between mb-6">
             <div>
               <h2
@@ -286,7 +286,9 @@ const ExplorePage: React.FC<ExplorePageProps> = ({ onNavigate }) => {
 
       {/* ── COMMUNITY FEED ──────────────────────────────────────────────── */}
       <div className="mx-8 accent-line" />
-      <CommunityFeed onNavigate={onNavigate} />
+      <section ref={examplesRef}>
+        <CommunityFeed onNavigate={onNavigate} />
+      </section>
 
       {/* ── SOCIAL PROOF ─────────────────────────────────────────────────── */}
       <section className="px-4 sm:px-8 pb-12 max-w-[1400px] mx-auto">

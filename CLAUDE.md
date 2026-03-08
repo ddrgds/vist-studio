@@ -244,6 +244,13 @@ Credits 3000:   1374291  |  Store ID:      308321
 | 12 | 🟡 MEDIUM | Webhook: empty variant map if env vars missing | ✅ FIXED — filters + logs |
 | 13 | 🟡 MEDIUM | `restoreCreditsInDb` fallback overwrites balance | ✅ FIXED — reads current + adds |
 | 14 | 🟡 MEDIUM | Video engine not passed in params (Kling routing bug) | ✅ FIXED — engine included in VideoParams |
+| 15 | 🔴 CRITICAL | "Director" button in Generate routes to /influencer instead of /director | ✅ FIXED — setActiveWorkspace("director") |
+| 16 | 🟡 MEDIUM | "Variaciones" and "galeria" Spanish strings in UI/downloads | ✅ FIXED — translated to English |
+| 17 | 🟡 MEDIUM | Hero counter contrast < 2:1 WCAG fail (#4A3A36 on dark) | ✅ FIXED — color raised to #8B7A76 |
+| 18 | 🟡 MEDIUM | "See examples" scrolls to personal gallery, not examples | ✅ FIXED — scrolls to Community Feed |
+| 19 | 🟡 MEDIUM | Generate without face reference wastes credits silently | ✅ FIXED — confirmation modal in Director |
+| 20 | 🟢 MINOR | "Start Free" no feedback for logged-in users | ✅ FIXED — shows "Start Creating" when authenticated |
+| 21 | 🟢 MINOR | 6+ icon-only buttons missing aria-label | ✅ FIXED — aria-labels on nav/sidebar/menu buttons |
 
 ### Deferred (lower priority)
 - Memory leaks: inspiration blob URLs, DetailModal (BUGs #14, #21 from audit)
@@ -364,3 +371,12 @@ npx tsc --noEmit       # Must return zero errors before every commit
 - [x] Library Images lightbox — click-to-preview with download, source badge, provider info
 - [x] Onboarding welcome modal — 3-slide tour (Freestyle, Director, Library), shown once on first login
 - [x] Code splitting — React.lazy for 6 workspaces + 12 modals/components + manualChunks for vendors → main chunk 1,422→856KB (-40%)
+
+### 🔧 QA Audit Fixes
+- [x] Bug #15 (P0): "Director" button in Generate routed to /influencer — fixed to /director
+- [x] Bug #16 (P2): "Variaciones" → "Variations", "galeria" → "gallery", Spanish comment in geminiService
+- [x] Bug #17 (P5): Hero counter contrast raised from #4A3A36 to #8B7A76 (WCAG improvement)
+- [x] Bug #18 (P4): "See examples" now scrolls to Community Feed (not personal gallery)
+- [x] Bug #19 (P3): Face reference validation in Director — shows warning modal before spending credits
+- [x] Bug #20 (P4): "Start Free" → "Start Creating" for authenticated users
+- [x] Bug #21 (P5): aria-labels added to 6 nav/sidebar/menu icon-only buttons
