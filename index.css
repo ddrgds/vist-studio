@@ -1,12 +1,196 @@
+@import "tailwindcss";
+
 /* ════════════════════════════════════════════════════════════
-   VIST Studio — Design System
+   VIST Studio — Design System (Tailwind v4)
    Coral/Amber brand identity. Warm, bold, creator-first.
    ════════════════════════════════════════════════════════════ */
 
-/* All core tokens, animations, and global overrides live in
-   index.html <style> for CDN Tailwind compatibility.
-   This file handles anything that needs cascade ordering
-   separate from the CDN-injected sheet. */
+@theme {
+  /* ── Custom Colors ── */
+  --color-zinc-50:  #FAF7F6;
+  --color-zinc-100: #F5F0EE;
+  --color-zinc-200: #E8DDD9;
+  --color-zinc-300: #D4C8C4;
+  --color-zinc-400: #B8A9A5;
+  --color-zinc-500: #8C7570;
+  --color-zinc-600: #6B5A56;
+  --color-zinc-700: #2A1F1C;
+  --color-zinc-800: #1E1614;
+  --color-zinc-850: #19100E;
+  --color-zinc-900: #161110;
+  --color-zinc-950: #0D0A0A;
+
+  --color-coral: #FF5C35;
+  --color-coral-hover: #FF7A57;
+  --color-coral-pressed: #E64A25;
+  --color-coral-dim: rgba(255,92,53,0.25);
+
+  --color-amber-brand: #FFB347;
+  --color-amber-dim: rgba(255,179,71,0.15);
+
+  /* ── Fonts ── */
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-jet: "JetBrains Mono", monospace;
+
+  /* ── Gradients ── */
+  --background-image-brand-gradient: linear-gradient(135deg, #FF5C35 0%, #FFB347 100%);
+  --background-image-brand-gradient-v: linear-gradient(180deg, #FF5C35 0%, #FF8C42 100%);
+
+  /* ── Shadows ── */
+  --shadow-coral-glow: 0 4px 24px rgba(255, 92, 53, 0.35);
+  --shadow-coral-glow-lg: 0 8px 40px rgba(255, 92, 53, 0.45);
+}
+
+/* ── CSS Design Tokens ──────────────────────────────────────────── */
+:root {
+  --bg-primary:    #0D0A0A;
+  --bg-surface:    #161110;
+  --bg-elevated:   #1E1614;
+  --bg-hover:      #251A17;
+
+  --accent:        #FF5C35;
+  --accent-hover:  #FF7A57;
+  --accent-glow:   rgba(255, 92, 53, 0.25);
+  --accent-amber:  #FFB347;
+
+  --text-primary:  #FFFFFF;
+  --text-secondary:#B8A9A5;
+  --text-muted:    #6B5A56;
+
+  --border:        #2A1F1C;
+  --border-active: rgba(255, 92, 53, 0.45);
+  --border-glow:   rgba(255, 92, 53, 0.6);
+
+  --gradient-brand: linear-gradient(135deg, #FF5C35 0%, #FFB347 100%);
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body:    'Inter', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+}
+
+/* ── Base ─────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 4px; height: 4px; }
+::-webkit-scrollbar-track  { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb  { background: var(--accent); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-hover); }
+
+.custom-scrollbar::-webkit-scrollbar        { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track  { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb  { background: var(--accent); border-radius: 2px; opacity: 0.6; }
+
+/* ── Gradient text utility ────────────────────────────────────── */
+.text-gradient-brand {
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Ambient glow ──────────────────────────────────────────────── */
+.glow-coral {
+  background: radial-gradient(ellipse 60% 40% at 30% 50%,
+    rgba(255, 92, 53, 0.08) 0%, transparent 70%);
+}
+
+/* ── Card hover glow ─────────────────────────────────────────── */
+.card-hover-glow {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.card-hover-glow:hover {
+  border-color: var(--border-active);
+  box-shadow: 0 0 0 1px var(--border-active),
+              0 8px 32px var(--accent-glow);
+}
+
+/* ── Shimmer skeleton loader ─────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.skeleton-shimmer {
+  background: linear-gradient(90deg,
+    var(--bg-surface) 25%,
+    var(--bg-hover) 50%,
+    var(--bg-surface) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* ── Accent divider line ─────────────────────────────────────── */
+.accent-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--accent) 50%, transparent 100%);
+  opacity: 0.35;
+}
+
+/* ── Font utilities ──────────────────────────────────────────── */
+.font-display { font-family: var(--font-display) !important; }
+.font-jet     { font-family: var(--font-mono) !important; }
+
+/* ── Primary button override: coral gradient ─────────────────── */
+.from-purple-600.to-indigo-600 {
+  --tw-gradient-from: #FF5C35 !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(255,92,53,0)) !important;
+  --tw-gradient-to: #FFB347 !important;
+}
+.hover\:from-purple-500:hover {
+  --tw-gradient-from: #FF7A57 !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(255,122,87,0)) !important;
+}
+.hover\:to-indigo-500:hover {
+  --tw-gradient-to: #FFC96A !important;
+}
+.shadow-\[0_0_20px_rgba\(147\,51\,234\,0\.3\)\] {
+  box-shadow: 0 4px 24px rgba(255, 92, 53, 0.35) !important;
+}
+.from-violet-600.to-purple-600,
+.from-indigo-600.to-purple-600 {
+  --tw-gradient-from: #FF5C35 !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(255,92,53,0)) !important;
+  --tw-gradient-to: #FFB347 !important;
+}
+.hover\:from-violet-500:hover,
+.hover\:from-indigo-500:hover {
+  --tw-gradient-from: #FF7A57 !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(255,122,87,0)) !important;
+}
+.hover\:to-purple-500:hover {
+  --tw-gradient-to: #FFC96A !important;
+}
+.from-purple-500.to-indigo-600 {
+  --tw-gradient-from: #FF5C35 !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(255,92,53,0)) !important;
+  --tw-gradient-to: #FFB347 !important;
+}
+
+/* ── Focus ring → coral ──────────────────────────────────────── */
+.focus-within\:border-purple-500\/40:focus-within {
+  border-color: rgba(255, 92, 53, 0.4) !important;
+}
+.focus-within\:ring-purple-500\/10:focus-within {
+  --tw-ring-color: rgba(255, 92, 53, 0.1) !important;
+}
+.focus-within\:shadow-purple-900\/5:focus-within {
+  --tw-shadow-color: rgba(255, 92, 53, 0.05) !important;
+}
 
 /* ── Input focus ring override ────────────────────────────────── */
 input:focus,
@@ -17,7 +201,7 @@ select:focus {
   box-shadow: 0 0 0 3px var(--accent-glow) !important;
 }
 
-/* ── Range slider (brush size, etc.) ─────────────────────────── */
+/* ── Range slider ─────────────────────────────────────────────── */
 input[type="range"]::-webkit-slider-thumb {
   background: var(--accent) !important;
 }
@@ -25,7 +209,6 @@ input[type="range"]::-moz-range-thumb {
   background: var(--accent) !important;
   border: none !important;
 }
-/* Track */
 input[type="range"]::-webkit-slider-runnable-track {
   background: var(--border) !important;
 }

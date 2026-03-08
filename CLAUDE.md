@@ -384,3 +384,123 @@ npx tsc --noEmit       # Must return zero errors before every commit
 - [x] SEO-001 (P5): Nav `<button>` → `<a href>` for crawleable links
 - [x] SEO-002 (P5): Dynamic `<title>` + meta description per workspace, OG tags + Twitter Card in index.html
 - [x] I18N-002 (P5): Download filenames "influencer-" → "vist-" across App.tsx + DetailModal
+# VIST Studio — Auditoría de Producto & Guía de Correcciones
+## Proyecto
+VIST Studio es un AI Influencer Studio que genera imágenes y videos fotorrealistas de personajes virtuales usando 10+ motores de IA (FLUX Kontext, Gemini Flash, GPT Image 1.5, Ideogram V3, Kling AI, Runway Gen-3, NB2, Seedream 4.5/5.0, Grok). Desplegado en Cloudflare Pages.
+## URL de producción
+https://vist-studio.pages.dev
+## Competidor principal de referencia
+Higgsfield.ai — estándar de UI/UX al que aspiramos: estética oscura premium, micro-interacciones fluidas, flujos de 2-3 clics, social proof con community feed, previews animados.
+## Arquitectura de rutas
+| Ruta | Título | Función |
+|------|--------|---------|
+| `/` | Explore (Homepage) | Landing con hero, feature cards, creaciones del usuario, stats, how it works, pricing, CTA final |
+| `/generate` | Freestyle Generator | Generación rápida de imágenes con prompt libre. Barra inferior con input + settings gear + botón Generate |
+| `/director` | Director Studio | Herramienta principal. Sidebar izquierda (Identity, Engine, Costume, Pose, Library). Tabs superiores: Create, Poses, AI Edit, Photo Session. Sidebar derecha (Lighting, Camera, Format, Scene). Gallery central |
+| `/characters` | Library (Your Cast) | Biblioteca de personajes guardados. Tabs: Characters / Images |
+| `/storyboard` | Storyboard | Planificador de contenido. Frames con drag-to-reorder, Export Grid, Clear |
+| `/pricing` | Plans & Pricing | 4 tiers: Starter (Free), Pro ($19), Studio ($49), Brand ($149) |
+## Navegación
+- **Desktop navbar (top):** VIST Studio logo → Explore (/) → Freestyle (/generate) → Director (/director) → Library (/characters) → Storyboard (/storyboard) → Pricing (/pricing) → Credits badge → Upgrade → Profile dropdown
+- **Mobile bottom bar:** Explore → Freestyle → Director → Library → Board (truncado de Storyboard)
+- Cada link del navbar tiene un subtitle tooltip: Explore="Home & overview", Freestyle="Freestyle generation", Director="Character studio", Library="Character library", Storyboard="Content planner", Pricing="Plans & features"
+## Director Studio — Sub-modos (tabs)
+1. **Create** → Sidebar: Identity (3 face slots), Engine selector con toggle, Costume (outfit ref + text), Pose, Library (personajes guardados). Right panel: Lighting (Natural/Studio/Golden/Neon/Dramatic/Dark), Camera (Portrait/Wide/Macro/Cinema/Polaroid/Vintage), Format (3:4/1:1/4:3/16:9/9:16), Resolution (1K/2K/4K), Scene, Variations. CTA: "Direct →"
+2. **Poses** → Base image loaded, Engine selector (Gemini/fal.ai/FLUX.2/GPT/Grok), Session Poses con pose descriptions. CTA: "Apply Poses →"
+3. **AI Edit** → Engine chips (Gemini/GPT/FLUX/FLUX.2/Seedream/Grok/Face Swap/NSFW Edit), Instruction textarea, Reference image optional. CTA: "Apply Edit →"
+4. **Photo Session** → 11 style presets (Selfies/GRWM/Stories/Editorial/Portrait/Street Style/Creator/Lifestyle/Fitness/Night Out/Foto Dump), Photos to shoot counter, Engine selector (NB2/Grok). CTA: "Shoot Session →"
+---
+## BUGS CONFIRMADOS — Prioridad P0 (Críticos)
+### BUG-001: Tarjeta "Video Generation" redirige a /generate en vez de /director
+**Dónde:** Homepage, sección "Everything you need", tercera tarjeta de 4
+**Qué pasa:** La tarjeta "Video Generation — Kling AI & Runway Gen-3" tiene un onClick/href que navega a `/generate` (Freestyle Generator). El usuario espera una herramienta de video pero llega al generador de imágenes.
+**Fix:** Cambiar la redirección de la tarjeta "Video Generation" a `/director`. Si se puede, añadir un query param como `/director?tab=video` para abrir directamente un futuro tab de video. Si no existe tab de video, redirigir a `/director` como default. Buscar el array/objeto de feature cards en el componente del homepage y corregir la entrada correspondiente a "Video Generation".
+### BUG-002: Race condition — Sección "YOUR CREATIONS" vs "COMMUNITY" alterna en cada refresh
+**Dónde:** Homepage, sección debajo de las feature cards
+**Qué pasa:** Al cargar la página, a veces muestra "YOUR CREATIONS" (29 images in your studio) con la galería del usuario, y otras veces muestra "COMMUNITY — See what others are creating" con un spinner infinito. El render depende de si el auth state se resolvió a tiempo.
+**Fix:** El componente debe esperar a que el estado de autenticación se resuelva antes de decidir qué renderizar. Mientras el auth está pendiente, mostrar un skeleton/placeholder (no un spinner). La lógica debe ser: si auth pendiente → skeleton; si autenticado → YOUR CREATIONS; si no autenticado → COMMUNITY. Buscar el componente condicional en la homepage y envolver con un check de loading state del auth.
+### BUG-003: Freestyle Generator (/generate) — Pantalla vacía sin onboarding
+**Dónde:** `/generate` — toda la página
+**Qué pasa:** La página muestra solo un icono de imagen roto (placeholder) y el texto "Describe what you want to create" sobre un fondo completamente negro. No hay sugerencias, templates, ejemplos, ni guía. Esto causa "blank canvas paralysis".
+**Fix:** Crear un empty state para cuando no hay imágenes generadas. Debe incluir:
+1. Un título de bienvenida sutil (ej: "What will you create?")
+2. Un grid o fila de 6-8 prompt suggestion chips clicables. Ejemplos:
+   - "Editorial fashion shoot, golden hour lighting"
+   - "Street style portrait, Tokyo neon nights"
+   - "Luxury brand campaign, minimalist studio"
+   - "Athletic wear, outdoor mountain scenery"
+   - "Vintage film aesthetic, European café"
+   - "Fantasy character, dramatic cinematic lighting"
+   - "Casual chic, rooftop sunset city skyline"
+   - "Swimwear editorial, tropical beach paradise"
+3. Al hacer click en un chip, debe copiar el texto al textarea del prompt (el input ref "Describe your image...")
+4. Opcionalmente: mostrar 3-4 thumbnails de ejemplo debajo con el prompt que los generó
+5. El empty state debe desaparecer una vez el usuario genere su primera imagen (el gallery se llena)
+---
+## BUGS CONFIRMADOS — Prioridad P1 (Altos)
+### BUG-004: Mobile bottom nav — Label "Board" truncado
+**Dónde:** Bottom navigation bar (nav móvil/contextual), último item
+**Qué pasa:** El label dice "Board" en vez de "Storyboard". Es ambiguo y pierde significado.
+**Fix:** Cambiar el label de "Board" a "Storyboard". Si el espacio no permite el texto completo, usar "Story" como alternativa. Verificar que no haya overflow. Buscar el componente de bottom navigation y corregir el label del último item.
+### BUG-005: Mobile bottom nav — Falta enlace a Pricing
+**Dónde:** Bottom navigation bar
+**Qué pasa:** La nav mobile tiene 5 items (Explore, Freestyle, Director, Library, Board) pero no incluye Pricing. Pricing es un flujo de monetización crítico que no debe ser inaccesible en mobile.
+**Fix:** Evaluar si Pricing debe añadirse como sexto item en la bottom nav, o si debe ser accesible desde el dropdown del perfil de usuario. Recomendación: añadirlo al menú de perfil como "Plans & billing" (que ya existe como botón pero solo en el dropdown del desktop).
+### BUG-006: Feature cards del homepage sin hover states significativos
+**Dónde:** Homepage, sección "Everything you need", las 4 tarjetas
+**Qué pasa:** Las tarjetas (Freestyle, Director Studio, Video Generation, Storyboard) tienen hover state mínimo. No comunican interactividad.
+**Fix:** Añadir a cada tarjeta:
+- `transition-all duration-200 ease-out`
+- `hover:scale-[1.02]`
+- `hover:border-orange-500/40` (border glow sutil)
+- `hover:shadow-lg hover:shadow-orange-500/10`
+- Cursor pointer si no lo tiene ya
+### BUG-007: Photo Session presets sin previews ni descripciones
+**Dónde:** Director → tab "Photo Session", sidebar izquierda, los 11 botones de estilo
+**Qué pasa:** Los presets (Selfies, GRWM, Stories, Editorial, etc.) solo muestran un emoji/icono y nombre. No hay tooltip ni preview que explique qué genera cada estilo.
+**Fix:** Añadir un tooltip on hover a cada preset con una descripción de 1 línea. Ejemplos:
+- Selfies: "Close-up self-portrait, natural lighting, phone camera feel"
+- GRWM: "Get Ready With Me — mirror shots, getting dressed sequence"
+- Editorial: "High fashion magazine spread, professional studio lighting"
+- Street Style: "Urban outdoor fashion, candid city vibes"
+Si es posible, mostrar un thumbnail de ejemplo en el tooltip.
+---
+## MEJORAS DE UI — Prioridad P2 (Elevación visual)
+### UI-001: Section headers — Cambiar monospaced por sans-serif
+**Dónde:** Homepage — todos los section headers: "EVERYTHING YOU NEED", "YOUR CREATIONS", "COMMUNITY", "HOW IT WORKS", "PRICING"
+**Qué pasa:** Usan una fuente monospaced/uppercase que crea efecto "developer tool" en vez de "professional creative suite".
+**Fix:** Cambiar estos headers a la misma font-family sans-serif del resto del UI. Mantener uppercase. Aplicar: `font-family: inherit` (o la sans-serif del proyecto), `font-weight: 600`, `letter-spacing: 0.05em`, `text-transform: uppercase`. Color: mantener el orange-500 actual.
+### UI-002: Introducir segundo accent color
+**Dónde:** Global — sistema de colores
+**Qué pasa:** Todo el UI usa exclusivamente naranja (#f97316 / orange-500) como único accent color sobre negro. Esto es monótono comparado con Higgsfield que usa lime/chartreuse como secondary.
+**Fix:** Añadir un color de acento secundario para estados de éxito, badges "new", y elementos secundarios. Sugerencia: `emerald-400` (#34d399) o `cyan-400` (#22d3ee). Usar para: badges de "NEW" en engines, estados de éxito ("Base image loaded"), y como hover color alternativo en elementos secundarios. No reemplazar el naranja principal — solo complementarlo.
+### UI-003: Storyboard — Rediseño como timeline visual
+**Dónde:** `/storyboard`
+**Qué pasa:** Actualmente es solo un canvas con frames apilados verticalmente, "Export Grid" y "Clear". No hay timeline, no hay indicadores de secuencia narrativa.
+**Fix:** Rediseñar como timeline horizontal:
+- Barra de timeline en la parte inferior con thumbnails de cada frame
+- Drag-and-drop entre posiciones
+- Indicador de frame número, tipo (image/video), y duración estimada para video
+- Botón "+" entre frames para insertar nuevos
+- Mantener Export Grid y añadir "Export Video" (compilación)
+- Zona de preview ampliado al hacer click en un frame
+### UI-004: Community feed con social proof
+**Dónde:** Homepage, sección "COMMUNITY"
+**Qué pasa:** Muestra un spinner infinito y nunca carga contenido de comunidad.
+**Fix:** Si el endpoint de community existe, corregir la carga de datos. Si no existe, implementar un feed tipo grid (estilo Pinterest) con:
+- Thumbnails de creaciones populares de otros usuarios
+- Contador de likes o "remixes"
+- Botón "Use this style" que copia los parámetros de generación al Director
+- Filtros por estilo: Editorial, Street, Fantasy, Lifestyle, etc.
+Si no hay backend para esto aún, mostrar un estado vacío elegante con "Community gallery coming soon" en vez del spinner infinito.
+---
+## Reglas de estilo para todos los cambios
+- Dark theme: background `#0a0a0a` o equivalente Tailwind `bg-zinc-950`
+- Primary accent: `orange-500` (#f97316)
+- Text principal: `zinc-100` o `gray-100`
+- Text secundario: `zinc-400` o `gray-400`
+- Border cards: `zinc-800` con hover `orange-500/40`
+- Radius: `rounded-xl` para cards, `rounded-lg` para botones, `rounded-full` para chips/badges
+- Transiciones: `duration-200 ease-out` para todos los hover states
+- No usar fuentes monospaced en headers de sección
+- Mantener consistencia con Tailwind CSS classes existentes en el proyecto
