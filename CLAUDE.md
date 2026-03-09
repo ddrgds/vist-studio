@@ -329,8 +329,8 @@ npx tsc --noEmit       # Must return zero errors before every commit
 
 ## 📋 Current Sprint
 
-**Last updated:** 2026-03-07
-**Focus:** Security & reliability hardening (complete), next: UX polish
+**Last updated:** 2026-03-08
+**Focus:** Director Studio audit (new wave — 10 items pending)
 
 ### ✅ Done (this sprint)
 - [x] Bug #1: `decrement_credits` + `restore_credits` RPC created in Supabase
@@ -384,6 +384,13 @@ npx tsc --noEmit       # Must return zero errors before every commit
 - [x] SEO-001 (P5): Nav `<button>` → `<a href>` for crawleable links
 - [x] SEO-002 (P5): Dynamic `<title>` + meta description per workspace, OG tags + Twitter Card in index.html
 - [x] I18N-002 (P5): Download filenames "influencer-" → "vist-" across App.tsx + DetailModal
+
+### 🎨 Performance & Visual Polish
+- [x] Tailwind CSS migrated from CDN to local v4 via @tailwindcss/vite (102KB compiled vs full CDN)
+- [x] Freestyle audit: prompt validation (shake + disabled), inline controls, engine categories (Featured/Pro/NSFW/Video)
+- [x] Freestyle visual overhaul: animated tech-water background, categorized prompts, text contrast boost
+- [x] Nav hover: links transition #6B5A56 → #E8DDD9 with 150ms ease
+- [x] AutocompleteInput: accepts style prop for text color control
 # VIST Studio — Auditoría de Producto & Guía de Correcciones
 ## Proyecto
 VIST Studio es un AI Influencer Studio que genera imágenes y videos fotorrealistas de personajes virtuales usando 10+ motores de IA (FLUX Kontext, Gemini Flash, GPT Image 1.5, Ideogram V3, Kling AI, Runway Gen-3, NB2, Seedream 4.5/5.0, Grok). Desplegado en Cloudflare Pages.
@@ -410,7 +417,7 @@ Higgsfield.ai — estándar de UI/UX al que aspiramos: estética oscura premium,
 3. **AI Edit** → Engine chips (Gemini/GPT/FLUX/FLUX.2/Seedream/Grok/Face Swap/NSFW Edit), Instruction textarea, Reference image optional. CTA: "Apply Edit →"
 4. **Photo Session** → 11 style presets (Selfies/GRWM/Stories/Editorial/Portrait/Street Style/Creator/Lifestyle/Fitness/Night Out/Foto Dump), Photos to shoot counter, Engine selector (NB2/Grok). CTA: "Shoot Session →"
 ---
-## BUGS CONFIRMADOS — Prioridad P0 (Críticos)
+## BUGS CONFIRMADOS — Prioridad P0 (Críticos) — DONE (sprint anterior)
 ### BUG-001: Tarjeta "Video Generation" redirige a /generate en vez de /director
 **Dónde:** Homepage, sección "Everything you need", tercera tarjeta de 4
 **Qué pasa:** La tarjeta "Video Generation — Kling AI & Runway Gen-3" tiene un onClick/href que navega a `/generate` (Freestyle Generator). El usuario espera una herramienta de video pero llega al generador de imágenes.
@@ -437,7 +444,7 @@ Higgsfield.ai — estándar de UI/UX al que aspiramos: estética oscura premium,
 4. Opcionalmente: mostrar 3-4 thumbnails de ejemplo debajo con el prompt que los generó
 5. El empty state debe desaparecer una vez el usuario genere su primera imagen (el gallery se llena)
 ---
-## BUGS CONFIRMADOS — Prioridad P1 (Altos)
+## BUGS CONFIRMADOS — Prioridad P1 (Altos) — DONE (sprint anterior)
 ### BUG-004: Mobile bottom nav — Label "Board" truncado
 **Dónde:** Bottom navigation bar (nav móvil/contextual), último item
 **Qué pasa:** El label dice "Board" en vez de "Storyboard". Es ambiguo y pierde significado.
@@ -465,7 +472,7 @@ Higgsfield.ai — estándar de UI/UX al que aspiramos: estética oscura premium,
 - Street Style: "Urban outdoor fashion, candid city vibes"
 Si es posible, mostrar un thumbnail de ejemplo en el tooltip.
 ---
-## MEJORAS DE UI — Prioridad P2 (Elevación visual)
+## MEJORAS DE UI — Prioridad P2 (Elevación visual) — DONE (sprint anterior)
 ### UI-001: Section headers — Cambiar monospaced por sans-serif
 **Dónde:** Homepage — todos los section headers: "EVERYTHING YOU NEED", "YOUR CREATIONS", "COMMUNITY", "HOW IT WORKS", "PRICING"
 **Qué pasa:** Usan una fuente monospaced/uppercase que crea efecto "developer tool" en vez de "professional creative suite".
@@ -504,3 +511,172 @@ Si no hay backend para esto aún, mostrar un estado vacío elegante con "Communi
 - Transiciones: `duration-200 ease-out` para todos los hover states
 - No usar fuentes monospaced en headers de sección
 - Mantener consistencia con Tailwind CSS classes existentes en el proyecto
+
+## Auditoría Freestyle Generator (/generate) — 2026-03-08 — DONE (este sprint)
+### FREESTYLE-BUG-001: Generate button sin validación de prompt vacío
+**Dónde:** `/generate`, botón "Generate" en la bottom bar
+**Qué pasa:** Al hacer clic en Generate con el prompt vacío, no hay ningún feedback. No hay disabled state, no hay toast, no hay shake, no hay border rojo. El botón simplemente no hace nada silenciosamente.
+**Fix:** 
+1. Añadir disabled state al botón Generate cuando el prompt está vacío: `opacity-50 cursor-not-allowed pointer-events-none`
+2. Si el usuario hace clic estando disabled, hacer shake animation en el input (translateX keyframe) y cambiar border a red-500 por 1 segundo
+3. Opcionalmente: mostrar toast "Enter a prompt to generate"
+### FREESTYLE-BUG-002: Empty state vacío — sin onboarding ni sugerencias
+**Dónde:** `/generate`, área central cuando no hay imágenes generadas
+**Qué pasa:** Pantalla 95% negra con un icono placeholder tiny (30x30px) y texto "Describe what you want to create". No hay sugerencias, ejemplos, ni inspiración.
+**Fix:** Reemplazar el empty state con:
+1. Heading sutil: "What will you create?" en text-zinc-300, text-xl, font-medium
+2. Sub-heading: "Choose a suggestion or write your own prompt" en text-zinc-500, text-sm
+3. Grid de prompt suggestion chips (3 columnas, 2-3 filas):
+   - "Editorial fashion shoot, golden hour lighting"
+   - "Street style portrait, Tokyo neon nights"  
+   - "Cyberpunk character, cinematic rain"
+   - "Luxury brand campaign, minimalist studio"
+   - "Vintage film aesthetic, European café"
+   - "Athletic wear, outdoor mountain scenery"
+   - "Fantasy portrait, dramatic rim lighting"
+   - "Casual summer outfit, tropical beach"
+4. Cada chip: bg-zinc-800/50 border border-zinc-700 rounded-full px-4 py-2 text-sm text-zinc-300 hover:border-orange-500/50 hover:text-orange-300 cursor-pointer transition-all duration-200
+5. onClick de cada chip: copiar el texto al prompt textarea y hacer focus en el textarea
+6. Debajo de los chips: "Or drag an image here for reference" con icono de upload sutil
+### FREESTYLE-BUG-003: Controles de generación ocultos en panel lateral
+**Dónde:** `/generate`, prompt bar → botón gear → panel lateral de settings
+**Qué pasa:** Engine, aspect ratio, resolution y variations están detrás de un clic en el gear icon. El usuario no ve qué engine tiene activo sin abrir el panel.
+**Fix:** Añadir una segunda fila de chips inline en la prompt bar:
+1. Debajo del input de texto, añadir una fila de botones/chips:
+   - Engine chip: muestra el engine activo con su icono (ej: "🔥 NB2" o "Seedream 4.5"). Al hacer clic, abre un dropdown de engines.
+   - Aspect ratio chip: "□ 4:3" — clic para cycle entre ratios o abrir selector
+   - Resolution chip: "◆ 2K" — clic para cycle entre 1K/2K/4K
+   - Variations chip: "⟳ 1" con +/- inline
+   - Advanced toggle: "⚙ Advanced" — abre el panel lateral SOLO para CFG/Steps/Seed/Negative
+2. Mantener el panel gear como fallback pero priorizar los controles inline
+3. Cada chip: bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-zinc-300 hover:border-orange-500/40
+### FREESTYLE-UI-001: Nav items sin hover state
+**Dónde:** Navbar superior, todos los links excepto el activo
+**Qué pasa:** Los links inactivos (Explore, Director, Library, Storyboard, Pricing) no tienen hover state. No hay cambio de color, underline, ni feedback visual.
+**Fix:** Añadir a los nav links inactivos: `hover:text-zinc-100 transition-colors duration-150`. El activo ya tiene underline naranja y color naranja, mantener eso.
+### FREESTYLE-UI-002: Botón Generate sin hover state
+**Dónde:** Bottom bar, botón Generate
+**Qué pasa:** El botón es naranja sólido sin cambio visual al hover.
+**Fix:** Añadir: `hover:brightness-110 hover:shadow-lg hover:shadow-orange-500/20 active:scale-[0.98] transition-all duration-150`
+### FREESTYLE-UI-003: Botón "+" sin label ni tooltip
+**Dónde:** Bottom bar, botón "+" a la izquierda del prompt input
+**Qué pasa:** Es un "+" gris sin contexto. Los usuarios no saben que es para añadir imagen de referencia.
+**Fix:** Añadir tooltip on hover: "Add reference image". Implementar con title attribute o un tooltip component. También considerar cambiar el icono de "+" genérico a un icono de imagen/cámara (ImagePlus icon de Lucide).
+### FREESTYLE-UI-004: Advanced settings — labels crípticos
+**Dónde:** Panel de settings → ADVANCED → checkbox "Anti-fish", campo "Rng"
+**Qué pasa:** "Anti-fish" no se explica. "Rng" como placeholder del seed es confuso.
+**Fix:**
+1. Cambiar "Anti-fish" a "Reduce artifacts" con tooltip: "Minimizes common AI artifacts like distorted features"
+2. Cambiar placeholder de seed de "Rng" a "Seed (random)"
+3. Añadir labels de rango a CFG y Steps: "CFG (1-20)" y "Steps (10-100)" o similar
+4. Añadir tooltips a CFG: "Controls how closely the image follows your prompt. Higher = more literal" y Steps: "More steps = higher quality but slower generation"
+### FREESTYLE-UI-005: Engine list sin separadores de categoría claros
+**Dónde:** Panel de settings → ENGINE list
+**Qué pasa:** Solo "FEATURED" y "OTHER" tienen headers. Los engines entre ambas categorías (FLUX Kontext, GPT Image 1.5, Gemini Pro, Grok Imagine) no tienen header de grupo.
+**Fix:** Añadir header "PREMIUM" o "PRO ENGINES" para el grupo intermedio. Cada header: text-xs text-zinc-500 uppercase tracking-wider font-medium mt-4 mb-2
+## Auditoría Director Studio (/director) — 2026-08-03
+### DIRECTOR-BUG-001: Engine sub-model dropdown no funcional / navega a /generate
+**Dónde:** `/director`, sidebar izquierda → ENGINE → dropdown "Gemini Flash ▾" o "Seedream 4.5 ▾"
+**Qué pasa:** El dropdown con chevron debajo de los 6 botones de engine no abre una lista de sub-modelos. En algunos casos, al hacer clic, el usuario es redirigido a `/generate` (Freestyle), abandonando completamente el Director sin confirmación.
+**Fix:** 
+1. Verificar que el dropdown button no esté envuelto en un <a> o <Link> que apunte a /generate
+2. Implementar un dropdown real que muestre los sub-modelos disponibles para el engine seleccionado (ej: para Gemini → "Gemini Flash", "Gemini Pro"; para FLUX → "FLUX Kontext", "FLUX Max", etc.)
+3. Añadir `e.preventDefault()` y `e.stopPropagation()` al onClick del dropdown para evitar propagación a links parent
+4. El dropdown debe usar position:absolute con z-index alto para no ser tapado por otros elementos
+### DIRECTOR-BUG-002: Imágenes de gallery sin hover overlay ni acciones accesibles
+**Dónde:** `/director`, gallery central, todas las imágenes
+**Qué pasa:** Las imágenes no muestran acciones al hover o clic. El DOM contiene botones para cada imagen (Download, Edit image, Change pose, Reuse parameters, Upscale 4×, More options, Select, Delete image) pero están ocultos y no son accesibles visualmente.
+**Fix:**
+1. Añadir hover overlay a cada imagen del grid: bg-black/60 con transición opacity
+2. En el overlay, mostrar 4 quick-action buttons en las esquinas:
+   - Top-left: Select (checkbox)
+   - Top-right: ★ Save
+   - Bottom-left: Download
+   - Bottom-right: More (⋯) que abre el menú completo
+3. Al hacer clic en la imagen (no en un botón), abrir un modal/lightbox con:
+   - Imagen a resolución completa
+   - Metadata: engine usado, prompt, timestamp, aspect ratio
+   - Todas las 8 acciones como botones: Download, Edit, Change pose, Reuse, Upscale 4×, More, Select, Delete
+4. Estilo del overlay: `group-hover:opacity-100 opacity-0 transition-opacity duration-200`
+### DIRECTOR-BUG-003: Identity tab "Makeup" truncada a "Mal"
+**Dónde:** `/director`, sidebar izquierda → IDENTITY → cuarto tab
+**Qué pasa:** El tab muestra "Mal" porque "Makeup" no cabe en el espacio disponible (~60px por tab).
+**Fix opciones:**
+1. Usar solo iconos en los tabs: 👤 Face, ✂️ Hair, 🏋️ Body, 💄 Makeup (con tooltip de texto on hover)
+2. Reducir el font-size de los tab labels a text-xs
+3. Usar abreviaciones consistentes: "Face", "Hair", "Body", "MU" o "Look"
+4. Hacer los tabs horizontally scrollable si hay más de 4
+### DIRECTOR-BUG-004: Banner de advertencia "fal.ai requires..." no es contextual
+**Dónde:** `/director`, banner rojo debajo de los tabs
+**Qué pasa:** El banner "fal.ai requires at least one model reference photo to preserve identity" se muestra siempre, incluso cuando el engine seleccionado es Gemini (que no requiere face reference).
+**Fix:**
+1. Mostrar el banner solo cuando el engine seleccionado requiere face reference (fal.ai, FLUX, etc.)
+2. Ocultar automáticamente cuando el usuario selecciona un engine que no lo requiere (Gemini, GPT)
+3. Mover el banner más cerca del face upload area, no en la zona de la gallery
+4. Cambiar estilo de banner rojo agresivo a un tooltip sutil naranja junto al face slot: "This engine works best with face photos"
+### DIRECTOR-UI-001: Sidebar izquierda sin progressive disclosure
+**Dónde:** `/director`, toda la sidebar izquierda
+**Qué pasa:** IDENTITY, ENGINE, COSTUME, POSE, LIBRARY, y CHARACTER 2 se muestran simultáneamente en un scroll largo. El usuario nuevo se siente abrumado.
+**Fix:**
+1. Convertir cada sección (IDENTITY, ENGINE, COSTUME, POSE, LIBRARY) en un accordion/collapsible
+2. Por defecto: IDENTITY expandido, el resto colapsado
+3. Cada header de sección muestra un indicador de estado: 
+   - IDENTITY: "✓ Face uploaded" o "⚠ No face"
+   - ENGINE: "Gemini ⚡2" (engine activo y costo)
+   - COSTUME: "Streetwear" (chip activo) o "Not set"
+   - POSE: "Sitting" o "Default"
+4. Al completar una sección, auto-expandir la siguiente
+5. Los headers colapsados: `bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 cursor-pointer hover:border-zinc-700`
+6. Icono de chevron que rota 180° al expandir: `transition-transform duration-200`
+### DIRECTOR-UI-002: Chips de Identity sin feedback de selección
+**Dónde:** `/director`, sidebar izquierda → IDENTITY → tabs Face/Hair/Body/Makeup → todos los chips
+**Qué pasa:** Los chips (ej: "+ Blue eyes", "+ Freckles", "+ Soft smile") no cambian visualmente al ser seleccionados. El usuario no sabe cuáles están activos.
+**Fix:**
+1. Estado inactivo: `bg-zinc-800/50 border border-zinc-700 text-zinc-400`
+2. Estado hover: `hover:border-orange-500/40 hover:text-zinc-200`
+3. Estado activo/seleccionado: `bg-orange-500/20 border-orange-500 text-orange-300` + prefijo cambia de "+" a "✓"
+4. Transición: `transition-all duration-150`
+### DIRECTOR-UI-003: Engine buttons sin tooltips ni indicadores de requisitos
+**Dónde:** `/director`, sidebar izquierda → ENGINE → 6 botones (Gemini, FLUX, GPT, Grok, NSFW) + dropdown
+**Qué pasa:** Los botones solo muestran nombre y costo. No explican qué hace cada engine, su velocidad, calidad, ni si requiere face reference.
+**Fix:**
+1. Añadir tooltip on hover a cada engine button con 1 línea descriptiva:
+   - Gemini: "Fast & versatile. No face photo required. ~5s"
+   - FLUX: "High fidelity with face consistency. Requires face photo. ~15s"
+   - GPT: "OpenAI precision. Rich detail & text rendering. ~20s"
+   - Grok: "xAI model. Strong creative interpretation. ~12s"
+   - NSFW: "Uncensored generation. Requires face photo. ~10s"
+2. Si el engine requiere face photo y no hay una subida, mostrar un indicador "📷" o border pulsante en el engine button
+3. Opcionalmente: badge de velocidad (⚡ Fast, 🔥 Quality, 💎 Premium)
+### DIRECTOR-UI-004: Custom input placeholders sin ejemplos útiles
+**Dónde:** `/director`, sidebar derecha → "Custom lighting..." y "Custom camera / lens..."
+**Qué pasa:** Los placeholders son genéricos. El usuario no sabe qué formato o nivel de detalle usar.
+**Fix:**
+1. Custom lighting placeholder: "e.g. Rembrandt light, warm 3200K, soft shadows"
+2. Custom camera placeholder: "e.g. 85mm f/1.4, shallow DOF, eye level"
+3. Añadir un botón "?" junto a cada input que muestre 3-4 ejemplos al hacer clic
+### DIRECTOR-UI-005: CHARACTER 2 sin contexto
+**Dónde:** `/director`, sidebar izquierda → parte inferior → "+ CHARACTER 2 ▼"
+**Qué pasa:** No hay explicación de qué hace este expandible. ¿Es para generar imágenes con 2 personajes? ¿Un personaje alternativo?
+**Fix:**
+1. Añadir un tooltip o texto de ayuda sutil: "Add a second character for couple/group scenes"
+2. Renombrar a "+ Add second character" o "+ Duo mode"
+3. Al expandir, mostrar los mismos campos de identidad pero con label "Character 2" y una mini-preview de cómo se combinan
+### DIRECTOR-UI-006: Gallery filter "All" usa rojo en lugar de naranja
+**Dónde:** `/director`, gallery central → filtro tabs → "All" (seleccionado)
+**Qué pasa:** El botón "All" cuando está activo usa un background rojo (#ef4444 / red-500) que rompe la paleta naranja (orange-500) del resto del UI.
+**Fix:** Cambiar el active state de "All" de bg-red-500 a bg-orange-500 para mantener consistencia con la paleta global.
+### DIRECTOR-UI-007: Los botones de Pose no tienen preview visual
+**Dónde:** `/director`, sidebar izquierda → POSE → 6 opciones (Standing, Sitting, Walking, Crouching, Back, Leaning)
+**Qué pasa:** Cada pose muestra un icono stick-figure genérico y un label. No hay preview de cómo se verá la pose aplicada al personaje.
+**Fix:**
+1. Hover en cada pose button: mostrar un tooltip con thumbnail de ejemplo de esa pose
+2. O reemplazar los iconos stick-figure con mini-thumbnails reales de poses generadas
+3. Añadir badge de costo si la pose tiene costo adicional
+### DIRECTOR-PERF-001: DOM bloat — 24× sets de 8 botones de acción
+**Dónde:** `/director`, gallery central
+**Qué pasa:** El DOM contiene 192+ botones de acción (24 imágenes × 8 botones cada una) que están renderizados pero ocultos. Esto es DOM bloat innecesario.
+**Fix:**
+1. Render los botones de acción only on hover/click, no pre-render todos
+2. Usar un portal/modal component que se renderiza una sola vez y se posiciona dinámicamente sobre la imagen activa
+3. O usar event delegation con un único handler en el grid container

@@ -373,7 +373,7 @@ const FaceSlot: React.FC<FaceSlotProps> = ({ file, onFile, label, size = "md" })
       ) : (
         <div className="flex flex-col items-center gap-1 text-zinc-600 group-hover:text-zinc-400 transition-colors">
           <Plus className="w-4 h-4" />
-          <span className="text-[9px] font-medium leading-tight text-center px-1">{label}</span>
+          <span className="text-[10px] font-medium leading-tight text-center px-1">{label}</span>
         </div>
       )}
       <input ref={ref} type="file" accept="image/*" className="hidden"
@@ -402,7 +402,7 @@ const Badge: React.FC<{ text: string }> = ({ text }) => {
 
 // ─── Section label ────────────────────────────────────────────────────────────
 const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">{children}</span>
+  <span className="text-[12px] font-bold uppercase tracking-widest" style={{ color: '#B8A9A5' }}>{children}</span>
 );
 
 // ─── Collapsible accordion section ───────────────────────────────────────────
@@ -412,8 +412,9 @@ const AccordionSection: React.FC<{
   onToggle: () => void;
   filled?: number;
   total?: number;
+  statusText?: string;
   children: React.ReactNode;
-}> = ({ label, isOpen, onToggle, filled, total, children }) => (
+}> = ({ label, isOpen, onToggle, filled, total, statusText, children }) => (
   <div>
     <button
       onClick={onToggle}
@@ -422,12 +423,17 @@ const AccordionSection: React.FC<{
       <div className="flex items-center gap-2">
         <SectionLabel>{label}</SectionLabel>
         {filled !== undefined && total !== undefined && filled > 0 && (
-          <span className="text-[9px] font-jet px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(255,92,53,0.12)', color: '#FF5C35' }}>
+          <span className="text-[10px] font-jet px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(255,92,53,0.12)', color: '#FF5C35' }}>
             {filled}/{total}
           </span>
         )}
+        {!isOpen && statusText && (
+          <span className="text-[10px] font-jet truncate max-w-[100px]" style={{ color: '#8C7570' }}>
+            {statusText}
+          </span>
+        )}
       </div>
-      <ChevronDown className={`w-3 h-3 text-zinc-700 group-hover:text-zinc-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      <ChevronDown className={`w-3 h-3 text-zinc-500 group-hover:text-zinc-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
     </button>
     {isOpen && <div>{children}</div>}
   </div>
@@ -909,14 +915,14 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
           showMobilePanel ? 'translate-y-0' : 'translate-y-full',
           // Desktop: left sidebar (override mobile styles)
           'md:relative md:bottom-auto md:left-auto md:right-auto md:z-auto',
-          'md:w-[250px] md:flex-none md:max-h-full md:rounded-none md:border-t-0 md:border-r',
+          'md:w-[300px] md:flex-none md:max-h-full md:rounded-none md:border-t-0 md:border-r',
           'md:translate-y-0 md:bg-zinc-950/80',
         ].join(' ')}
       >
         {/* Mobile drag handle + close (hidden on desktop) */}
         <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-zinc-800/40 shrink-0">
           <div className="w-8 h-1 rounded-full bg-zinc-700 mx-auto absolute left-1/2 -translate-x-1/2" />
-          <span className="text-[11px] font-semibold" style={{ color: '#B8A9A5' }}>
+          <span className="text-[12px] font-semibold" style={{ color: '#B8A9A5' }}>
             Setup
           </span>
           <button
@@ -937,7 +943,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                 onClick={handleSurpriseMe}
                 title="Fill all fields with a curated random character preset"
                 className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-lg transition-colors font-jet"
-                style={{ color: '#6B5A56', border: '1px solid #2A1F1C' }}
+                style={{ color: '#8C7570', border: '1px solid #2A1F1C' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#FFB347'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,179,71,0.3)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#6B5A56'; (e.currentTarget as HTMLElement).style.borderColor = '#2A1F1C'; }}
               >
@@ -959,8 +965,8 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                       <path d="M12 14v6" opacity="0.4"/><path d="M9 18l3 3 3-3" opacity="0.4"/>
                     </svg>
                   </div>
-                  <p className="text-[11px] font-semibold mb-0.5" style={{ color: '#B8A9A5' }}>Your characters will live here</p>
-                  <p className="text-[10px] mb-2.5 leading-relaxed" style={{ color: '#4A3A36' }}>Upload 1–3 reference photos to create your first AI character</p>
+                  <p className="text-[12px] font-semibold mb-0.5" style={{ color: '#B8A9A5' }}>Your characters will live here</p>
+                  <p className="text-[10px] mb-2.5 leading-relaxed" style={{ color: '#8C7570' }}>Upload 1–3 reference photos to create your first AI character</p>
                   <button
                     onClick={() => setIsSavingMode(true)}
                     className="text-[10px] px-3 py-1 rounded-full font-jet transition-all"
@@ -986,12 +992,12 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                           {char.thumbnail ? (
                             <img src={char.thumbnail} alt={char.name} className="w-full h-full object-cover" />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-zinc-500 text-[11px] font-bold">
+                            <div className="w-full h-full flex items-center justify-center text-zinc-500 text-[12px] font-bold">
                               {char.name.charAt(0).toUpperCase()}
                             </div>
                           )}
                         </div>
-                        <span className="text-[9px] text-zinc-600 group-hover:text-zinc-400 truncate w-9 text-center leading-tight">
+                        <span className="text-[10px] text-zinc-600 group-hover:text-zinc-400 truncate w-9 text-center leading-tight">
                           {char.name}
                         </span>
                       </button>
@@ -1017,7 +1023,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                                   }
                                   if (e.key === 'Escape') { setRenamingId(null); setChipMenuId(null); }
                                 }}
-                                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1 text-[11px] text-zinc-200 outline-none"
+                                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1 text-[12px] text-zinc-200 outline-none"
                                 placeholder="New name…"
                               />
                             </div>
@@ -1025,13 +1031,13 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                             <>
                               <button
                                 onClick={() => { setRenamingId(char.id); setRenameValue(char.name); }}
-                                className="w-full text-left px-3 py-2 text-[11px] text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
+                                className="w-full text-left px-3 py-2 text-[12px] text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
                               >
                                 Rename
                               </button>
                               <button
                                 onClick={() => { charLib.deleteCharacter(char.id); setChipMenuId(null); }}
-                                className="w-full text-left px-3 py-2 text-[11px] text-red-400 hover:text-red-300 hover:bg-zinc-800 transition-colors"
+                                className="w-full text-left px-3 py-2 text-[12px] text-red-400 hover:text-red-300 hover:bg-zinc-800 transition-colors"
                               >
                                 Delete
                               </button>
@@ -1078,7 +1084,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
 
                     {/* Placeholder slots */}
                     {savingImages.length === 0 && (
-                      <div className="text-[10px] text-zinc-700 flex-1">
+                      <div className="text-[10px] text-zinc-500 flex-1">
                         {(char0?.modelImages?.length ?? 0) > 0
                           ? `Using current face refs (${char0!.modelImages.length})`
                           : 'No face refs — add below'}
@@ -1106,7 +1112,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                         title="Pick from gallery"
                         className={`flex-none w-7 h-7 rounded-lg border flex items-center justify-center transition-all ${
                           showSavingGalleryPicker
-                            ? 'bg-zinc-700 border-zinc-500 text-zinc-300'
+                            ? 'bg-zinc-700 border-zinc-500 text-zinc-200'
                             : 'bg-zinc-800 border-zinc-700 hover:border-zinc-500 hover:bg-zinc-700 text-zinc-500'
                         }`}
                       >
@@ -1119,7 +1125,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                   {showSavingGalleryPicker && (
                     <div className="grid grid-cols-4 gap-1 max-h-28 overflow-y-auto pr-0.5">
                       {gallery.generatedHistory.length === 0 ? (
-                        <p className="col-span-4 text-[10px] text-zinc-700 text-center py-2">No images in gallery yet</p>
+                        <p className="col-span-4 text-[10px] text-zinc-500 text-center py-2">No images in gallery yet</p>
                       ) : (
                         gallery.generatedHistory.map(item => (
                           <button
@@ -1145,12 +1151,12 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                         if (e.key === 'Escape') { setIsSavingMode(false); setSavingName(''); setSavingImages([]); setShowSavingGalleryPicker(false); }
                       }}
                       placeholder="Character name…"
-                      className="flex-1 min-w-0 bg-zinc-950 border border-zinc-700 focus:border-zinc-500 rounded-xl px-3 py-1.5 text-[11px] text-zinc-300 outline-none placeholder:text-zinc-700 transition-colors"
+                      className="flex-1 min-w-0 bg-zinc-950 border border-zinc-700 focus:border-zinc-500 rounded-xl px-3 py-1.5 text-[12px] text-zinc-200 outline-none placeholder:text-zinc-500 transition-colors"
                     />
                     <button
                       onClick={handleSaveCharacter}
                       disabled={!savingName.trim()}
-                      className="px-2 py-1.5 rounded-xl bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-300 text-[10px] font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      className="px-2 py-1.5 rounded-xl bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-200 text-[10px] font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                     >
                       Save
                     </button>
@@ -1185,6 +1191,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
               onToggle={() => toggleSection('identity')}
               filled={(char0?.modelImages.length ?? 0) > 0 || (char0?.characteristics ?? '').trim().length > 0 ? Math.min(2, (char0?.modelImages.length ?? 0) + ((char0?.characteristics ?? '').trim().length > 0 ? 1 : 0)) : 0}
               total={2}
+              statusText={(char0?.modelImages?.length ?? 0) > 0 ? `✓ ${char0!.modelImages.length} face ref` : '⚠ No face'}
             >
               {/* Face slots */}
               <div className="px-4 pb-3">
@@ -1198,7 +1205,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                     />
                   ))}
                 </div>
-                <p className="text-[10px] text-zinc-700 mt-2 leading-relaxed">
+                <p className="text-[10px] text-zinc-500 mt-2 leading-relaxed">
                   Upload 1–3 reference photos for identity
                 </p>
               </div>
@@ -1216,7 +1223,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
             {/* Dim sections if no character face uploaded */}
             {(char0?.modelImages.length ?? 0) === 0 && (
               <div style={{ order: 1 }} className="flex items-center justify-center py-3">
-                <span className="text-[10px] font-jet px-3 py-1.5 rounded-lg" style={{ background: '#161110', border: '1px solid #2A1F1C', color: '#6B5A56' }}>
+                <span className="text-[10px] font-jet px-3 py-1.5 rounded-lg" style={{ background: '#161110', border: '1px solid #2A1F1C', color: '#8C7570' }}>
                   Upload a face photo first
                 </span>
               </div>
@@ -1230,40 +1237,51 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
               onToggle={() => toggleSection('engine')}
               filled={1}
               total={1}
+              statusText={`${providerChips.find(c => c.id === form.aiProvider)?.label ?? 'Gemini'}`}
             >
               <div className="px-4 pb-2">
                 <div className="flex gap-1.5">
                   {providerChips.map((chip) => {
-                    const TIPS: Record<string, { speed: string; best: string; cost: number }> = {
-                      [AIProvider.Gemini]:    { speed: 'Fast',   best: 'Multi-reference, complex scenes', cost: 2 },
-                      [AIProvider.Fal]:       { speed: 'Fast',   best: 'Identity preservation, edits', cost: 10 },
-                      [AIProvider.OpenAI]:    { speed: 'Medium', best: 'Commercial quality, rich context', cost: 20 },
-                      [AIProvider.Replicate]: { speed: 'Fast',   best: 'Fast edits, creative results', cost: 12 },
-                      [AIProvider.ModelsLab]: { speed: 'Medium', best: 'NSFW, uncensored generation', cost: 8 },
+                    const TIPS: Record<string, { speed: string; best: string; cost: number; needsFace?: boolean; time: string }> = {
+                      [AIProvider.Gemini]:    { speed: '⚡ Fast',   best: 'Fast & versatile. No face photo required.', cost: 2, needsFace: false, time: '~5s' },
+                      [AIProvider.Fal]:       { speed: '🔥 Quality', best: 'High fidelity with face consistency.', cost: 10, needsFace: true, time: '~15s' },
+                      [AIProvider.OpenAI]:    { speed: '💎 Premium', best: 'Rich detail & text rendering.', cost: 20, needsFace: false, time: '~20s' },
+                      [AIProvider.Replicate]: { speed: '⚡ Fast',   best: 'Strong creative interpretation.', cost: 12, needsFace: false, time: '~12s' },
+                      [AIProvider.ModelsLab]: { speed: '🔥 Quality', best: 'Uncensored generation.', cost: 8, needsFace: true, time: '~10s' },
                     };
                     const tip = TIPS[chip.id];
                     const costColor = (tip?.cost ?? 2) <= 5 ? '#4ADE80' : (tip?.cost ?? 2) <= 10 ? '#FFB347' : '#FF5C35';
+                    const hasFaceUploaded = (char0?.modelImages?.length ?? 0) > 0;
+                    const needsFaceWarning = tip?.needsFace && !hasFaceUploaded && form.aiProvider === chip.id;
                     return (
                       <div key={chip.id} className="relative group/tip flex-1">
                         <button
                           onClick={() => { chip.select(); setShowSubModels(true); }}
                           className={`w-full flex flex-col items-center gap-1.5 py-2.5 px-1 rounded-lg border text-center transition-all ${
                             form.aiProvider === chip.id
-                              ? "bg-white/8 border-zinc-500 text-white"
-                              : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
+                              ? needsFaceWarning
+                                ? "bg-white/8 border-amber-500/60 text-white"
+                                : "bg-white/8 border-zinc-500 text-white"
+                              : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-200"
                           }`}
                         >
                           <span className="text-lg leading-none">{chip.icon}</span>
-                          <span className="text-[9px] font-semibold">{chip.label}</span>
+                          <span className="text-[10px] font-semibold">{chip.label}</span>
                           <span className="text-[8px] font-jet font-bold" style={{ color: costColor }}>⚡{tip?.cost ?? 2}</span>
+                          {needsFaceWarning && (
+                            <span className="text-[7px]" style={{ color: '#FFB347' }}>📷 needs face</span>
+                          )}
                         </button>
                         {/* Tooltip */}
                         {tip && (
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 pointer-events-none w-[120px]">
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 pointer-events-none w-[140px]">
                             <div className="rounded-xl p-2 shadow-2xl text-left" style={{ background: '#161110', border: '1px solid #2A1F1C' }}>
-                              <p className="text-[9px] font-bold font-jet mb-0.5" style={{ color: '#FF5C35' }}>{chip.label}</p>
-                              <p className="text-[9px] font-jet mb-1" style={{ color: '#B8A9A5' }}>⚡ {tip.speed}</p>
-                              <p className="text-[9px] leading-snug" style={{ color: '#6B5A56' }}>{tip.best}</p>
+                              <p className="text-[10px] font-bold font-jet mb-0.5" style={{ color: '#FF5C35' }}>{chip.label}</p>
+                              <p className="text-[10px] font-jet mb-0.5" style={{ color: '#B8A9A5' }}>{tip.speed} · {tip.time}</p>
+                              <p className="text-[10px] leading-snug mb-0.5" style={{ color: '#8C7570' }}>{tip.best}</p>
+                              {tip.needsFace && (
+                                <p className="text-[8px] font-jet" style={{ color: '#FFB347' }}>📷 Requires face photo</p>
+                              )}
                             </div>
                           </div>
                         )}
@@ -1277,7 +1295,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
               <div className="px-4 pb-3">
                 <button
                   onClick={() => setShowSubModels(!showSubModels)}
-                  className="w-full flex items-center justify-between px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-[11px] text-zinc-400 hover:border-zinc-600 hover:text-zinc-200 transition-all"
+                  className="w-full flex items-center justify-between px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-[12px] text-zinc-400 hover:border-zinc-600 hover:text-zinc-200 transition-all"
                 >
                   <span className="truncate">{activeSubLabel}</span>
                   <ChevronDown className={`w-3 h-3 flex-none ml-1 transition-transform ${showSubModels ? "rotate-180" : ""}`} />
@@ -1288,7 +1306,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                     {form.aiProvider === AIProvider.Gemini && GEMINI_SUBMODELS.map((m) => (
                       <button key={m.value}
                         onClick={() => { form.setGeminiModel(m.value); setShowSubModels(false); }}
-                        className={`w-full flex items-center justify-between px-3 py-2 text-[11px] transition-colors text-left hover:bg-white/5 ${
+                        className={`w-full flex items-center justify-between px-3 py-2 text-[12px] transition-colors text-left hover:bg-white/5 ${
                           form.geminiModel === m.value ? "bg-white/8 text-white" : "text-zinc-400"
                         }`}
                       >
@@ -1299,7 +1317,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                     {form.aiProvider === AIProvider.Fal && FLUX_SUBMODELS.map((m) => (
                       <button key={m.value}
                         onClick={() => { form.setFalModel(m.value); setShowSubModels(false); }}
-                        className={`w-full flex items-center justify-between px-3 py-2 text-[11px] transition-colors text-left hover:bg-white/5 ${
+                        className={`w-full flex items-center justify-between px-3 py-2 text-[12px] transition-colors text-left hover:bg-white/5 ${
                           form.falModel === m.value ? "bg-white/8 text-white" : "text-zinc-400"
                         }`}
                       >
@@ -1310,7 +1328,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                     {form.aiProvider === AIProvider.OpenAI && GPT_SUBMODELS.map((m) => (
                       <button key={m.value}
                         onClick={() => { form.setOpenaiModel(m.value); setShowSubModels(false); }}
-                        className={`w-full flex items-center justify-between px-3 py-2 text-[11px] transition-colors text-left hover:bg-white/5 ${
+                        className={`w-full flex items-center justify-between px-3 py-2 text-[12px] transition-colors text-left hover:bg-white/5 ${
                           form.openaiModel === m.value ? "bg-white/8 text-white" : "text-zinc-400"
                         }`}
                       >
@@ -1321,7 +1339,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                     {form.aiProvider === AIProvider.Replicate && GROK_SUBMODELS.map((m) => (
                       <button key={m.value}
                         onClick={() => { form.setReplicateModel(m.value); setShowSubModels(false); }}
-                        className={`w-full flex items-center justify-between px-3 py-2 text-[11px] transition-colors text-left hover:bg-white/5 ${
+                        className={`w-full flex items-center justify-between px-3 py-2 text-[12px] transition-colors text-left hover:bg-white/5 ${
                           form.replicateModel === m.value ? "bg-white/8 text-white" : "text-zinc-400"
                         }`}
                       >
@@ -1332,12 +1350,12 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                     {form.aiProvider === AIProvider.ModelsLab && MODELSLAB_SUBMODELS.map((m) => (
                       <button key={m.value}
                         onClick={() => { form.setModelsLabModel(m.value); setShowSubModels(false); }}
-                        className={`w-full flex items-center justify-between px-3 py-2 text-[11px] transition-colors text-left hover:bg-white/5 ${
+                        className={`w-full flex items-center justify-between px-3 py-2 text-[12px] transition-colors text-left hover:bg-white/5 ${
                           form.modelsLabModel === m.value ? "bg-white/8 text-white" : "text-zinc-400"
                         }`}
                       >
                         <span className="truncate">{m.label}</span>
-                        {m.badge && <span className="text-[9px]">{m.badge}</span>}
+                        {m.badge && <span className="text-[10px]">{m.badge}</span>}
                       </button>
                     ))}
                   </div>
@@ -1352,6 +1370,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
               onToggle={() => toggleSection('costume')}
               filled={((char0?.outfitImages?.length ?? 0) > 0 ? 1 : 0) + ((char0?.outfitDescription ?? '').trim().length > 0 ? 1 : 0)}
               total={2}
+              statusText={(char0?.outfitDescription ?? '').trim() || 'Not set'}
             >
               {/* Outfit image reference + text */}
               <div className="px-4 pb-2 flex gap-2 items-start">
@@ -1365,24 +1384,30 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                   value={char0?.outfitDescription ?? ""}
                   onChange={(e) => char0 && form.updateCharacter(char0.id, "outfitDescription", e.target.value)}
                   placeholder="Outfit — fabric, color, style..."
-                  className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 text-[11px] text-zinc-300 outline-none resize-none placeholder:text-zinc-700 focus:border-zinc-600 transition-colors leading-relaxed"
+                  className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 text-[12px] text-zinc-200 outline-none resize-none placeholder:text-zinc-500 focus:border-zinc-600 transition-colors leading-relaxed"
                   rows={3}
                 />
               </div>
-              {/* Quick chips */}
+              {/* Quick chips with selection feedback */}
               <div className="px-4 pb-3 flex flex-wrap gap-1">
-                {['Streetwear', 'Editorial', 'Casual chic', 'Swimwear', 'Formal'].map((chip) => (
-                  <button
-                    key={chip}
-                    onClick={() => char0 && form.updateCharacter(char0.id, 'outfitDescription', chip)}
-                    className="text-[9px] px-2 py-0.5 rounded-full transition-colors font-jet"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid #2A1F1C', color: '#6B5A56' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#B8A9A5'; (e.currentTarget as HTMLElement).style.borderColor = '#4A3A36'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#6B5A56'; (e.currentTarget as HTMLElement).style.borderColor = '#2A1F1C'; }}
-                  >
-                    {chip}
-                  </button>
-                ))}
+                {['Streetwear', 'Editorial', 'Casual chic', 'Swimwear', 'Formal'].map((chip) => {
+                  const isChipActive = (char0?.outfitDescription ?? '').toLowerCase().includes(chip.toLowerCase());
+                  return (
+                    <button
+                      key={chip}
+                      onClick={() => char0 && form.updateCharacter(char0.id, 'outfitDescription', isChipActive ? '' : chip)}
+                      className="text-[10px] px-2 py-0.5 rounded-full transition-all duration-150 font-jet"
+                      style={isChipActive
+                        ? { background: 'rgba(255,92,53,0.15)', border: '1px solid #FF5C35', color: '#FFB347' }
+                        : { background: 'rgba(255,255,255,0.04)', border: '1px solid #2A1F1C', color: '#8C7570' }
+                      }
+                      onMouseEnter={e => { if (!isChipActive) { (e.currentTarget as HTMLElement).style.color = '#D4C8C4'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,92,53,0.4)'; }}}
+                      onMouseLeave={e => { if (!isChipActive) { (e.currentTarget as HTMLElement).style.color = '#6B5A56'; (e.currentTarget as HTMLElement).style.borderColor = '#2A1F1C'; }}}
+                    >
+                      {isChipActive ? '✓' : '+'} {chip}
+                    </button>
+                  );
+                })}
               </div>
             </AccordionSection>
 
@@ -1393,6 +1418,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
               onToggle={() => toggleSection('pose')}
               filled={(char0?.pose ? 1 : 0) + (char0?.poseImage ? 1 : 0)}
               total={2}
+              statusText={char0?.pose ? POSE_OPTIONS.find(p => p.value === char0.pose)?.label ?? 'Custom' : 'Default'}
             >
               <div className="px-4 pb-2 grid grid-cols-3 gap-1.5">
                 {POSE_OPTIONS.map((pose) => {
@@ -1400,19 +1426,26 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                   return (
                     <button
                       key={pose.id}
+                      title={pose.value}
                       onClick={() => {
                         const next = isActive ? "" : pose.value;
                         if (char0) form.updateCharacter(char0.id, "pose", next);
                         setCustomPose("");
                       }}
-                      className={`flex flex-col items-center gap-1 py-2.5 rounded-xl border text-center transition-all ${
+                      className={`relative group/pose flex flex-col items-center gap-1 py-2.5 rounded-xl border text-center transition-all ${
                         isActive
                           ? "bg-white/10 border-zinc-500 text-white"
-                          : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
+                          : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-200"
                       }`}
                     >
                       <span className="text-base leading-none">{pose.icon}</span>
-                      <span className="text-[9px] font-medium">{pose.label}</span>
+                      <span className="text-[10px] font-medium">{pose.label}</span>
+                      {/* Tooltip with pose description */}
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-50 opacity-0 group-hover/pose:opacity-100 transition-opacity duration-150 pointer-events-none w-[130px]">
+                        <div className="rounded-lg px-2 py-1.5 shadow-xl text-center" style={{ background: '#161110', border: '1px solid #2A1F1C' }}>
+                          <p className="text-[8px] leading-snug" style={{ color: '#B8A9A5' }}>{pose.value}</p>
+                        </div>
+                      </div>
                     </button>
                   );
                 })}
@@ -1428,8 +1461,8 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                 <input
                   value={customPose}
                   onChange={(e) => handleCustomPose(e.target.value)}
-                  placeholder="Custom pose..."
-                  className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-[11px] text-zinc-300 outline-none placeholder:text-zinc-700 focus:border-zinc-600 transition-colors"
+                  placeholder="e.g. arms crossed, looking away, dynamic"
+                  className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-[12px] text-zinc-200 outline-none placeholder:text-zinc-500 focus:border-zinc-600 transition-colors"
                 />
               </div>
               {char0?.poseImage && (
@@ -1438,7 +1471,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                 </p>
               )}
               {!char0?.poseImage && (
-                <p className="px-4 pb-3 text-[10px] text-zinc-700">
+                <p className="px-4 pb-3 text-[10px] text-zinc-500">
                   Upload a pose reference photo to guide generation
                 </p>
               )}
@@ -1453,10 +1486,14 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
               <button
                 onClick={() => setShowChar2(!showChar2)}
                 className="w-full flex items-center justify-between text-[10px] font-bold text-zinc-600 uppercase tracking-widest hover:text-zinc-400 transition-colors py-1"
+                title="Add a second character for couple or group scenes"
               >
-                <span>+ Character 2</span>
+                <span>+ Add second character</span>
                 <span>{showChar2 ? "▲" : "▼"}</span>
               </button>
+              {!showChar2 && (
+                <p className="text-[10px] mt-0.5" style={{ color: '#8C7570' }}>For duo / couple / group scenes</p>
+              )}
               {showChar2 && char1 && (
                 <div className="mt-3 space-y-3">
                   <div className="flex gap-2">
@@ -1476,7 +1513,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                       value={char1.outfitDescription}
                       onChange={(e) => form.updateCharacter(char1.id, "outfitDescription", e.target.value)}
                       placeholder="Character 2 outfit..."
-                      className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-[11px] text-zinc-300 outline-none resize-none placeholder:text-zinc-700 focus:border-zinc-600 transition-colors"
+                      className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-[12px] text-zinc-200 outline-none resize-none placeholder:text-zinc-500 focus:border-zinc-600 transition-colors"
                       rows={2}
                     />
                   </div>
@@ -1494,7 +1531,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
               {hasGallery && !form.baseImageForEdit && (
                 <button
                   onClick={loadLastAsBase}
-                  className="text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors"
+                  className="text-[10px] text-zinc-500 hover:text-zinc-200 transition-colors"
                 >
                   Use last ↑
                 </button>
@@ -1528,7 +1565,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                       onClick={() => form.setPoseEngine(engine)}
                       title={label.description}
                       className={`flex-1 py-1.5 text-[10px] font-medium rounded-md transition-all flex items-center justify-center gap-0.5 ${
-                        isActive ? `${color} text-white shadow-sm` : "text-zinc-500 hover:text-zinc-300"
+                        isActive ? `${color} text-white shadow-sm` : "text-zinc-500 hover:text-zinc-200"
                       }`}
                     >
                       <span>{label.icon}</span>
@@ -1548,7 +1585,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
               <SectionLabel>Session Poses</SectionLabel>
               <button
                 onClick={addPose}
-                className="text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-0.5"
+                className="text-[10px] text-zinc-500 hover:text-zinc-200 transition-colors flex items-center gap-0.5"
               >
                 <Plus className="w-3 h-3" /> Add
               </button>
@@ -1584,7 +1621,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                       value={pose.text}
                       onChange={(e) => form.updateSessionPose(i, "text", e.target.value)}
                       placeholder="Describe the pose... e.g. sitting on steps, looking right"
-                      className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-2 text-[11px] text-zinc-300 outline-none resize-none placeholder:text-zinc-600 focus:border-zinc-600 transition-colors leading-relaxed"
+                      className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-2 text-[12px] text-zinc-200 outline-none resize-none placeholder:text-zinc-500 focus:border-zinc-600 transition-colors leading-relaxed"
                       rows={3}
                     />
                   </div>
@@ -1601,7 +1638,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
             <div className="px-4 pt-5 pb-2 flex items-center justify-between">
               <SectionLabel>Reference <span className="text-red-500 ml-0.5">*</span></SectionLabel>
               {hasGallery && !form.baseImageForEdit && (
-                <button onClick={loadLastAsBase} className="text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors">
+                <button onClick={loadLastAsBase} className="text-[10px] text-zinc-500 hover:text-zinc-200 transition-colors">
                   Use last ↑
                 </button>
               )}
@@ -1637,7 +1674,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
               )}
             </div>
             <div className="px-4 pb-1">
-              <p className="text-[10px] text-zinc-700 mb-2 leading-relaxed">
+              <p className="text-[10px] text-zinc-500 mb-2 leading-relaxed">
                 Select one or more styles to combine
               </p>
               <div className="grid grid-cols-2 gap-1.5">
@@ -1651,12 +1688,12 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                       className={`flex flex-col items-center gap-1 py-2.5 px-2 rounded-xl border text-center transition-all ${
                         isActive
                           ? "bg-white/10 border-zinc-400 text-white"
-                          : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
+                          : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-200"
                       }`}
                     >
                       <span className="text-lg leading-none">{preset.icon}</span>
-                      <span className="text-[9px] font-semibold leading-tight">{preset.label}</span>
-                      <span className={`text-[8px] leading-none ${isActive ? "text-zinc-400" : "text-zinc-700"}`}>
+                      <span className="text-[10px] font-semibold leading-tight">{preset.label}</span>
+                      <span className={`text-[8px] leading-none ${isActive ? "text-zinc-400" : "text-zinc-500"}`}>
                         {preset.shots.length} shots
                       </span>
                     </button>
@@ -1700,7 +1737,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                 </button>
               </div>
               {selectedPresets.size === 0 && (
-                <p className="text-[10px] text-zinc-700 mt-2 leading-relaxed text-center">
+                <p className="text-[10px] text-zinc-500 mt-2 leading-relaxed text-center">
                   No style selected — using default camera angles
                 </p>
               )}
@@ -1719,7 +1756,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                   className={`flex-1 flex flex-col items-center gap-1 py-2.5 rounded-xl border text-center transition-all ${
                     form.photoSessionModel === 'nb2'
                       ? "bg-violet-700/30 border-violet-500 text-white"
-                      : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
+                      : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-200"
                   }`}
                 >
                   <span className="text-sm leading-none">✦</span>
@@ -1731,7 +1768,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                   className={`flex-1 flex flex-col items-center gap-1 py-2.5 rounded-xl border text-center transition-all ${
                     form.photoSessionModel === 'grok'
                       ? "bg-zinc-600/30 border-zinc-400 text-white"
-                      : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
+                      : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-200"
                   }`}
                 >
                   <span className="text-sm leading-none">𝕏</span>
@@ -1739,7 +1776,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                   <span className="text-[8px] text-zinc-500 leading-tight">Aurora · fal.ai</span>
                 </button>
               </div>
-              <p className="text-[10px] text-zinc-700 mt-2 leading-relaxed text-center">
+              <p className="text-[10px] text-zinc-500 mt-2 leading-relaxed text-center">
                 {form.photoSessionModel === 'grok'
                   ? "Sequential · ~4s/shot · $0.022 per image"
                   : "Parallel · 3 concurrent · Gemini API"}
@@ -1756,7 +1793,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
               {hasGallery && !form.baseImageForEdit && (
                 <button
                   onClick={loadLastAsBase}
-                  className="text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors"
+                  className="text-[10px] text-zinc-500 hover:text-zinc-200 transition-colors"
                 >
                   Use last ↑
                 </button>
@@ -1790,7 +1827,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                       className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-medium border transition-all ${
                         isActive
                           ? `${color} border-transparent text-white shadow-sm`
-                          : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
+                          : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-200"
                       }`}
                     >
                       <span>{icon}</span>
@@ -1818,7 +1855,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                         ? "e.g. Transform into a 3D photorealistic portrait in a cyberpunk city at night."
                         : "e.g. Add a golden halo of light around the head, add glowing particles in the air..."
                   }
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 text-[11px] text-zinc-300 outline-none resize-none placeholder:text-zinc-700 focus:border-zinc-600 transition-colors leading-relaxed"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 text-[12px] text-zinc-200 outline-none resize-none placeholder:text-zinc-500 focus:border-zinc-600 transition-colors leading-relaxed"
                   rows={4}
                 />
               </div>
@@ -1835,7 +1872,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                   onFile={form.setAiEditReferenceImage}
                   label={form.aiEditEngine === AIEditEngine.FaceSwapFal ? "Face photo" : "Reference"}
                 />
-                <p className="text-[10px] text-zinc-700 mt-1.5 leading-relaxed">
+                <p className="text-[10px] text-zinc-500 mt-1.5 leading-relaxed">
                   {form.aiEditEngine === AIEditEngine.FaceSwapFal
                     ? "Close-up face photo to swap onto the base image"
                     : "Visual reference for the effect to apply"}
@@ -1866,7 +1903,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                   {form.aiEditReferenceImages.length < 9 && (
                     <label className="w-[56px] h-[56px] rounded-xl border-2 border-dashed border-zinc-700 hover:border-zinc-500 bg-zinc-900 flex flex-col items-center justify-center cursor-pointer transition-colors text-zinc-600 hover:text-zinc-400">
                       <Plus className="w-4 h-4" />
-                      <span className="text-[9px] mt-0.5">Add</span>
+                      <span className="text-[10px] mt-0.5">Add</span>
                       <input type="file" accept="image/*" className="hidden" multiple
                         onChange={(e) => {
                           const files = Array.from(e.target.files ?? []);
@@ -1877,7 +1914,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                     </label>
                   )}
                 </div>
-                <p className="text-[10px] text-zinc-700 mt-1.5 leading-relaxed">
+                <p className="text-[10px] text-zinc-500 mt-1.5 leading-relaxed">
                   {form.aiEditEngine === AIEditEngine.Seedream5Edit
                     ? "These become Figure 2, Figure 3, etc. in your prompt"
                     : "Character, outfit, or scenario references"}
@@ -1897,7 +1934,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
           <button
             onClick={() => handleSetStudioMode("create")}
             title="Generate new images from your character"
-            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${studioMode === "create" ? "text-white" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900"}`}
+            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${studioMode === "create" ? "text-white" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900"}`}
             style={studioMode === "create" ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', color: '#fff' } : undefined}
           >
             ✦ Create
@@ -1947,7 +1984,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
         {(localError || gallery.error) && (
           <div className="shrink-0 mx-4 mt-3 flex items-start gap-2 px-3 py-2.5 bg-red-950/60 border border-red-800/60 rounded-xl animate-in fade-in duration-200">
             <span className="text-red-400 text-sm leading-none mt-0.5">⚠</span>
-            <p className="text-[11px] text-red-300 leading-relaxed flex-1">
+            <p className="text-[12px] text-red-300 leading-relaxed flex-1">
               {localError || gallery.error}
             </p>
             <button
@@ -1983,7 +2020,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                   <div className="h-full rounded-full transition-all duration-300" style={{ width: `${progress}%`, background: 'linear-gradient(90deg,#FF5C35,#FFB347)' }} />
                 </div>
               )}
-              <button onClick={onStopGeneration} className="mt-2 text-xs transition-colors flex items-center gap-1.5" style={{ color: '#6B5A56' }}
+              <button onClick={onStopGeneration} className="mt-2 text-xs transition-colors flex items-center gap-1.5" style={{ color: '#8C7570' }}
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#fff'}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#6B5A56'}
               >
@@ -2045,7 +2082,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                     {["1. Upload reference", "2. Set count", "📷 Shoot"].map((step, i, arr) => (
                       <React.Fragment key={step}>
                         <span className="px-2 py-1 bg-zinc-900 border border-zinc-800 rounded-lg">{step}</span>
-                        {i < arr.length - 1 && <span className="text-zinc-700">→</span>}
+                        {i < arr.length - 1 && <span className="text-zinc-500">→</span>}
                       </React.Fragment>
                     ))}
                   </div>
@@ -2062,11 +2099,11 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                     {["1. Face", "2. Costume", "3. Scene", "✦ Direct"].map((step, i, arr) => (
                       <React.Fragment key={step}>
                         <span className="px-2 py-1 bg-zinc-900 border border-zinc-800 rounded-lg">{step}</span>
-                        {i < arr.length - 1 && <span className="text-zinc-700">→</span>}
+                        {i < arr.length - 1 && <span className="text-zinc-500">→</span>}
                       </React.Fragment>
                     ))}
                   </div>
-                  <p className="mt-8 text-[11px] text-zinc-700">
+                  <p className="mt-8 text-[12px] text-zinc-500">
                     💡 Once generated, hover images to Edit · Change Pose · Face Swap · Inpaint
                   </p>
                 </>
@@ -2089,7 +2126,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
       </div>
 
       {/* ─── Right: SHOT Panel ─── */}
-      <aside className="w-[220px] flex-none flex flex-col border-l border-zinc-800/60 bg-zinc-950/80 overflow-y-auto custom-scrollbar">
+      <aside className="w-[260px] flex-none flex flex-col border-l border-zinc-800/60 bg-zinc-950/80 overflow-y-auto custom-scrollbar">
 
         {/* Show Lighting/Camera only in Create mode */}
         {studioMode === "create" && (
@@ -2106,11 +2143,11 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                     onClick={() => { form.setLighting(isActive ? "" : opt.value); setCustomLighting(""); }}
                     className={`flex flex-col items-center gap-1 py-3 rounded-xl border text-center transition-all ${
                       isActive ? "bg-white/10 border-zinc-500 text-white"
-                        : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
+                        : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-200"
                     }`}
                   >
                     <span className="text-base leading-none">{opt.icon}</span>
-                    <span className="text-[9px] font-medium leading-tight">{opt.label}</span>
+                    <span className="text-[10px] font-medium leading-tight">{opt.label}</span>
                   </button>
                 );
               })}
@@ -2119,8 +2156,8 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
               <input
                 value={customLighting}
                 onChange={(e) => handleCustomLighting(e.target.value)}
-                placeholder="Custom lighting..."
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-[11px] text-zinc-300 outline-none placeholder:text-zinc-700 focus:border-zinc-600 transition-colors"
+                placeholder="e.g. Rembrandt light, warm 3200K, soft shadows"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-[12px] text-zinc-200 outline-none placeholder:text-zinc-500 focus:border-zinc-600 transition-colors"
               />
             </div>
 
@@ -2139,11 +2176,11 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                     onClick={() => { form.setCamera(isActive ? "" : opt.value); setCustomCamera(""); }}
                     className={`flex flex-col items-center gap-1 py-3 rounded-xl border text-center transition-all ${
                       isActive ? "bg-white/10 border-zinc-500 text-white"
-                        : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
+                        : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-200"
                     }`}
                   >
                     <span className="text-base leading-none">{opt.icon}</span>
-                    <span className="text-[9px] font-medium leading-tight">{opt.label}</span>
+                    <span className="text-[10px] font-medium leading-tight">{opt.label}</span>
                   </button>
                 );
               })}
@@ -2152,8 +2189,8 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
               <input
                 value={customCamera}
                 onChange={(e) => handleCustomCamera(e.target.value)}
-                placeholder="Custom camera / lens..."
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-[11px] text-zinc-300 outline-none placeholder:text-zinc-700 focus:border-zinc-600 transition-colors"
+                placeholder="e.g. 85mm f/1.4, shallow DOF, eye level"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-[12px] text-zinc-200 outline-none placeholder:text-zinc-500 focus:border-zinc-600 transition-colors"
               />
             </div>
 
@@ -2171,16 +2208,16 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
 
         {/* Aspect ratio */}
         <div className="px-4 pb-3">
-          <p className="text-[9px] text-zinc-700 mb-2">Aspect Ratio</p>
+          <p className="text-[10px] text-zinc-500 mb-2">Aspect Ratio</p>
           <div className="flex flex-col gap-1">
             {AR_OPTIONS.map((o) => (
               <button
                 key={o.value}
                 onClick={() => form.setAspectRatio(o.value)}
-                className={`flex items-center justify-between px-3 py-1.5 rounded-lg text-[11px] border transition-all ${
+                className={`flex items-center justify-between px-3 py-1.5 rounded-lg text-[12px] border transition-all ${
                   form.aspectRatio === o.value
                     ? "bg-white/10 border-zinc-500 text-white"
-                    : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
+                    : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-200"
                 }`}
               >
                 <span className="font-semibold">{o.label}</span>
@@ -2192,7 +2229,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
 
         {/* Resolution */}
         <div className="px-4 pb-3">
-          <p className="text-[9px] text-zinc-700 mb-2">Resolution</p>
+          <p className="text-[10px] text-zinc-500 mb-2">Resolution</p>
           <div className="flex gap-1.5">
             {SIZE_OPTIONS.map((o) => (
               <button
@@ -2201,7 +2238,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                 className={`flex-1 py-1.5 rounded-lg text-[10px] font-medium border transition-all ${
                   form.imageSize === o.value
                     ? "bg-white/10 border-zinc-500 text-white"
-                    : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
+                    : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-200"
                 }`}
               >
                 {o.label}
@@ -2224,7 +2261,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                 value={form.scenario}
                 onChange={(e) => form.setScenario(e.target.value)}
                 placeholder="Location, atmosphere, context... e.g. rooftop Tokyo, night"
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 text-[11px] text-zinc-300 outline-none resize-none placeholder:text-zinc-700 focus:border-zinc-600 transition-colors leading-relaxed"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 text-[12px] text-zinc-200 outline-none resize-none placeholder:text-zinc-500 focus:border-zinc-600 transition-colors leading-relaxed"
                 rows={3}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey && !isGenerating) {
@@ -2269,7 +2306,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
         <div className="sticky bottom-0 z-[60] px-4 pb-4 pt-3 mt-auto" style={{ background: 'linear-gradient(to top, rgba(9,9,11,1) 60%, rgba(9,9,11,0))' }}>
           {/* Credit cost pill */}
           {!isGenerating && (
-            <div className="flex items-center justify-center gap-2 mb-2 text-[11px] font-jet">
+            <div className="flex items-center justify-center gap-2 mb-2 text-[12px] font-jet">
               <span style={{ color: '#FFB347' }}>⚡ {directorCreditCost} credits</span>
               <span style={{ color: '#2A1F1C' }}>·</span>
               <span style={{ color: sub.credits < 20 ? '#EF4444' : sub.credits < 100 ? '#F59E0B' : '#6B5A56' }}>
@@ -2329,7 +2366,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
             <h2 className="text-[17px] font-bold text-white mb-2 leading-snug">
               Welcome to Director Studio
             </h2>
-            <p className="text-[13px] leading-relaxed mb-6" style={{ color: '#6B5A56' }}>
+            <p className="text-[13px] leading-relaxed mb-6" style={{ color: '#8C7570' }}>
               Build AI influencers with full control over identity, outfit, lighting, and camera. Start with a random preset or build from scratch.
             </p>
 
@@ -2346,7 +2383,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
               <button
                 onClick={dismissQuickStart}
                 className="w-full py-2.5 rounded-xl text-[13px] font-medium transition-colors"
-                style={{ color: '#6B5A56' }}
+                style={{ color: '#8C7570' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#B8A9A5'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#6B5A56'; }}
               >
@@ -2373,14 +2410,14 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
               <AlertTriangle className="w-6 h-6" />
             </div>
             <h3 className="text-base font-bold mb-2" style={{ color: '#F5EDE8' }}>No face reference uploaded</h3>
-            <p className="text-sm mb-5" style={{ color: '#6B5A56' }}>
+            <p className="text-sm mb-5" style={{ color: '#8C7570' }}>
               Without reference photos, the AI won't maintain character consistency. The result will be a random face. Credits will still be consumed.
             </p>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowNoFaceWarning(false)}
                 className="flex-1 py-2.5 rounded-xl text-xs font-semibold transition-colors"
-                style={{ color: '#6B5A56', border: '1px solid #2A1F1C' }}
+                style={{ color: '#8C7570', border: '1px solid #2A1F1C' }}
               >
                 Upload Photos
               </button>

@@ -397,6 +397,7 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
   const isUpscaling = upscalingId === item.id;
   const hasTags = item.tags && item.tags.length > 0;
   const [imgError, setImgError] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   // Card hidden while undo window is open
   if (isDeleted) return null;
@@ -412,6 +413,8 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
           transform: swipeOffset !== 0 ? `translateX(${swipeOffset}px)` : undefined,
           transition: swipeOffset === 0 ? 'transform 0.2s ease-out' : 'none',
         }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => { setIsHovered(false); setShowMoreMenu(false); }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -464,17 +467,17 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
         </div>
 
         {/* Provider badge — top-right, fades in on hover */}
-        {!isSelectionMode && item.aiProvider && PROVIDER_SHORT[item.aiProvider as AIProvider] && (
-          <div className="absolute top-11 right-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+        {isHovered && !isSelectionMode && item.aiProvider && PROVIDER_SHORT[item.aiProvider as AIProvider] && (
+          <div className="absolute top-11 right-2 z-20 pointer-events-none">
             <span className="text-[9px] font-jet px-1.5 py-0.5 rounded-full bg-black/70 backdrop-blur-sm border border-white/10" style={{ color: '#B8A9A5' }}>
               {PROVIDER_SHORT[item.aiProvider as AIProvider]}
             </span>
           </div>
         )}
 
-        {/* Action overlay */}
-        {!isSelectionMode && (
-          <div className="absolute inset-0 z-10 pointer-events-none lg:pointer-events-auto opacity-0 lg:group-hover:opacity-100 transition-all duration-300 rounded-2xl flex flex-col justify-end p-4 bg-gradient-to-t from-black/90 via-transparent to-transparent hidden lg:flex">
+        {/* Action overlay — lazy-rendered on hover to avoid DOM bloat (PERF-001) */}
+        {isHovered && !isSelectionMode && (
+          <div className="absolute inset-0 z-10 pointer-events-auto opacity-100 transition-all duration-300 rounded-2xl flex flex-col justify-end p-4 bg-gradient-to-t from-black/90 via-transparent to-transparent hidden lg:flex">
             <div className="flex gap-2 justify-end mb-2 pointer-events-auto flex-wrap">
 
               {/* Download */}

@@ -79,10 +79,25 @@ type Category = keyof typeof SUGGESTIONS;
 const CharacteristicsInput: React.FC<CharacteristicsInputProps> = ({ value, onChange }) => {
   const [activeCategory, setActiveCategory] = useState<Category>('Face');
 
-  const addSuggestion = (suggestion: string) => {
+  const toggleSuggestion = (suggestion: string) => {
+    // If already present, remove it
+    const lower = suggestion.toLowerCase();
+    const parts = value.split(',').map(s => s.trim()).filter(Boolean);
+    const idx = parts.findIndex(p => p.toLowerCase() === lower);
+    if (idx >= 0) {
+      parts.splice(idx, 1);
+      onChange(parts.join(', '));
+      return;
+    }
+    // Otherwise add it
     if (!value.trim()) { onChange(suggestion); return; }
     const sep = value.endsWith(',') ? ' ' : value.endsWith(' ') ? '' : ', ';
     onChange(value + sep + suggestion);
+  };
+
+  const isSuggestionActive = (suggestion: string) => {
+    const lower = suggestion.toLowerCase();
+    return value.split(',').some(p => p.trim().toLowerCase() === lower);
   };
 
   const categories = Object.keys(SUGGESTIONS) as Category[];
@@ -94,42 +109,49 @@ const CharacteristicsInput: React.FC<CharacteristicsInputProps> = ({ value, onCh
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Age, ethnicity, features... e.g. 25yo, Asian, almond eyes"
-        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 text-[11px] text-zinc-300 outline-none resize-none placeholder:text-zinc-700 focus:border-zinc-600 transition-colors leading-relaxed"
+        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 text-[12px] text-zinc-200 outline-none resize-none placeholder:text-zinc-500 focus:border-zinc-600 transition-colors leading-relaxed"
         rows={2}
       />
 
-      {/* Category tabs */}
+      {/* Category tabs — icon-first with tooltip on small widths */}
       <div className="flex gap-0.5 mt-2 overflow-x-auto">
         {categories.map((cat) => (
           <button
             key={cat}
             onClick={() => setActiveCategory(cat)}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-semibold transition-all whitespace-nowrap"
+            title={cat}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-all whitespace-nowrap"
             style={activeCategory === cat
               ? { background: 'rgba(255,92,53,0.1)', border: '1px solid rgba(255,92,53,0.25)', color: '#FF5C35' }
-              : { background: 'transparent', border: '1px solid transparent', color: '#6B5A56' }
+              : { background: 'transparent', border: '1px solid transparent', color: '#8C7570' }
             }
           >
-            <span className="text-[10px]">{CATEGORY_ICONS[cat]}</span>
-            {cat}
+            <span className="text-[12px]">{CATEGORY_ICONS[cat]}</span>
+            <span className="text-[10px]">{cat === 'Makeup' ? 'Look' : cat}</span>
           </button>
         ))}
       </div>
 
-      {/* Suggestion chips */}
+      {/* Suggestion chips with active/toggle feedback */}
       <div className="flex flex-wrap gap-1 mt-1.5">
-        {SUGGESTIONS[activeCategory].map((s) => (
-          <button
-            key={s.label}
-            onClick={() => addSuggestion(s.value)}
-            className="text-[9px] px-2 py-0.5 rounded-full transition-all font-medium"
-            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #2A1F1C', color: '#6B5A56' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#B8A9A5'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,92,53,0.3)'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#6B5A56'; (e.currentTarget as HTMLElement).style.borderColor = '#2A1F1C'; }}
-          >
-            + {s.label}
-          </button>
-        ))}
+        {SUGGESTIONS[activeCategory].map((s) => {
+          const active = isSuggestionActive(s.value);
+          return (
+            <button
+              key={s.label}
+              onClick={() => toggleSuggestion(s.value)}
+              className="text-[10px] px-2.5 py-1 rounded-full transition-all duration-150 font-medium"
+              style={active
+                ? { background: 'rgba(255,92,53,0.15)', border: '1px solid #FF5C35', color: '#FFB347' }
+                : { background: 'rgba(255,255,255,0.04)', border: '1px solid #2A1F1C', color: '#8C7570' }
+              }
+              onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLElement).style.color = '#D4C8C4'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,92,53,0.4)'; }}}
+              onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLElement).style.color = '#8C7570'; (e.currentTarget as HTMLElement).style.borderColor = '#2A1F1C'; }}}
+            >
+              {active ? '✓' : '+'} {s.label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
