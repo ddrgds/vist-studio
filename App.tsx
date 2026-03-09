@@ -1074,7 +1074,9 @@ const AppInner: React.FC = () => {
                         {sub.isUnlimited ? 'Unlimited credits' : `${sub.credits.toLocaleString('en-US')} credits available`}
                       </div>
                       <div className="text-[10px]" style={{ color: '#4A3A36' }}>
-                        {sub.plan === 'starter' ? '50' : sub.plan === 'pro' ? '500' : sub.plan === 'studio' ? '1,500' : '8,000'} credits/mo included in {sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1)}
+                        {sub.profileLoaded
+                          ? `${sub.plan === 'starter' ? '50' : sub.plan === 'pro' ? '500' : sub.plan === 'studio' ? '1,500' : '8,000'} credits/mo included in ${sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1)}`
+                          : 'Loading plan info...'}
                       </div>
                       {sub.renewsAt && (
                         <div className="text-[10px]" style={{ color: '#4A3A36' }}>

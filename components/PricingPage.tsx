@@ -296,6 +296,30 @@ const PricingPage: React.FC<PricingPageProps> = ({ onNavigate }) => {
           </div>
         </div>
 
+        {/* ── Annual savings banner ── */}
+        {annual && (
+          <div
+            className="mb-8 px-5 py-3.5 rounded-2xl flex items-center justify-center gap-3 text-center"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,92,53,0.06) 0%, rgba(255,179,71,0.04) 100%)',
+              border: '1px solid rgba(255,92,53,0.15)',
+            }}
+          >
+            <span className="text-[13px] font-medium" style={{ color: '#B8A9A5' }}>
+              Annual billing saves you up to
+            </span>
+            <span
+              className="text-[14px] font-bold font-jet px-2.5 py-0.5 rounded-full"
+              style={{ background: 'rgba(255,92,53,0.12)', color: '#FF5C35' }}
+            >
+              ${(PLANS[3].monthlyPrice - PLANS[3].annualPrice) * 12}/yr
+            </span>
+            <span className="text-[13px] font-medium" style={{ color: '#B8A9A5' }}>
+              on the Brand plan
+            </span>
+          </div>
+        )}
+
         {/* ── Sign-up prompt for anonymous users ── */}
         {showSignUpPrompt && !user && (
           <div className="mb-6 px-5 py-4 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3"

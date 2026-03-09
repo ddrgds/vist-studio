@@ -67,113 +67,120 @@ interface ModelEntry {
 }
 
 const ALL_MODELS: ModelEntry[] = [
+  // ── Auto — smart engine selection ──
+  {
+    id: "auto", name: "Auto", tagline: "Best engine for your prompt", icon: "✨",
+    badge: "SMART", section: "featured", creditCost: 2,
+    select: (f) => { f.setAiProvider(AIProvider.Auto); f.setActiveMode("create"); },
+    isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Auto,
+  },
   // ── Featured image models ──
   {
-    id: "nb2", name: "NB2", tagline: "Pro quality at Flash speed", icon: "🍌",
+    id: "nb2", name: "Smart & Economical", tagline: "Quick iterations, minimal cost", icon: "🍌",
     badge: "TOP", section: "featured", creditCost: 2,
     select: (f) => { f.setAiProvider(AIProvider.Gemini); f.setGeminiModel(GeminiImageModel.Flash2); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Gemini && f.geminiModel === GeminiImageModel.Flash2,
   },
   {
-    id: "seedream45", name: "Seedream 4.5", tagline: "ByteDance next-gen 4K", icon: "📊",
+    id: "seedream45", name: "Photorealistic 4K", tagline: "Exceptional photorealism", icon: "📊",
     badge: "NEW", section: "featured", creditCost: 8,
     select: (f) => { f.setAiProvider(AIProvider.Fal); f.setFalModel(FalModel.Seedream45); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Fal && f.falModel === FalModel.Seedream45,
   },
   {
-    id: "seedream50", name: "Seedream 5.0", tagline: "Visual reasoning", icon: "📊",
+    id: "seedream50", name: "Smart Photorealistic", tagline: "Web-aware reasoning for richer scenes", icon: "📊",
     badge: "NEW", section: "featured", creditCost: 8,
     select: (f) => { f.setAiProvider(AIProvider.Fal); f.setFalModel(FalModel.Seedream50); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Fal && f.falModel === FalModel.Seedream50,
   },
   {
-    id: "gpt15", name: "GPT Image 1.5", tagline: "True-color precision", icon: "⚙️",
+    id: "gpt15", name: "Text & Detail", tagline: "Best for text, logos, fine detail", icon: "⚙️",
     badge: "PREMIUM", section: "featured", creditCost: 20,
     select: (f) => { f.setAiProvider(AIProvider.OpenAI); f.setOpenaiModel(OpenAIModel.GptImage15); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.OpenAI && f.openaiModel === OpenAIModel.GptImage15,
   },
   {
-    id: "nb2-pro", name: "Gemini Pro", tagline: "Google flagship", icon: "G",
+    id: "nb2-pro", name: "Maximum Quality", tagline: "Highest quality for demanding scenes", icon: "G",
     badge: "PREMIUM", section: "featured", creditCost: 10,
     select: (f) => { f.setAiProvider(AIProvider.Gemini); f.setGeminiModel(GeminiImageModel.Pro); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Gemini && f.geminiModel === GeminiImageModel.Pro,
   },
   {
-    id: "grok-imagine", name: "Grok Imagine", tagline: "xAI SOTA · ~4s", icon: "𝕏",
+    id: "grok-imagine", name: "Creative Fast", tagline: "Strong creative interpretation, ~4s", icon: "𝕏",
     badge: "NEW", section: "featured", creditCost: 10,
     select: (f) => { f.setAiProvider(AIProvider.Replicate); f.setReplicateModel(ReplicateModel.GrokImagine); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Replicate && f.replicateModel === ReplicateModel.GrokImagine,
   },
-  // ── Other image models ──
+  // ── Pro engines ──
   {
-    id: "kontext-multi", name: "FLUX Kontext", tagline: "Identity multi-ref", icon: "⚡",
+    id: "kontext-multi", name: "Face Consistent", tagline: "Keeps identity across images", icon: "⚡",
     badge: "NEW", section: "other", creditCost: 10,
     select: (f) => { f.setAiProvider(AIProvider.Fal); f.setFalModel(FalModel.KontextMulti); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Fal && f.falModel === FalModel.KontextMulti,
   },
   {
-    id: "kontext-max", name: "FLUX Kontext Max", tagline: "Max quality multi-ref", icon: "⚡",
+    id: "kontext-max", name: "Face Consistent (Max)", tagline: "Maximum quality face consistency", icon: "⚡",
     section: "other", creditCost: 15,
     select: (f) => { f.setAiProvider(AIProvider.Fal); f.setFalModel(FalModel.KontextMaxMulti); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Fal && f.falModel === FalModel.KontextMaxMulti,
   },
   {
-    id: "gen4", name: "Gen-4 Image", tagline: "Runway consistency", icon: "🎬",
+    id: "gen4", name: "Scene Consistent", tagline: "Character + location consistency", icon: "🎬",
     section: "other", creditCost: 15,
     select: (f) => { f.setAiProvider(AIProvider.Replicate); f.setReplicateModel(ReplicateModel.Gen4Image); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Replicate && f.replicateModel === ReplicateModel.Gen4Image,
   },
   {
-    id: "flux2max", name: "FLUX.2 Max", tagline: "Max fidelity · 8 refs", icon: "🔥",
+    id: "flux2max", name: "Max Detail", tagline: "Highest fidelity, up to 8 references", icon: "🔥",
     section: "other", creditCost: 12,
     select: (f) => { f.setAiProvider(AIProvider.Replicate); f.setReplicateModel(ReplicateModel.Flux2Max); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Replicate && f.replicateModel === ReplicateModel.Flux2Max,
   },
   {
-    id: "imagen4ultra", name: "Imagen 4 Ultra", tagline: "Google photorealism", icon: "✨",
+    id: "imagen4ultra", name: "Maximum Fidelity", tagline: "Most detailed output available", icon: "✨",
     badge: "NEW", section: "other", creditCost: 20,
     select: (f) => { f.setAiProvider(AIProvider.Gemini); f.setGeminiModel(GeminiImageModel.Imagen4Ultra); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Gemini && f.geminiModel === GeminiImageModel.Imagen4Ultra,
   },
   {
-    id: "ideogram-v3", name: "Ideogram V3", tagline: "Typography + char ref", icon: "💡",
+    id: "ideogram-v3", name: "Typography Expert", tagline: "Best-in-class text in images", icon: "💡",
     section: "other", creditCost: 15,
     select: (f) => { f.setAiProvider(AIProvider.Ideogram); f.setIdeogramModel(IdeogramModel.V3); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Ideogram && f.ideogramModel === IdeogramModel.V3,
   },
   {
-    id: "gemini-flash", name: "Gemini Flash", tagline: "Fast and efficient", icon: "⚡",
+    id: "gemini-flash", name: "Fast Generation", tagline: "Quick iterations at minimal cost", icon: "⚡",
     section: "other", creditCost: 2,
     select: (f) => { f.setAiProvider(AIProvider.Gemini); f.setGeminiModel(GeminiImageModel.Flash); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Gemini && f.geminiModel === GeminiImageModel.Flash,
   },
   // ── ModelsLab NSFW ──
   {
-    id: "lustify-sdxl", name: "Lustify SDXL", tagline: "Photoreal uncensored", icon: "🔞",
+    id: "lustify-sdxl", name: "NSFW Photoreal", tagline: "Photoreal uncensored generation", icon: "🔞",
     badge: "NSFW", section: "nsfw", creditCost: 8,
     select: (f) => { f.setAiProvider(AIProvider.ModelsLab); f.setModelsLabModel(ModelsLabModel.LustifySdxl); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.ModelsLab && f.modelsLabModel === ModelsLabModel.LustifySdxl,
   },
   {
-    id: "nsfw-sdxl", name: "NSFW SDXL", tagline: "General uncensored", icon: "🔞",
+    id: "nsfw-sdxl", name: "NSFW General", tagline: "General purpose uncensored", icon: "🔞",
     badge: "NSFW", section: "nsfw", creditCost: 8,
     select: (f) => { f.setAiProvider(AIProvider.ModelsLab); f.setModelsLabModel(ModelsLabModel.NsfwSdxl); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.ModelsLab && f.modelsLabModel === ModelsLabModel.NsfwSdxl,
   },
   {
-    id: "wai-nsfw", name: "WAI Illustrious", tagline: "Anime & illustration", icon: "🎌",
+    id: "wai-nsfw", name: "NSFW Illustrated", tagline: "Anime & illustrated style", icon: "🎌",
     badge: "NSFW", section: "nsfw", creditCost: 8,
     select: (f) => { f.setAiProvider(AIProvider.ModelsLab); f.setModelsLabModel(ModelsLabModel.WaiNsfw); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.ModelsLab && f.modelsLabModel === ModelsLabModel.WaiNsfw,
   },
   {
-    id: "flux-nsfw", name: "FLUX NSFW", tagline: "FLUX uncensored", icon: "🔞",
+    id: "flux-nsfw", name: "NSFW FLUX", tagline: "FLUX-based uncensored", icon: "🔞",
     badge: "NSFW", section: "nsfw", creditCost: 8,
     select: (f) => { f.setAiProvider(AIProvider.ModelsLab); f.setModelsLabModel(ModelsLabModel.FluxNsfw); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.ModelsLab && f.modelsLabModel === ModelsLabModel.FluxNsfw,
   },
   {
-    id: "z-image-turbo", name: "Z-Image Turbo", tagline: "Alibaba 6B uncensored", icon: "🈸",
+    id: "z-image-turbo", name: "Budget Uncensored", tagline: "Ultra-cheap, no content filters", icon: "🈸",
     badge: "NSFW", section: "nsfw", creditCost: 5,
     select: (f) => { f.setAiProvider(AIProvider.Fal); f.setFalModel(FalModel.ZImageTurbo); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Fal && f.falModel === FalModel.ZImageTurbo,
@@ -266,6 +273,7 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
   // Credit cost for current config
   const genCreditCost = (() => {
     if (form.activeMode === 'video') return CREDIT_COSTS[form.videoEngine as string] ?? 50;
+    if (form.aiProvider === AIProvider.Auto) return 2 * form.numberOfImages; // Auto defaults to cheapest (Gemini Flash)
     let costPerImage = 2;
     if (form.aiProvider === AIProvider.Fal) costPerImage = CREDIT_COSTS[form.falModel] ?? 10;
     else if (form.aiProvider === AIProvider.Replicate) costPerImage = CREDIT_COSTS[form.replicateModel] ?? 15;
@@ -444,12 +452,13 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
                     <div className="absolute top-1 left-1 px-1 py-px rounded text-[7px] font-jet font-bold"
                       style={{ background: 'rgba(0,0,0,0.7)', color: '#8C7570' }}
                     >
-                      {item.aiProvider === AIProvider.Gemini ? 'Gemini' :
-                       item.aiProvider === AIProvider.Fal ? 'FAL' :
-                       item.aiProvider === AIProvider.Replicate ? 'Replicate' :
-                       item.aiProvider === AIProvider.OpenAI ? 'OpenAI' :
-                       item.aiProvider === AIProvider.Ideogram ? 'Ideogram' :
-                       item.aiProvider === AIProvider.ModelsLab ? 'ModelsLab' : ''}
+                      {item.aiProvider === AIProvider.Auto ? 'Auto' :
+                       item.aiProvider === AIProvider.Gemini ? 'Fast' :
+                       item.aiProvider === AIProvider.Fal ? 'Identity' :
+                       item.aiProvider === AIProvider.Replicate ? 'Creative' :
+                       item.aiProvider === AIProvider.OpenAI ? 'Detail' :
+                       item.aiProvider === AIProvider.Ideogram ? 'Typography' :
+                       item.aiProvider === AIProvider.ModelsLab ? 'NSFW' : ''}
                     </div>
                   )}
 
@@ -561,7 +570,7 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,92,53,0.15)'; (e.currentTarget as HTMLElement).style.background = 'rgba(255,92,53,0.06)'; }}
             >
               <span className="text-sm leading-none">{activeModel?.icon ?? '⚡'}</span>
-              <span className="truncate max-w-[100px]">{activeModel?.name ?? 'NB2'}</span>
+              <span className="truncate max-w-[100px]">{activeModel?.name ?? 'Auto'}</span>
               <ChevronDown className="w-3 h-3 flex-none" style={{ color: '#8C7570' }} />
             </button>
 

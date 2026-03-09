@@ -107,23 +107,23 @@ const SIZE_OPTIONS: { label: string; value: ImageSize }[] = [
 // ─── Sub-model catalogs per provider ─────────────────────────────────────────
 
 const GEMINI_SUBMODELS: { label: string; badge?: string; value: GeminiImageModel }[] = [
-  { label: "NB2 · Nano Banana 2",      badge: "FAST", value: GeminiImageModel.Flash2 },
-  { label: "NB Pro · Nano Banana Pro", badge: "PRO",  value: GeminiImageModel.Pro },
-  { label: "Imagen 4 Ultra",           badge: "4K",   value: GeminiImageModel.Imagen4Ultra },
-  { label: "Gemini Flash",                             value: GeminiImageModel.Flash },
+  { label: "Smart & Economical — NB2",    badge: "FAST", value: GeminiImageModel.Flash2 },
+  { label: "Maximum Quality — Pro",        badge: "PRO",  value: GeminiImageModel.Pro },
+  { label: "Maximum Fidelity — Imagen 4 Ultra", badge: "4K",   value: GeminiImageModel.Imagen4Ultra },
+  { label: "Fast Generation — Flash",                          value: GeminiImageModel.Flash },
 ];
 
 const FLUX_SUBMODELS: { label: string; badge?: string; value: FalModel }[] = [
-  { label: "Kontext Multi",   badge: "ID",   value: FalModel.KontextMulti },
-  { label: "Kontext Max",     badge: "MAX",  value: FalModel.KontextMaxMulti },
-  { label: "Seedream 4.5",    badge: "4K",   value: FalModel.Seedream45 },
-  { label: "Seedream 5.0",    badge: "NEW",  value: FalModel.Seedream50 },
-  { label: "Z-Image Turbo",   badge: "🔞",   value: FalModel.ZImageTurbo },
+  { label: "Face Consistent — Kontext",        badge: "ID",   value: FalModel.KontextMulti },
+  { label: "Face Consistent (Max) — Kontext",  badge: "MAX",  value: FalModel.KontextMaxMulti },
+  { label: "Photorealistic 4K — Seedream",     badge: "4K",   value: FalModel.Seedream45 },
+  { label: "Smart Photorealistic — Seedream 5", badge: "NEW",  value: FalModel.Seedream50 },
+  { label: "Budget Uncensored — Z-Image",      badge: "🔞",   value: FalModel.ZImageTurbo },
 ];
 
 const GPT_SUBMODELS: { label: string; badge?: string; value: OpenAIModel }[] = [
-  { label: "GPT Image 1.5", badge: "BEST", value: OpenAIModel.GptImage15 },
-  { label: "GPT Image 1.0",               value: OpenAIModel.GptImage1 },
+  { label: "Text & Detail — GPT 1.5",   badge: "BEST", value: OpenAIModel.GptImage15 },
+  { label: "Precise Detail — GPT 1.0",                  value: OpenAIModel.GptImage1 },
 ];
 
 // AI Edit engine options
@@ -149,15 +149,15 @@ const POSE_ENGINE_OPTIONS = [
 
 // Grok sub-models (for Create mode sub-model picker)
 const GROK_SUBMODELS: { label: string; badge?: string; value: ReplicateModel }[] = [
-  { label: "Grok Imagine", badge: "NEW", value: ReplicateModel.GrokImagine },
+  { label: "Creative Fast — Grok", badge: "NEW", value: ReplicateModel.GrokImagine },
 ];
 
 // ModelsLab NSFW sub-models
 const MODELSLAB_SUBMODELS: { label: string; badge?: string; value: ModelsLabModel }[] = [
-  { label: "Lustify SDXL",    badge: "🔞",  value: ModelsLabModel.LustifySdxl },
-  { label: "NSFW SDXL",       badge: "🔞",  value: ModelsLabModel.NsfwSdxl },
-  { label: "WAI Illustrious", badge: "🎌",  value: ModelsLabModel.WaiNsfw },
-  { label: "FLUX NSFW",       badge: "NEW", value: ModelsLabModel.FluxNsfw },
+  { label: "NSFW Photoreal — Lustify",   badge: "🔞",  value: ModelsLabModel.LustifySdxl },
+  { label: "NSFW General — SDXL",        badge: "🔞",  value: ModelsLabModel.NsfwSdxl },
+  { label: "NSFW Illustrated — WAI",     badge: "🎌",  value: ModelsLabModel.WaiNsfw },
+  { label: "NSFW FLUX — uncensored",     badge: "NEW", value: ModelsLabModel.FluxNsfw },
 ];
 
 // ─── Photo Session Presets ────────────────────────────────────────────────────
@@ -545,8 +545,9 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
 
   const directorCreditCost = computeDirectorCreditCost();
 
-  // ─── Mobile panel (6.1) ─────────────────────────────────────────────────────
+  // ─── Mobile panels ─────────────────────────────────────────────────────────
   const [showMobilePanel, setShowMobilePanel] = useState(false);
+  const [showMobileRight, setShowMobileRight] = useState(false);
 
   // ─── Quick Start modal (4.3) ────────────────────────────────────────────────
   const [showQuickStart, setShowQuickStart] = useState(false);
@@ -716,32 +717,42 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
     if (val.trim() && char0) form.updateCharacter(char0.id, "pose", val);
   };
 
-  // Provider chips
+  // Provider chips — benefit-focused labels (product philosophy: outcomes, not model names)
   const providerChips = [
-    { id: AIProvider.Gemini,    icon: "✦",  label: "Gemini",
+    { id: AIProvider.Auto,      icon: "✨",  label: "Auto",
+      benefit: "Smart pick",
+      select: () => { form.setAiProvider(AIProvider.Auto); } },
+    { id: AIProvider.Gemini,    icon: "✦",  label: "Fast",
+      benefit: "Quick & versatile",
       select: () => { form.setAiProvider(AIProvider.Gemini); form.setGeminiModel(GeminiImageModel.Flash2); } },
-    { id: AIProvider.Fal,       icon: "⚡",  label: "FLUX",
+    { id: AIProvider.Fal,       icon: "⚡",  label: "Identity",
+      benefit: "Face consistent",
       select: () => { form.setAiProvider(AIProvider.Fal); form.setFalModel(FalModel.KontextMulti); } },
-    { id: AIProvider.OpenAI,    icon: "🤖", label: "GPT",
+    { id: AIProvider.OpenAI,    icon: "🤖", label: "Detail",
+      benefit: "Text & precision",
       select: () => { form.setAiProvider(AIProvider.OpenAI); form.setOpenaiModel(OpenAIModel.GptImage15); } },
-    { id: AIProvider.Replicate, icon: "𝕏",  label: "Grok",
+    { id: AIProvider.Replicate, icon: "𝕏",  label: "Creative",
+      benefit: "Fast artistic",
       select: () => { form.setAiProvider(AIProvider.Replicate); form.setReplicateModel(ReplicateModel.GrokImagine); } },
     { id: AIProvider.ModelsLab, icon: "🔞", label: "NSFW",
+      benefit: "Uncensored",
       select: () => { form.setAiProvider(AIProvider.ModelsLab); form.setModelsLabModel(ModelsLabModel.LustifySdxl); } },
   ];
 
   // Current sub-model label
   const activeSubLabel = (() => {
+    if (form.aiProvider === AIProvider.Auto)
+      return "Best engine picked automatically";
     if (form.aiProvider === AIProvider.Gemini)
-      return GEMINI_SUBMODELS.find((m) => m.value === form.geminiModel)?.label ?? "NB2";
+      return GEMINI_SUBMODELS.find((m) => m.value === form.geminiModel)?.label ?? "Smart & Economical — NB2";
     if (form.aiProvider === AIProvider.Fal)
-      return FLUX_SUBMODELS.find((m) => m.value === form.falModel)?.label ?? "Kontext Multi";
+      return FLUX_SUBMODELS.find((m) => m.value === form.falModel)?.label ?? "Face Consistent — Kontext";
     if (form.aiProvider === AIProvider.OpenAI)
-      return GPT_SUBMODELS.find((m) => m.value === form.openaiModel)?.label ?? "GPT Image 1.5";
+      return GPT_SUBMODELS.find((m) => m.value === form.openaiModel)?.label ?? "Text & Detail — GPT 1.5";
     if (form.aiProvider === AIProvider.Replicate)
-      return REPLICATE_MODEL_LABELS[form.replicateModel]?.name ?? "Grok Imagine";
+      return GROK_SUBMODELS.find((m) => m.value === form.replicateModel)?.label ?? "Creative Fast — Grok";
     if (form.aiProvider === AIProvider.ModelsLab)
-      return MODELSLAB_MODEL_LABELS[form.modelsLabModel]?.name ?? "Lustify SDXL";
+      return MODELSLAB_SUBMODELS.find((m) => m.value === form.modelsLabModel)?.label ?? "NSFW Photoreal — Lustify";
     return "";
   })();
 
@@ -1237,17 +1248,18 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
               onToggle={() => toggleSection('engine')}
               filled={1}
               total={1}
-              statusText={`${providerChips.find(c => c.id === form.aiProvider)?.label ?? 'Gemini'}`}
+              statusText={form.aiProvider === AIProvider.Auto ? 'Auto ✨' : `${providerChips.find(c => c.id === form.aiProvider)?.benefit ?? 'Quick & versatile'}`}
             >
               <div className="px-4 pb-2">
                 <div className="flex gap-1.5">
                   {providerChips.map((chip) => {
                     const TIPS: Record<string, { speed: string; best: string; cost: number; needsFace?: boolean; time: string }> = {
-                      [AIProvider.Gemini]:    { speed: '⚡ Fast',   best: 'Fast & versatile. No face photo required.', cost: 2, needsFace: false, time: '~5s' },
-                      [AIProvider.Fal]:       { speed: '🔥 Quality', best: 'High fidelity with face consistency.', cost: 10, needsFace: true, time: '~15s' },
-                      [AIProvider.OpenAI]:    { speed: '💎 Premium', best: 'Rich detail & text rendering.', cost: 20, needsFace: false, time: '~20s' },
-                      [AIProvider.Replicate]: { speed: '⚡ Fast',   best: 'Strong creative interpretation.', cost: 12, needsFace: false, time: '~12s' },
-                      [AIProvider.ModelsLab]: { speed: '🔥 Quality', best: 'Uncensored generation.', cost: 8, needsFace: true, time: '~10s' },
+                      [AIProvider.Auto]:      { speed: '✨ Smart',  best: 'We pick the best engine for your prompt and references.', cost: 2, needsFace: false, time: 'varies' },
+                      [AIProvider.Gemini]:    { speed: '⚡ Fast',   best: 'Quick iterations at minimal cost. No face photo required.', cost: 2, needsFace: false, time: '~5s' },
+                      [AIProvider.Fal]:       { speed: '🔥 Quality', best: 'Keeps your character looking the same across images.', cost: 10, needsFace: true, time: '~12s' },
+                      [AIProvider.OpenAI]:    { speed: '💎 Premium', best: 'Best for text rendering, logos, and fine detail.', cost: 20, needsFace: false, time: '~15s' },
+                      [AIProvider.Replicate]: { speed: '⚡ Fast',   best: 'Strong creative interpretation, very fast.', cost: 10, needsFace: false, time: '~4s' },
+                      [AIProvider.ModelsLab]: { speed: '🔞 NSFW',   best: 'Uncensored generation with no content filters.', cost: 8, needsFace: false, time: '~10s' },
                     };
                     const tip = TIPS[chip.id];
                     const costColor = (tip?.cost ?? 2) <= 5 ? '#4ADE80' : (tip?.cost ?? 2) <= 10 ? '#FFB347' : '#FF5C35';
@@ -1276,7 +1288,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                         {tip && (
                           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 pointer-events-none w-[140px]">
                             <div className="rounded-xl p-2 shadow-2xl text-left" style={{ background: '#161110', border: '1px solid #2A1F1C' }}>
-                              <p className="text-[10px] font-bold font-jet mb-0.5" style={{ color: '#FF5C35' }}>{chip.label}</p>
+                              <p className="text-[10px] font-bold font-jet mb-0.5" style={{ color: '#FF5C35' }}>{chip.benefit || chip.label}</p>
                               <p className="text-[10px] font-jet mb-0.5" style={{ color: '#B8A9A5' }}>{tip.speed} · {tip.time}</p>
                               <p className="text-[10px] leading-snug mb-0.5" style={{ color: '#8C7570' }}>{tip.best}</p>
                               {tip.needsFace && (
@@ -1293,6 +1305,11 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
 
               {/* Sub-model selector */}
               <div className="px-4 pb-3">
+                {form.aiProvider === AIProvider.Auto ? (
+                  <div className="w-full px-3 py-2 bg-zinc-900/50 border border-zinc-800/50 rounded-xl text-[11px] text-zinc-500 italic">
+                    {activeSubLabel}
+                  </div>
+                ) : (
                 <button
                   onClick={() => setShowSubModels(!showSubModels)}
                   className="w-full flex items-center justify-between px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-[12px] text-zinc-400 hover:border-zinc-600 hover:text-zinc-200 transition-all"
@@ -1300,8 +1317,9 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                   <span className="truncate">{activeSubLabel}</span>
                   <ChevronDown className={`w-3 h-3 flex-none ml-1 transition-transform ${showSubModels ? "rotate-180" : ""}`} />
                 </button>
+                )}
 
-                {showSubModels && (
+                {showSubModels && form.aiProvider !== AIProvider.Auto && (
                   <div className="mt-1.5 bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
                     {form.aiProvider === AIProvider.Gemini && GEMINI_SUBMODELS.map((m) => (
                       <button key={m.value}
@@ -2125,8 +2143,53 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
         )}
       </div>
 
+      {/* ─── Mobile right panel backdrop ─── */}
+      {showMobileRight && (
+        <div
+          className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowMobileRight(false)}
+        />
+      )}
+
+      {/* ─── Mobile Shot FAB (right panel toggle) ─── */}
+      {!showMobileRight && !showMobilePanel && (
+        <button
+          className="md:hidden fixed bottom-20 right-4 z-30 flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-full text-[12px] font-semibold text-white shadow-lg"
+          style={{ background: '#1A1210', border: '1px solid #2A1F1C', boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}
+          onClick={() => setShowMobileRight(true)}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF5C35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          Shot
+        </button>
+      )}
+
       {/* ─── Right: SHOT Panel ─── */}
-      <aside className="w-[260px] flex-none flex flex-col border-l border-zinc-800/60 bg-zinc-950/80 overflow-y-auto custom-scrollbar">
+      <aside
+        className={[
+          'flex flex-col border-zinc-800/60 bg-zinc-950 overflow-y-auto custom-scrollbar',
+          'transition-transform duration-300 ease-out',
+          // Mobile: bottom sheet
+          'fixed bottom-0 left-0 right-0 z-50 max-h-[85vh] rounded-t-2xl border-t',
+          showMobileRight ? 'translate-y-0' : 'translate-y-full',
+          // Desktop: right sidebar
+          'md:relative md:bottom-auto md:left-auto md:right-auto md:z-auto',
+          'md:w-[260px] md:flex-none md:max-h-full md:rounded-none md:border-t-0 md:border-l',
+          'md:translate-y-0 md:bg-zinc-950/80',
+        ].join(' ')}
+      >
+        {/* Mobile drag handle + close (hidden on desktop) */}
+        <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-zinc-800/40 shrink-0">
+          <div className="w-8 h-1 rounded-full bg-zinc-700 mx-auto absolute left-1/2 -translate-x-1/2" />
+          <span className="text-[12px] font-semibold" style={{ color: '#B8A9A5' }}>
+            Shot Settings
+          </span>
+          <button
+            onClick={() => setShowMobileRight(false)}
+            className="opacity-50 hover:opacity-100 transition-opacity"
+          >
+            <X className="w-4 h-4 text-zinc-400" />
+          </button>
+        </div>
 
         {/* Show Lighting/Camera only in Create mode */}
         {studioMode === "create" && (
@@ -2315,7 +2378,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
             </div>
           )}
           <button
-            onClick={isGenerating ? onStopGeneration : () => { setShowMobilePanel(false); handleDirectorGenerate(); }}
+            onClick={isGenerating ? onStopGeneration : () => { setShowMobilePanel(false); setShowMobileRight(false); handleDirectorGenerate(); }}
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all active:scale-95"
             style={isGenerating
               ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', color: '#fff' }

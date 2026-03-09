@@ -28,7 +28,8 @@ import { generateWithModelsLab, editImageWithModelsLab } from '../services/model
 import {
   GeneratedContent, InfluencerParams, PoseModificationParams, VideoParams, AIEditParams,
   AIProvider, FalModel, ReplicateModel, OpenAIModel, IdeogramModel, ModelsLabModel, PoseEngine, AIEditEngine, VideoEngine, VIDEO_ENGINE_LABELS,
-  IMAGEN4_MODELS, CREDIT_COSTS, OPERATION_CREDIT_COSTS,
+  IMAGEN4_MODELS, CREDIT_COSTS, OPERATION_CREDIT_COSTS, GeminiImageModel,
+  resolveAutoEngine,
 } from '../types';
 import { useForm } from '../contexts/FormContext';
 import { useGallery } from '../contexts/GalleryContext';
@@ -74,6 +75,24 @@ export const useGeneration = (onGenerateStart?: () => void) => {
   const { decrementCredits, restoreCredits } = useProfile();
   const toast = useToast();
 
+  // ── Resolve auto engine ────────────────────────────────────────────────
+  // When aiProvider is 'auto', pick the best engine based on context.
+  // Returns the effective provider/model to use for this generation.
+  const resolveEffectiveEngine = () => {
+    if (aiProvider !== AIProvider.Auto) {
+      return { effectiveProvider: aiProvider, effectiveGeminiModel: geminiModel, effectiveFalModel: falModel, effectiveOpenaiModel: openaiModel };
+    }
+    const hasFaceRef = directorFaceImages.length > 0 || (characters[0]?.modelImages?.length ?? 0) > 0;
+    const prompt = [scenario, characters[0]?.characteristics, characters[0]?.outfitDescription].filter(Boolean).join(' ');
+    const resolved = resolveAutoEngine({ hasFaceRef, prompt });
+    return {
+      effectiveProvider: resolved.provider,
+      effectiveGeminiModel: resolved.geminiModel ?? geminiModel,
+      effectiveFalModel: resolved.falModel ?? falModel,
+      effectiveOpenaiModel: resolved.openaiModel ?? openaiModel,
+    };
+  };
+
   // ── Credit cost helper ──────────────────────────────────────────────────
   const computeCreditCost = (): number => {
     if (activeMode === 'video') {
@@ -84,14 +103,15 @@ export const useGeneration = (onGenerateStart?: () => void) => {
       if (editSubMode === 'ai' && aiEditEngine === AIEditEngine.FaceSwapFal) return OPERATION_CREDIT_COSTS.faceSwap;
       return OPERATION_CREDIT_COSTS.upscale; // cheap edit default (8)
     }
-    // create mode — cost per model × numberOfImages
+    // create mode — resolve auto if needed, then compute cost
+    const { effectiveProvider, effectiveGeminiModel, effectiveFalModel, effectiveOpenaiModel } = resolveEffectiveEngine();
     let costPerImage = 2;
-    if (aiProvider === AIProvider.Fal) costPerImage = CREDIT_COSTS[falModel] ?? 10;
-    else if (aiProvider === AIProvider.Replicate) costPerImage = CREDIT_COSTS[replicateModel] ?? 15;
-    else if (aiProvider === AIProvider.OpenAI) costPerImage = CREDIT_COSTS[openaiModel] ?? 20;
-    else if (aiProvider === AIProvider.Ideogram) costPerImage = CREDIT_COSTS[ideogramModel] ?? 10;
-    else if (aiProvider === AIProvider.ModelsLab) costPerImage = CREDIT_COSTS[modelsLabModel] ?? 5;
-    else costPerImage = CREDIT_COSTS[geminiModel] ?? 2;
+    if (effectiveProvider === AIProvider.Fal) costPerImage = CREDIT_COSTS[effectiveFalModel] ?? 10;
+    else if (effectiveProvider === AIProvider.Replicate) costPerImage = CREDIT_COSTS[replicateModel] ?? 15;
+    else if (effectiveProvider === AIProvider.OpenAI) costPerImage = CREDIT_COSTS[effectiveOpenaiModel] ?? 20;
+    else if (effectiveProvider === AIProvider.Ideogram) costPerImage = CREDIT_COSTS[ideogramModel] ?? 10;
+    else if (effectiveProvider === AIProvider.ModelsLab) costPerImage = CREDIT_COSTS[modelsLabModel] ?? 5;
+    else costPerImage = CREDIT_COSTS[effectiveGeminiModel] ?? 2;
     return costPerImage * numberOfImages;
   };
 
@@ -136,6 +156,9 @@ export const useGeneration = (onGenerateStart?: () => void) => {
       let params: any;
 
       if (activeMode === 'create') {
+        // Resolve auto engine if needed
+        const { effectiveProvider, effectiveGeminiModel, effectiveFalModel, effectiveOpenaiModel } = resolveEffectiveEngine();
+
         const finalNegativePrompt = antiFisheye
           ? (negativePrompt ? `${negativePrompt}, fisheye lens, distorted perspective, wide angle distortion, warped anatomy` : 'fisheye lens, distorted perspective, wide angle distortion, warped anatomy')
           : negativePrompt;
@@ -161,33 +184,33 @@ export const useGeneration = (onGenerateStart?: () => void) => {
           guidanceScale,
           strength,
           seed,
-          model: geminiModel,
+          model: effectiveGeminiModel,
         } as InfluencerParams;
 
         let urls: string[] = [];
 
-        if (aiProvider === AIProvider.Fal && falModel === FalModel.ZImageTurbo) {
+        if (effectiveProvider === AIProvider.Fal && effectiveFalModel === FalModel.ZImageTurbo) {
           // Z-Image Turbo — text-to-image only, no reference needed
           urls = await generateWithZImageTurbo(params, (p) => setProgress(p), abortSignal);
-        } else if (aiProvider === AIProvider.Fal) {
+        } else if (effectiveProvider === AIProvider.Fal) {
           // All other fal.ai models require at least 1 reference photo for identity
           if (!characters[0]?.modelImages?.length) {
             throw new Error('fal.ai requires at least one model reference photo to preserve identity.');
           }
-          urls = await generateWithFal(params, falModel, (p) => setProgress(p), abortSignal);
-        } else if (aiProvider === AIProvider.Replicate) {
+          urls = await generateWithFal(params, effectiveFalModel, (p) => setProgress(p), abortSignal);
+        } else if (effectiveProvider === AIProvider.Replicate) {
           const replicateNoRefNeeded = replicateModel === ReplicateModel.Flux2Max || replicateModel === ReplicateModel.GrokImagine;
           if (!replicateNoRefNeeded && !characters[0]?.modelImages?.length) {
             throw new Error('Replicate requires at least one model reference photo to preserve identity.');
           }
           urls = await generateWithReplicate(params, replicateModel as ReplicateModel, (p) => setProgress(p), abortSignal);
-        } else if (aiProvider === AIProvider.OpenAI) {
-          urls = await generateWithOpenAI(params, openaiModel as OpenAIModel, (p) => setProgress(p), abortSignal);
-        } else if (aiProvider === AIProvider.Ideogram) {
+        } else if (effectiveProvider === AIProvider.OpenAI) {
+          urls = await generateWithOpenAI(params, effectiveOpenaiModel as OpenAIModel, (p) => setProgress(p), abortSignal);
+        } else if (effectiveProvider === AIProvider.Ideogram) {
           urls = await generateWithIdeogram(params, ideogramModel as IdeogramModel, (p) => setProgress(p), abortSignal);
-        } else if (aiProvider === AIProvider.ModelsLab) {
+        } else if (effectiveProvider === AIProvider.ModelsLab) {
           urls = await generateWithModelsLab(params, modelsLabModel as ModelsLabModel, (p) => setProgress(p), abortSignal);
-        } else if (IMAGEN4_MODELS.has(geminiModel)) {
+        } else if (IMAGEN4_MODELS.has(effectiveGeminiModel)) {
           // Imagen 4: pure text-to-image via ai.models.generateImages
           urls = await generateWithImagen4(params, (p) => setProgress(p), abortSignal);
         } else {
@@ -201,12 +224,12 @@ export const useGeneration = (onGenerateStart?: () => void) => {
           params: { ...params },
           timestamp: Date.now(),
           type: 'create' as const,
-          aiProvider,
-          ...(aiProvider === AIProvider.Fal && { falModel }),
-          ...(aiProvider === AIProvider.Replicate && { replicateModel }),
-          ...(aiProvider === AIProvider.OpenAI && { openaiModel }),
-          ...(aiProvider === AIProvider.Ideogram && { ideogramModel }),
-          ...(aiProvider === AIProvider.ModelsLab && { modelsLabModel }),
+          aiProvider: effectiveProvider,
+          ...(effectiveProvider === AIProvider.Fal && { falModel: effectiveFalModel }),
+          ...(effectiveProvider === AIProvider.Replicate && { replicateModel }),
+          ...(effectiveProvider === AIProvider.OpenAI && { openaiModel: effectiveOpenaiModel }),
+          ...(effectiveProvider === AIProvider.Ideogram && { ideogramModel }),
+          ...(effectiveProvider === AIProvider.ModelsLab && { modelsLabModel }),
         }));
 
       } else if (activeMode === 'edit') {

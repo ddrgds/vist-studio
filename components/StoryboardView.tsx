@@ -219,6 +219,14 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
             Export Grid
           </button>
           <button
+            onClick={() => toast.info('Video export coming soon')}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold rounded-lg transition-all"
+            style={{ background: 'rgba(255,179,71,0.06)', border: '1px solid rgba(255,179,71,0.12)', color: '#FFB347' }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Export Video
+          </button>
+          <button
             onClick={handleClearAll}
             className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold rounded-lg transition-all"
             style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)', color: '#EF4444' }}
@@ -301,6 +309,17 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
         >
           {storyboardItems.map((item, index) => (
             <React.Fragment key={item.id}>
+              {/* Insert button before each frame */}
+              {index === 0 && (
+                <button
+                  onClick={() => toast.info('Add images from the Director or Freestyle gallery via "Add to Storyboard"')}
+                  className="flex-shrink-0 w-5 h-16 flex items-center justify-center rounded-md transition-all opacity-0 hover:opacity-100"
+                  style={{ background: 'rgba(255,92,53,0.08)', border: '1px dashed rgba(255,92,53,0.2)' }}
+                  title="Insert frame"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FF5C35" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
+              )}
               <button
                 draggable
                 onDragStart={() => handleDragStart(index)}
@@ -333,6 +352,15 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
                     ▶
                   </span>
                 )}
+              </button>
+              {/* Insert button after each frame */}
+              <button
+                onClick={() => toast.info('Add images from the Director or Freestyle gallery via "Add to Storyboard"')}
+                className="flex-shrink-0 w-5 h-16 flex items-center justify-center rounded-md transition-all opacity-0 hover:opacity-100"
+                style={{ background: 'rgba(255,92,53,0.08)', border: '1px dashed rgba(255,92,53,0.2)' }}
+                title="Insert frame"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FF5C35" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               </button>
             </React.Fragment>
           ))}

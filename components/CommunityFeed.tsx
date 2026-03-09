@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowRight, Loader2, Users } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { ArrowRight, Loader2, Users, Trophy } from 'lucide-react';
 import { loadCommunityFeed, CommunityShare } from '../services/supabaseService';
 
 interface CommunityFeedProps {
@@ -8,12 +8,48 @@ interface CommunityFeedProps {
 
 type SortMode = 'recent' | 'popular';
 
+const STYLE_FILTERS = [
+  { id: 'all', label: 'All' },
+  { id: 'editorial', label: 'Editorial' },
+  { id: 'street', label: 'Street' },
+  { id: 'fantasy', label: 'Fantasy' },
+  { id: 'lifestyle', label: 'Lifestyle' },
+  { id: 'portrait', label: 'Portrait' },
+  { id: 'fitness', label: 'Fitness' },
+  { id: 'nightlife', label: 'Nightlife' },
+] as const;
+
+type StyleFilter = (typeof STYLE_FILTERS)[number]['id'];
+
+// Keywords per style for client-side classification from captions/display_name
+const STYLE_KEYWORDS: Record<Exclude<StyleFilter, 'all'>, string[]> = {
+  editorial: ['editorial', 'magazine', 'fashion', 'vogue', 'studio', 'campaign', 'haute', 'couture', 'high fashion'],
+  street: ['street', 'urban', 'city', 'neon', 'graffiti', 'tokyo', 'nyc', 'cyberpunk', 'gritty'],
+  fantasy: ['fantasy', 'dragon', 'magic', 'enchanted', 'mystical', 'fairy', 'elf', 'medieval', 'warrior', 'cinematic'],
+  lifestyle: ['lifestyle', 'cafe', 'coffee', 'park', 'home', 'casual', 'everyday', 'cozy', 'morning', 'beach', 'tropical'],
+  portrait: ['portrait', 'close-up', 'headshot', 'face', 'bokeh', '85mm', 'eyes', 'beauty'],
+  fitness: ['fitness', 'gym', 'athletic', 'workout', 'muscle', 'sport', 'running', 'yoga'],
+  nightlife: ['night', 'neon', 'club', 'bar', 'party', 'cocktail', 'glamour', 'evening', 'rooftop'],
+};
+
+function classifyItem(item: CommunityShare): StyleFilter[] {
+  const text = `${item.caption} ${item.display_name}`.toLowerCase();
+  const matches: StyleFilter[] = [];
+  for (const [style, keywords] of Object.entries(STYLE_KEYWORDS)) {
+    if (keywords.some(kw => text.includes(kw))) {
+      matches.push(style as StyleFilter);
+    }
+  }
+  return matches;
+}
+
 const CommunityFeed: React.FC<CommunityFeedProps> = ({ onNavigate }) => {
   const [items, setItems] = useState<CommunityShare[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [sortMode, setSortMode] = useState<SortMode>('recent');
+  const [styleFilter, setStyleFilter] = useState<StyleFilter>('all');
 
   const PAGE_SIZE = 20;
 
@@ -46,9 +82,62 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ onNavigate }) => {
     setLoadingMore(false);
   }, [items.length, loadingMore, hasMore]);
 
+  // Filter + sort items
+  const displayItems = useMemo(() => {
+    let filtered = items;
+    if (styleFilter !== 'all') {
+      filtered = items.filter(item => classifyItem(item).includes(styleFilter));
+    }
+    if (sortMode === 'popular') {
+      // Trending: prefer items shared more recently with shorter display names (proxy for engagement)
+      // and spread by user to surface variety
+      return [...filtered].sort((a, b) => {
+        const aAge = (Date.now() - new Date(a.shared_at).getTime()) / 3_600_000; // hours
+        const bAge = (Date.now() - new Date(b.shared_at).getTime()) / 3_600_000;
+        // Wilson-style score: newer items with captions score higher
+        const aScore = (a.caption.length > 0 ? 2 : 1) / (1 + aAge * 0.1);
+        const bScore = (b.caption.length > 0 ? 2 : 1) / (1 + bAge * 0.1);
+        return bScore - aScore;
+      });
+    }
+    return filtered;
+  }, [items, sortMode, styleFilter]);
+
   return (
     <section className="px-4 sm:px-8 pt-10 pb-12 max-w-[1400px] mx-auto">
-      <div className="flex items-end justify-between mb-6">
+      {/* Contest / Featured banner */}
+      <div
+        className="mb-6 rounded-2xl px-5 py-4 flex items-center gap-4 relative overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, rgba(255,92,53,0.08) 0%, rgba(255,179,71,0.06) 100%)',
+          border: '1px solid rgba(255,92,53,0.15)',
+        }}
+      >
+        <div
+          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ background: 'rgba(255,92,53,0.12)' }}
+        >
+          <Trophy className="w-5 h-5" style={{ color: '#FF5C35' }} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm font-bold font-display" style={{ color: '#F5EDE8' }}>
+            Weekly Showcase
+          </h3>
+          <p className="text-[11px] mt-0.5" style={{ color: '#8C7570' }}>
+            Share your best creation and get featured. Top picks are highlighted every week.
+          </p>
+        </div>
+        <button
+          onClick={() => onNavigate('director', 'create')}
+          className="flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-semibold transition-all hover:scale-[1.02] active:scale-95"
+          style={{ background: 'linear-gradient(135deg,#FF5C35,#FFB347)', color: '#fff' }}
+        >
+          Enter
+          <ArrowRight className="w-3 h-3" />
+        </button>
+      </div>
+
+      <div className="flex items-end justify-between mb-4">
         <div className="flex items-end gap-4">
           <div>
             <h2
@@ -96,6 +185,23 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ onNavigate }) => {
         </button>
       </div>
 
+      {/* Style filter chips */}
+      <div className="flex gap-1.5 mb-5 overflow-x-auto pb-1 custom-scrollbar">
+        {STYLE_FILTERS.map(({ id, label }) => (
+          <button
+            key={id}
+            onClick={() => setStyleFilter(id)}
+            className="text-[10px] px-3 py-1.5 rounded-full transition-all font-jet whitespace-nowrap"
+            style={styleFilter === id
+              ? { background: 'rgba(255,92,53,0.15)', border: '1px solid #FF5C35', color: '#FFB347' }
+              : { background: 'transparent', color: '#6B5A56', border: '1px solid #2A1F1C' }
+            }
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {loading ? (
         /* Skeleton grid instead of spinner */
         <div className="columns-2 md:columns-3 lg:columns-4 gap-2">
@@ -103,7 +209,7 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ onNavigate }) => {
             <div key={i} className="mb-2 rounded-xl skeleton-shimmer" style={{ height: h }} />
           ))}
         </div>
-      ) : items.length === 0 ? (
+      ) : displayItems.length === 0 && items.length === 0 ? (
         /* Empty state — no community shares yet */
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'rgba(255,92,53,0.06)' }}>
@@ -124,23 +230,28 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ onNavigate }) => {
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
+      ) : displayItems.length === 0 ? (
+        /* Filter matches nothing */
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <p className="text-sm font-display mb-1" style={{ color: '#B8A9A5' }}>No results for this style</p>
+          <p className="text-xs mb-4" style={{ color: '#4A3A36' }}>Try a different filter or share your own creation.</p>
+          <button
+            onClick={() => setStyleFilter('all')}
+            className="text-[11px] px-4 py-2 rounded-full font-jet transition-all"
+            style={{ color: '#FF5C35', border: '1px solid rgba(255,92,53,0.25)' }}
+          >
+            Show all
+          </button>
+        </div>
       ) : (
         <>
           <div className="columns-2 md:columns-3 lg:columns-4 gap-2">
-            {(sortMode === 'popular'
-              ? [...items].sort((a, b) => {
-                  // Pseudo-trending: mix by hash of id for stable but shuffled order
-                  const hashA = a.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-                  const hashB = b.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-                  return hashA - hashB;
-                })
-              : items
-            ).map((item) => (
+            {displayItems.map((item) => (
               <CommunityCard key={item.id} item={item} />
             ))}
           </div>
 
-          {hasMore && (
+          {hasMore && styleFilter === 'all' && (
             <div className="flex justify-center mt-8">
               <button
                 onClick={loadMore}

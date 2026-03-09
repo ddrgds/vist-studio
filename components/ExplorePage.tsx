@@ -227,6 +227,53 @@ const ExplorePage: React.FC<ExplorePageProps> = ({ onNavigate }) => {
       {/* ── Divider ──────────────────────────────────────────────────────── */}
       <div className="mx-8 accent-line" />
 
+      {/* ── AI TOOLS ─────────────────────────────────────────────────────── */}
+      <section className="px-4 sm:px-8 pt-10 pb-12 max-w-[1400px] mx-auto">
+        <div className="mb-7">
+          <h2
+            className="text-[11px] font-black tracking-widest uppercase font-display"
+            style={{ color: "#FF5C35" }}
+          >
+            AI Tools
+          </h2>
+          <p className="text-xs mt-1" style={{ color: "#6B5A56" }}>
+            Professional editing tools for your generated images
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+          {[
+            { icon: '👗', name: 'Virtual Try-On', desc: 'Try clothes on your character', nav: 'director' as AppWorkspace },
+            { icon: '🎭', name: 'Face Swap', desc: 'Put any face on any photo', nav: 'director' as AppWorkspace },
+            { icon: '💡', name: 'Relight', desc: 'Change the lighting of any photo', nav: 'director' as AppWorkspace },
+            { icon: '✨', name: 'Skin Enhancer', desc: 'Professional skin retouching', nav: 'director' as AppWorkspace },
+            { icon: '🖌️', name: 'Inpainting', desc: 'Edit specific areas of your image', nav: 'director' as AppWorkspace },
+            { icon: '🔍', name: 'Upscale 4K', desc: 'Enhance resolution to 4K', nav: 'director' as AppWorkspace },
+            { icon: '🧍', name: 'Pose Change', desc: "Change your character's pose", nav: 'director' as AppWorkspace },
+          ].map((tool) => (
+            <button
+              key={tool.name}
+              onClick={() => onNavigate(tool.nav)}
+              className="text-left p-4 rounded-xl border transition-all duration-200 group hover:-translate-y-0.5"
+              style={{ background: '#161110', border: '1px solid #2A1F1C' }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,92,53,0.3)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.borderColor = '#2A1F1C';
+              }}
+            >
+              <span className="text-2xl block mb-2">{tool.icon}</span>
+              <h3 className="text-[13px] font-bold mb-0.5" style={{ color: '#F5EDE8' }}>{tool.name}</h3>
+              <p className="text-[11px] leading-relaxed" style={{ color: '#6B5A56' }}>{tool.desc}</p>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Divider ──────────────────────────────────────────────────────── */}
+      <div className="mx-8 accent-line" />
+
       {/* ── GALLERY (Your Creations) ──────────────────────────────────────── */}
       {gallery.galleryLoading ? (
         /* Skeleton while gallery loads — prevents flash/alternation */
