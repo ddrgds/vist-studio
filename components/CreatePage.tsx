@@ -507,6 +507,20 @@ const CreatePage: React.FC<CreatePageProps> = ({
   const [aiEditTarget, setAiEditTarget] = useState<GeneratedContent | null>(null);
   const [aiEditPrompt, setAiEditPrompt] = useState('');
 
+  // Task 7: Gallery filter/sort
+  const [filterType, setFilterType] = useState<'all' | 'images' | 'video' | 'favorites'>('all');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+
+  // Task 8: Resizable gallery
+  const [galleryRatio, setGalleryRatio] = useState(() => {
+    try {
+      const saved = localStorage.getItem('vist_gallery_ratio');
+      return saved ? parseFloat(saved) : 0.65;
+    } catch { return 0.65; }
+  });
+  const [isResizing, setIsResizing] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const settingsRef = useRef<HTMLDivElement>(null);
   const refInputRef = useRef<HTMLInputElement>(null);
   const promptBarRef = useRef<HTMLDivElement>(null);
@@ -627,6 +641,38 @@ const CreatePage: React.FC<CreatePageProps> = ({
   );
   const displayItems = galleryTab === 'session' ? sessionItems : allItems;
 
+  // Task 7: Filtered/sorted items
+  const filteredItems = useMemo(() => {
+    let items = displayItems;
+    if (filterType === 'images') items = items.filter(i => i.type !== 'video');
+    if (filterType === 'video') items = items.filter(i => i.type === 'video');
+    if (filterType === 'favorites') items = items.filter(i => (i as any).isFavorite);
+    if (sortOrder === 'oldest') items = [...items].reverse();
+    return items;
+  }, [displayItems, filterType, sortOrder]);
+
+  // Task 8: Resize drag effect
+  useEffect(() => {
+    if (!isResizing) return;
+    const handleMove = (e: MouseEvent) => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const ratio = (e.clientY - rect.top) / rect.height;
+      const clamped = Math.min(0.85, Math.max(0.3, ratio));
+      setGalleryRatio(clamped);
+    };
+    const handleUp = () => {
+      setIsResizing(false);
+      try { localStorage.setItem('vist_gallery_ratio', galleryRatio.toString()); } catch {}
+    };
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
+  }, [isResizing, galleryRatio]);
+
   const handleRefFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (files.length > 0 && char0) {
@@ -651,10 +697,10 @@ const CreatePage: React.FC<CreatePageProps> = ({
   // Panel content checks
   const hasFaceContent = (char0?.modelImages?.length ?? 0) > 0;
   const hasOutfitContent = (char0?.outfitImages?.length ?? 0) > 0;
-  const hasSceneContent = !!form.lighting || !!form.camera || !!form.scenario;
+  const hasSceneContent = !!form.lighting || !!form.camera || !!form.scenario || (form.scenarioImage && form.scenarioImage.length > 0);
 
   return (
-    <div className="flex flex-col h-full overflow-hidden" style={{ background: '#0D0A0A' }}>
+    <div ref={containerRef} className="flex flex-col h-full overflow-hidden" style={{ background: '#0D0A0A' }}>
       <input
         ref={refInputRef}
         type="file"
@@ -665,7 +711,7 @@ const CreatePage: React.FC<CreatePageProps> = ({
       />
 
       {/* ─── Gallery Area ─── */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar relative">
+      <div className="overflow-y-auto custom-scrollbar relative" style={{ height: `${galleryRatio * 100}%` }}>
 
         {/* Generating overlay */}
         {isGenerating && (
@@ -732,9 +778,35 @@ const CreatePage: React.FC<CreatePageProps> = ({
               </div>
             )}
 
+            {/* Filter bar */}
+            <div className="sticky top-0 z-20 flex items-center gap-1.5 px-3 py-2" style={{ background: 'rgba(13,10,10,0.92)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #2A1F1C' }}>
+              {(['all', 'images', 'video', 'favorites'] as const).map((type) => {
+                const LABELS: Record<string, string> = { all: 'All', images: 'Images', video: 'Video', favorites: '\u2605 Saved' };
+                return (
+                  <button key={type} onClick={() => setFilterType(type)}
+                    className="text-[10px] px-2.5 py-1 rounded-full transition-all font-jet"
+                    style={filterType === type
+                      ? { background: '#FF5C35', color: '#fff' }
+                      : { background: 'transparent', color: '#6B5A56', border: '1px solid #2A1F1C' }
+                    }>
+                    {LABELS[type]}
+                  </button>
+                );
+              })}
+              <div className="flex-1" />
+              <button onClick={() => setSortOrder(prev => prev === 'newest' ? 'oldest' : 'newest')}
+                className="text-[10px] px-2.5 py-1 rounded-full font-jet transition-colors"
+                style={{ color: '#6B5A56', border: '1px solid #2A1F1C' }}>
+                {sortOrder === 'newest' ? '\u2193 Newest' : '\u2191 Oldest'}
+              </button>
+              <span className="text-[10px] font-jet tabular-nums" style={{ color: '#4A3A36' }}>
+                {filteredItems.length}
+              </span>
+            </div>
+
             {/* Masonry grid */}
             <div className="columns-3 gap-0.5 px-0.5">
-              {displayItems.map((item, idx) => (
+              {filteredItems.map((item, idx) => (
                 <div
                   key={item.id}
                   className={`break-inside-avoid mb-0.5 relative group cursor-pointer overflow-hidden rounded${idx < 20 ? ' fade-in-stagger' : ''}`}
@@ -910,6 +982,20 @@ const CreatePage: React.FC<CreatePageProps> = ({
           </div>
         )}
       </div>
+
+      {/* ─── Drag Handle (resizable gallery) ─── */}
+      <div
+        className="h-1.5 cursor-row-resize flex items-center justify-center shrink-0"
+        style={{ background: isResizing ? 'rgba(34,211,238,0.15)' : 'transparent' }}
+        onMouseDown={(e) => { e.preventDefault(); setIsResizing(true); }}
+      >
+        <div className="w-8 h-0.5 rounded-full transition-colors"
+          style={{ background: isResizing ? '#22D3EE' : '#2A1F1C' }}
+        />
+      </div>
+
+      {/* ─── Panels + Prompt (remaining space) ─── */}
+      <div className="flex-1 flex flex-col overflow-y-auto min-h-0">
 
       {/* ─── Expandable Panels (between gallery and prompt bar) ─── */}
       {activePanel && (
@@ -1109,6 +1195,34 @@ const CreatePage: React.FC<CreatePageProps> = ({
                       );
                     })}
                   </div>
+                </div>
+
+                {/* Scene reference image */}
+                <div className="mb-3">
+                  <div className="text-[9px] font-jet uppercase tracking-wider mb-1.5" style={{ color: '#6B5A56' }}>Scene reference</div>
+                  {form.scenarioImage && form.scenarioImage.length > 0 ? (
+                    <div className="relative w-16 h-16 rounded-lg overflow-hidden group">
+                      <img src={URL.createObjectURL(form.scenarioImage[0])} alt="" className="w-full h-full object-cover" />
+                      <button
+                        onClick={() => form.setScenarioImage([])}
+                        className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                      >
+                        <X className="w-4 h-4 text-white" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors"
+                      style={{ border: '1px dashed #2A1F1C', color: '#4A3A36' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#22D3EE'; (e.currentTarget as HTMLElement).style.color = '#22D3EE'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#2A1F1C'; (e.currentTarget as HTMLElement).style.color = '#4A3A36'; }}>
+                      <ImagePlus className="w-3.5 h-3.5" />
+                      <span className="text-[10px]">Add scene photo</span>
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) form.setScenarioImage([file]);
+                      }} />
+                    </label>
+                  )}
                 </div>
 
                 {/* Scene description */}
@@ -1411,6 +1525,8 @@ const CreatePage: React.FC<CreatePageProps> = ({
           </div>
         </div>
       </div>
+
+      </div>{/* end panels+prompt wrapper */}
 
       {/* ─── Lightbox ─── */}
       {lightboxItem && (
