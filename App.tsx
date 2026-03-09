@@ -15,6 +15,7 @@ const GeneratorPage = lazy(() => import("./components/GeneratorPage"));
 const DirectorStudio = lazy(() => import("./components/DirectorStudio"));
 const CharactersPage = lazy(() => import("./components/CharactersPage"));
 const StoryboardView = lazy(() => import("./components/StoryboardView"));
+const ToolsPage = lazy(() => import("./components/ToolsPage"));
 const PricingPage = lazy(() => import("./components/PricingPage"));
 const ProfilePage = lazy(() => import("./components/ProfilePage"));
 
@@ -80,9 +81,19 @@ import {
 const safeFiles = (arr: any[]): File[] =>
   Array.isArray(arr) ? arr.filter((f) => f instanceof File) : [];
 
+/** Wrap a user-uploaded File into a minimal GeneratedContent for tool modals */
+const fileToContent = (file: File): GeneratedContent => ({
+  id: `tools-${Date.now()}`,
+  url: URL.createObjectURL(file),
+  params: { prompt: '', characters: [] } as any,
+  timestamp: Date.now(),
+  type: 'create',
+  source: 'generate',
+});
+
 // ─────────────────────────────────────────────
 // Inner App — consumes all contexts
-type AppWorkspace = "explore" | "generate" | "director" | "characters" | "storyboard" | "pricing" | "profile";
+type AppWorkspace = "home" | "create" | "characters" | "tools" | "pricing" | "profile";
 
 const AppInner: React.FC = () => {
   const { user, signOut, authLoading } = useAuth();
@@ -112,17 +123,20 @@ const AppInner: React.FC = () => {
 
   // Map URL paths to workspaces
   const PATH_TO_WORKSPACE: Record<string, AppWorkspace> = {
-    '/': 'explore', '/explore': 'explore', '/generate': 'generate',
-    '/director': 'director', '/characters': 'characters', '/library': 'characters',
-    '/storyboard': 'storyboard', '/pricing': 'pricing', '/profile': 'profile',
-    '/login': 'generate', '/register': 'generate',
+    '/': 'home', '/home': 'home', '/explore': 'home',
+    '/create': 'create', '/generate': 'create', '/director': 'create',
+    '/characters': 'characters', '/library': 'characters',
+    '/storyboard': 'characters',
+    '/tools': 'tools',
+    '/pricing': 'pricing', '/profile': 'profile',
+    '/login': 'create', '/register': 'create',
   };
-  const initialWs = PATH_TO_WORKSPACE[window.location.pathname] ?? 'explore';
+  const initialWs = PATH_TO_WORKSPACE[window.location.pathname] ?? 'home';
   const [activeWorkspace, _setActiveWorkspace] =
     useState<AppWorkspace>(initialWs);
   const setActiveWorkspace = React.useCallback((ws: AppWorkspace) => {
     _setActiveWorkspace(ws);
-    const wsPath = ws === 'explore' ? '/' : `/${ws}`;
+    const wsPath = ws === 'home' ? '/' : `/${ws}`;
     if (window.location.pathname !== wsPath) {
       window.history.pushState({}, '', wsPath);
     }
@@ -131,7 +145,7 @@ const AppInner: React.FC = () => {
   // ─── Handle browser back/forward ────────────────────────────────────────
   React.useEffect(() => {
     const onPop = () => {
-      const ws = PATH_TO_WORKSPACE[window.location.pathname] ?? 'explore';
+      const ws = PATH_TO_WORKSPACE[window.location.pathname] ?? 'home';
       _setActiveWorkspace(ws);
     };
     window.addEventListener('popstate', onPop);
@@ -141,11 +155,10 @@ const AppInner: React.FC = () => {
   // ─── Dynamic page title + meta description ──────────────────────────────
   useEffect(() => {
     const PAGE_META: Record<AppWorkspace, { title: string; description: string }> = {
-      explore: { title: 'VIST Studio — AI Character & Image Generator', description: 'Create AI-generated characters, images, and videos with multiple engines. Freestyle generation, character consistency, and storyboard planning.' },
-      generate: { title: 'Freestyle Generator — VIST Studio', description: 'Generate images instantly with Gemini, FLUX, GPT Image, Ideogram, and more AI engines.' },
-      director: { title: 'Director Studio — VIST Studio', description: 'Build consistent AI characters with face references, outfits, and scene control.' },
-      characters: { title: 'Character Library — VIST Studio', description: 'Manage your AI characters, browse generated images, and organize your creative assets.' },
-      storyboard: { title: 'Storyboard — VIST Studio', description: 'Plan content campaigns and organize your AI-generated images into sequences.' },
+      home: { title: 'VIST Studio — AI Character & Image Generator', description: 'Create AI-generated characters, images, and videos with multiple engines. Freestyle generation, character consistency, and storyboard planning.' },
+      create: { title: 'Create — VIST Studio', description: 'Generate AI images and videos with 10+ engines. Prompt-first with optional face, outfit, and scene control.' },
+      characters: { title: 'Library — VIST Studio', description: 'Manage your AI characters, browse generated images, and organize your creative assets.' },
+      tools: { title: 'AI Tools — VIST Studio', description: 'Try-On, Face Swap, Relight, Upscale, and more AI tools.' },
       pricing: { title: 'Plans & Pricing — VIST Studio', description: 'Choose a plan for AI image and video generation. Free tier available. Pro, Studio, and Brand plans.' },
       profile: { title: 'Profile — VIST Studio', description: 'Manage your VIST Studio account, subscription, and settings.' },
     };
@@ -205,7 +218,7 @@ const AppInner: React.FC = () => {
 
   // ─── Sync form.activeMode when workspace changes ───────
   React.useEffect(() => {
-    if (activeWorkspace === "generate") {
+    if (activeWorkspace === "create") {
       // Generator manages its own mode via model selection
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -237,7 +250,9 @@ const AppInner: React.FC = () => {
   const handleExploreNavigate = (workspace: string, mode?: string, modelId?: string) => {
     // Map old workspace names to current ones
     const mapped: AppWorkspace =
-      workspace === "create" || workspace === "video" ? "generate" :
+      workspace === "create" || workspace === "video" || workspace === "generate" || workspace === "director" ? "create" :
+      workspace === "explore" ? "home" :
+      workspace === "storyboard" ? "characters" :
       workspace as AppWorkspace;
     setActiveWorkspace(mapped);
     // Apply model pre-selection first (takes priority over mode)
@@ -260,7 +275,7 @@ const AppInner: React.FC = () => {
       // Load as base image for editing in the VIST editor
       form.setBaseImageForEdit(file);
       form.setActiveMode("edit");
-      setActiveWorkspace("director");
+      setActiveWorkspace("create");
     } catch {
       toast.error("Could not load the image for the editor.");
     }
@@ -272,7 +287,7 @@ const AppInner: React.FC = () => {
     if (!char0) return;
     charLib.loadCharacterIntoForm(char, char0.id, form.updateCharacter);
     charLib.incrementUsage(char.id);
-    setActiveWorkspace("director");
+    setActiveWorkspace("create");
   };
 
   // ─── Reuse params ─────────────────────────
@@ -947,7 +962,7 @@ const AppInner: React.FC = () => {
   }
 
   // ─── Auth gate — public pages: explore, pricing ───────────────
-  const PUBLIC_WORKSPACES: AppWorkspace[] = ['explore', 'pricing'];
+  const PUBLIC_WORKSPACES: AppWorkspace[] = ['home', 'pricing'];
   const isPublicWorkspace = PUBLIC_WORKSPACES.includes(activeWorkspace);
 
   if (!user && !isPublicWorkspace) {
@@ -1013,24 +1028,17 @@ const AppInner: React.FC = () => {
             </h1>
 
             <nav className="flex gap-0.5">
-              {(["explore", "generate", "director", "characters", "storyboard", "pricing"] as const).map((ws) => {
+              {(["home", "create", "characters", "tools"] as const).map((ws) => {
                 const TAB_LABELS: Record<string, string> = {
-                  explore: "Explore", generate: "Freestyle", director: "Director",
-                  characters: "Library", storyboard: "Storyboard", pricing: "Pricing",
-                };
-                const TAB_BADGES: Record<string, string | null> = {
-                  explore: null, generate: null, director: "New",
-                  characters: null, storyboard: null, pricing: null,
+                  home: "Home", create: "Create", characters: "Library", tools: "Tools",
                 };
                 const TAB_TIPS: Record<string, string> = {
-                  explore: "Home & overview",
-                  generate: "Freestyle generation",
-                  director: "Character studio",
-                  characters: "Character library",
-                  storyboard: "Content planner",
-                  pricing: "Plans & features",
+                  home: "Home & inspiration",
+                  create: "Generate images & video",
+                  characters: "Characters & gallery",
+                  tools: "Try-On, Face Swap & more",
                 };
-                const href = ws === 'explore' ? '/' : `/${ws}`;
+                const href = ws === 'home' ? '/' : `/${ws}`;
                 return (
                   <a
                     key={ws}
@@ -1042,11 +1050,6 @@ const AppInner: React.FC = () => {
                     onMouseLeave={e => { if (activeWorkspace !== ws) (e.currentTarget as HTMLElement).style.color = '#6B5A56'; }}
                   >
                     {TAB_LABELS[ws]}
-                    {TAB_BADGES[ws] && (
-                      <span className="ml-1 text-[8px] font-bold font-jet px-1.5 py-0.5 rounded-full leading-none align-top" style={{ background: '#FF5C35', color: '#fff' }}>
-                        {TAB_BADGES[ws]}
-                      </span>
-                    )}
                     {activeWorkspace === ws && (
                       <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full" style={{ background: '#FF5C35' }} />
                     )}
@@ -1160,14 +1163,14 @@ const AppInner: React.FC = () => {
               <>
                 {/* Anonymous — show login/signup buttons */}
                 <button
-                  onClick={() => setActiveWorkspace('generate')}
+                  onClick={() => setActiveWorkspace('create')}
                   className="px-4 py-1.5 rounded-full text-xs font-semibold transition-all hover:bg-white/5"
                   style={{ color: '#B8A9A5', border: '1px solid #2A1F1C' }}
                 >
                   Sign in
                 </button>
                 <button
-                  onClick={() => setActiveWorkspace('generate')}
+                  onClick={() => setActiveWorkspace('create')}
                   className="px-4 py-1.5 rounded-full text-xs font-bold text-white transition-all hover:scale-[1.02]"
                   style={{ background: 'linear-gradient(135deg, #FF5C35, #FFB347)', boxShadow: '0 2px 12px rgba(255,92,53,0.35)', fontFamily: 'var(--font-display)' }}
                 >
@@ -1181,24 +1184,18 @@ const AppInner: React.FC = () => {
         {/* ─── Mobile Bottom Tab Bar ─── */}
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around px-2 py-2 border-t" style={{ background: 'rgba(13,10,10,0.96)', backdropFilter: 'blur(16px)', borderColor: '#1A1210' }}>
           {([
-            { ws: 'explore' as const,     icon: (
+            { ws: 'home' as const,        icon: (
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            ), label: 'Explore' },
-            { ws: 'generate' as const,    icon: (
+            ), label: 'Home' },
+            { ws: 'create' as const,      icon: (
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            ), label: 'Freestyle' },
-            { ws: 'director' as const,    icon: (
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-            ), label: 'Director' },
+            ), label: 'Create' },
             { ws: 'characters' as const,  icon: (
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             ), label: 'Library' },
-            { ws: 'storyboard' as const,  icon: (
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            ), label: 'Story' },
-            { ws: 'pricing' as const,  icon: (
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-            ), label: 'Plans' },
+            { ws: 'tools' as const,       icon: (
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            ), label: 'Tools' },
           ]).map(({ ws, icon, label }) => {
             const isActive = activeWorkspace === ws;
             return (
@@ -1220,8 +1217,8 @@ const AppInner: React.FC = () => {
 
         {/* ─── Workspace Router Container ─── */}
         <div className="relative flex-1 w-full h-[calc(100vh-4rem-3.5rem)] lg:h-[calc(100vh-3.5rem)] overflow-hidden transition-opacity duration-300">
-          {/* ────── WORKSPACE: EXPLORE ────── */}
-          {activeWorkspace === "explore" && (
+          {/* ────── WORKSPACE: HOME ────── */}
+          {activeWorkspace === "home" && (
             <div className="absolute inset-0 z-0 overflow-hidden">
               <ExplorePage onNavigate={handleExploreNavigate} />
             </div>
@@ -1233,8 +1230,8 @@ const AppInner: React.FC = () => {
               <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#FF5C35', borderTopColor: 'transparent' }} />
             </div>
           }>
-          {/* ────── WORKSPACE: GENERATE ────── */}
-          {activeWorkspace === "generate" && (
+          {/* ────── WORKSPACE: CREATE ────── */}
+          {activeWorkspace === "create" && (
             <div className="absolute inset-0 z-0 overflow-hidden">
               <GeneratorPage
                 isGenerating={isGenerating}
@@ -1255,93 +1252,36 @@ const AppInner: React.FC = () => {
             </div>
           )}
 
-          {/* ────── WORKSPACE: DIRECTOR ────── */}
-          {activeWorkspace === "director" && (
-            <div className="absolute inset-0 z-0 overflow-hidden">
-              <DirectorStudio
-                isGenerating={isGenerating}
-                progress={progress}
-                onGenerate={handleGenerate}
-                onStopGeneration={stopGeneration}
-                onDownload={handleDownload}
-                onEdit={(item) => gallery.setEditingItem(item)}
-                onReuse={handleReuse}
-                onChangePose={handleChangePose}
-                onUpscale={handleUpscale}
-                upscalingId={upscalingId}
-                onCaption={(item) => setCaptionItem(item)}
-                onRemoveBg={handleRemoveBg}
-                onFaceSwap={(item) => setFaceSwapItem(item)}
-                onTryOn={(item) => setTryOnItem(item)}
-                onSkinEnhance={(item) => setSkinEnhanceItem(item)}
-                onRelight={(item) => setRelightItem(item)}
-                onInpaint={(item) => setInpaintItem(item)}
-                onAddToStoryboard={handleAddToStoryboard}
-                onCopyToClipboard={handleCopyToClipboard}
-              />
-            </div>
-          )}
-
           {/* ────── WORKSPACE: CHARACTERS ────── */}
           {activeWorkspace === "characters" && (
             <div className="absolute inset-0 z-0 overflow-hidden">
               <CharactersPage
                 onLoadCharacter={handleLoadCharacterInDirector}
-                onNewCharacter={() => setActiveWorkspace("director")}
+                onNewCharacter={() => setActiveWorkspace("create")}
+                onNavigate={(ws) => setActiveWorkspace(ws as AppWorkspace)}
+                storyboardCount={gallery.storyboardIds.length}
               />
             </div>
           )}
 
 
-          {/* ────── WORKSPACE: STORYBOARD ────── */}
-          {activeWorkspace === "storyboard" && (
-            <div className="absolute inset-0 z-0 bg-black flex h-full">
-              {gallery.storyboardIds.length > 0 ? (
-                <div className="w-full h-full p-6 pb-32 overflow-y-auto">
-                  <StoryboardView />
-                </div>
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center -mt-10 animate-in zoom-in duration-700">
-                  <h2 className="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-white/20 mb-4 tracking-tighter text-center leading-none">
-                    DIRECT
-                    <br />
-                    YOUR FILM
-                  </h2>
-                  <p className="text-zinc-500 text-center max-w-md text-base font-light tracking-wide mb-8">
-                    Collect your best generations to build sequences, visual stories, and content campaigns.
-                  </p>
-
-                  {/* Step indicators */}
-                  <div className="flex items-center gap-3 mb-8 text-xs font-jet">
-                    {['1. Generate images', '2. Add to Storyboard', '3. Export grid'].map((step, i, arr) => (
-                      <React.Fragment key={step}>
-                        <span className="px-3 py-1.5 rounded-lg" style={{ background: '#161110', border: '1px solid #2A1F1C', color: '#8C7570' }}>{step}</span>
-                        {i < arr.length - 1 && <span style={{ color: '#2A1F1C' }}>→</span>}
-                      </React.Fragment>
-                    ))}
-                  </div>
-
-                  {/* CTA buttons */}
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setActiveWorkspace('director')}
-                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] active:scale-[0.97]"
-                      style={{ background: 'linear-gradient(135deg, #FF5C35, #FFB347)', boxShadow: '0 4px 24px rgba(255,92,53,0.35)' }}
-                    >
-                      Open Director
-                    </button>
-                    <button
-                      onClick={() => setActiveWorkspace('generate')}
-                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-sm transition-all hover:scale-[1.02]"
-                      style={{ color: '#B8A9A5', border: '1px solid #2A1F1C' }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,92,53,0.3)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = '#2A1F1C'; }}
-                    >
-                      Open Freestyle
-                    </button>
-                  </div>
-                </div>
-              )}
+          {/* ────── WORKSPACE: TOOLS ────── */}
+          {activeWorkspace === "tools" && (
+            <div className="absolute inset-0 z-0 overflow-hidden">
+              <ToolsPage
+                onTryOn={(file) => { const item = fileToContent(file); setTryOnItem(item); }}
+                onFaceSwap={(file) => { const item = fileToContent(file); setFaceSwapItem(item); }}
+                onRelight={(file) => { const item = fileToContent(file); setRelightItem(item); }}
+                onSkinEnhance={(file) => { const item = fileToContent(file); setSkinEnhanceItem(item); }}
+                onInpaint={(file) => { const item = fileToContent(file); setInpaintItem(item); }}
+                onUpscale={(file) => { const item = fileToContent(file); handleUpscale(item); }}
+                onPoseChange={(file) => {
+                  const item = fileToContent(file);
+                  form.setBaseImageForEdit(file);
+                  form.setActiveMode("edit");
+                  setActiveWorkspace("create");
+                }}
+              />
             </div>
           )}
 
@@ -1465,7 +1405,7 @@ const AppInner: React.FC = () => {
             onClose={() => setShowWelcome(false)}
             onNavigate={(ws, mode) => {
               setActiveWorkspace(ws as AppWorkspace);
-              if (mode && ws === 'generate') form.setActiveMode(mode as any);
+              if (mode && ws === 'create') form.setActiveMode(mode as any);
             }}
           />
         )}

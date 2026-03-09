@@ -1,12 +1,15 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Plus, Trash2, Pencil, ChevronRight, X, Check, Search, Image, Users, Download, Play } from 'lucide-react';
+import { Plus, Trash2, Pencil, ChevronRight, X, Check, Search, Image, Users, Download, Play, LayoutGrid } from 'lucide-react';
 import { useCharacterLibrary } from '../contexts/CharacterLibraryContext';
 import { useGallery } from '../contexts/GalleryContext';
 import { SavedCharacter, GeneratedContent } from '../types';
+import StoryboardView from './StoryboardView';
 
 interface CharactersPageProps {
   onLoadCharacter?: (char: SavedCharacter) => void;
   onNewCharacter?: () => void;
+  onNavigate?: (ws: string) => void;
+  storyboardCount?: number;
 }
 
 // ─── Soul ID Status Badge ─────────────────────────────────────────────────────
@@ -378,9 +381,9 @@ const ImagesEmptyState: React.FC = () => (
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-type LibraryTab = 'characters' | 'images';
+type LibraryTab = 'characters' | 'images' | 'storyboard';
 
-const CharactersPage: React.FC<CharactersPageProps> = ({ onLoadCharacter, onNewCharacter }) => {
+const CharactersPage: React.FC<CharactersPageProps> = ({ onLoadCharacter, onNewCharacter, onNavigate, storyboardCount }) => {
   const { savedCharacters, deleteCharacter, renameCharacter, trainSoulId } = useCharacterLibrary();
   const { generatedHistory, deleteItem } = useGallery();
 
@@ -450,12 +453,14 @@ const CharactersPage: React.FC<CharactersPageProps> = ({ onLoadCharacter, onNewC
               Library
             </p>
             <h1 className="text-2xl font-black tracking-tight" style={{ color: '#F5EDE8' }}>
-              {activeTab === 'characters' ? 'Your Cast' : 'Your Images'}
+              {activeTab === 'characters' ? 'Your Cast' : activeTab === 'images' ? 'Your Images' : 'Your Storyboard'}
             </h1>
             <p className="text-sm mt-1" style={{ color: '#4A3A36' }}>
               {activeTab === 'characters'
                 ? 'Save face references, outfit, and identity — reuse forever.'
-                : 'All generated images and videos in one place.'}
+                : activeTab === 'images'
+                  ? 'All generated images and videos in one place.'
+                  : `${storyboardCount ?? 0} frames in your sequence`}
             </p>
           </div>
 
@@ -475,6 +480,7 @@ const CharactersPage: React.FC<CharactersPageProps> = ({ onLoadCharacter, onNewC
           {([
             { key: 'characters' as LibraryTab, label: 'Characters', icon: Users, count: savedCharacters.length },
             { key: 'images' as LibraryTab, label: 'Images', icon: Image, count: generatedHistory.length },
+            { key: 'storyboard' as LibraryTab, label: 'Storyboard', icon: LayoutGrid, count: storyboardCount ?? 0 },
           ]).map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.key;
@@ -643,6 +649,31 @@ const CharactersPage: React.FC<CharactersPageProps> = ({ onLoadCharacter, onNewC
               </div>
             )}
           </>
+        )}
+
+        {/* ══════════ STORYBOARD TAB ══════════ */}
+        {activeTab === 'storyboard' && (
+          <div className="flex-1 overflow-y-auto">
+            {(storyboardCount ?? 0) > 0 ? (
+              <div className="p-6">
+                <StoryboardView onOpenMobileMenu={() => {}} />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-64 text-center">
+                <h3 className="text-lg font-bold mb-2" style={{ color: '#F5EDE8' }}>No frames yet</h3>
+                <p className="text-sm mb-4" style={{ color: '#8C7570' }}>
+                  Generate images in Create, then add them to your storyboard
+                </p>
+                <button
+                  onClick={() => onNavigate?.('create')}
+                  className="px-5 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-[1.02]"
+                  style={{ background: 'linear-gradient(135deg, #FF5C35, #FFB347)' }}
+                >
+                  Start Creating
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
