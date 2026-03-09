@@ -16,11 +16,10 @@ import CommunityFeed from "./CommunityFeed";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type AppWorkspace =
-  | "explore"
-  | "generate"
-  | "director"
+  | "home"
+  | "create"
   | "characters"
-  | "storyboard"
+  | "tools"
   | "pricing"
   | "profile";
 
@@ -32,45 +31,35 @@ interface ExplorePageProps {
 
 const FEATURES = [
   {
-    id: "generate",
+    id: "create",
     icon: <Sparkles className="w-5 h-5" />,
-    title: "Freestyle",
-    subtitle: "Quick AI generation",
+    title: "Create",
+    subtitle: "AI image & video generation",
     description:
-      "FLUX Kontext, Gemini Flash, GPT Image 1.5, Ideogram V3 — switch instantly and compare results.",
-    workspace: "generate" as AppWorkspace,
+      "10+ engines — NB2, FLUX Kontext, GPT Image, Seedream. Add face, outfit, and scene for character consistency.",
+    workspace: "create" as AppWorkspace,
     mode: "create",
     accent: "#FF5C35",
   },
   {
-    id: "director",
-    icon: <Users className="w-5 h-5" />,
-    title: "Director Studio",
-    subtitle: "Consistent characters",
+    id: "tools",
+    icon: <Zap className="w-5 h-5" />,
+    title: "AI Tools",
+    subtitle: "Try-On, Face Swap & more",
     description:
-      "Upload face references, define outfits and characteristics. Save characters to your library and reuse them in every session.",
-    workspace: "director" as AppWorkspace,
+      "Upload a photo and apply 7 AI tools: Virtual Try-On, Face Swap, Relight, Skin Enhancer, Inpainting, Upscale, Pose Change.",
+    workspace: "tools" as AppWorkspace,
     accent: "#FFB347",
   },
   {
-    id: "video",
-    icon: <Film className="w-5 h-5" />,
-    title: "Video Generation",
-    subtitle: "Kling AI & Runway Gen-3",
+    id: "library",
+    icon: <Users className="w-5 h-5" />,
+    title: "Library",
+    subtitle: "Characters, images & storyboard",
     description:
-      "Turn still images into cinematic video clips with smooth motion and consistent character identity across frames.",
-    workspace: "director" as AppWorkspace,
+      "Save characters to your library, browse generated images, and plan content campaigns in the storyboard.",
+    workspace: "characters" as AppWorkspace,
     accent: "#FF7A5A",
-  },
-  {
-    id: "storyboard",
-    icon: <Zap className="w-5 h-5" />,
-    title: "Storyboard",
-    subtitle: "Plan your campaigns",
-    description:
-      "Collect generated images and videos into narrative sequences. Build complete content campaigns, frame by frame.",
-    workspace: "storyboard" as AppWorkspace,
-    accent: "#FFCA7A",
   },
 ];
 
@@ -155,7 +144,7 @@ const ExplorePage: React.FC<ExplorePageProps> = ({ onNavigate }) => {
 
             <div className="mt-7 flex items-center gap-3">
               <button
-                onClick={() => onNavigate("generate", "create")}
+                onClick={() => onNavigate("create", "create")}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white active:scale-[0.97] transition-transform hover:scale-[1.02]"
                 style={{
                   background: "linear-gradient(135deg, #FF5C35, #FFB347)",
@@ -217,7 +206,7 @@ const ExplorePage: React.FC<ExplorePageProps> = ({ onNavigate }) => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {FEATURES.map((feat) => (
             <FeatureCard key={feat.id} feature={feat} onNavigate={onNavigate} />
           ))}
@@ -243,13 +232,13 @@ const ExplorePage: React.FC<ExplorePageProps> = ({ onNavigate }) => {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
           {[
-            { icon: '👗', name: 'Virtual Try-On', desc: 'Try clothes on your character', nav: 'director' as AppWorkspace },
-            { icon: '🎭', name: 'Face Swap', desc: 'Put any face on any photo', nav: 'director' as AppWorkspace },
-            { icon: '💡', name: 'Relight', desc: 'Change the lighting of any photo', nav: 'director' as AppWorkspace },
-            { icon: '✨', name: 'Skin Enhancer', desc: 'Professional skin retouching', nav: 'director' as AppWorkspace },
-            { icon: '🖌️', name: 'Inpainting', desc: 'Edit specific areas of your image', nav: 'director' as AppWorkspace },
-            { icon: '🔍', name: 'Upscale 4K', desc: 'Enhance resolution to 4K', nav: 'director' as AppWorkspace },
-            { icon: '🧍', name: 'Pose Change', desc: "Change your character's pose", nav: 'director' as AppWorkspace },
+            { icon: '👗', name: 'Virtual Try-On', desc: 'Try clothes on your character', nav: 'tools' as AppWorkspace },
+            { icon: '🎭', name: 'Face Swap', desc: 'Put any face on any photo', nav: 'tools' as AppWorkspace },
+            { icon: '💡', name: 'Relight', desc: 'Change the lighting of any photo', nav: 'tools' as AppWorkspace },
+            { icon: '✨', name: 'Skin Enhancer', desc: 'Professional skin retouching', nav: 'tools' as AppWorkspace },
+            { icon: '🖌️', name: 'Inpainting', desc: 'Edit specific areas of your image', nav: 'tools' as AppWorkspace },
+            { icon: '🔍', name: 'Upscale 4K', desc: 'Enhance resolution to 4K', nav: 'tools' as AppWorkspace },
+            { icon: '🧍', name: 'Pose Change', desc: "Change your character's pose", nav: 'tools' as AppWorkspace },
           ].map((tool) => (
             <button
               key={tool.name}
@@ -304,7 +293,7 @@ const ExplorePage: React.FC<ExplorePageProps> = ({ onNavigate }) => {
               </p>
             </div>
             <button
-              onClick={() => onNavigate("generate", "create")}
+              onClick={() => onNavigate("create", "create")}
               className="flex items-center gap-1 text-xs transition-colors rounded-full px-3 py-1.5"
               style={{ color: "#6B5A56", border: "1px solid #2A1F1C" }}
               onMouseEnter={(e) => {
@@ -326,7 +315,7 @@ const ExplorePage: React.FC<ExplorePageProps> = ({ onNavigate }) => {
             {realImages.map((item, idx) => (
               <button
                 key={item.id}
-                onClick={() => onNavigate("generate", "create")}
+                onClick={() => onNavigate("create", "create")}
                 className="block w-full mb-2 break-inside-avoid overflow-hidden rounded-xl group relative"
               >
                 <img
@@ -369,7 +358,7 @@ const ExplorePage: React.FC<ExplorePageProps> = ({ onNavigate }) => {
 
           <div className="flex-shrink-0">
             <button
-              onClick={() => onNavigate("director")}
+              onClick={() => onNavigate("create")}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white active:scale-[0.97] hover:scale-[1.02] transition-transform"
               style={{
                 background: "linear-gradient(135deg, #FF5C35, #FFB347)",
@@ -377,8 +366,8 @@ const ExplorePage: React.FC<ExplorePageProps> = ({ onNavigate }) => {
                 fontFamily: "var(--font-display)",
               }}
             >
-              <Users className="w-4 h-4" />
-              Open Director
+              <Sparkles className="w-4 h-4" />
+              Start Creating
             </button>
           </div>
         </div>
@@ -475,7 +464,7 @@ const ExplorePage: React.FC<ExplorePageProps> = ({ onNavigate }) => {
             Start free. No credit card required.
           </p>
           <button
-            onClick={() => onNavigate("director")}
+            onClick={() => onNavigate("create")}
             className="mt-6 relative z-10 inline-flex items-center gap-2 px-7 py-3 rounded-xl font-bold text-sm transition-all hover:scale-[1.03] active:scale-[0.97]"
             style={{ background: '#fff', color: '#0D0A0A', fontFamily: 'var(--font-display)', boxShadow: '0 4px 24px rgba(0,0,0,0.2)' }}
           >
@@ -548,7 +537,7 @@ const MasonryPreview: React.FC<{
       {/* CTA overlay on last cell if no images */}
       {!images && (
         <button
-          onClick={() => onNavigate("generate", "create")}
+          onClick={() => onNavigate("create", "create")}
           className="absolute inset-0 flex items-center justify-center"
           style={{ background: "rgba(13,10,10,0)" }}
         />
