@@ -1062,7 +1062,7 @@ const AppInner: React.FC = () => {
                     color: sub.isUnlimited ? '#B8A9A5' : sub.credits < 20 ? '#EF4444' : sub.credits < 100 ? '#F59E0B' : '#B8A9A5',
                     animation: !sub.isUnlimited && sub.credits < 20 ? 'pulse 2s infinite' : undefined,
                   }}>
-                    {sub.isUnlimited ? '∞' : sub.credits.toLocaleString('en-US')}
+                    {sub.isUnlimited ? '∞' : sub.profileLoaded ? sub.credits.toLocaleString('en-US') : '…'}
                   </span>
                   {/* Credits dropdown */}
                   <div
