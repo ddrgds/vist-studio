@@ -110,7 +110,7 @@ const TagEditor: React.FC<TagEditorProps> = ({ item, onClose }) => {
         </div>
 
         {/* Preview */}
-        <img src={item.url} alt="preview" className="w-16 h-16 rounded-lg object-cover border border-zinc-700" />
+        <img src={item.url} alt="preview" className="w-16 h-16 rounded-lg object-cover border border-zinc-700" loading="lazy" />
 
         {/* Tag input */}
         <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-2 min-h-[56px] flex flex-wrap gap-1.5 cursor-text focus-within:border-purple-500 transition-colors">
@@ -461,6 +461,7 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
               src={item.url}
               alt={item.type === 'edit' ? 'Edited image' : 'Generated image'}
               className="w-full h-full object-cover cursor-pointer"
+              loading="lazy"
               onError={() => setImgError(true)}
             />
           )}

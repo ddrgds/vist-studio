@@ -631,7 +631,7 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
         )}
 
         {/* Main prompt row */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 relative z-10">
           {/* Reference image button */}
           <button
             onClick={() => refInputRef.current?.click()}

@@ -93,6 +93,18 @@ const AppInner: React.FC = () => {
   const profileCtx = useProfile();
   const sub = useSubscription();
 
+  // Cache last known credits so the badge doesn't flash "0" / "..." during reloads
+  const lastCreditsRef = useRef<{ text: string; raw: number } | null>(null);
+  if (sub.profileLoaded && !sub.isUnlimited) {
+    lastCreditsRef.current = { text: sub.credits.toLocaleString('en-US'), raw: sub.credits };
+  }
+  const displayCredits = sub.isUnlimited
+    ? '∞'
+    : sub.profileLoaded
+      ? sub.credits.toLocaleString('en-US')
+      : lastCreditsRef.current?.text ?? '…';
+  const displayCreditsRaw = sub.isUnlimited ? 999999 : sub.profileLoaded ? sub.credits : lastCreditsRef.current?.raw ?? 0;
+
   // ─── Onboarding ────────────────────────────────────────────────────────
   const [showWelcome, setShowWelcome] = useState(() => {
     return !localStorage.getItem(ONBOARDING_KEY);
@@ -1059,10 +1071,10 @@ const AppInner: React.FC = () => {
                   onClick={() => setActiveWorkspace('pricing')}>
                   <span style={{ color: '#FFB347' }}>⚡</span>
                   <span style={{
-                    color: sub.isUnlimited ? '#B8A9A5' : sub.credits < 20 ? '#EF4444' : sub.credits < 100 ? '#F59E0B' : '#B8A9A5',
-                    animation: !sub.isUnlimited && sub.credits < 20 ? 'pulse 2s infinite' : undefined,
+                    color: sub.isUnlimited ? '#B8A9A5' : displayCreditsRaw < 20 ? '#EF4444' : displayCreditsRaw < 100 ? '#F59E0B' : '#B8A9A5',
+                    animation: !sub.isUnlimited && displayCreditsRaw < 20 ? 'pulse 2s infinite' : undefined,
                   }}>
-                    {sub.isUnlimited ? '∞' : sub.profileLoaded ? sub.credits.toLocaleString('en-US') : '…'}
+                    {displayCredits}
                   </span>
                   {/* Credits dropdown */}
                   <div
@@ -1071,10 +1083,10 @@ const AppInner: React.FC = () => {
                   >
                     <div className="px-3 py-2.5 space-y-1.5">
                       <div className="text-[11px]" style={{ color: '#F5EDE8' }}>
-                        {sub.isUnlimited ? 'Unlimited credits' : `${sub.credits.toLocaleString('en-US')} credits available`}
+                        {sub.isUnlimited ? 'Unlimited credits' : `${displayCredits} credits available`}
                       </div>
                       <div className="text-[10px]" style={{ color: '#4A3A36' }}>
-                        {sub.profileLoaded
+                        {(sub.profileLoaded || lastCreditsRef.current)
                           ? `${sub.plan === 'starter' ? '50' : sub.plan === 'pro' ? '500' : sub.plan === 'studio' ? '1,500' : '8,000'} credits/mo included in ${sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1)}`
                           : 'Loading plan info...'}
                       </div>
@@ -1183,7 +1195,7 @@ const AppInner: React.FC = () => {
             ), label: 'Library' },
             { ws: 'storyboard' as const,  icon: (
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            ), label: 'Board' },
+            ), label: 'Story' },
             { ws: 'pricing' as const,  icon: (
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
             ), label: 'Plans' },
@@ -1207,7 +1219,7 @@ const AppInner: React.FC = () => {
         </nav>
 
         {/* ─── Workspace Router Container ─── */}
-        <div className="relative flex-1 w-full h-[calc(100vh-3.5rem)] overflow-hidden transition-opacity duration-300">
+        <div className="relative flex-1 w-full h-[calc(100vh-4rem-3.5rem)] lg:h-[calc(100vh-3.5rem)] overflow-hidden transition-opacity duration-300">
           {/* ────── WORKSPACE: EXPLORE ────── */}
           {activeWorkspace === "explore" && (
             <div className="absolute inset-0 z-0 overflow-hidden">

@@ -899,7 +899,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
       {/* ─── Mobile overlay backdrop ─── */}
       {showMobilePanel && (
         <div
-          className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+          className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
           onClick={() => setShowMobilePanel(false)}
         />
       )}
@@ -907,7 +907,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
       {/* ─── Mobile Setup FAB ─── */}
       {!showMobilePanel && (
         <button
-          className="md:hidden fixed bottom-20 left-4 z-30 flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-full text-[12px] font-semibold text-white shadow-lg"
+          className="lg:hidden fixed bottom-20 left-4 z-30 flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-full text-[12px] font-semibold text-white shadow-lg"
           style={{ background: 'linear-gradient(135deg,#FF5C35,#FFB347)', boxShadow: '0 4px 20px rgba(255,92,53,0.4)' }}
           onClick={() => setShowMobilePanel(true)}
         >
@@ -925,13 +925,13 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
           'fixed bottom-0 left-0 right-0 z-50 max-h-[85vh] rounded-t-2xl border-t',
           showMobilePanel ? 'translate-y-0' : 'translate-y-full',
           // Desktop: left sidebar (override mobile styles)
-          'md:relative md:bottom-auto md:left-auto md:right-auto md:z-auto',
-          'md:w-[300px] md:flex-none md:max-h-full md:rounded-none md:border-t-0 md:border-r',
-          'md:translate-y-0 md:bg-zinc-950/80',
+          'lg:relative lg:bottom-auto lg:left-auto lg:right-auto lg:z-auto',
+          'lg:w-[300px] lg:flex-none lg:max-h-full lg:rounded-none lg:border-t-0 lg:border-r',
+          'lg:translate-y-0 lg:bg-zinc-950/80',
         ].join(' ')}
       >
         {/* Mobile drag handle + close (hidden on desktop) */}
-        <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-zinc-800/40 shrink-0">
+        <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-zinc-800/40 shrink-0">
           <div className="w-8 h-1 rounded-full bg-zinc-700 mx-auto absolute left-1/2 -translate-x-1/2" />
           <span className="text-[12px] font-semibold" style={{ color: '#B8A9A5' }}>
             Setup
@@ -939,6 +939,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
           <button
             onClick={() => setShowMobilePanel(false)}
             className="opacity-50 hover:opacity-100 transition-opacity"
+            aria-label="Close setup panel"
           >
             <X className="w-4 h-4 text-zinc-400" />
           </button>
@@ -1001,7 +1002,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                       >
                         <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-zinc-800 group-hover:border-zinc-500 transition-colors bg-zinc-900 flex-none">
                           {char.thumbnail ? (
-                            <img src={char.thumbnail} alt={char.name} className="w-full h-full object-cover" />
+                            <img src={char.thumbnail} alt={char.name} className="w-full h-full object-cover" loading="lazy" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-zinc-500 text-[12px] font-bold">
                               {char.name.charAt(0).toUpperCase()}
@@ -1087,6 +1088,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                         <button
                           onClick={() => setSavingImages(prev => prev.filter((_, idx) => idx !== i))}
                           className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-zinc-950 border border-zinc-700 flex items-center justify-center"
+                          aria-label="Remove image"
                         >
                           <X className="w-2 h-2 text-zinc-400" />
                         </button>
@@ -1144,7 +1146,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                             onClick={() => handleSavingGalleryPick(item)}
                             className="aspect-square rounded-lg overflow-hidden border border-zinc-800 hover:border-zinc-500 transition-all"
                           >
-                            <img src={item.url} className="w-full h-full object-cover" alt="" />
+                            <img src={item.url} className="w-full h-full object-cover" alt="" loading="lazy" />
                           </button>
                         ))
                       )}
@@ -1174,6 +1176,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                     <button
                       onClick={() => { setIsSavingMode(false); setSavingName(''); setSavingImages([]); setShowSavingGalleryPicker(false); }}
                       className="p-1.5 rounded-xl hover:bg-zinc-900 text-zinc-600 hover:text-zinc-400 transition-colors"
+                      aria-label="Cancel saving"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -1740,6 +1743,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                 <button
                   onClick={() => form.setPhotoSessionCount(Math.max(2, form.photoSessionCount - 1))}
                   className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white hover:border-zinc-600 transition-all"
+                  aria-label="Decrease photo count"
                 >
                   <Minus className="w-3 h-3" />
                 </button>
@@ -1750,6 +1754,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                 <button
                   onClick={() => form.setPhotoSessionCount(Math.min(selectedPresets.size > 0 ? form.photoSessionAngles.length : 8, form.photoSessionCount + 1))}
                   className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white hover:border-zinc-600 transition-all"
+                  aria-label="Increase photo count"
                 >
                   <Plus className="w-3 h-3" />
                 </button>
@@ -1913,6 +1918,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                       <button
                         onClick={() => form.setAiEditReferenceImages((prev) => prev.filter((_, j) => j !== i))}
                         className="absolute inset-0 bg-black/0 group-hover:bg-black/50 flex items-center justify-center transition-colors"
+                        aria-label="Remove reference image"
                       >
                         <X className="w-3 h-3 text-white opacity-0 group-hover:opacity-100" />
                       </button>
@@ -2008,6 +2014,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
             <button
               onClick={() => { setLocalError(null); gallery.setError(null); }}
               className="text-red-500 hover:text-red-300 transition-colors shrink-0"
+              aria-label="Dismiss error"
             >
               <X className="w-3 h-3" />
             </button>
@@ -2146,7 +2153,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
       {/* ─── Mobile right panel backdrop ─── */}
       {showMobileRight && (
         <div
-          className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+          className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
           onClick={() => setShowMobileRight(false)}
         />
       )}
@@ -2154,7 +2161,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
       {/* ─── Mobile Shot FAB (right panel toggle) ─── */}
       {!showMobileRight && !showMobilePanel && (
         <button
-          className="md:hidden fixed bottom-20 right-4 z-30 flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-full text-[12px] font-semibold text-white shadow-lg"
+          className="lg:hidden fixed bottom-20 right-4 z-30 flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-full text-[12px] font-semibold text-white shadow-lg"
           style={{ background: '#1A1210', border: '1px solid #2A1F1C', boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}
           onClick={() => setShowMobileRight(true)}
         >
@@ -2172,13 +2179,13 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
           'fixed bottom-0 left-0 right-0 z-50 max-h-[85vh] rounded-t-2xl border-t',
           showMobileRight ? 'translate-y-0' : 'translate-y-full',
           // Desktop: right sidebar
-          'md:relative md:bottom-auto md:left-auto md:right-auto md:z-auto',
-          'md:w-[260px] md:flex-none md:max-h-full md:rounded-none md:border-t-0 md:border-l',
-          'md:translate-y-0 md:bg-zinc-950/80',
+          'lg:relative lg:bottom-auto lg:left-auto lg:right-auto lg:z-auto',
+          'lg:w-[260px] lg:flex-none lg:max-h-full lg:rounded-none lg:border-t-0 lg:border-l',
+          'lg:translate-y-0 lg:bg-zinc-950/80',
         ].join(' ')}
       >
         {/* Mobile drag handle + close (hidden on desktop) */}
-        <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-zinc-800/40 shrink-0">
+        <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-zinc-800/40 shrink-0">
           <div className="w-8 h-1 rounded-full bg-zinc-700 mx-auto absolute left-1/2 -translate-x-1/2" />
           <span className="text-[12px] font-semibold" style={{ color: '#B8A9A5' }}>
             Shot Settings
@@ -2186,6 +2193,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
           <button
             onClick={() => setShowMobileRight(false)}
             className="opacity-50 hover:opacity-100 transition-opacity"
+            aria-label="Close shot settings panel"
           >
             <X className="w-4 h-4 text-zinc-400" />
           </button>
@@ -2347,18 +2355,18 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
               {studioMode === "create" ? (
                 <>
                   <button onClick={() => form.setNumberOfImages(Math.max(1, form.numberOfImages - 1))}
-                    className="text-zinc-400 hover:text-white transition-colors"><Minus className="w-3 h-3" /></button>
+                    className="text-zinc-400 hover:text-white transition-colors" aria-label="Decrease variations"><Minus className="w-3 h-3" /></button>
                   <span className="text-xs text-zinc-200 w-4 text-center">{form.numberOfImages}</span>
                   <button onClick={() => form.setNumberOfImages(Math.min(4, form.numberOfImages + 1))}
-                    className="text-zinc-400 hover:text-white transition-colors"><Plus className="w-3 h-3" /></button>
+                    className="text-zinc-400 hover:text-white transition-colors" aria-label="Increase variations"><Plus className="w-3 h-3" /></button>
                 </>
               ) : (
                 <>
                   <button onClick={() => form.setEditNumberOfImages(Math.max(1, form.editNumberOfImages - 1))}
-                    className="text-zinc-400 hover:text-white transition-colors"><Minus className="w-3 h-3" /></button>
+                    className="text-zinc-400 hover:text-white transition-colors" aria-label="Decrease variations"><Minus className="w-3 h-3" /></button>
                   <span className="text-xs text-zinc-200 w-4 text-center">{form.editNumberOfImages}</span>
                   <button onClick={() => form.setEditNumberOfImages(Math.min(4, form.editNumberOfImages + 1))}
-                    className="text-zinc-400 hover:text-white transition-colors"><Plus className="w-3 h-3" /></button>
+                    className="text-zinc-400 hover:text-white transition-colors" aria-label="Increase variations"><Plus className="w-3 h-3" /></button>
                 </>
               )}
             </div>
@@ -2413,6 +2421,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
             <button
               onClick={dismissQuickStart}
               className="absolute top-4 right-4 opacity-40 hover:opacity-80 transition-opacity"
+              aria-label="Close quick start"
             >
               <X className="w-4 h-4 text-zinc-400" />
             </button>
