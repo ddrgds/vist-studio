@@ -1278,7 +1278,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                   <div className="flex-1 text-left min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-[12px] font-semibold text-white truncate">
-                        {form.aiProvider === AIProvider.Auto ? 'Auto' : activeSubLabel}
+                        {form.aiProvider === AIProvider.Auto ? 'Auto' : activeSubLabel.split(' — ')[0]}
                       </span>
                       <span className="text-[9px] font-jet font-bold px-1.5 py-px rounded-full flex-none"
                         style={{ background: 'rgba(255,92,53,0.12)', color: '#FF5C35' }}>
@@ -1297,7 +1297,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                     <span className="text-[10px] block truncate" style={{ color: '#8C7570' }}>
                       {form.aiProvider === AIProvider.Auto
                         ? 'Best engine picked automatically'
-                        : providerChips.find(c => c.id === form.aiProvider)?.benefit ?? ''}
+                        : activeSubLabel.split(' — ')[1] ?? providerChips.find(c => c.id === form.aiProvider)?.benefit ?? ''}
                     </span>
                   </div>
                   <span className="text-[10px] font-medium flex-none" style={{ color: '#FF5C35' }}>
