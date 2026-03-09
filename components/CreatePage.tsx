@@ -19,6 +19,8 @@ import {
   MoreVertical,
   Pencil,
   Move,
+  GitCompareArrows,
+  Check,
 } from "lucide-react";
 import AutocompleteInput from "./AutocompleteInput";
 import CharacteristicsInput from "./CharacteristicsInput";
@@ -507,6 +509,29 @@ const CreatePage: React.FC<CreatePageProps> = ({
   const [aiEditTarget, setAiEditTarget] = useState<GeneratedContent | null>(null);
   const [aiEditPrompt, setAiEditPrompt] = useState('');
 
+  // Task 10: Battle mode
+  const [battleMode, setBattleMode] = useState(false);
+  const [battleEngines, setBattleEngines] = useState<Set<string>>(new Set());
+  const [battleResults, setBattleResults] = useState<GeneratedContent[]>([]);
+  const [showBattleSelector, setShowBattleSelector] = useState(false);
+
+  // Task 11: Selection mode
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+    setIsSelectionMode(false);
+  };
+
   // Task 7: Gallery filter/sort
   const [filterType, setFilterType] = useState<'all' | 'images' | 'video' | 'favorites'>('all');
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
@@ -778,6 +803,60 @@ const CreatePage: React.FC<CreatePageProps> = ({
               </div>
             )}
 
+            {/* Battle results */}
+            {battleResults.length > 0 && (
+              <div className="p-3" style={{ borderBottom: '1px solid #2A1F1C' }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <GitCompareArrows className="w-4 h-4" style={{ color: '#22D3EE' }} />
+                  <span className="text-xs font-bold" style={{ color: '#22D3EE' }}>Battle Results</span>
+                  <button onClick={() => setBattleResults([])} className="ml-auto text-[10px] transition-colors" style={{ color: '#4A3A36' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#B8A9A5'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#4A3A36'; }}>
+                    Clear
+                  </button>
+                </div>
+                <div className={`grid gap-2 ${battleResults.length <= 2 ? 'grid-cols-2' : battleResults.length === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                  {battleResults.map(item => (
+                    <div key={item.id} className="relative rounded-xl overflow-hidden group cursor-pointer" onClick={() => setLightboxItem(item)}>
+                      <img src={item.url} alt="" className="w-full" loading="lazy" />
+                      <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
+                        <span className="text-[9px] font-jet font-bold" style={{ color: '#22D3EE' }}>
+                          {item.aiProvider}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Selection batch toolbar */}
+            {isSelectionMode && (
+              <div className="sticky top-0 z-30 flex items-center gap-2 px-3 py-2" style={{ background: 'rgba(13,10,10,0.95)', borderBottom: '1px solid #2A1F1C' }}>
+                <span className="text-xs font-semibold text-white tabular-nums">{selectedIds.size} selected</span>
+                <button onClick={clearSelection} className="text-[11px] underline underline-offset-2 transition-colors" style={{ color: '#6B5A56' }}>Clear</button>
+                <div className="flex-1" />
+                {selectedIds.size === 2 && (
+                  <button onClick={() => {
+                    const items = filteredItems.filter(i => selectedIds.has(i.id));
+                    if (items.length === 2) { setCompareItems([items[0], items[1]]); clearSelection(); }
+                  }}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all"
+                    style={{ background: 'rgba(34,211,238,0.15)', border: '1px solid rgba(34,211,238,0.3)', color: '#22D3EE' }}>
+                    <GitCompareArrows className="w-3 h-3" /> Compare
+                  </button>
+                )}
+                <button onClick={() => {
+                  filteredItems.filter(i => selectedIds.has(i.id)).forEach(i => onDownload(i));
+                  clearSelection();
+                }}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all"
+                  style={{ background: '#1A1210', border: '1px solid #2A1F1C', color: '#D4C8C4' }}>
+                  <Download className="w-3 h-3" /> Download {selectedIds.size}
+                </button>
+              </div>
+            )}
+
             {/* Filter bar */}
             <div className="sticky top-0 z-20 flex items-center gap-1.5 px-3 py-2" style={{ background: 'rgba(13,10,10,0.92)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #2A1F1C' }}>
               {(['all', 'images', 'video', 'favorites'] as const).map((type) => {
@@ -828,6 +907,25 @@ const CreatePage: React.FC<CreatePageProps> = ({
                     <img src={item.url} alt="" className="w-full block" loading="lazy" />
                   )}
 
+                  {/* Selection checkbox */}
+                  <div className={`absolute top-1 left-1 z-20 transition-all ${isSelectionMode ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                    style={{ ...(isSelectionMode ? {} : { transitionDelay: '0.1s' }) }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!isSelectionMode) setIsSelectionMode(true);
+                        toggleSelect(item.id);
+                      }}
+                      className="w-6 h-6 rounded-full border flex items-center justify-center transition-colors shadow-lg"
+                      style={selectedIds.has(item.id)
+                        ? { background: '#22D3EE', borderColor: '#22D3EE' }
+                        : { background: 'rgba(0,0,0,0.6)', borderColor: 'rgba(255,255,255,0.4)' }
+                      }
+                    >
+                      {selectedIds.has(item.id) && <Check className="w-3 h-3 text-black" />}
+                    </button>
+                  </div>
+
                   {/* Engine badge — colored by provider */}
                   {item.aiProvider && (() => {
                     const badgeMap: Record<string, { bg: string; color: string; label: string }> = {
@@ -842,8 +940,8 @@ const CreatePage: React.FC<CreatePageProps> = ({
                     const b = badgeMap[item.aiProvider];
                     if (!b) return null;
                     return (
-                      <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded text-[7px] font-jet font-bold"
-                        style={{ background: b.bg, color: b.color }}>
+                      <div className={`absolute top-1 z-10 px-1.5 py-0.5 rounded text-[7px] font-jet font-bold ${isSelectionMode || selectedIds.has(item.id) ? 'left-8' : 'left-1'}`}
+                        style={{ background: b.bg, color: b.color, transition: 'left 0.15s ease' }}>
                         {b.label}
                       </div>
                     );
@@ -1324,6 +1422,62 @@ const CreatePage: React.FC<CreatePageProps> = ({
               />
 
               <div className="flex-1" />
+
+              {/* Battle button */}
+              <div className="relative flex-none">
+                <button
+                  onClick={() => setShowBattleSelector(!showBattleSelector)}
+                  className="flex items-center gap-1 px-3 py-2 rounded-xl text-[11px] font-medium transition-all"
+                  style={{
+                    background: battleMode ? 'rgba(34,211,238,0.15)' : 'transparent',
+                    border: `1px solid ${battleMode ? '#22D3EE' : '#2A1F1C'}`,
+                    color: battleMode ? '#22D3EE' : '#6B5A56'
+                  }}
+                >
+                  <GitCompareArrows className="w-3.5 h-3.5" />
+                  Battle
+                </button>
+
+                {/* Battle engine selector popover */}
+                {showBattleSelector && (
+                  <div className="absolute bottom-full mb-2 right-0 p-3 rounded-xl w-64 z-50" style={{ background: '#111010', border: '1px solid #2A1F1C' }}>
+                    <div className="text-[10px] font-jet uppercase tracking-wider mb-2" style={{ color: '#22D3EE' }}>
+                      Select 2-4 engines to compare
+                    </div>
+                    <div className="max-h-48 overflow-y-auto custom-scrollbar">
+                      {ALL_MODELS.filter(m => m.section !== 'video').map(m => (
+                        <label key={m.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-colors"
+                          style={{ color: battleEngines.has(m.id) ? '#22D3EE' : '#6B5A56' }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(34,211,238,0.04)'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
+                          <input type="checkbox" checked={battleEngines.has(m.id)}
+                            onChange={() => {
+                              const next = new Set(battleEngines);
+                              if (next.has(m.id)) next.delete(m.id);
+                              else if (next.size < 4) next.add(m.id);
+                              setBattleEngines(next);
+                            }}
+                            className="accent-cyan-400 w-3 h-3" />
+                          <span className="text-xs">{m.icon} {m.name}</span>
+                          <span className="text-[9px] ml-auto" style={{ color: '#FFB347' }}>⚡{m.creditCost}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (battleEngines.size >= 2) {
+                          setBattleMode(true);
+                          setShowBattleSelector(false);
+                        }
+                      }}
+                      disabled={battleEngines.size < 2}
+                      className="w-full mt-2 py-2 rounded-xl text-xs font-bold text-black disabled:opacity-40"
+                      style={{ background: '#22D3EE' }}>
+                      Battle ({battleEngines.size} engines)
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* Generate button */}
               <button
