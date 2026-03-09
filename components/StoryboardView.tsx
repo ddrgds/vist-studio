@@ -150,7 +150,7 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
           {/* Step-by-step guide */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-8 max-w-md mx-auto">
             {[
-              { step: '1', icon: '🎨', text: 'Generate images in Director or Freestyle' },
+              { step: '1', icon: '🎨', text: 'Generate images in Create' },
               { step: '2', icon: '⋯', text: 'Tap menu on any image → "Add to Storyboard"' },
               { step: '3', icon: '📤', text: 'Arrange frames & export as grid' },
             ].map(({ step, icon, text }) => (
@@ -164,23 +164,14 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
             ))}
           </div>
 
-          {/* CTA buttons — visible on all viewports */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          {/* CTA button */}
+          <div className="flex justify-center">
             <button
               onClick={onOpenMobileMenu}
               className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] active:scale-[0.97]"
               style={{ background: 'linear-gradient(135deg, #FF5C35, #FFB347)', boxShadow: '0 4px 24px rgba(255,92,53,0.35)' }}
             >
-              Open Director
-            </button>
-            <button
-              onClick={onOpenMobileMenu}
-              className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-sm transition-all hover:scale-[1.02]"
-              style={{ color: '#B8A9A5', border: '1px solid #2A1F1C' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,92,53,0.3)'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#2A1F1C'; }}
-            >
-              Open Freestyle
+              Open Create
             </button>
           </div>
         </div>
@@ -312,7 +303,7 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
               {/* Insert button before each frame */}
               {index === 0 && (
                 <button
-                  onClick={() => toast.info('Add images from the Director or Freestyle gallery via "Add to Storyboard"')}
+                  onClick={() => toast.info('Add images from the Create gallery via "Add to Storyboard"')}
                   className="flex-shrink-0 w-5 h-16 flex items-center justify-center rounded-md transition-all opacity-0 hover:opacity-100"
                   style={{ background: 'rgba(255,92,53,0.08)', border: '1px dashed rgba(255,92,53,0.2)' }}
                   title="Insert frame"
@@ -355,7 +346,7 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
               </button>
               {/* Insert button after each frame */}
               <button
-                onClick={() => toast.info('Add images from the Director or Freestyle gallery via "Add to Storyboard"')}
+                onClick={() => toast.info('Add images from the Create gallery via "Add to Storyboard"')}
                 className="flex-shrink-0 w-5 h-16 flex items-center justify-center rounded-md transition-all opacity-0 hover:opacity-100"
                 style={{ background: 'rgba(255,92,53,0.08)', border: '1px dashed rgba(255,92,53,0.2)' }}
                 title="Insert frame"

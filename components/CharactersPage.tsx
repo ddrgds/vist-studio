@@ -134,7 +134,7 @@ const CharacterCard: React.FC<CardProps> = ({
           </div>
         )}
 
-        {/* Hover overlay — "Open in Director" */}
+        {/* Hover overlay — "Open in Create" */}
         {onLoadCharacter && (
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end p-3"
             style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)' }}>
@@ -143,7 +143,7 @@ const CharacterCard: React.FC<CardProps> = ({
               className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02] active:scale-95"
               style={{ background: '#fff', color: '#000' }}
             >
-              Open in Director <ChevronRight className="w-3 h-3" />
+              Open in Create <ChevronRight className="w-3 h-3" />
             </button>
           </div>
         )}
@@ -253,7 +253,7 @@ const EmptyState: React.FC<{ onNewCharacter?: () => void }> = ({ onNewCharacter 
     <div>
       <h2 className="text-xl font-bold mb-2" style={{ color: '#F5EDE8' }}>No characters yet</h2>
       <p className="text-sm max-w-sm leading-relaxed" style={{ color: '#4A3A36' }}>
-        Go to Director, upload face references and fill in characteristics, then save your character to the library.
+        Go to Create, upload face references and fill in characteristics, then save your character to the library.
       </p>
     </div>
     {onNewCharacter && (
@@ -294,7 +294,7 @@ const ImageCard: React.FC<{
   const date = new Date(item.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
   const provider = item.aiProvider ?? '';
-  const source = item.source === 'generate' ? 'Freestyle' : 'Director';
+  const source = item.source === 'generate' ? 'Create' : 'Create';
 
   const handleDownload = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -373,7 +373,7 @@ const ImagesEmptyState: React.FC = () => (
     <div>
       <h2 className="text-xl font-bold mb-2" style={{ color: '#F5EDE8' }}>No images yet</h2>
       <p className="text-sm max-w-sm leading-relaxed" style={{ color: '#4A3A36' }}>
-        Generate images in Freestyle or Director — they'll appear here automatically.
+        Generate images in Create — they'll appear here automatically.
       </p>
     </div>
   </div>
@@ -716,7 +716,7 @@ const CharactersPage: React.FC<CharactersPageProps> = ({ onLoadCharacter, onNewC
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-jet px-1.5 py-0.5 rounded-full"
                   style={{ background: 'rgba(255,92,53,0.15)', color: '#FF5C35' }}>
-                  {previewItem.source === 'generate' ? 'Freestyle' : 'Director'}
+                  {previewItem.source === 'generate' ? 'Create' : 'Create'}
                 </span>
                 {previewItem.aiProvider && (
                   <span className="text-[10px] font-jet capitalize" style={{ color: 'rgba(255,255,255,0.5)' }}>
