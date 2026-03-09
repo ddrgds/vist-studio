@@ -22,8 +22,6 @@ import {
   GeminiImageModel,
   ReplicateModel,
   OpenAIModel,
-  IdeogramModel,
-  ModelsLabModel,
   VideoEngine,
   ImageSize,
   AspectRatio,
@@ -60,7 +58,7 @@ interface ModelEntry {
   icon: string;
   badge?: string;
   isVideo?: boolean;
-  section: "featured" | "other" | "nsfw" | "video";
+  section: "featured" | "other" | "video";
   creditCost: number;
   select: (form: ReturnType<typeof useForm>) => void;
   isActive: (form: ReturnType<typeof useForm>) => boolean;
@@ -74,114 +72,65 @@ const ALL_MODELS: ModelEntry[] = [
     select: (f) => { f.setAiProvider(AIProvider.Auto); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Auto,
   },
-  // ── Featured image models ──
+  // ── Featured (top 5 — best all-rounders) ──
   {
-    id: "nb2", name: "Smart & Economical", tagline: "Quick iterations, minimal cost", icon: "🍌",
+    id: "nb2", name: "Nano Banana 2", tagline: "Pro quality at Flash speed", icon: "🍌",
     badge: "TOP", section: "featured", creditCost: 2,
     select: (f) => { f.setAiProvider(AIProvider.Gemini); f.setGeminiModel(GeminiImageModel.Flash2); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Gemini && f.geminiModel === GeminiImageModel.Flash2,
   },
   {
-    id: "seedream45", name: "Photorealistic 4K", tagline: "Exceptional photorealism", icon: "📊",
-    badge: "NEW", section: "featured", creditCost: 8,
-    select: (f) => { f.setAiProvider(AIProvider.Fal); f.setFalModel(FalModel.Seedream45); f.setActiveMode("create"); },
-    isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Fal && f.falModel === FalModel.Seedream45,
-  },
-  {
-    id: "seedream50", name: "Smart Photorealistic", tagline: "Web-aware reasoning for richer scenes", icon: "📊",
+    id: "seedream50", name: "Seedream 5.0", tagline: "Intelligent visual reasoning", icon: "🧠",
     badge: "NEW", section: "featured", creditCost: 8,
     select: (f) => { f.setAiProvider(AIProvider.Fal); f.setFalModel(FalModel.Seedream50); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Fal && f.falModel === FalModel.Seedream50,
   },
   {
-    id: "gpt15", name: "Text & Detail", tagline: "Best for text, logos, fine detail", icon: "⚙️",
+    id: "gpt15", name: "GPT Image 1.5", tagline: "True-color precision rendering", icon: "⚙️",
     badge: "PREMIUM", section: "featured", creditCost: 20,
     select: (f) => { f.setAiProvider(AIProvider.OpenAI); f.setOpenaiModel(OpenAIModel.GptImage15); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.OpenAI && f.openaiModel === OpenAIModel.GptImage15,
   },
   {
-    id: "nb2-pro", name: "Maximum Quality", tagline: "Highest quality for demanding scenes", icon: "G",
-    badge: "PREMIUM", section: "featured", creditCost: 10,
-    select: (f) => { f.setAiProvider(AIProvider.Gemini); f.setGeminiModel(GeminiImageModel.Pro); f.setActiveMode("create"); },
-    isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Gemini && f.geminiModel === GeminiImageModel.Pro,
-  },
-  {
-    id: "grok-imagine", name: "Creative Fast", tagline: "Strong creative interpretation, ~4s", icon: "𝕏",
+    id: "grok-imagine", name: "Grok Imagine", tagline: "xAI creative interpretation, ~4s", icon: "𝕏",
     badge: "NEW", section: "featured", creditCost: 10,
     select: (f) => { f.setAiProvider(AIProvider.Replicate); f.setReplicateModel(ReplicateModel.GrokImagine); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Replicate && f.replicateModel === ReplicateModel.GrokImagine,
   },
-  // ── Pro engines ──
   {
-    id: "kontext-multi", name: "Face Consistent", tagline: "Keeps identity across images", icon: "⚡",
-    badge: "NEW", section: "other", creditCost: 10,
+    id: "kontext-multi", name: "FLUX Kontext", tagline: "Face-consistent identity", icon: "⚡",
+    badge: "FACE", section: "featured", creditCost: 10,
     select: (f) => { f.setAiProvider(AIProvider.Fal); f.setFalModel(FalModel.KontextMulti); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Fal && f.falModel === FalModel.KontextMulti,
   },
+  // ── All models (specialist engines) ──
   {
-    id: "kontext-max", name: "Face Consistent (Max)", tagline: "Maximum quality face consistency", icon: "⚡",
-    section: "other", creditCost: 15,
-    select: (f) => { f.setAiProvider(AIProvider.Fal); f.setFalModel(FalModel.KontextMaxMulti); f.setActiveMode("create"); },
-    isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Fal && f.falModel === FalModel.KontextMaxMulti,
+    id: "nb-pro", name: "Nano Banana Pro", tagline: "Google's flagship generation", icon: "🍌",
+    badge: "PRO", section: "other", creditCost: 10,
+    select: (f) => { f.setAiProvider(AIProvider.Gemini); f.setGeminiModel(GeminiImageModel.Pro); f.setActiveMode("create"); },
+    isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Gemini && f.geminiModel === GeminiImageModel.Pro,
   },
   {
-    id: "gen4", name: "Scene Consistent", tagline: "Character + location consistency", icon: "🎬",
-    section: "other", creditCost: 15,
-    select: (f) => { f.setAiProvider(AIProvider.Replicate); f.setReplicateModel(ReplicateModel.Gen4Image); f.setActiveMode("create"); },
-    isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Replicate && f.replicateModel === ReplicateModel.Gen4Image,
+    id: "imagen4", name: "Imagen 4", tagline: "Google's photorealistic diffusion", icon: "✨",
+    section: "other", creditCost: 10,
+    select: (f) => { f.setAiProvider(AIProvider.Gemini); f.setGeminiModel(GeminiImageModel.Imagen4); f.setActiveMode("create"); },
+    isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Gemini && f.geminiModel === GeminiImageModel.Imagen4,
   },
   {
-    id: "flux2max", name: "Max Detail", tagline: "Highest fidelity, up to 8 references", icon: "🔥",
-    section: "other", creditCost: 12,
-    select: (f) => { f.setAiProvider(AIProvider.Replicate); f.setReplicateModel(ReplicateModel.Flux2Max); f.setActiveMode("create"); },
-    isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Replicate && f.replicateModel === ReplicateModel.Flux2Max,
+    id: "seedream45", name: "Seedream 4.5", tagline: "ByteDance next-gen 4K", icon: "📊",
+    section: "other", creditCost: 8,
+    select: (f) => { f.setAiProvider(AIProvider.Fal); f.setFalModel(FalModel.Seedream45); f.setActiveMode("create"); },
+    isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Fal && f.falModel === FalModel.Seedream45,
   },
   {
-    id: "imagen4ultra", name: "Maximum Fidelity", tagline: "Most detailed output available", icon: "✨",
-    badge: "NEW", section: "other", creditCost: 20,
-    select: (f) => { f.setAiProvider(AIProvider.Gemini); f.setGeminiModel(GeminiImageModel.Imagen4Ultra); f.setActiveMode("create"); },
-    isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Gemini && f.geminiModel === GeminiImageModel.Imagen4Ultra,
+    id: "flux2pro", name: "FLUX.2 Pro", tagline: "Speed-optimized detail", icon: "🔥",
+    section: "other", creditCost: 10,
+    select: (f) => { f.setAiProvider(AIProvider.Fal); f.setFalModel(FalModel.Flux2Pro); f.setActiveMode("create"); },
+    isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Fal && f.falModel === FalModel.Flux2Pro,
   },
   {
-    id: "ideogram-v3", name: "Typography Expert", tagline: "Best-in-class text in images", icon: "💡",
-    section: "other", creditCost: 15,
-    select: (f) => { f.setAiProvider(AIProvider.Ideogram); f.setIdeogramModel(IdeogramModel.V3); f.setActiveMode("create"); },
-    isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Ideogram && f.ideogramModel === IdeogramModel.V3,
-  },
-  {
-    id: "gemini-flash", name: "Fast Generation", tagline: "Quick iterations at minimal cost", icon: "⚡",
-    section: "other", creditCost: 2,
-    select: (f) => { f.setAiProvider(AIProvider.Gemini); f.setGeminiModel(GeminiImageModel.Flash); f.setActiveMode("create"); },
-    isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Gemini && f.geminiModel === GeminiImageModel.Flash,
-  },
-  // ── ModelsLab NSFW ──
-  {
-    id: "lustify-sdxl", name: "NSFW Photoreal", tagline: "Photoreal uncensored generation", icon: "🔞",
-    badge: "NSFW", section: "nsfw", creditCost: 8,
-    select: (f) => { f.setAiProvider(AIProvider.ModelsLab); f.setModelsLabModel(ModelsLabModel.LustifySdxl); f.setActiveMode("create"); },
-    isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.ModelsLab && f.modelsLabModel === ModelsLabModel.LustifySdxl,
-  },
-  {
-    id: "nsfw-sdxl", name: "NSFW General", tagline: "General purpose uncensored", icon: "🔞",
-    badge: "NSFW", section: "nsfw", creditCost: 8,
-    select: (f) => { f.setAiProvider(AIProvider.ModelsLab); f.setModelsLabModel(ModelsLabModel.NsfwSdxl); f.setActiveMode("create"); },
-    isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.ModelsLab && f.modelsLabModel === ModelsLabModel.NsfwSdxl,
-  },
-  {
-    id: "wai-nsfw", name: "NSFW Illustrated", tagline: "Anime & illustrated style", icon: "🎌",
-    badge: "NSFW", section: "nsfw", creditCost: 8,
-    select: (f) => { f.setAiProvider(AIProvider.ModelsLab); f.setModelsLabModel(ModelsLabModel.WaiNsfw); f.setActiveMode("create"); },
-    isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.ModelsLab && f.modelsLabModel === ModelsLabModel.WaiNsfw,
-  },
-  {
-    id: "flux-nsfw", name: "NSFW FLUX", tagline: "FLUX-based uncensored", icon: "🔞",
-    badge: "NSFW", section: "nsfw", creditCost: 8,
-    select: (f) => { f.setAiProvider(AIProvider.ModelsLab); f.setModelsLabModel(ModelsLabModel.FluxNsfw); f.setActiveMode("create"); },
-    isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.ModelsLab && f.modelsLabModel === ModelsLabModel.FluxNsfw,
-  },
-  {
-    id: "z-image-turbo", name: "Budget Uncensored", tagline: "Ultra-cheap, no content filters", icon: "🈸",
-    badge: "NSFW", section: "nsfw", creditCost: 5,
+    id: "z-image", name: "Z-Image", tagline: "Instant lifelike portraits", icon: "⚡",
+    badge: "NSFW", section: "other", creditCost: 8,
     select: (f) => { f.setAiProvider(AIProvider.Fal); f.setFalModel(FalModel.ZImageTurbo); f.setActiveMode("create"); },
     isActive: (f) => f.activeMode !== "video" && f.aiProvider === AIProvider.Fal && f.falModel === FalModel.ZImageTurbo,
   },
@@ -273,13 +222,11 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
   // Credit cost for current config
   const genCreditCost = (() => {
     if (form.activeMode === 'video') return CREDIT_COSTS[form.videoEngine as string] ?? 50;
-    if (form.aiProvider === AIProvider.Auto) return 2 * form.numberOfImages; // Auto defaults to cheapest (Gemini Flash)
+    if (form.aiProvider === AIProvider.Auto) return 2 * form.numberOfImages;
     let costPerImage = 2;
     if (form.aiProvider === AIProvider.Fal) costPerImage = CREDIT_COSTS[form.falModel] ?? 10;
-    else if (form.aiProvider === AIProvider.Replicate) costPerImage = CREDIT_COSTS[form.replicateModel] ?? 15;
+    else if (form.aiProvider === AIProvider.Replicate) costPerImage = CREDIT_COSTS[form.replicateModel] ?? 10;
     else if (form.aiProvider === AIProvider.OpenAI) costPerImage = CREDIT_COSTS[form.openaiModel] ?? 20;
-    else if (form.aiProvider === AIProvider.Ideogram) costPerImage = CREDIT_COSTS[form.ideogramModel] ?? 10;
-    else if (form.aiProvider === AIProvider.ModelsLab) costPerImage = CREDIT_COSTS[form.modelsLabModel] ?? 5;
     else costPerImage = CREDIT_COSTS[form.geminiModel] ?? 2;
     return costPerImage * form.numberOfImages;
   })();
@@ -331,7 +278,6 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
     !q || m.name.toLowerCase().includes(q) || m.tagline.toLowerCase().includes(q);
   const featuredModels = ALL_MODELS.filter((m) => m.section === "featured" && filter(m));
   const otherModels = ALL_MODELS.filter((m) => m.section === "other" && filter(m));
-  const nsfwModels = ALL_MODELS.filter((m) => m.section === "nsfw" && filter(m));
   const videoModels = ALL_MODELS.filter((m) => m.section === "video" && filter(m));
 
   // Gallery items — session vs history
@@ -556,12 +502,102 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
         )}
       </div>
 
-      {/* ─── Bottom Bar ─── */}
-      <div className="flex-none border-t px-3 py-2.5 space-y-2" style={{ background: '#111010', borderColor: '#2A1F1C' }}>
-        {/* Inline controls row — engine, aspect, resolution, variations */}
-        {!isVideo && (
-          <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar">
-            {/* Engine chip */}
+      {/* ─── Centered Prompt Bar (Gemini-style) ─── */}
+      <div className="flex-none px-4 py-3" style={{ background: 'linear-gradient(to top, #0D0A0A 60%, rgba(13,10,10,0))' }}>
+        <div className="max-w-2xl mx-auto space-y-2">
+          {/* Main input container — rounded, multi-line */}
+          <div
+            ref={promptBarRef}
+            className="relative rounded-2xl transition-all"
+            style={{
+              background: 'rgba(255,255,255,0.04)',
+              border: promptShake ? '1.5px solid rgba(239,68,68,0.6)' : '1.5px solid rgba(255,255,255,0.1)',
+              animation: promptShake ? 'prompt-shake 0.4s ease-out' : undefined,
+              boxShadow: '0 2px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.02) inset',
+            }}
+          >
+            {/* Textarea area */}
+            <div className="px-4 pt-3 pb-2">
+              {isVideo ? (
+                <textarea
+                  value={form.videoPrompt}
+                  onChange={(e) => form.setVideoPrompt(e.target.value)}
+                  placeholder="Describe the motion and scene..."
+                  className="w-full bg-transparent text-[15px] text-white outline-none resize-none placeholder:text-zinc-500 font-light leading-relaxed"
+                  style={{ color: '#F5EDE8', minHeight: '72px' }}
+                  rows={3}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !isGenerating) { e.preventDefault(); handleGenerate(); } }}
+                />
+              ) : (
+                <AutocompleteInput
+                  value={form.characters[0]?.outfitDescription ?? ""}
+                  onChange={(v) => char0 && form.updateCharacter(char0.id, "outfitDescription", v)}
+                  placeholder="Describe your image..."
+                  className="w-full bg-transparent text-[15px] outline-none resize-none placeholder:text-zinc-500 font-light leading-relaxed"
+                  style={{ color: '#F5EDE8' }}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !isGenerating) { e.preventDefault(); handleGenerate(); } }}
+                />
+              )}
+            </div>
+
+            {/* Bottom row inside input: ref button + ref badge | ... | generate button */}
+            <div className="flex items-center gap-2 px-3 pb-3">
+              {/* Reference image button */}
+              <button
+                onClick={() => refInputRef.current?.click()}
+                className="flex items-center justify-center w-8 h-8 rounded-lg flex-none transition-all"
+                style={char0 && char0.modelImages.length > 0
+                  ? { background: 'rgba(255,92,53,0.12)', color: '#FF5C35' }
+                  : { background: 'rgba(255,255,255,0.06)', color: '#8C7570' }
+                }
+                title="Add reference image"
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#E8DDD9'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = char0 && char0.modelImages.length > 0 ? '#FF5C35' : '#8C7570'; }}
+              >
+                <ImagePlus className="w-4 h-4" />
+              </button>
+
+              {char0 && char0.modelImages.length > 0 && (
+                <span className="text-[9px] font-jet px-2 py-0.5 rounded-md flex-none"
+                  style={{ background: 'rgba(255,92,53,0.12)', color: '#FF5C35' }}
+                >
+                  @{char0.modelImages.length} ref
+                </span>
+              )}
+
+              <div className="flex-1" />
+
+              {/* Generate button inside input */}
+              <button
+                onClick={isGenerating ? onStopGeneration : handleGenerate}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-[0.97] flex-none text-white"
+                style={isGenerating
+                  ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)' }
+                  : promptIsEmpty && !isGenerating
+                    ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', opacity: 0.4, cursor: 'not-allowed', boxShadow: 'none' }
+                    : { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', boxShadow: '0 2px 12px rgba(255,92,53,0.3)' }
+                }
+                onMouseEnter={e => { if (!promptIsEmpty && !isGenerating) { (e.currentTarget as HTMLElement).style.filter = 'brightness(1.1)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 24px rgba(255,92,53,0.4)'; } }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.filter = ''; (e.currentTarget as HTMLElement).style.boxShadow = promptIsEmpty ? 'none' : '0 2px 12px rgba(255,92,53,0.3)'; }}
+              >
+                {isGenerating ? (
+                  <>
+                    <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                    Stop
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Generate <span className="text-[10px] font-jet opacity-80">⚡{genCreditCost}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Controls row below input — model chip, aspect ratio, settings gear */}
+          <div className="flex items-center gap-1.5 justify-center relative" ref={settingsRef}>
+            {/* Engine chip with subtle glow */}
             <button
               onClick={() => setShowSettings(!showSettings)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex-none"
@@ -576,15 +612,15 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
 
             <div className="w-px h-4 flex-none" style={{ background: '#2A1F1C' }} />
 
-            {/* Aspect ratio chips */}
-            {AR_OPTIONS.map((o) => (
+            {/* Aspect ratio pills */}
+            {!isVideo && AR_OPTIONS.map((o) => (
               <button
                 key={o.value}
                 onClick={() => form.setAspectRatio(o.value)}
-                className="px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all flex-none"
+                className="px-2 py-1 rounded-md text-[10px] font-semibold transition-all flex-none"
                 style={form.aspectRatio === o.value
                   ? { background: 'rgba(255,92,53,0.12)', color: '#FF5C35', border: '1px solid rgba(255,92,53,0.25)' }
-                  : { color: '#B8A9A5', border: '1px solid rgba(255,255,255,0.06)' }
+                  : { color: '#8C7570', border: '1px solid transparent' }
                 }
                 title={o.desc}
               >
@@ -594,117 +630,24 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
 
             <div className="w-px h-4 flex-none" style={{ background: '#2A1F1C' }} />
 
-            {/* Resolution chips */}
-            {SIZE_OPTIONS.map((o) => (
-              <button
-                key={o.value}
-                onClick={() => form.setImageSize(o.value)}
-                className="px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all flex-none"
-                style={form.imageSize === o.value
-                  ? { background: 'rgba(255,92,53,0.12)', color: '#FF5C35', border: '1px solid rgba(255,92,53,0.25)' }
-                  : { color: '#B8A9A5', border: '1px solid rgba(255,255,255,0.06)' }
-                }
-              >
-                {o.label}
-              </button>
-            ))}
-
-            <div className="w-px h-4 flex-none" style={{ background: '#2A1F1C' }} />
-
-            {/* Variations inline */}
-            <div className="flex items-center gap-1 flex-none">
-              <button onClick={() => form.setNumberOfImages(Math.max(1, form.numberOfImages - 1))}
-                className="w-5 h-5 rounded flex items-center justify-center"
-                style={{ background: 'rgba(255,255,255,0.06)', color: '#B8A9A5' }}>
-                <Minus className="w-2.5 h-2.5" />
-              </button>
-              <span className="text-[10px] font-bold w-4 text-center font-jet" style={{ color: '#E8DDD9' }}>
-                {form.numberOfImages}
-              </span>
-              <button onClick={() => form.setNumberOfImages(Math.min(4, form.numberOfImages + 1))}
-                className="w-5 h-5 rounded flex items-center justify-center"
-                style={{ background: 'rgba(255,255,255,0.06)', color: '#B8A9A5' }}>
-                <Plus className="w-2.5 h-2.5" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Main prompt row */}
-        <div className="flex items-center gap-2 relative z-10">
-          {/* Reference image button */}
-          <button
-            onClick={() => refInputRef.current?.click()}
-            className="flex items-center justify-center w-10 h-10 rounded-xl flex-none transition-all"
-            style={char0 && char0.modelImages.length > 0
-              ? { background: 'rgba(255,92,53,0.12)', border: '1px solid rgba(255,92,53,0.25)', color: '#FF5C35' }
-              : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#8C7570' }
-            }
-            title="Add reference image"
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#E8DDD9'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,92,53,0.3)'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = char0 && char0.modelImages.length > 0 ? '#FF5C35' : '#8C7570'; (e.currentTarget as HTMLElement).style.borderColor = char0 && char0.modelImages.length > 0 ? 'rgba(255,92,53,0.25)' : 'rgba(255,255,255,0.08)'; }}
-          >
-            <ImagePlus className="w-4 h-4" />
-          </button>
-
-          {/* Prompt input — wider, taller, clearer */}
-          <div
-            ref={promptBarRef}
-            className="flex-1 flex items-center rounded-xl px-4 transition-all"
-            style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: promptShake ? '1px solid rgba(239,68,68,0.6)' : '1px solid rgba(255,255,255,0.1)',
-              animation: promptShake ? 'prompt-shake 0.4s ease-out' : undefined,
-              boxShadow: '0 0 0 1px rgba(255,255,255,0.02) inset',
-            }}
-          >
-            {isVideo ? (
-              <input
-                value={form.videoPrompt}
-                onChange={(e) => form.setVideoPrompt(e.target.value)}
-                placeholder="Describe the motion and scene..."
-                className="flex-1 bg-transparent text-sm text-white outline-none py-3 font-light placeholder:text-zinc-500"
-                style={{ color: '#F5EDE8' }}
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !isGenerating) { e.preventDefault(); handleGenerate(); } }}
-              />
-            ) : (
-              <AutocompleteInput
-                value={form.characters[0]?.outfitDescription ?? ""}
-                onChange={(v) => char0 && form.updateCharacter(char0.id, "outfitDescription", v)}
-                placeholder="Describe your image..."
-                className="flex-1 bg-transparent text-sm outline-none py-3 font-light placeholder:text-zinc-500"
-                style={{ color: '#F5EDE8' }}
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !isGenerating) { e.preventDefault(); handleGenerate(); } }}
-              />
-            )}
-            {char0 && char0.modelImages.length > 0 && (
-              <span className="text-[9px] font-jet ml-2 px-2 py-0.5 rounded-md flex-none"
-                style={{ background: 'rgba(255,92,53,0.12)', color: '#FF5C35' }}
-              >
-                @{char0.modelImages.length} ref
-              </span>
-            )}
-          </div>
-
-          {/* Advanced settings */}
-          <div className="relative" ref={settingsRef}>
+            {/* Settings gear */}
             <button
               onClick={() => setShowSettings(!showSettings)}
-              className="flex items-center justify-center w-10 h-10 rounded-xl flex-none transition-all"
+              className="flex items-center justify-center w-7 h-7 rounded-lg flex-none transition-all"
               style={showSettings
-                ? { background: 'rgba(255,92,53,0.12)', border: '1px solid rgba(255,92,53,0.25)', color: '#FF5C35' }
-                : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#8C7570' }
+                ? { background: 'rgba(255,92,53,0.12)', color: '#FF5C35' }
+                : { background: 'rgba(255,255,255,0.04)', color: '#8C7570' }
               }
               title="Advanced settings"
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#E8DDD9'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = showSettings ? '#FF5C35' : '#8C7570'; }}
             >
-              <Settings className="w-4 h-4" />
+              <Settings className="w-3.5 h-3.5" />
             </button>
 
             {/* Settings popover */}
             {showSettings && (
-              <div className="absolute bottom-full mb-2 right-0 w-[340px] rounded-xl shadow-2xl overflow-hidden z-50"
+              <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-[360px] rounded-xl shadow-2xl overflow-hidden z-50"
                 style={{ background: '#111010', border: '1px solid #2A1F1C' }}
               >
                 <div className="p-3 space-y-4">
@@ -721,23 +664,59 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
                       />
                       {searchQuery && <button onClick={() => setSearchQuery("")}><X className="w-3 h-3" style={{ color: '#8C7570' }} /></button>}
                     </div>
-                    <div className="max-h-[200px] overflow-y-auto custom-scrollbar space-y-0.5">
+                    <div className="max-h-[280px] overflow-y-auto custom-scrollbar space-y-0.5">
                       {featuredModels.length > 0 && (
                         <EngineSection title="Featured" models={featuredModels} form={form}
                           onSelect={(m) => { m.select(form); setSearchQuery(""); }} />
                       )}
                       {otherModels.length > 0 && (
-                        <EngineSection title="Pro Engines" models={otherModels} form={form}
-                          onSelect={(m) => { m.select(form); setSearchQuery(""); }} />
-                      )}
-                      {nsfwModels.length > 0 && (
-                        <EngineSection title="NSFW" models={nsfwModels} form={form}
+                        <EngineSection title="All Models" models={otherModels} form={form}
                           onSelect={(m) => { m.select(form); setSearchQuery(""); }} />
                       )}
                       {videoModels.length > 0 && (
                         <EngineSection title="Video" models={videoModels} form={form}
                           onSelect={(m) => { m.select(form); setSearchQuery(""); }} />
                       )}
+                    </div>
+                  </div>
+
+                  {/* Resolution + Variations */}
+                  <div>
+                    <label className="text-[9px] font-jet font-bold uppercase tracking-widest block mb-2" style={{ color: '#8C7570' }}>Output</label>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1">
+                        <span className="text-[9px]" style={{ color: '#8C7570' }}>Size</span>
+                        {SIZE_OPTIONS.map((o) => (
+                          <button
+                            key={o.value}
+                            onClick={() => form.setImageSize(o.value)}
+                            className="px-2 py-0.5 rounded text-[10px] font-semibold transition-all"
+                            style={form.imageSize === o.value
+                              ? { background: 'rgba(255,92,53,0.12)', color: '#FF5C35' }
+                              : { color: '#8C7570' }
+                            }
+                          >
+                            {o.label}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="w-px h-4" style={{ background: '#2A1F1C' }} />
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[9px]" style={{ color: '#8C7570' }}>Qty</span>
+                        <button onClick={() => form.setNumberOfImages(Math.max(1, form.numberOfImages - 1))}
+                          className="w-5 h-5 rounded flex items-center justify-center"
+                          style={{ background: 'rgba(255,255,255,0.06)', color: '#B8A9A5' }}>
+                          <Minus className="w-2.5 h-2.5" />
+                        </button>
+                        <span className="text-[10px] font-bold w-4 text-center font-jet" style={{ color: '#E8DDD9' }}>
+                          {form.numberOfImages}
+                        </span>
+                        <button onClick={() => form.setNumberOfImages(Math.min(4, form.numberOfImages + 1))}
+                          className="w-5 h-5 rounded flex items-center justify-center"
+                          style={{ background: 'rgba(255,255,255,0.06)', color: '#B8A9A5' }}>
+                          <Plus className="w-2.5 h-2.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -786,29 +765,6 @@ const GeneratorPage: React.FC<GeneratorPageProps> = ({
               </div>
             )}
           </div>
-
-          {/* Generate button */}
-          <button
-            onClick={isGenerating ? onStopGeneration : handleGenerate}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-[0.97] flex-none text-white"
-            style={isGenerating
-              ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)' }
-              : promptIsEmpty && !isGenerating
-                ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', opacity: 0.4, cursor: 'not-allowed', boxShadow: 'none' }
-                : { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', boxShadow: '0 2px 16px rgba(255,92,53,0.3)' }
-            }
-            onMouseEnter={e => { if (!promptIsEmpty && !isGenerating) { (e.currentTarget as HTMLElement).style.filter = 'brightness(1.1)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 24px rgba(255,92,53,0.4)'; } }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.filter = ''; (e.currentTarget as HTMLElement).style.boxShadow = promptIsEmpty ? 'none' : '0 2px 16px rgba(255,92,53,0.3)'; }}
-          >
-            {isGenerating ? (
-              <>
-                <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                Stop
-              </>
-            ) : (
-              <>Generate <span className="text-[10px] font-jet opacity-80">⚡{genCreditCost}</span></>
-            )}
-          </button>
         </div>
       </div>
 

@@ -107,23 +107,21 @@ const SIZE_OPTIONS: { label: string; value: ImageSize }[] = [
 // ─── Sub-model catalogs per provider ─────────────────────────────────────────
 
 const GEMINI_SUBMODELS: { label: string; badge?: string; value: GeminiImageModel }[] = [
-  { label: "Smart & Economical — NB2",    badge: "FAST", value: GeminiImageModel.Flash2 },
-  { label: "Maximum Quality — Pro",        badge: "PRO",  value: GeminiImageModel.Pro },
-  { label: "Maximum Fidelity — Imagen 4 Ultra", badge: "4K",   value: GeminiImageModel.Imagen4Ultra },
-  { label: "Fast Generation — Flash",                          value: GeminiImageModel.Flash },
+  { label: "Nano Banana 2 — Pro at Flash speed",  badge: "TOP",  value: GeminiImageModel.Flash2 },
+  { label: "Nano Banana Pro — Flagship quality",   badge: "PRO",  value: GeminiImageModel.Pro },
+  { label: "Imagen 4 — Photorealistic diffusion",                 value: GeminiImageModel.Imagen4 },
 ];
 
 const FLUX_SUBMODELS: { label: string; badge?: string; value: FalModel }[] = [
-  { label: "Face Consistent — Kontext",        badge: "ID",   value: FalModel.KontextMulti },
-  { label: "Face Consistent (Max) — Kontext",  badge: "MAX",  value: FalModel.KontextMaxMulti },
-  { label: "Photorealistic 4K — Seedream",     badge: "4K",   value: FalModel.Seedream45 },
-  { label: "Smart Photorealistic — Seedream 5", badge: "NEW",  value: FalModel.Seedream50 },
-  { label: "Budget Uncensored — Z-Image",      badge: "🔞",   value: FalModel.ZImageTurbo },
+  { label: "FLUX Kontext — Face-consistent identity",  badge: "FACE", value: FalModel.KontextMulti },
+  { label: "Seedream 5.0 — Intelligent reasoning",     badge: "NEW",  value: FalModel.Seedream50 },
+  { label: "Seedream 4.5 — ByteDance 4K",                             value: FalModel.Seedream45 },
+  { label: "FLUX.2 Pro — Speed-optimized detail",                     value: FalModel.Flux2Pro },
+  { label: "Z-Image — Instant lifelike portraits",     badge: "NSFW", value: FalModel.ZImageTurbo },
 ];
 
 const GPT_SUBMODELS: { label: string; badge?: string; value: OpenAIModel }[] = [
-  { label: "Text & Detail — GPT 1.5",   badge: "BEST", value: OpenAIModel.GptImage15 },
-  { label: "Precise Detail — GPT 1.0",                  value: OpenAIModel.GptImage1 },
+  { label: "GPT Image 1.5 — True-color precision", badge: "BEST", value: OpenAIModel.GptImage15 },
 ];
 
 // AI Edit engine options
@@ -577,8 +575,8 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
     try {
       const s = localStorage.getItem('vist-director-sections');
-      return s ? JSON.parse(s) : { identity: true, engine: false, costume: false, pose: false };
-    } catch { return { identity: true, engine: false, costume: false, pose: false }; }
+      return s ? JSON.parse(s) : { identity: true, engine: false, costume: false, pose: false, lighting: false, camera: false };
+    } catch { return { identity: true, engine: false, costume: false, pose: false, lighting: false, camera: false }; }
   });
   const toggleSection = (key: string) => {
     setOpenSections(prev => {
@@ -1224,12 +1222,28 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
                 </p>
               </div>
 
-              {/* Characteristics — Visual Builder */}
+              {/* Characteristics — collapsed behind "Add details" */}
               <div className="px-4 pb-3">
-                <CharacteristicsInput
-                  value={char0?.characteristics ?? ""}
-                  onChange={(v) => char0 && form.updateCharacter(char0.id, "characteristics", v)}
-                />
+                <button
+                  onClick={() => setOpenSections(prev => {
+                    const next = { ...prev, details: !prev.details };
+                    try { localStorage.setItem('vist-director-sections', JSON.stringify(next)); } catch {}
+                    return next;
+                  })}
+                  className="flex items-center gap-1.5 text-[10px] font-medium transition-colors mb-1"
+                  style={{ color: openSections.details ? '#FF5C35' : '#8C7570' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#E8DDD9'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = openSections.details ? '#FF5C35' : '#8C7570'; }}
+                >
+                  <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${openSections.details ? 'rotate-180' : ''}`} />
+                  {openSections.details ? 'Hide details' : 'Add details (eyes, hair, body...)'}
+                </button>
+                {openSections.details && (
+                  <CharacteristicsInput
+                    value={char0?.characteristics ?? ""}
+                    onChange={(v) => char0 && form.updateCharacter(char0.id, "characteristics", v)}
+                  />
+                )}
               </div>
             </AccordionSection>
             </div>{/* end Identity order wrapper */}
@@ -1251,134 +1265,146 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
               onToggle={() => toggleSection('engine')}
               filled={1}
               total={1}
-              statusText={form.aiProvider === AIProvider.Auto ? 'Auto ✨' : `${providerChips.find(c => c.id === form.aiProvider)?.benefit ?? 'Quick & versatile'}`}
+              statusText={form.aiProvider === AIProvider.Auto ? 'Auto ✨' : `${providerChips.find(c => c.id === form.aiProvider)?.label ?? 'Fast'} ⚡${directorCreditCost}`}
             >
-              <div className="px-4 pb-2">
-                <div className="flex gap-1.5">
-                  {providerChips.map((chip) => {
-                    const TIPS: Record<string, { speed: string; best: string; cost: number; needsFace?: boolean; time: string }> = {
-                      [AIProvider.Auto]:      { speed: '✨ Smart',  best: 'We pick the best engine for your prompt and references.', cost: 2, needsFace: false, time: 'varies' },
-                      [AIProvider.Gemini]:    { speed: '⚡ Fast',   best: 'Quick iterations at minimal cost. No face photo required.', cost: 2, needsFace: false, time: '~5s' },
-                      [AIProvider.Fal]:       { speed: '🔥 Quality', best: 'Keeps your character looking the same across images.', cost: 10, needsFace: true, time: '~12s' },
-                      [AIProvider.OpenAI]:    { speed: '💎 Premium', best: 'Best for text rendering, logos, and fine detail.', cost: 20, needsFace: false, time: '~15s' },
-                      [AIProvider.Replicate]: { speed: '⚡ Fast',   best: 'Strong creative interpretation, very fast.', cost: 10, needsFace: false, time: '~4s' },
-                      [AIProvider.ModelsLab]: { speed: '🔞 NSFW',   best: 'Uncensored generation with no content filters.', cost: 8, needsFace: false, time: '~10s' },
-                    };
-                    const tip = TIPS[chip.id];
-                    const costColor = (tip?.cost ?? 2) <= 5 ? '#4ADE80' : (tip?.cost ?? 2) <= 10 ? '#FFB347' : '#FF5C35';
-                    const hasFaceUploaded = (char0?.modelImages?.length ?? 0) > 0;
-                    const needsFaceWarning = tip?.needsFace && !hasFaceUploaded && form.aiProvider === chip.id;
-                    return (
-                      <div key={chip.id} className="relative group/tip flex-1">
-                        <button
-                          onClick={() => { chip.select(); setShowSubModels(true); }}
-                          className={`w-full flex flex-col items-center gap-1.5 py-2.5 px-1 rounded-lg border text-center transition-all ${
-                            form.aiProvider === chip.id
-                              ? needsFaceWarning
-                                ? "bg-white/8 border-amber-500/60 text-white"
-                                : "bg-white/8 border-zinc-500 text-white"
-                              : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-200"
-                          }`}
-                        >
-                          <span className="text-lg leading-none">{chip.icon}</span>
-                          <span className="text-[10px] font-semibold">{chip.label}</span>
-                          <span className="text-[8px] font-jet font-bold" style={{ color: costColor }}>⚡{tip?.cost ?? 2}</span>
-                          {needsFaceWarning && (
-                            <span className="text-[7px]" style={{ color: '#FFB347' }}>📷 needs face</span>
-                          )}
-                        </button>
-                        {/* Tooltip */}
-                        {tip && (
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 pointer-events-none w-[140px]">
-                            <div className="rounded-xl p-2 shadow-2xl text-left" style={{ background: '#161110', border: '1px solid #2A1F1C' }}>
-                              <p className="text-[10px] font-bold font-jet mb-0.5" style={{ color: '#FF5C35' }}>{chip.benefit || chip.label}</p>
-                              <p className="text-[10px] font-jet mb-0.5" style={{ color: '#B8A9A5' }}>{tip.speed} · {tip.time}</p>
-                              <p className="text-[10px] leading-snug mb-0.5" style={{ color: '#8C7570' }}>{tip.best}</p>
-                              {tip.needsFace && (
-                                <p className="text-[8px] font-jet" style={{ color: '#FFB347' }}>📷 Requires face photo</p>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Sub-model selector */}
               <div className="px-4 pb-3">
-                {form.aiProvider === AIProvider.Auto ? (
-                  <div className="w-full px-3 py-2 bg-zinc-900/50 border border-zinc-800/50 rounded-xl text-[11px] text-zinc-500 italic">
-                    {activeSubLabel}
-                  </div>
-                ) : (
+                {/* Compact model selector — single row showing active model */}
                 <button
                   onClick={() => setShowSubModels(!showSubModels)}
-                  className="w-full flex items-center justify-between px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-[12px] text-zinc-400 hover:border-zinc-600 hover:text-zinc-200 transition-all"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all hover:border-zinc-600"
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #2A1F1C' }}
                 >
-                  <span className="truncate">{activeSubLabel}</span>
-                  <ChevronDown className={`w-3 h-3 flex-none ml-1 transition-transform ${showSubModels ? "rotate-180" : ""}`} />
+                  <span className="text-lg leading-none">{providerChips.find(c => c.id === form.aiProvider)?.icon ?? '✨'}</span>
+                  <div className="flex-1 text-left min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[12px] font-semibold text-white truncate">
+                        {form.aiProvider === AIProvider.Auto ? 'Auto' : activeSubLabel}
+                      </span>
+                      <span className="text-[9px] font-jet font-bold px-1.5 py-px rounded-full flex-none"
+                        style={{ background: 'rgba(255,92,53,0.12)', color: '#FF5C35' }}>
+                        ⚡{(() => {
+                          let c = 2;
+                          if (form.aiProvider === AIProvider.Fal) c = CREDIT_COSTS[form.falModel] ?? 10;
+                          else if (form.aiProvider === AIProvider.Replicate) c = CREDIT_COSTS[form.replicateModel] ?? 15;
+                          else if (form.aiProvider === AIProvider.OpenAI) c = CREDIT_COSTS[form.openaiModel] ?? 20;
+                          else if (form.aiProvider === AIProvider.Ideogram) c = CREDIT_COSTS[form.ideogramModel] ?? 10;
+                          else if (form.aiProvider === AIProvider.ModelsLab) c = CREDIT_COSTS[form.modelsLabModel] ?? 5;
+                          else c = CREDIT_COSTS[form.geminiModel] ?? 2;
+                          return c;
+                        })()}
+                      </span>
+                    </div>
+                    <span className="text-[10px] block truncate" style={{ color: '#8C7570' }}>
+                      {form.aiProvider === AIProvider.Auto
+                        ? 'Best engine picked automatically'
+                        : providerChips.find(c => c.id === form.aiProvider)?.benefit ?? ''}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-medium flex-none" style={{ color: '#FF5C35' }}>
+                    Change
+                  </span>
+                  <ChevronDown className={`w-3 h-3 flex-none transition-transform duration-200 ${showSubModels ? 'rotate-180' : ''}`} style={{ color: '#8C7570' }} />
                 </button>
-                )}
 
-                {showSubModels && form.aiProvider !== AIProvider.Auto && (
-                  <div className="mt-1.5 bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
-                    {form.aiProvider === AIProvider.Gemini && GEMINI_SUBMODELS.map((m) => (
-                      <button key={m.value}
-                        onClick={() => { form.setGeminiModel(m.value); setShowSubModels(false); }}
-                        className={`w-full flex items-center justify-between px-3 py-2 text-[12px] transition-colors text-left hover:bg-white/5 ${
-                          form.geminiModel === m.value ? "bg-white/8 text-white" : "text-zinc-400"
-                        }`}
-                      >
-                        <span className="truncate">{m.label}</span>
-                        {m.badge && <Badge text={m.badge} />}
-                      </button>
-                    ))}
-                    {form.aiProvider === AIProvider.Fal && FLUX_SUBMODELS.map((m) => (
-                      <button key={m.value}
-                        onClick={() => { form.setFalModel(m.value); setShowSubModels(false); }}
-                        className={`w-full flex items-center justify-between px-3 py-2 text-[12px] transition-colors text-left hover:bg-white/5 ${
-                          form.falModel === m.value ? "bg-white/8 text-white" : "text-zinc-400"
-                        }`}
-                      >
-                        <span className="truncate">{m.label}</span>
-                        {m.badge && <Badge text={m.badge} />}
-                      </button>
-                    ))}
-                    {form.aiProvider === AIProvider.OpenAI && GPT_SUBMODELS.map((m) => (
-                      <button key={m.value}
-                        onClick={() => { form.setOpenaiModel(m.value); setShowSubModels(false); }}
-                        className={`w-full flex items-center justify-between px-3 py-2 text-[12px] transition-colors text-left hover:bg-white/5 ${
-                          form.openaiModel === m.value ? "bg-white/8 text-white" : "text-zinc-400"
-                        }`}
-                      >
-                        <span className="truncate">{m.label}</span>
-                        {m.badge && <Badge text={m.badge} />}
-                      </button>
-                    ))}
-                    {form.aiProvider === AIProvider.Replicate && GROK_SUBMODELS.map((m) => (
-                      <button key={m.value}
-                        onClick={() => { form.setReplicateModel(m.value); setShowSubModels(false); }}
-                        className={`w-full flex items-center justify-between px-3 py-2 text-[12px] transition-colors text-left hover:bg-white/5 ${
-                          form.replicateModel === m.value ? "bg-white/8 text-white" : "text-zinc-400"
-                        }`}
-                      >
-                        <span className="truncate">{m.label}</span>
-                        {m.badge && <Badge text={m.badge} />}
-                      </button>
-                    ))}
-                    {form.aiProvider === AIProvider.ModelsLab && MODELSLAB_SUBMODELS.map((m) => (
-                      <button key={m.value}
-                        onClick={() => { form.setModelsLabModel(m.value); setShowSubModels(false); }}
-                        className={`w-full flex items-center justify-between px-3 py-2 text-[12px] transition-colors text-left hover:bg-white/5 ${
-                          form.modelsLabModel === m.value ? "bg-white/8 text-white" : "text-zinc-400"
-                        }`}
-                      >
-                        <span className="truncate">{m.label}</span>
-                        {m.badge && <span className="text-[10px]">{m.badge}</span>}
-                      </button>
-                    ))}
+                {/* Expanded model picker */}
+                {showSubModels && (
+                  <div className="mt-2 rounded-xl overflow-hidden" style={{ background: '#111010', border: '1px solid #2A1F1C' }}>
+                    {/* Provider category tabs */}
+                    <div className="flex gap-0.5 p-1.5 overflow-x-auto">
+                      {providerChips.map((chip) => (
+                        <button
+                          key={chip.id}
+                          onClick={() => { chip.select(); }}
+                          className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-medium transition-all flex-none ${
+                            form.aiProvider === chip.id
+                              ? 'text-white'
+                              : 'text-zinc-500 hover:text-zinc-300'
+                          }`}
+                          style={form.aiProvider === chip.id ? { background: 'rgba(255,92,53,0.12)', border: '1px solid rgba(255,92,53,0.25)' } : { border: '1px solid transparent' }}
+                        >
+                          <span className="text-xs">{chip.icon}</span>
+                          <span>{chip.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                    {/* Sub-model list */}
+                    <div className="border-t" style={{ borderColor: '#2A1F1C' }}>
+                      {form.aiProvider === AIProvider.Auto && (
+                        <div className="px-3 py-2.5 text-[11px] italic" style={{ color: '#8C7570' }}>
+                          Best engine picked automatically based on your prompt and references
+                        </div>
+                      )}
+                      {form.aiProvider === AIProvider.Gemini && GEMINI_SUBMODELS.map((m) => (
+                        <button key={m.value}
+                          onClick={() => { form.setGeminiModel(m.value); setShowSubModels(false); }}
+                          className={`w-full flex items-center justify-between px-3 py-2 text-[11px] transition-colors text-left hover:bg-white/5 ${
+                            form.geminiModel === m.value ? "bg-white/[0.06] text-white" : "text-zinc-400"
+                          }`}
+                        >
+                          <span className="truncate">{m.label}</span>
+                          <div className="flex items-center gap-1.5">
+                            {m.badge && <Badge text={m.badge} />}
+                            <span className="text-[9px] font-jet" style={{ color: '#8C7570' }}>⚡{CREDIT_COSTS[m.value] ?? 2}</span>
+                          </div>
+                        </button>
+                      ))}
+                      {form.aiProvider === AIProvider.Fal && FLUX_SUBMODELS.map((m) => (
+                        <button key={m.value}
+                          onClick={() => { form.setFalModel(m.value); setShowSubModels(false); }}
+                          className={`w-full flex items-center justify-between px-3 py-2 text-[11px] transition-colors text-left hover:bg-white/5 ${
+                            form.falModel === m.value ? "bg-white/[0.06] text-white" : "text-zinc-400"
+                          }`}
+                        >
+                          <span className="truncate">{m.label}</span>
+                          <div className="flex items-center gap-1.5">
+                            {m.badge && <Badge text={m.badge} />}
+                            <span className="text-[9px] font-jet" style={{ color: '#8C7570' }}>⚡{CREDIT_COSTS[m.value] ?? 10}</span>
+                          </div>
+                        </button>
+                      ))}
+                      {form.aiProvider === AIProvider.OpenAI && GPT_SUBMODELS.map((m) => (
+                        <button key={m.value}
+                          onClick={() => { form.setOpenaiModel(m.value); setShowSubModels(false); }}
+                          className={`w-full flex items-center justify-between px-3 py-2 text-[11px] transition-colors text-left hover:bg-white/5 ${
+                            form.openaiModel === m.value ? "bg-white/[0.06] text-white" : "text-zinc-400"
+                          }`}
+                        >
+                          <span className="truncate">{m.label}</span>
+                          <div className="flex items-center gap-1.5">
+                            {m.badge && <Badge text={m.badge} />}
+                            <span className="text-[9px] font-jet" style={{ color: '#8C7570' }}>⚡{CREDIT_COSTS[m.value] ?? 20}</span>
+                          </div>
+                        </button>
+                      ))}
+                      {form.aiProvider === AIProvider.Replicate && GROK_SUBMODELS.map((m) => (
+                        <button key={m.value}
+                          onClick={() => { form.setReplicateModel(m.value); setShowSubModels(false); }}
+                          className={`w-full flex items-center justify-between px-3 py-2 text-[11px] transition-colors text-left hover:bg-white/5 ${
+                            form.replicateModel === m.value ? "bg-white/[0.06] text-white" : "text-zinc-400"
+                          }`}
+                        >
+                          <span className="truncate">{m.label}</span>
+                          <div className="flex items-center gap-1.5">
+                            {m.badge && <Badge text={m.badge} />}
+                            <span className="text-[9px] font-jet" style={{ color: '#8C7570' }}>⚡{CREDIT_COSTS[m.value] ?? 10}</span>
+                          </div>
+                        </button>
+                      ))}
+                      {form.aiProvider === AIProvider.ModelsLab && MODELSLAB_SUBMODELS.map((m) => (
+                        <button key={m.value}
+                          onClick={() => { form.setModelsLabModel(m.value); setShowSubModels(false); }}
+                          className={`w-full flex items-center justify-between px-3 py-2 text-[11px] transition-colors text-left hover:bg-white/5 ${
+                            form.modelsLabModel === m.value ? "bg-white/[0.06] text-white" : "text-zinc-400"
+                          }`}
+                        >
+                          <span className="truncate">{m.label}</span>
+                          <div className="flex items-center gap-1.5">
+                            {m.badge && <span className="text-[10px]">{m.badge}</span>}
+                            <span className="text-[9px] font-jet" style={{ color: '#8C7570' }}>⚡{CREDIT_COSTS[m.value] ?? 5}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -2202,71 +2228,73 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
         {/* Show Lighting/Camera only in Create mode */}
         {studioMode === "create" && (
           <>
-            {/* ── LIGHTING ── */}
-            <div className="px-4 pt-5 pb-2">
-              <SectionLabel>Lighting</SectionLabel>
-            </div>
-            <div className="px-4 pb-2 grid grid-cols-3 gap-1.5">
-              {LIGHTING_OPTIONS.map((opt) => {
-                const isActive = form.lighting === opt.value;
-                return (
-                  <button key={opt.id}
-                    onClick={() => { form.setLighting(isActive ? "" : opt.value); setCustomLighting(""); }}
-                    className={`flex flex-col items-center gap-1 py-3 rounded-xl border text-center transition-all ${
-                      isActive ? "bg-white/10 border-zinc-500 text-white"
-                        : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-200"
-                    }`}
-                  >
-                    <span className="text-base leading-none">{opt.icon}</span>
-                    <span className="text-[10px] font-medium leading-tight">{opt.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="px-4 pb-3">
-              <input
-                value={customLighting}
-                onChange={(e) => handleCustomLighting(e.target.value)}
-                placeholder="e.g. Rembrandt light, warm 3200K, soft shadows"
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-[12px] text-zinc-200 outline-none placeholder:text-zinc-500 focus:border-zinc-600 transition-colors"
-              />
-            </div>
+            {/* ── LIGHTING (collapsed by default, shows preset name) ── */}
+            <AccordionSection
+              label="Lighting"
+              isOpen={openSections.lighting ?? false}
+              onToggle={() => toggleSection('lighting')}
+              statusText={LIGHTING_OPTIONS.find(o => o.value === form.lighting)?.label ?? (customLighting ? 'Custom' : 'Auto')}
+            >
+              <div className="px-4 pb-2 grid grid-cols-3 gap-1.5">
+                {LIGHTING_OPTIONS.map((opt) => {
+                  const isActive = form.lighting === opt.value;
+                  return (
+                    <button key={opt.id}
+                      onClick={() => { form.setLighting(isActive ? "" : opt.value); setCustomLighting(""); }}
+                      className={`flex flex-col items-center gap-1 py-3 rounded-xl border text-center transition-all ${
+                        isActive ? "bg-white/10 border-zinc-500 text-white"
+                          : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-200"
+                      }`}
+                    >
+                      <span className="text-base leading-none">{opt.icon}</span>
+                      <span className="text-[10px] font-medium leading-tight">{opt.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="px-4 pb-3">
+                <input
+                  value={customLighting}
+                  onChange={(e) => handleCustomLighting(e.target.value)}
+                  placeholder="e.g. Rembrandt light, warm 3200K, soft shadows"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-[12px] text-zinc-200 outline-none placeholder:text-zinc-500 focus:border-zinc-600 transition-colors"
+                />
+              </div>
+            </AccordionSection>
 
-            {/* Divider */}
-            <div className="mx-4 border-t border-zinc-800/60 mb-3" />
-
-            {/* ── CAMERA ── */}
-            <div className="px-4 pb-2">
-              <SectionLabel>Camera</SectionLabel>
-            </div>
-            <div className="px-4 pb-2 grid grid-cols-3 gap-1.5">
-              {CAMERA_OPTIONS.map((opt) => {
-                const isActive = form.camera === opt.value;
-                return (
-                  <button key={opt.id}
-                    onClick={() => { form.setCamera(isActive ? "" : opt.value); setCustomCamera(""); }}
-                    className={`flex flex-col items-center gap-1 py-3 rounded-xl border text-center transition-all ${
-                      isActive ? "bg-white/10 border-zinc-500 text-white"
-                        : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-200"
-                    }`}
-                  >
-                    <span className="text-base leading-none">{opt.icon}</span>
-                    <span className="text-[10px] font-medium leading-tight">{opt.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="px-4 pb-3">
-              <input
-                value={customCamera}
-                onChange={(e) => handleCustomCamera(e.target.value)}
-                placeholder="e.g. 85mm f/1.4, shallow DOF, eye level"
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-[12px] text-zinc-200 outline-none placeholder:text-zinc-500 focus:border-zinc-600 transition-colors"
-              />
-            </div>
-
-            {/* Divider */}
-            <div className="mx-4 border-t border-zinc-800/60 mb-3" />
+            {/* ── CAMERA (collapsed by default, shows preset name) ── */}
+            <AccordionSection
+              label="Camera"
+              isOpen={openSections.camera ?? false}
+              onToggle={() => toggleSection('camera')}
+              statusText={CAMERA_OPTIONS.find(o => o.value === form.camera)?.label ?? (customCamera ? 'Custom' : 'Auto')}
+            >
+              <div className="px-4 pb-2 grid grid-cols-3 gap-1.5">
+                {CAMERA_OPTIONS.map((opt) => {
+                  const isActive = form.camera === opt.value;
+                  return (
+                    <button key={opt.id}
+                      onClick={() => { form.setCamera(isActive ? "" : opt.value); setCustomCamera(""); }}
+                      className={`flex flex-col items-center gap-1 py-3 rounded-xl border text-center transition-all ${
+                        isActive ? "bg-white/10 border-zinc-500 text-white"
+                          : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-200"
+                      }`}
+                    >
+                      <span className="text-base leading-none">{opt.icon}</span>
+                      <span className="text-[10px] font-medium leading-tight">{opt.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="px-4 pb-3">
+                <input
+                  value={customCamera}
+                  onChange={(e) => handleCustomCamera(e.target.value)}
+                  placeholder="e.g. 85mm f/1.4, shallow DOF, eye level"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-[12px] text-zinc-200 outline-none placeholder:text-zinc-500 focus:border-zinc-600 transition-colors"
+                />
+              </div>
+            </AccordionSection>
           </>
         )}
 
@@ -2298,19 +2326,20 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
           </div>
         </div>
 
-        {/* Resolution */}
-        <div className="px-4 pb-3">
-          <p className="text-[10px] text-zinc-500 mb-2">Resolution</p>
-          <div className="flex gap-1.5">
+        {/* Resolution — compact inline toggle */}
+        <div className="px-4 pb-3 flex items-center justify-between">
+          <span className="text-[10px] text-zinc-600">Resolution</span>
+          <div className="flex items-center gap-0.5 p-0.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #2A1F1C' }}>
             {SIZE_OPTIONS.map((o) => (
               <button
                 key={o.value}
                 onClick={() => form.setImageSize(o.value)}
-                className={`flex-1 py-1.5 rounded-lg text-[10px] font-medium border transition-all ${
+                className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-all ${
                   form.imageSize === o.value
-                    ? "bg-white/10 border-zinc-500 text-white"
-                    : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-200"
+                    ? "text-white"
+                    : "text-zinc-500 hover:text-zinc-300"
                 }`}
+                style={form.imageSize === o.value ? { background: 'rgba(255,92,53,0.15)', color: '#FF5C35' } : undefined}
               >
                 {o.label}
               </button>

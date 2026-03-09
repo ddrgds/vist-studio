@@ -942,8 +942,8 @@ const GalleryGrid: React.FC<GalleryGridProps> = ({
       {/* ── Filter bar (3.5) ── */}
       {!isSelectionMode && (
         <div className="sticky top-0 z-20 flex items-center gap-1.5 px-4 py-2 border-b" style={{ background: 'rgba(13,10,10,0.92)', backdropFilter: 'blur(12px)', borderColor: '#2A1F1C' }}>
-          {(['all', 'create', 'edit', 'video', 'favorites'] as const).map((type) => {
-            const LABELS: Record<string, string> = { all: 'All', create: 'Images', edit: 'Edited', video: 'Video', favorites: '★ Saved' };
+          {(['all', 'create', 'video', 'favorites'] as const).map((type) => {
+            const LABELS: Record<string, string> = { all: 'All', create: 'Images', video: 'Video', favorites: '★ Saved' };
             return (
               <button
                 key={type}
@@ -955,23 +955,6 @@ const GalleryGrid: React.FC<GalleryGridProps> = ({
                 }
               >
                 {LABELS[type]}
-              </button>
-            );
-          })}
-          <div className="w-px h-4 mx-1" style={{ background: '#2A1F1C' }} />
-          {(['all', 'generate', 'director'] as const).map((src) => {
-            const SRC_LABELS: Record<string, string> = { all: 'All sources', generate: 'Freestyle', director: 'Director' };
-            return (
-              <button
-                key={src}
-                onClick={() => setSourceFilter(src)}
-                className="text-[10px] px-2.5 py-1 rounded-full transition-all font-jet"
-                style={sourceFilter === src
-                  ? { background: '#FF5C35', color: '#fff' }
-                  : { background: 'transparent', color: '#6B5A56', border: '1px solid #2A1F1C' }
-                }
-              >
-                {SRC_LABELS[src]}
               </button>
             );
           })}

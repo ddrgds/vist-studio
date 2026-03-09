@@ -364,8 +364,8 @@ export const CREDIT_COSTS: Record<string, number> = {
   // Gemini
   [GeminiImageModel.Flash]:      2,
   [GeminiImageModel.Flash2]:     2,
-  [GeminiImageModel.Pro]:        10,
-  [GeminiImageModel.Imagen4]:    8,
+  [GeminiImageModel.Pro]:        2,
+  [GeminiImageModel.Imagen4]:    2,
   [GeminiImageModel.Imagen4Ultra]: 20,
   [GeminiImageModel.Imagen4Fast]: 5,
   // FAL
@@ -374,7 +374,7 @@ export const CREDIT_COSTS: Record<string, number> = {
   [FalModel.Flux2Pro]:        10,
   [FalModel.Seedream45]:      8,
   [FalModel.Seedream50]:      8,
-  [FalModel.ZImageTurbo]:     5,
+  [FalModel.ZImageTurbo]:     8,
   // Replicate
   [ReplicateModel.Flux2Max]:    12,
   [ReplicateModel.Gen4Image]:   15,
@@ -450,20 +450,9 @@ export interface EngineMetadata {
 export const ENGINE_METADATA: EngineMetadata[] = [
   // ── Gemini ──
   {
-    key: 'gemini:flash',
-    userFriendlyName: 'Fast Generation',
-    description: 'Quick iterations at minimal cost',
-    tags: ['fast', 'economical'],
-    requiresFaceRef: false,
-    estimatedTime: '~5s',
-    creditCost: CREDIT_COSTS[GeminiImageModel.Flash],
-    provider: AIProvider.Gemini,
-    geminiModel: GeminiImageModel.Flash,
-  },
-  {
     key: 'gemini:nb2',
-    userFriendlyName: 'Smart & Economical',
-    description: 'Latest Gemini model, fast and versatile',
+    userFriendlyName: 'Nano Banana 2',
+    description: 'Pro quality at Flash speed',
     tags: ['fast', 'quality', 'economical'],
     requiresFaceRef: false,
     estimatedTime: '~5s',
@@ -473,8 +462,8 @@ export const ENGINE_METADATA: EngineMetadata[] = [
   },
   {
     key: 'gemini:pro',
-    userFriendlyName: 'Maximum Quality',
-    description: 'Highest quality Gemini output for demanding scenes',
+    userFriendlyName: 'Nano Banana Pro',
+    description: "Google's flagship generation",
     tags: ['quality'],
     requiresFaceRef: false,
     estimatedTime: '~15s',
@@ -484,8 +473,8 @@ export const ENGINE_METADATA: EngineMetadata[] = [
   },
   {
     key: 'gemini:imagen4',
-    userFriendlyName: 'Ultra Photorealistic',
-    description: 'Imagen 4 — stunning photorealism from text',
+    userFriendlyName: 'Imagen 4',
+    description: "Google's photorealistic diffusion",
     tags: ['quality', 'photorealism'],
     requiresFaceRef: false,
     estimatedTime: '~10s',
@@ -493,77 +482,11 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     provider: AIProvider.Gemini,
     geminiModel: GeminiImageModel.Imagen4,
   },
-  {
-    key: 'gemini:imagen4ultra',
-    userFriendlyName: 'Maximum Fidelity',
-    description: 'Imagen 4 Ultra — the most detailed output available',
-    tags: ['quality', 'photorealism'],
-    requiresFaceRef: false,
-    estimatedTime: '~20s',
-    creditCost: CREDIT_COSTS[GeminiImageModel.Imagen4Ultra],
-    provider: AIProvider.Gemini,
-    geminiModel: GeminiImageModel.Imagen4Ultra,
-  },
-  {
-    key: 'gemini:imagen4fast',
-    userFriendlyName: 'Fast Photorealistic',
-    description: 'Imagen 4 Fast — photorealism at speed',
-    tags: ['fast', 'photorealism'],
-    requiresFaceRef: false,
-    estimatedTime: '~4s',
-    creditCost: CREDIT_COSTS[GeminiImageModel.Imagen4Fast],
-    provider: AIProvider.Gemini,
-    geminiModel: GeminiImageModel.Imagen4Fast,
-  },
-  // ── FAL (FLUX) ──
-  {
-    key: 'fal:kontext-multi',
-    userFriendlyName: 'Face Consistent',
-    description: 'Keeps your character looking the same across images',
-    tags: ['face', 'quality'],
-    requiresFaceRef: true,
-    estimatedTime: '~12s',
-    creditCost: CREDIT_COSTS[FalModel.KontextMulti],
-    provider: AIProvider.Fal,
-    falModel: FalModel.KontextMulti,
-  },
-  {
-    key: 'fal:kontext-max',
-    userFriendlyName: 'Face Consistent (Max)',
-    description: 'Maximum quality face consistency with multiple refs',
-    tags: ['face', 'quality'],
-    requiresFaceRef: true,
-    estimatedTime: '~20s',
-    creditCost: CREDIT_COSTS[FalModel.KontextMaxMulti],
-    provider: AIProvider.Fal,
-    falModel: FalModel.KontextMaxMulti,
-  },
-  {
-    key: 'fal:flux2pro',
-    userFriendlyName: 'Multi-Reference Edit',
-    description: 'Combine multiple reference images for complex edits',
-    tags: ['face', 'quality'],
-    requiresFaceRef: true,
-    estimatedTime: '~15s',
-    creditCost: CREDIT_COSTS[FalModel.Flux2Pro],
-    provider: AIProvider.Fal,
-    falModel: FalModel.Flux2Pro,
-  },
-  {
-    key: 'fal:seedream45',
-    userFriendlyName: 'Photorealistic 4K',
-    description: 'ByteDance Seedream — exceptional photorealism up to 4K',
-    tags: ['photorealism', 'quality'],
-    requiresFaceRef: false,
-    estimatedTime: '~10s',
-    creditCost: CREDIT_COSTS[FalModel.Seedream45],
-    provider: AIProvider.Fal,
-    falModel: FalModel.Seedream45,
-  },
+  // ── FAL ──
   {
     key: 'fal:seedream50',
-    userFriendlyName: 'Smart Photorealistic',
-    description: 'Seedream 5.0 — web-aware reasoning for richer scenes',
+    userFriendlyName: 'Seedream 5.0',
+    description: 'Intelligent visual reasoning',
     tags: ['photorealism', 'quality'],
     requiresFaceRef: false,
     estimatedTime: '~12s',
@@ -572,10 +495,56 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     falModel: FalModel.Seedream50,
   },
   {
+    key: 'fal:seedream45',
+    userFriendlyName: 'Seedream 4.5',
+    description: 'ByteDance next-gen 4K',
+    tags: ['photorealism', 'quality'],
+    requiresFaceRef: false,
+    estimatedTime: '~10s',
+    creditCost: CREDIT_COSTS[FalModel.Seedream45],
+    provider: AIProvider.Fal,
+    falModel: FalModel.Seedream45,
+  },
+  // ── OpenAI ──
+  {
+    key: 'openai:gpt15',
+    userFriendlyName: 'GPT Image 1.5',
+    description: 'True-color precision rendering',
+    tags: ['text', 'quality'],
+    requiresFaceRef: false,
+    estimatedTime: '~15s',
+    creditCost: CREDIT_COSTS[OpenAIModel.GptImage15],
+    provider: AIProvider.OpenAI,
+    openaiModel: OpenAIModel.GptImage15,
+  },
+  // ── FAL (FLUX) ──
+  {
+    key: 'fal:kontext-multi',
+    userFriendlyName: 'FLUX Kontext',
+    description: 'Face-consistent identity',
+    tags: ['face', 'quality'],
+    requiresFaceRef: true,
+    estimatedTime: '~12s',
+    creditCost: CREDIT_COSTS[FalModel.KontextMulti],
+    provider: AIProvider.Fal,
+    falModel: FalModel.KontextMulti,
+  },
+  {
+    key: 'fal:flux2pro',
+    userFriendlyName: 'FLUX.2 Pro',
+    description: 'Speed-optimized detail',
+    tags: ['face', 'quality'],
+    requiresFaceRef: true,
+    estimatedTime: '~15s',
+    creditCost: CREDIT_COSTS[FalModel.Flux2Pro],
+    provider: AIProvider.Fal,
+    falModel: FalModel.Flux2Pro,
+  },
+  {
     key: 'fal:zimage-turbo',
-    userFriendlyName: 'Budget Uncensored',
-    description: 'Ultra-cheap generation with no content filters',
-    tags: ['fast', 'economical', 'nsfw'],
+    userFriendlyName: 'Z-Image',
+    description: 'Instant lifelike portraits',
+    tags: ['fast', 'photorealism'],
     requiresFaceRef: false,
     estimatedTime: '~3s',
     creditCost: CREDIT_COSTS[FalModel.ZImageTurbo],
@@ -584,139 +553,15 @@ export const ENGINE_METADATA: EngineMetadata[] = [
   },
   // ── Replicate ──
   {
-    key: 'replicate:flux2max',
-    userFriendlyName: 'Max Detail',
-    description: 'FLUX.2 Max — highest fidelity with up to 8 references',
-    tags: ['quality', 'face'],
-    requiresFaceRef: false,
-    estimatedTime: '~25s',
-    creditCost: CREDIT_COSTS[ReplicateModel.Flux2Max],
-    provider: AIProvider.Replicate,
-    replicateModel: ReplicateModel.Flux2Max,
-  },
-  {
-    key: 'replicate:gen4',
-    userFriendlyName: 'Scene Consistent',
-    description: 'Runway Gen-4 — character + location consistency',
-    tags: ['quality', 'face'],
-    requiresFaceRef: true,
-    estimatedTime: '~20s',
-    creditCost: CREDIT_COSTS[ReplicateModel.Gen4Image],
-    provider: AIProvider.Replicate,
-    replicateModel: ReplicateModel.Gen4Image,
-  },
-  {
     key: 'replicate:grok',
-    userFriendlyName: 'Creative Fast',
-    description: 'Grok Imagine — strong creative interpretation, very fast',
+    userFriendlyName: 'Grok Imagine',
+    description: 'xAI creative interpretation',
     tags: ['fast', 'artistic'],
     requiresFaceRef: false,
     estimatedTime: '~4s',
     creditCost: CREDIT_COSTS[ReplicateModel.GrokImagine],
     provider: AIProvider.Replicate,
     replicateModel: ReplicateModel.GrokImagine,
-  },
-  // ── OpenAI ──
-  {
-    key: 'openai:gpt15',
-    userFriendlyName: 'Text & Detail',
-    description: 'Best for text rendering, logos, and fine detail',
-    tags: ['text', 'quality'],
-    requiresFaceRef: false,
-    estimatedTime: '~15s',
-    creditCost: CREDIT_COSTS[OpenAIModel.GptImage15],
-    provider: AIProvider.OpenAI,
-    openaiModel: OpenAIModel.GptImage15,
-  },
-  {
-    key: 'openai:gpt1',
-    userFriendlyName: 'Precise Detail',
-    description: 'Original GPT Image — high fidelity with references',
-    tags: ['quality', 'text'],
-    requiresFaceRef: false,
-    estimatedTime: '~20s',
-    creditCost: CREDIT_COSTS[OpenAIModel.GptImage1],
-    provider: AIProvider.OpenAI,
-    openaiModel: OpenAIModel.GptImage1,
-  },
-  // ── Ideogram ──
-  {
-    key: 'ideogram:v3',
-    userFriendlyName: 'Typography Expert',
-    description: 'Best-in-class text in images, character reference support',
-    tags: ['text', 'artistic', 'quality'],
-    requiresFaceRef: false,
-    estimatedTime: '~12s',
-    creditCost: CREDIT_COSTS[IdeogramModel.V3],
-    provider: AIProvider.Ideogram,
-    ideogramModel: IdeogramModel.V3,
-  },
-  {
-    key: 'ideogram:v2a',
-    userFriendlyName: 'Balanced Typography',
-    description: 'Good typography at a lower cost',
-    tags: ['text', 'artistic'],
-    requiresFaceRef: false,
-    estimatedTime: '~10s',
-    creditCost: CREDIT_COSTS[IdeogramModel.V2A],
-    provider: AIProvider.Ideogram,
-    ideogramModel: IdeogramModel.V2A,
-  },
-  {
-    key: 'ideogram:v2a-turbo',
-    userFriendlyName: 'Fast Typography',
-    description: 'Quick text-in-image generation',
-    tags: ['fast', 'text'],
-    requiresFaceRef: false,
-    estimatedTime: '~5s',
-    creditCost: CREDIT_COSTS[IdeogramModel.V2ATurbo],
-    provider: AIProvider.Ideogram,
-    ideogramModel: IdeogramModel.V2ATurbo,
-  },
-  // ── ModelsLab (NSFW) ──
-  {
-    key: 'modelslab:nsfw-sdxl',
-    userFriendlyName: 'NSFW General',
-    description: 'General purpose uncensored photoreal generation',
-    tags: ['nsfw', 'photorealism'],
-    requiresFaceRef: false,
-    estimatedTime: '~10s',
-    creditCost: CREDIT_COSTS[ModelsLabModel.NsfwSdxl],
-    provider: AIProvider.ModelsLab,
-    modelsLabModel: ModelsLabModel.NsfwSdxl,
-  },
-  {
-    key: 'modelslab:lustify',
-    userFriendlyName: 'NSFW Photoreal',
-    description: 'Lustify — photoreal explicit content generation',
-    tags: ['nsfw', 'photorealism'],
-    requiresFaceRef: false,
-    estimatedTime: '~10s',
-    creditCost: CREDIT_COSTS[ModelsLabModel.LustifySdxl],
-    provider: AIProvider.ModelsLab,
-    modelsLabModel: ModelsLabModel.LustifySdxl,
-  },
-  {
-    key: 'modelslab:wai',
-    userFriendlyName: 'NSFW Illustrated',
-    description: 'Anime/illustrated style uncensored content',
-    tags: ['nsfw', 'artistic'],
-    requiresFaceRef: false,
-    estimatedTime: '~10s',
-    creditCost: CREDIT_COSTS[ModelsLabModel.WaiNsfw],
-    provider: AIProvider.ModelsLab,
-    modelsLabModel: ModelsLabModel.WaiNsfw,
-  },
-  {
-    key: 'modelslab:flux-nsfw',
-    userFriendlyName: 'NSFW FLUX',
-    description: 'FLUX-based uncensored generation',
-    tags: ['nsfw'],
-    requiresFaceRef: false,
-    estimatedTime: '~10s',
-    creditCost: CREDIT_COSTS[ModelsLabModel.FluxNsfw],
-    provider: AIProvider.ModelsLab,
-    modelsLabModel: ModelsLabModel.FluxNsfw,
   },
 ];
 
@@ -737,7 +582,7 @@ export function resolveAutoEngine(context: {
 }): { provider: AIProvider; geminiModel?: GeminiImageModel; falModel?: FalModel; openaiModel?: OpenAIModel } {
   const lowerPrompt = context.prompt.toLowerCase();
 
-  // Check if prompt mentions text rendering needs
+  // Check if prompt mentions text rendering needs → GPT Image 1.5
   const textKeywords = ['text', 'lettering', 'typography', 'logo', 'sign', 'label', 'caption', 'headline', 'poster', 'banner', 'written', 'writing', 'words'];
   const wantsText = textKeywords.some(kw => lowerPrompt.includes(kw));
 
@@ -745,10 +590,11 @@ export function resolveAutoEngine(context: {
     return { provider: AIProvider.OpenAI, openaiModel: OpenAIModel.GptImage15 };
   }
 
+  // Face reference → FLUX Kontext for identity consistency
   if (context.hasFaceRef) {
     return { provider: AIProvider.Fal, falModel: FalModel.KontextMulti };
   }
 
-  // Default: fast & cheap
-  return { provider: AIProvider.Gemini, geminiModel: GeminiImageModel.Flash };
+  // Default: Nano Banana 2 — pro quality at flash speed
+  return { provider: AIProvider.Gemini, geminiModel: GeminiImageModel.Flash2 };
 }
