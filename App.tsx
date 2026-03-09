@@ -12,8 +12,6 @@ import ExplorePage from "./components/ExplorePage";
 
 // Lazy-loaded workspace components for code splitting
 const CreatePage = lazy(() => import("./components/CreatePage"));
-const GeneratorPage = lazy(() => import("./components/GeneratorPage"));
-const DirectorStudio = lazy(() => import("./components/DirectorStudio"));
 const CharactersPage = lazy(() => import("./components/CharactersPage"));
 const StoryboardView = lazy(() => import("./components/StoryboardView"));
 const ToolsPage = lazy(() => import("./components/ToolsPage"));
@@ -1250,6 +1248,7 @@ const AppInner: React.FC = () => {
                 onAddToStoryboard={handleAddToStoryboard}
                 onEdit={(item) => gallery.setEditingItem(item)}
                 onChangePose={handleChangePose}
+                onSkinEnhance={(item) => setSkinEnhanceItem(item)}
               />
             </div>
           )}

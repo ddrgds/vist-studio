@@ -28,6 +28,12 @@
   --color-amber-brand: #FFB347;
   --color-amber-dim: rgba(255,179,71,0.15);
 
+  --color-cyan-accent: #22D3EE;
+  --color-cyan-hover: #06B6D4;
+  --color-cyan-dim: rgba(34, 211, 238, 0.15);
+  --color-cyan-glow: rgba(34, 211, 238, 0.1);
+  --color-cyan-tint: rgba(34, 211, 238, 0.04);
+
   /* ── Fonts ── */
   --font-display: "Space Grotesk", sans-serif;
   --font-body: "Inter", sans-serif;
@@ -300,4 +306,23 @@ progress::-moz-progress-bar      { background: var(--accent) !important; }
     linear-gradient(90deg, rgba(255,92,53,0.02) 1px, transparent 1px);
   background-size: 60px 60px;
   background-position: center center;
+}
+
+/* ── Generate button pulse ────────────────────────────────────── */
+@keyframes generate-pulse {
+  0%, 100% { box-shadow: 0 2px 12px rgba(255,92,53,0.3); }
+  50% { box-shadow: 0 2px 20px rgba(255,92,53,0.5), 0 0 30px rgba(255,92,53,0.15); }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.generate-ready {
+  animation: generate-pulse 2s ease-in-out infinite;
+}
+
+.fade-in-stagger {
+  animation: fade-in-up 0.3s ease-out both;
 }

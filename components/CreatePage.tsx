@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import ReactDOM from "react-dom";
 import {
   Download,
   Settings,
@@ -14,9 +15,14 @@ import {
   Camera,
   Shirt,
   Film,
+  Wand2,
+  MoreVertical,
+  Pencil,
+  Move,
 } from "lucide-react";
 import AutocompleteInput from "./AutocompleteInput";
 import CharacteristicsInput from "./CharacteristicsInput";
+import CompareSliderModal from "./CompareSliderModal";
 import { useForm } from "../contexts/FormContext";
 import { useGallery } from "../contexts/GalleryContext";
 import {
@@ -51,6 +57,7 @@ interface CreatePageProps {
   onAddToStoryboard: (item: GeneratedContent) => void;
   onEdit?: (item: GeneratedContent) => void;
   onChangePose?: (item: GeneratedContent) => void;
+  onSkinEnhance?: (item: GeneratedContent) => void;
 }
 
 // ─── Model Catalog ─────────────────────────────────────────────────────────────
@@ -451,10 +458,13 @@ const CreatePage: React.FC<CreatePageProps> = ({
   onUpscale,
   onCaption,
   onFaceSwap,
+  onTryOn,
+  onRelight,
   onInpaint,
   onAddToStoryboard,
   onEdit,
   onChangePose,
+  onSkinEnhance,
 }) => {
   const form = useForm();
   const gallery = useGallery();
@@ -490,6 +500,12 @@ const CreatePage: React.FC<CreatePageProps> = ({
   const [lightboxItem, setLightboxItem] = useState<GeneratedContent | null>(null);
   const [galleryTab, setGalleryTab] = useState<'session' | 'history'>('session');
   const [promptShake, setPromptShake] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState<string | null>(null);
+  const [moreMenuRect, setMoreMenuRect] = useState<DOMRect | null>(null);
+  const [compareMode, setCompareMode] = useState<GeneratedContent | null>(null);
+  const [compareItems, setCompareItems] = useState<[GeneratedContent, GeneratedContent] | null>(null);
+  const [aiEditTarget, setAiEditTarget] = useState<GeneratedContent | null>(null);
+  const [aiEditPrompt, setAiEditPrompt] = useState('');
 
   const settingsRef = useRef<HTMLDivElement>(null);
   const refInputRef = useRef<HTMLInputElement>(null);
@@ -524,6 +540,76 @@ const CreatePage: React.FC<CreatePageProps> = ({
     }
     onGenerate();
   };
+
+  // Copy image to clipboard
+  const handleCopyToClipboard = async (item: GeneratedContent) => {
+    try {
+      const response = await fetch(item.url);
+      const blob = await response.blob();
+      await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+    } catch { /* silent fail */ }
+  };
+
+  // More menu renderer (portal)
+  const renderMoreMenu = (item: GeneratedContent, anchorRect: DOMRect) => {
+    const MENU_WIDTH = 200;
+    let top = anchorRect.bottom + 4;
+    let left = anchorRect.right - MENU_WIDTH;
+    if (left < 8) left = 8;
+    if (top + 400 > window.innerHeight) top = anchorRect.top - 400;
+
+    const actions = [
+      ...(item.type !== 'video' ? [
+        { icon: '\u{1F3AD}', label: 'Face Swap', action: () => onFaceSwap(item) },
+        { icon: '\u{1F457}', label: 'Virtual Try-On', action: () => onTryOn?.(item) },
+        { icon: '\u2728', label: 'Skin Enhancer', action: () => onSkinEnhance?.(item) },
+        { icon: '\u2600\uFE0F', label: 'Relight', action: () => onRelight?.(item) },
+        { icon: '\u{1F3A8}', label: 'Inpainting', action: () => onInpaint(item) },
+        { icon: '\u270D\uFE0F', label: 'Generate Caption', action: () => onCaption(item) },
+        { icon: '\u{1F4CB}', label: 'Copy to Clipboard', action: () => handleCopyToClipboard(item) },
+      ] : []),
+      { icon: '\u{1F3AC}', label: 'Add to Storyboard', action: () => onAddToStoryboard(item) },
+      ...(item.type !== 'video' ? [
+        { icon: '\u2694\uFE0F', label: 'Compare with...', action: () => setCompareMode(item) },
+      ] : []),
+    ];
+
+    return ReactDOM.createPortal(
+      <div
+        style={{ position: 'fixed', top, left, zIndex: 9999, width: MENU_WIDTH, background: '#111010', border: '1px solid #2A1F1C' }}
+        className="rounded-xl shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {actions.map((a, i) => (
+          <button
+            key={i}
+            onClick={(e) => { e.stopPropagation(); a.action(); setShowMoreMenu(null); setMoreMenuRect(null); }}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs transition-colors text-left"
+            style={{ color: '#D4C8C4' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(34,211,238,0.06)'; (e.currentTarget as HTMLElement).style.color = '#fff'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#D4C8C4'; }}
+          >
+            <span className="text-sm shrink-0">{a.icon}</span>
+            {a.label}
+          </button>
+        ))}
+      </div>,
+      document.body
+    );
+  };
+
+  // Close more menu on click outside / escape
+  useEffect(() => {
+    if (!showMoreMenu) return;
+    const handleClick = () => { setShowMoreMenu(null); setMoreMenuRect(null); };
+    const handleEscape = (e: KeyboardEvent) => { if (e.key === 'Escape') handleClick(); };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [showMoreMenu]);
 
   // Filtered models for picker
   const q = searchQuery.toLowerCase();
@@ -648,10 +734,15 @@ const CreatePage: React.FC<CreatePageProps> = ({
 
             {/* Masonry grid */}
             <div className="columns-3 gap-0.5 px-0.5">
-              {displayItems.map((item) => (
+              {displayItems.map((item, idx) => (
                 <div
                   key={item.id}
-                  className="break-inside-avoid mb-0.5 relative group cursor-pointer overflow-hidden"
+                  className={`break-inside-avoid mb-0.5 relative group cursor-pointer overflow-hidden rounded${idx < 20 ? ' fade-in-stagger' : ''}`}
+                  style={{
+                    transition: 'box-shadow 0.2s ease, transform 0.2s ease',
+                    ...(hoveredItem === item.id ? { boxShadow: '0 0 16px rgba(34,211,238,0.12)', transform: 'scale(1.01)' } : {}),
+                    ...(idx < 20 ? { animationDelay: `${idx * 40}ms` } : {}),
+                  }}
                   onMouseEnter={() => setHoveredItem(item.id)}
                   onMouseLeave={() => setHoveredItem(null)}
                   onClick={() => setLightboxItem(item)}
@@ -665,33 +756,85 @@ const CreatePage: React.FC<CreatePageProps> = ({
                     <img src={item.url} alt="" className="w-full block" loading="lazy" />
                   )}
 
-                  {/* Engine badge */}
-                  {item.aiProvider && (
-                    <div className="absolute top-1 left-1 px-1 py-px rounded text-[7px] font-jet font-bold"
-                      style={{ background: 'rgba(0,0,0,0.7)', color: '#8C7570' }}
-                    >
-                      {item.aiProvider === AIProvider.Auto ? 'Auto' :
-                       item.aiProvider === AIProvider.Gemini ? 'Fast' :
-                       item.aiProvider === AIProvider.Fal ? 'Identity' :
-                       item.aiProvider === AIProvider.Replicate ? 'Creative' :
-                       item.aiProvider === AIProvider.OpenAI ? 'Detail' :
-                       item.aiProvider === AIProvider.Ideogram ? 'Typography' :
-                       item.aiProvider === AIProvider.ModelsLab ? 'NSFW' : ''}
-                    </div>
-                  )}
-
-                  {/* Hover actions */}
-                  {hoveredItem === item.id && (
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent">
-                      <div className="absolute top-1 right-1 flex flex-col gap-0.5">
-                        <MiniAction icon={<Download className="w-3 h-3" />} onClick={(e) => { e.stopPropagation(); onDownload(item); }} title="Download" />
-                        <MiniAction icon={<RefreshCw className="w-3 h-3" />} onClick={(e) => { e.stopPropagation(); onReuse(item); }} title="Reuse" />
-                        {item.type !== "video" && (
-                          <MiniAction icon={<Maximize2 className="w-3 h-3" />} onClick={(e) => { e.stopPropagation(); onUpscale(item); }} title="Upscale" />
-                        )}
+                  {/* Engine badge — colored by provider */}
+                  {item.aiProvider && (() => {
+                    const badgeMap: Record<string, { bg: string; color: string; label: string }> = {
+                      [AIProvider.Auto]:      { bg: 'rgba(34,211,238,0.15)', color: '#22D3EE', label: 'Auto' },
+                      [AIProvider.Gemini]:     { bg: 'rgba(16,185,129,0.15)', color: '#10B981', label: 'Fast' },
+                      [AIProvider.Fal]:        { bg: 'rgba(139,92,246,0.15)', color: '#8B5CF6', label: 'Identity' },
+                      [AIProvider.Replicate]:  { bg: 'rgba(59,130,246,0.15)', color: '#3B82F6', label: 'Creative' },
+                      [AIProvider.OpenAI]:     { bg: 'rgba(217,119,6,0.15)',  color: '#D97706', label: 'Detail' },
+                      [AIProvider.Ideogram]:   { bg: 'rgba(236,72,153,0.15)', color: '#EC4899', label: 'Typography' },
+                      [AIProvider.ModelsLab]:  { bg: 'rgba(239,68,68,0.15)',  color: '#EF4444', label: 'NSFW' },
+                    };
+                    const b = badgeMap[item.aiProvider];
+                    if (!b) return null;
+                    return (
+                      <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded text-[7px] font-jet font-bold"
+                        style={{ background: b.bg, color: b.color }}>
+                        {b.label}
                       </div>
+                    );
+                  })()}
+
+                  {/* Hover actions — 6 colored buttons + More menu */}
+                  {hoveredItem === item.id && (
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent hidden lg:flex flex-col justify-end p-2">
+                      <div className="flex gap-1.5 justify-end flex-wrap">
+                        <button onClick={(e) => { e.stopPropagation(); onDownload(item); }} aria-label="Download"
+                          className="p-1.5 rounded-full text-white shadow-lg transition-all hover:scale-110 active:scale-95"
+                          style={{ background: 'rgba(16,185,129,0.85)' }}>
+                          <Download className="w-3.5 h-3.5" />
+                        </button>
+                        {item.type !== 'video' && (
+                          <button onClick={(e) => { e.stopPropagation(); setAiEditTarget(item); }} aria-label="AI Edit"
+                            className="p-1.5 rounded-full text-white shadow-lg transition-all hover:scale-110 active:scale-95"
+                            style={{ background: 'rgba(59,130,246,0.85)' }}>
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {item.type !== 'video' && onChangePose && (
+                          <button onClick={(e) => { e.stopPropagation(); onChangePose(item); }} aria-label="Change pose"
+                            className="p-1.5 rounded-full text-white shadow-lg transition-all hover:scale-110 active:scale-95"
+                            style={{ background: 'rgba(139,92,246,0.85)' }}>
+                            <Move className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <button onClick={(e) => { e.stopPropagation(); onReuse(item); }} aria-label="Reuse parameters"
+                          className="p-1.5 rounded-full text-white shadow-lg transition-all hover:scale-110 active:scale-95"
+                          style={{ background: 'rgba(168,85,247,0.85)' }}>
+                          <RefreshCw className="w-3.5 h-3.5" />
+                        </button>
+                        {item.type !== 'video' && (
+                          <button onClick={(e) => { e.stopPropagation(); onUpscale(item); }} aria-label="Upscale 4x"
+                            className="p-1.5 rounded-full text-white shadow-lg transition-all hover:scale-110 active:scale-95"
+                            style={{ background: 'rgba(217,119,6,0.85)' }}>
+                            <Maximize2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowMoreMenu(item.id);
+                            setMoreMenuRect((e.currentTarget as HTMLElement).getBoundingClientRect());
+                          }}
+                          aria-label="More options"
+                          className="p-1.5 rounded-full text-white shadow-lg transition-all hover:scale-110 active:scale-95"
+                          style={{ background: 'rgba(82,82,91,0.85)' }}>
+                          <MoreVertical className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      {compareMode && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); setCompareItems([compareMode, item]); setCompareMode(null); }}>
+                          <span className="text-xs font-bold px-3 py-1.5 rounded-full" style={{ background: '#22D3EE', color: '#000' }}>
+                            Click to compare
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
+                  {showMoreMenu === item.id && moreMenuRect && renderMoreMenu(item, moreMenuRect)}
                 </div>
               ))}
             </div>
@@ -772,7 +915,7 @@ const CreatePage: React.FC<CreatePageProps> = ({
       {activePanel && (
         <div
           className="flex-none border-t overflow-hidden"
-          style={{ borderColor: '#2A1F1C', background: '#111010' }}
+          style={{ background: 'linear-gradient(180deg, #131010, #0D0A0A)', borderTop: '1px solid rgba(34,211,238,0.06)' }}
         >
           <div className="max-w-2xl mx-auto px-4 py-3">
             {/* Face Panel */}
@@ -986,7 +1129,7 @@ const CreatePage: React.FC<CreatePageProps> = ({
       )}
 
       {/* ─── Centered Prompt Bar ─── */}
-      <div className="flex-none px-4 py-3" style={{ background: 'linear-gradient(to top, #0D0A0A 60%, rgba(13,10,10,0))' }}>
+      <div className="flex-none px-4 py-3" style={{ background: 'linear-gradient(180deg, rgba(13,10,10,0) 0%, #0D0A0A 20%)', boxShadow: '0 -8px 32px rgba(0,0,0,0.5)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
         <div className="max-w-2xl mx-auto space-y-2">
           {/* Main input container */}
           <div
@@ -1071,15 +1214,15 @@ const CreatePage: React.FC<CreatePageProps> = ({
               {/* Generate button */}
               <button
                 onClick={isGenerating ? onStopGeneration : handleGenerate}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-[0.97] flex-none text-white"
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-[0.97] flex-none text-white ${!promptIsEmpty && !isGenerating ? 'generate-ready' : ''}`}
                 style={isGenerating
                   ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)' }
                   : promptIsEmpty && !isGenerating
                     ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', opacity: 0.4, cursor: 'not-allowed', boxShadow: 'none' }
-                    : { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', boxShadow: '0 2px 12px rgba(255,92,53,0.3)' }
+                    : { background: 'linear-gradient(135deg,#FF5C35,#FFB347)' }
                 }
                 onMouseEnter={e => { if (!promptIsEmpty && !isGenerating) { (e.currentTarget as HTMLElement).style.filter = 'brightness(1.1)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 24px rgba(255,92,53,0.4)'; } }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.filter = ''; (e.currentTarget as HTMLElement).style.boxShadow = promptIsEmpty ? 'none' : '0 2px 12px rgba(255,92,53,0.3)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.filter = ''; }}
               >
                 {isGenerating ? (
                   <>
@@ -1088,8 +1231,8 @@ const CreatePage: React.FC<CreatePageProps> = ({
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Generate <span className="text-[10px] font-jet opacity-80">⚡{genCreditCost}</span>
+                    <Wand2 className="w-3.5 h-3.5" />
+                    Generate <span className="text-[9px] font-jet font-bold px-1.5 py-0.5 rounded-full" style={{ background: '#22D3EE', color: '#000' }}>⚡{genCreditCost}</span>
                   </>
                 )}
               </button>
@@ -1304,17 +1447,61 @@ const CreatePage: React.FC<CreatePageProps> = ({
                   <LbSep />
                   <LbAction label="Face Swap" onClick={() => onFaceSwap(lightboxItem)} />
                   <LbSep />
-                  <LbAction label="Edit" onClick={() => onInpaint(lightboxItem)} />
+                  <LbAction label="Filters" onClick={() => onInpaint(lightboxItem)} />
                 </>
               )}
-              {onEdit && lightboxItem.type !== "video" && (
+              {lightboxItem.type !== "video" && (
                 <>
                   <LbSep />
-                  <LbAction icon={<Sparkles className="w-3.5 h-3.5" />} label="AI Edit" onClick={() => { onEdit(lightboxItem); setLightboxItem(null); }} />
+                  <LbAction icon={<Wand2 className="w-3.5 h-3.5" />} label="AI Edit" onClick={() => { setAiEditTarget(lightboxItem); setLightboxItem(null); }} />
                 </>
               )}
               <LbSep />
               <LbAction label="+ Board" onClick={() => onAddToStoryboard(lightboxItem)} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Compare Slider */}
+      {compareItems && (
+        <CompareSliderModal
+          itemA={compareItems[0]}
+          itemB={compareItems[1]}
+          onClose={() => setCompareItems(null)}
+        />
+      )}
+
+      {/* AI Edit Overlay */}
+      {aiEditTarget && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.85)' }} onClick={() => { setAiEditTarget(null); setAiEditPrompt(''); }}>
+          <div className="relative w-full max-w-lg rounded-2xl overflow-hidden" style={{ background: '#0F0C0C', border: '1px solid #2A1F1C' }} onClick={e => e.stopPropagation()}>
+            <div className="p-4">
+              <img src={aiEditTarget.url} alt="" className="w-full max-h-64 object-contain rounded-xl" />
+            </div>
+            <div className="px-4 pb-4">
+              <label className="text-[10px] font-jet uppercase tracking-wider mb-2 block" style={{ color: '#22D3EE' }}>Edit instruction</label>
+              <textarea
+                value={aiEditPrompt}
+                onChange={e => setAiEditPrompt(e.target.value)}
+                placeholder="e.g. Add sunglasses, change background to beach..."
+                className="w-full h-20 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none"
+                style={{ background: '#1A1210', border: '1px solid #2A1F1C', color: '#E8DDD9' }}
+                autoFocus
+              />
+              <div className="flex gap-2 mt-3">
+                <button onClick={() => { setAiEditTarget(null); setAiEditPrompt(''); }} className="flex-1 py-2 rounded-xl text-xs font-medium" style={{ background: '#1A1210', color: '#6B5A56', border: '1px solid #2A1F1C' }}>Cancel</button>
+                <button onClick={() => {
+                  if (!aiEditPrompt.trim()) return;
+                  form.setActiveMode('edit');
+                  form.setEditSubMode('ai');
+                  setAiEditTarget(null);
+                  setAiEditPrompt('');
+                  onGenerate();
+                }} className="flex-1 py-2 rounded-xl text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg, #22D3EE, #06B6D4)' }}>
+                  Apply Edit
+                </button>
+              </div>
             </div>
           </div>
         </div>
