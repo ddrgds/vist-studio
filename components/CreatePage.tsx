@@ -216,6 +216,164 @@ const SIZE_OPTIONS: { label: string; value: ImageSize }[] = [
   { label: "4K", value: ImageSize.Size4K },
 ];
 
+// ─── Photo Session Presets (from DirectorStudio) ─────────────────────────────
+
+interface SessionPreset {
+  id: string;
+  icon: string;
+  label: string;
+  shots: string[];
+}
+
+const PRESET_TOOLTIPS: Record<string, string> = {
+  selfie: "Close-up self-portrait, natural lighting, phone camera feel",
+  grwm: "Get Ready With Me — mirror shots, getting dressed sequence",
+  stories: "Vertical 9:16 clips, casual talking-to-camera energy",
+  editorial: "High fashion magazine spread, professional studio lighting",
+  portrait: "Classic studio portraits, 85mm bokeh, timeless quality",
+  street: "Urban outdoor fashion, candid city vibes",
+  creator: "Influencer-style content, engaging and relatable",
+  lifestyle: "Everyday moments — café, park, home, natural light",
+  fitness: "Athletic action shots, gym and outdoor energy",
+  nightout: "Evening glamour, neon lights, nightlife atmosphere",
+  fotodump: "Casual mixed collection, authentic unfiltered moments",
+};
+
+const PHOTO_SESSION_PRESETS: SessionPreset[] = [
+  {
+    id: "selfie",
+    icon: "🤳",
+    label: "Selfies",
+    shots: [
+      "selfie angle, camera held slightly above eye level at arm's length, front-facing, natural warm smile, tight crop on face and upper shoulders",
+      "eye-level selfie, camera at exact face height, playful expression, slight head tilt to one side, close crop",
+      "mirror selfie, full body visible in reflection, arm extended toward camera, outfit showcase, confident casual stance",
+      "low selfie angle, camera just below chin level, subject looking down into lens with a confident smirk, dramatic angle",
+    ],
+  },
+  {
+    id: "grwm",
+    icon: "💄",
+    label: "GRWM",
+    shots: [
+      "beauty close-up, extreme close on face, soft front lighting, looking directly into lens, skin texture and makeup detail fully visible, ring-light catch lights",
+      "macro detail on eyes, upper face tightly cropped, eyeshadow blend and lash detail sharp, side-lit for texture",
+      "macro detail on lips, extreme close-up, lip color and product texture clearly visible, slight 3/4 angle",
+      "getting-ready candid, 3/4 angle slightly above, hand near hair or face mid-gesture, warm vanity or window light",
+      "mirror shot, full face visible in vanity mirror, bedroom or bathroom context, backstage getting-ready atmosphere",
+    ],
+  },
+  {
+    id: "stories",
+    icon: "📱",
+    label: "Stories",
+    shots: [
+      "vertical 9:16 crop, bust shot, front-facing, talking-to-camera pose, expressive and direct, casual conversational energy",
+      "vertical 9:16 crop, full body walking toward camera, dynamic movement, urban or indoor setting, candid lifestyle",
+      "vertical, close crop face and shoulders, genuine mid-laugh, eyes crinkled, authentic caught-in-the-moment joy",
+      "vertical, 3/4 angle, hands gesturing mid-sentence, storytelling energy, expressive body language",
+      "vertical, looking away from camera then glancing back, over-the-shoulder candid, relaxed off-guard vibe",
+    ],
+  },
+  {
+    id: "editorial",
+    icon: "🎞️",
+    label: "Editorial",
+    shots: [
+      "3/4 angle, medium shot, chin slightly down, eyes slightly up, looking left of camera, magazine editorial quality, cinematic color",
+      "side profile, 90-degree lateral view, full body, clean architectural negative space, elegant and sculptural composition",
+      "wide environmental shot, full body, subject placed at rule-of-thirds left, rich storytelling background",
+      "low angle, shooting upward, dynamic power stance, dramatic sky or ceiling context, high-fashion energy",
+      "high contrast front portrait, 85mm, direct unwavering gaze, minimal background, stark editorial look",
+    ],
+  },
+  {
+    id: "portrait",
+    icon: "🖼️",
+    label: "Portrait",
+    shots: [
+      "classic bust portrait, 85mm f/1.4, eye-level, direct warm gaze, creamy bokeh, timeless studio quality",
+      "3/4 face turn, looking into middle distance past camera, contemplative mood, soft Rembrandt side lighting",
+      "intimate extreme close-up, eyes filling most of frame, eyelashes and iris detail crisp, rest softly blurred",
+      "back 3/4, head turned over left shoulder toward camera, nape of neck and jawline visible, mysterious and elegant",
+      "profile silhouette, 90-degree side, jaw and neck line sculpted by hard side light, graphic and architectural",
+    ],
+  },
+  {
+    id: "street",
+    icon: "🏙️",
+    label: "Street Style",
+    shots: [
+      "full body candid, mid-stride walking, shot from 15ft with 85mm compression, city architecture blurred background",
+      "low 3/4 angle, shooting from hip height, dynamic street energy, shallow depth of field, urban attitude",
+      "side profile, leaning against brick wall or doorway, cross-armed or hands in pockets, cool effortless style",
+      "wide establishing, subject small in frame at rule-of-thirds, rich urban environment and city life surrounding",
+      "close-up candid, looking away from camera, natural unposed expression, street light quality, documentary feel",
+    ],
+  },
+  {
+    id: "creator",
+    icon: "✨",
+    label: "Creator",
+    shots: [
+      "front-facing talking, confident expressive pose, slightly above eye level, engaging direct eye contact, creator energy",
+      "holding phone or product, looking at it then glancing at camera, lifestyle influencer framing, natural light",
+      "genuine mid-laugh, 3/4 angle, eyes crinkled, teeth showing, authentic and relatable, candid joy",
+      "looking upward and slightly right, slight smile, thinking-dreaming expression, aspirational creative mood",
+      "back-of-shoulder looking back, candid documentary feel, subject unaware then noticing camera, intimate behind-the-scenes",
+    ],
+  },
+  {
+    id: "lifestyle",
+    icon: "🌿",
+    label: "Lifestyle",
+    shots: [
+      "sitting at café table, 3/4 angle, hands wrapped around coffee cup, warm window light, cozy intimate atmosphere",
+      "walking through park or tree-lined street, candid wide, natural dappled sunlight, relaxed everyday energy",
+      "at home, sitting cross-legged on floor or couch, casual relaxed pose, soft interior light, comfortable and personal",
+      "looking at phone or book, side angle, absorbed in moment, candid and unposed, lifestyle storytelling",
+      "standing by window, side-lit by natural daylight, looking outside pensively, serene and peaceful mood",
+    ],
+  },
+  {
+    id: "fitness",
+    icon: "💪",
+    label: "Fitness",
+    shots: [
+      "action pose mid-movement, dynamic athletic stance, side angle, powerful and energetic, gym or outdoor setting",
+      "low angle looking up, strong confident power stance, arms crossed or hands on hips, athletic authority",
+      "stretching pose, full body side profile, flexibility and form on display, clean gym background",
+      "post-workout candid, slightly above eye level, hands on hips, catching breath, authentic athletic grit",
+      "close-up determination face, intense focus expression, sweat detail, athletic close crop on face and neck",
+    ],
+  },
+  {
+    id: "nightout",
+    icon: "🌙",
+    label: "Night Out",
+    shots: [
+      "soft glow front portrait, warm candlelight or bar lighting, relaxed confident expression, night atmosphere bokeh",
+      "full body wide, dressed up, urban night backdrop, city lights blurred behind, elegant nightlife energy",
+      "over-shoulder looking back, neon or ambient light rim, party energy, blurred movement in background",
+      "3/4 angle close-medium shot, golden bar light, raised glass or drink, social celebratory mood",
+      "side profile, dramatic nightclub or rooftop light, architectural silhouette, mysterious and cinematic",
+    ],
+  },
+  {
+    id: "fotodump",
+    icon: "🎞️",
+    label: "Foto Dump",
+    shots: [
+      "ultra candid, slightly tilted frame, subject caught mid-movement, motion blur on edges, film grain texture, disposable camera aesthetic, raw and unfiltered",
+      "extreme close-up detail — hands, shoes, jewelry, food, or object — macro, off-center composition, spontaneous and intimate",
+      "wide shot, subject very small at edge of frame, environment dominates, documentary snapshot quality, slice-of-life moment",
+      "selfie from exaggerated angle — too close, tilted, or from below — unfiltered casual expression, wide grin or deadpan face, authentic",
+      "over-shoulder walking-away, subject in motion or looking back, spontaneous escape energy, candid street feel",
+      "slightly soft-focus portrait, analog film grain, warm or faded color cast, vintage disposable camera feel, imperfect and nostalgic",
+    ],
+  },
+];
+
 // ─── FaceSlot sub-component (from DirectorStudio) ───────────────────────────
 
 interface FaceSlotProps {
@@ -485,12 +643,34 @@ const CreatePage: React.FC<CreatePageProps> = ({
   })();
 
   // Panel state — only one open at a time
-  type PanelType = 'face' | 'outfit' | 'scene' | null;
+  type PanelType = 'face' | 'outfit' | 'scene' | 'session' | null;
   const [activePanel, setActivePanel] = useState<PanelType>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [selectedPresets, setSelectedPresets] = useState<Set<string>>(new Set());
 
   const togglePanel = (panel: PanelType) => {
     setActivePanel(prev => prev === panel ? null : panel);
+  };
+
+  const togglePreset = (presetId: string) => {
+    setSelectedPresets(prev => {
+      const next = new Set(prev);
+      if (next.has(presetId)) next.delete(presetId);
+      else next.add(presetId);
+
+      // Recalculate combined angles from selected presets
+      const allShots: string[] = [];
+      next.forEach(id => {
+        const preset = PHOTO_SESSION_PRESETS.find(p => p.id === id);
+        if (preset) allShots.push(...preset.shots);
+      });
+      // Limit to 8 shots max
+      form.setPhotoSessionAngles(allShots.slice(0, 8));
+      if (form.photoSessionCount > allShots.length && allShots.length > 0) {
+        form.setPhotoSessionCount(Math.min(form.photoSessionCount, allShots.length));
+      }
+      return next;
+    });
   };
 
   // Settings popover
@@ -572,6 +752,20 @@ const CreatePage: React.FC<CreatePageProps> = ({
 
   // Validated generate — shakes prompt bar if empty
   const handleGenerate = () => {
+    // Photo Session mode
+    if (activePanel === 'session') {
+      if (!form.baseImageForEdit) {
+        setPromptShake(true);
+        setTimeout(() => setPromptShake(false), 500);
+        return;
+      }
+      form.setActiveMode('edit');
+      form.setEditSubMode('session');
+      onGenerate();
+      return;
+    }
+
+    // Normal generation mode
     if (promptIsEmpty) {
       setPromptShake(true);
       setTimeout(() => setPromptShake(false), 500);
@@ -723,6 +917,7 @@ const CreatePage: React.FC<CreatePageProps> = ({
   const hasFaceContent = (char0?.modelImages?.length ?? 0) > 0;
   const hasOutfitContent = (char0?.outfitImages?.length ?? 0) > 0;
   const hasSceneContent = !!form.lighting || !!form.camera || !!form.scenario || (form.scenarioImage && form.scenarioImage.length > 0);
+  const hasSessionContent = !!form.baseImageForEdit || selectedPresets.size > 0;
 
   return (
     <div ref={containerRef} className="flex flex-col h-full overflow-hidden" style={{ background: '#0D0A0A' }}>
@@ -1336,6 +1531,141 @@ const CreatePage: React.FC<CreatePageProps> = ({
                 </div>
               </div>
             )}
+
+            {/* Session Panel */}
+            {activePanel === 'session' && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: '#B8A9A5' }}>Photo Session</span>
+                  <button onClick={() => setActivePanel(null)} className="p-1 rounded-lg transition-colors" style={{ color: '#6B5A56' }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#E8DDD9'}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#6B5A56'}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Base image upload */}
+                <div>
+                  <div className="text-[9px] font-jet uppercase tracking-wider mb-1.5" style={{ color: '#22D3EE' }}>Reference photo</div>
+                  <div className="flex items-start gap-3">
+                    <FaceSlot
+                      file={form.baseImageForEdit}
+                      onFile={(f) => form.setBaseImageForEdit(f)}
+                      label="Upload photo"
+                      size="sm"
+                    />
+                    <p className="text-[10px] mt-2" style={{ color: form.baseImageForEdit ? '#10B981' : '#D97706' }}>
+                      {form.baseImageForEdit ? '✓ Face, outfit & scene will be preserved' : 'Upload the photo to anchor the session'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Style presets grid */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="text-[9px] font-jet uppercase tracking-wider" style={{ color: '#6B5A56' }}>Style</div>
+                    {selectedPresets.size > 0 && (
+                      <button onClick={() => { setSelectedPresets(new Set()); form.setPhotoSessionAngles([]); form.setPhotoSessionCount(4); }}
+                        className="text-[10px] transition-colors" style={{ color: '#6B5A56' }}
+                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#E8DDD9'}
+                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#6B5A56'}
+                      >Clear</button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-1">
+                    {PHOTO_SESSION_PRESETS.map((preset) => {
+                      const isActive = selectedPresets.has(preset.id);
+                      return (
+                        <button
+                          key={preset.id}
+                          onClick={() => togglePreset(preset.id)}
+                          title={PRESET_TOOLTIPS[preset.id] || preset.label}
+                          className="flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl border text-center transition-all"
+                          style={isActive
+                            ? { background: 'rgba(34,211,238,0.1)', borderColor: '#22D3EE', color: '#fff' }
+                            : { background: '#0F0C0C', borderColor: '#2A1F1C', color: '#6B5A56' }
+                          }
+                          onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(34,211,238,0.3)'; (e.currentTarget as HTMLElement).style.color = '#B8A9A5'; }}}
+                          onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.borderColor = '#2A1F1C'; (e.currentTarget as HTMLElement).style.color = '#6B5A56'; }}}
+                        >
+                          <span className="text-sm leading-none">{preset.icon}</span>
+                          <span className="text-[8px] font-semibold leading-tight">{preset.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {selectedPresets.size > 0 && (
+                    <div className="mt-1.5 px-2 py-1 rounded-lg" style={{ background: '#0F0C0C', border: '1px solid #2A1F1C' }}>
+                      <p className="text-[10px] text-center" style={{ color: '#B8A9A5' }}>
+                        <span className="font-bold text-white">{form.photoSessionAngles.length}</span>
+                        {form.photoSessionAngles.length === 8 ? ' shots (max)' : ' shots combined'}
+                        {' · '}{Array.from(selectedPresets).map(id => PHOTO_SESSION_PRESETS.find(p => p.id === id)?.label).filter(Boolean).join(' + ')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Count + Engine row */}
+                <div className="flex gap-3 items-start">
+                  {/* Count stepper */}
+                  <div className="flex-1">
+                    <div className="text-[9px] font-jet uppercase tracking-wider mb-1.5" style={{ color: '#6B5A56' }}>Photos</div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => form.setPhotoSessionCount(Math.max(2, form.photoSessionCount - 1))}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+                        style={{ background: '#0F0C0C', border: '1px solid #2A1F1C', color: '#6B5A56' }}
+                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = '#22D3EE'}
+                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = '#2A1F1C'}
+                      >
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className="text-lg font-black text-white w-6 text-center">{form.photoSessionCount}</span>
+                      <button onClick={() => form.setPhotoSessionCount(Math.min(selectedPresets.size > 0 ? form.photoSessionAngles.length : 8, form.photoSessionCount + 1))}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+                        style={{ background: '#0F0C0C', border: '1px solid #2A1F1C', color: '#6B5A56' }}
+                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = '#22D3EE'}
+                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = '#2A1F1C'}
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Engine selector */}
+                  <div className="flex-1">
+                    <div className="text-[9px] font-jet uppercase tracking-wider mb-1.5" style={{ color: '#6B5A56' }}>Engine</div>
+                    <div className="flex gap-1.5">
+                      <button onClick={() => form.setPhotoSessionModel('nb2')}
+                        className="flex-1 py-1.5 rounded-lg text-[10px] font-bold text-center transition-all"
+                        style={form.photoSessionModel === 'nb2'
+                          ? { background: 'rgba(34,211,238,0.15)', border: '1px solid #22D3EE', color: '#22D3EE' }
+                          : { background: '#0F0C0C', border: '1px solid #2A1F1C', color: '#6B5A56' }
+                        }
+                        onMouseEnter={e => { if (form.photoSessionModel !== 'nb2') (e.currentTarget as HTMLElement).style.borderColor = 'rgba(34,211,238,0.3)'; }}
+                        onMouseLeave={e => { if (form.photoSessionModel !== 'nb2') (e.currentTarget as HTMLElement).style.borderColor = '#2A1F1C'; }}
+                      >NB2</button>
+                      <button onClick={() => form.setPhotoSessionModel('grok')}
+                        className="flex-1 py-1.5 rounded-lg text-[10px] font-bold text-center transition-all"
+                        style={form.photoSessionModel === 'grok'
+                          ? { background: 'rgba(34,211,238,0.15)', border: '1px solid #22D3EE', color: '#22D3EE' }
+                          : { background: '#0F0C0C', border: '1px solid #2A1F1C', color: '#6B5A56' }
+                        }
+                        onMouseEnter={e => { if (form.photoSessionModel !== 'grok') (e.currentTarget as HTMLElement).style.borderColor = 'rgba(34,211,238,0.3)'; }}
+                        onMouseLeave={e => { if (form.photoSessionModel !== 'grok') (e.currentTarget as HTMLElement).style.borderColor = '#2A1F1C'; }}
+                      >Grok</button>
+                    </div>
+                  </div>
+
+                  {/* Credit cost info */}
+                  <div className="flex-none pt-5">
+                    <span className="text-[10px] font-jet font-bold px-2 py-1 rounded-lg" style={{ background: 'rgba(34,211,238,0.1)', color: '#22D3EE' }}>
+                      ⚡{10 * form.photoSessionCount}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1420,6 +1750,14 @@ const CreatePage: React.FC<CreatePageProps> = ({
                 hasContent={hasSceneContent}
                 onClick={() => togglePanel('scene')}
               />
+              <TogglePill
+                icon={<span className="text-xs leading-none">📷</span>}
+                label="Session"
+                activeLabel={hasSessionContent ? `${form.photoSessionCount} shots` : undefined}
+                isOpen={activePanel === 'session'}
+                hasContent={hasSessionContent}
+                onClick={() => togglePanel('session')}
+              />
 
               <div className="flex-1" />
 
@@ -1482,14 +1820,14 @@ const CreatePage: React.FC<CreatePageProps> = ({
               {/* Generate button */}
               <button
                 onClick={isGenerating ? onStopGeneration : handleGenerate}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-[0.97] flex-none text-white ${!promptIsEmpty && !isGenerating ? 'generate-ready' : ''}`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-[0.97] flex-none text-white ${(!promptIsEmpty || activePanel === 'session') && !isGenerating ? 'generate-ready' : ''}`}
                 style={isGenerating
                   ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)' }
-                  : promptIsEmpty && !isGenerating
+                  : (promptIsEmpty && activePanel !== 'session') && !isGenerating
                     ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', opacity: 0.4, cursor: 'not-allowed', boxShadow: 'none' }
                     : { background: 'linear-gradient(135deg,#FF5C35,#FFB347)' }
                 }
-                onMouseEnter={e => { if (!promptIsEmpty && !isGenerating) { (e.currentTarget as HTMLElement).style.filter = 'brightness(1.1)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 24px rgba(255,92,53,0.4)'; } }}
+                onMouseEnter={e => { if ((!promptIsEmpty || activePanel === 'session') && !isGenerating) { (e.currentTarget as HTMLElement).style.filter = 'brightness(1.1)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 24px rgba(255,92,53,0.4)'; } }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.filter = ''; }}
               >
                 {isGenerating ? (
@@ -1500,7 +1838,7 @@ const CreatePage: React.FC<CreatePageProps> = ({
                 ) : (
                   <>
                     <Wand2 className="w-3.5 h-3.5" />
-                    Generate <span className="text-[9px] font-jet font-bold px-1.5 py-0.5 rounded-full" style={{ background: '#22D3EE', color: '#000' }}>⚡{genCreditCost}</span>
+                    {activePanel === 'session' ? 'Shoot' : 'Generate'} <span className="text-[9px] font-jet font-bold px-1.5 py-0.5 rounded-full" style={{ background: '#22D3EE', color: '#000' }}>⚡{activePanel === 'session' ? 10 * form.photoSessionCount : genCreditCost}</span>
                   </>
                 )}
               </button>
