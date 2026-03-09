@@ -232,7 +232,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate }) => {
               <span className="font-bold" style={{ color: '#FFB347' }}>
                 {sub.isUnlimited
                   ? <span className="flex items-center gap-1"><Infinity className="w-3 h-3" /> Unlimited</span>
-                  : sub.credits.toLocaleString()
+                  : sub.credits.toLocaleString('en-US')
                 }
               </span>
             </div>

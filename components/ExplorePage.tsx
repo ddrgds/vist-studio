@@ -186,7 +186,7 @@ const ExplorePage: React.FC<ExplorePageProps> = ({ onNavigate }) => {
 
             {/* Micro-stat */}
             <p className="mt-6 text-[11px] font-jet" style={{ color: "#8B7A76" }}>
-              {totalGenerated.toLocaleString()}+ images created
+              {totalGenerated.toLocaleString('en-US')}+ images created
             </p>
           </div>
 
@@ -308,7 +308,7 @@ const ExplorePage: React.FC<ExplorePageProps> = ({ onNavigate }) => {
           style={{ background: "#161110", border: "1px solid #2A1F1C" }}
         >
           <div className="flex gap-6 sm:gap-12 flex-shrink-0">
-            <Stat value={totalGenerated.toLocaleString() + "+"} label="Images generated" />
+            <Stat value={totalGenerated.toLocaleString('en-US') + "+"} label="Images generated" />
             <Stat value="10+" label="AI models" />
             <Stat value="4" label="Providers" />
           </div>

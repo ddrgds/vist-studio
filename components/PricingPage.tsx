@@ -488,7 +488,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onNavigate }) => {
                   </div>
                 )}
                 <div className="text-[32px] font-bold mb-1" style={{ color: '#F5EDE8' }}>
-                  {pack.credits.toLocaleString()}
+                  {pack.credits.toLocaleString('en-US')}
                 </div>
                 <div className="text-[11px] font-jet mb-3" style={{ color: '#FFB347' }}>⚡ credits</div>
                 <div className="text-[24px] font-bold mb-1" style={{ color: '#F5EDE8' }}>${pack.price}</div>
@@ -511,7 +511,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onNavigate }) => {
                 >
                   {checkoutLoading === `pack-${pack.credits}`
                     ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Redirecting…</>
-                    : `Buy ${pack.credits.toLocaleString()} credits`}
+                    : `Buy ${pack.credits.toLocaleString('en-US')} credits`}
                 </button>
               </div>
             ))}

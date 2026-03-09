@@ -2310,7 +2310,7 @@ const DirectorStudio: React.FC<DirectorStudioProps> = ({
               <span style={{ color: '#FFB347' }}>⚡ {directorCreditCost} credits</span>
               <span style={{ color: '#2A1F1C' }}>·</span>
               <span style={{ color: sub.credits < 20 ? '#EF4444' : sub.credits < 100 ? '#F59E0B' : '#6B5A56' }}>
-                {sub.isUnlimited ? '∞ remaining' : `${sub.credits.toLocaleString()} remaining`}
+                {sub.isUnlimited ? '∞ remaining' : `${sub.credits.toLocaleString('en-US')} remaining`}
               </span>
             </div>
           )}

@@ -1006,6 +1006,10 @@ const AppInner: React.FC = () => {
                   explore: "Explore", generate: "Freestyle", director: "Director",
                   characters: "Library", storyboard: "Storyboard", pricing: "Pricing",
                 };
+                const TAB_BADGES: Record<string, string | null> = {
+                  explore: null, generate: null, director: "New",
+                  characters: null, storyboard: null, pricing: null,
+                };
                 const TAB_TIPS: Record<string, string> = {
                   explore: "Home & overview",
                   generate: "Freestyle generation",
@@ -1026,6 +1030,11 @@ const AppInner: React.FC = () => {
                     onMouseLeave={e => { if (activeWorkspace !== ws) (e.currentTarget as HTMLElement).style.color = '#6B5A56'; }}
                   >
                     {TAB_LABELS[ws]}
+                    {TAB_BADGES[ws] && (
+                      <span className="ml-1 text-[8px] font-bold font-jet px-1.5 py-0.5 rounded-full leading-none align-top" style={{ background: '#FF5C35', color: '#fff' }}>
+                        {TAB_BADGES[ws]}
+                      </span>
+                    )}
                     {activeWorkspace === ws && (
                       <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full" style={{ background: '#FF5C35' }} />
                     )}
@@ -1053,7 +1062,7 @@ const AppInner: React.FC = () => {
                     color: sub.isUnlimited ? '#B8A9A5' : sub.credits < 20 ? '#EF4444' : sub.credits < 100 ? '#F59E0B' : '#B8A9A5',
                     animation: !sub.isUnlimited && sub.credits < 20 ? 'pulse 2s infinite' : undefined,
                   }}>
-                    {sub.isUnlimited ? '∞' : sub.credits.toLocaleString()}
+                    {sub.isUnlimited ? '∞' : sub.credits.toLocaleString('en-US')}
                   </span>
                   {/* Credits dropdown */}
                   <div
@@ -1062,7 +1071,7 @@ const AppInner: React.FC = () => {
                   >
                     <div className="px-3 py-2.5 space-y-1.5">
                       <div className="text-[11px]" style={{ color: '#F5EDE8' }}>
-                        {sub.isUnlimited ? 'Unlimited credits' : `${sub.credits.toLocaleString()} credits available`}
+                        {sub.isUnlimited ? 'Unlimited credits' : `${sub.credits.toLocaleString('en-US')} credits available`}
                       </div>
                       <div className="text-[10px]" style={{ color: '#4A3A36' }}>
                         {sub.plan === 'starter' ? '50' : sub.plan === 'pro' ? '500' : sub.plan === 'studio' ? '1,500' : '8,000'} credits/mo included in {sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1)}
@@ -1172,7 +1181,7 @@ const AppInner: React.FC = () => {
             ), label: 'Library' },
             { ws: 'storyboard' as const,  icon: (
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            ), label: 'Story' },
+            ), label: 'Board' },
             { ws: 'pricing' as const,  icon: (
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
             ), label: 'Plans' },
@@ -1207,10 +1216,7 @@ const AppInner: React.FC = () => {
           {/* Suspense boundary for lazy-loaded workspaces */}
           <Suspense fallback={
             <div className="absolute inset-0 z-0 flex items-center justify-center" style={{ background: '#0D0A0A' }}>
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#FF5C35', borderTopColor: 'transparent' }} />
-                <span className="text-xs font-jet" style={{ color: '#6B5A56' }}>Loading workspace…</span>
-              </div>
+              <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#FF5C35', borderTopColor: 'transparent' }} />
             </div>
           }>
           {/* ────── WORKSPACE: GENERATE ────── */}
