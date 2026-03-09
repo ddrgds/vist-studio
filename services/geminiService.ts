@@ -312,7 +312,20 @@ export const generateInfluencerImage = async (
   const parts: any[] = [];
   let characterDescriptions = '';
 
-  for (const [index, character] of params.characters.entries()) {
+  // Filter out empty characters — only include those with actual content
+  const activeCharacters = params.characters.filter(c =>
+    (c.modelImages && c.modelImages.length > 0) ||
+    c.characteristics?.trim() ||
+    c.outfitDescription?.trim() ||
+    (c.outfitImages && c.outfitImages.length > 0) ||
+    c.poseImage ||
+    c.pose?.trim() ||
+    c.accessory?.trim()
+  );
+  // Always have at least 1 character (use first even if empty for the prompt)
+  const effectiveCharacters = activeCharacters.length > 0 ? activeCharacters : [params.characters[0]];
+
+  for (const [index, character] of effectiveCharacters.entries()) {
     const charNum = index + 1;
 
     // 1. Model Reference Images
@@ -385,14 +398,21 @@ export const generateInfluencerImage = async (
   // Gemini processes JSON blocks as distinct semantic units — fields don't bleed into each other.
   // Technique from community: "extract visual DNA as JSON → feed back to NB for consistency"
   // (promptlibrary.space 3-step workflow + godofprompt.ai JSON prompt guide)
-  const characterSpecs = params.characters.map((ch, i) => ({
+  const hasFaceRefs = effectiveCharacters.some(c => c.modelImages && c.modelImages.length > 0);
+
+  const characterSpecs = effectiveCharacters.map((ch, i) => ({
     character: i + 1,
-    identity: {
-      source: `[CHARACTER ${i + 1} — FACE/IDENTITY REFERENCE]`,
-      face_lock: "ABSOLUTE — reproduce with pixel-perfect fidelity",
-      preserve: ["bone_structure", "eye_shape", "eye_color", "nose_form", "lip_shape", "skin_tone", "skin_texture", "hair_color", "hair_texture"],
-      ...(ch.characteristics ? { traits: ch.characteristics } : {}),
-    },
+    identity: (ch.modelImages && ch.modelImages.length > 0)
+      ? {
+          source: `[CHARACTER ${i + 1} — FACE/IDENTITY REFERENCE]`,
+          face_lock: "ABSOLUTE — reproduce with pixel-perfect fidelity",
+          preserve: ["bone_structure", "eye_shape", "eye_color", "nose_form", "lip_shape", "skin_tone", "skin_texture", "hair_color", "hair_texture"],
+          ...(ch.characteristics ? { traits: ch.characteristics } : {}),
+        }
+      : {
+          description: ch.characteristics || "photorealistic person",
+          ...(ch.characteristics ? { traits: ch.characteristics } : {}),
+        },
     costume: {
       source: (ch.outfitImages?.length ?? 0) > 0
         ? `[CHARACTER ${i + 1} — OUTFIT REFERENCE] — reproduce every detail exactly`
@@ -419,7 +439,10 @@ export const generateInfluencerImage = async (
     ...(params.negativePrompt ? { exclude: params.negativePrompt } : {}),
   };
 
-  const finalPrompt = `Generate a single cohesive fashion editorial image with ${params.characters.length} character(s).
+  const charCount = effectiveCharacters.length;
+  const charCountText = charCount === 1 ? 'exactly ONE person (solo subject — no other people)' : `exactly ${charCount} characters`;
+
+  const finalPrompt = `Generate a single cohesive fashion editorial image featuring ${charCountText}.
 
 CHARACTERS:
 \`\`\`json
@@ -432,9 +455,8 @@ ${JSON.stringify(sceneSpec, null, 2)}
 \`\`\`
 
 ABSOLUTE CONSTRAINTS:
-- Face of each character comes ONLY from their [FACE/IDENTITY REFERENCE] — never alter, blend, or idealize it.
-- Outfit from [FACE/IDENTITY REFERENCE] images is IRRELEVANT — replace with COSTUME source above.
-- [SCENARIO REFERENCE] is for environment only — ignore any people visible in it.
+${charCount === 1 ? '- CRITICAL: Generate exactly ONE person. Do NOT add any other people, bystanders, reflections, or background figures.\n' : ''}- ${hasFaceRefs ? 'Face of each character comes ONLY from their [FACE/IDENTITY REFERENCE] — never alter, blend, or idealize it.' : 'Generate the character(s) from the text description provided.'}
+${hasFaceRefs ? '- Outfit from [FACE/IDENTITY REFERENCE] images is IRRELEVANT — replace with COSTUME source above.\n' : ''}- [SCENARIO REFERENCE] is for environment only — ignore any people visible in it.
 - No watermarks, text, or borders.
 `;
 
