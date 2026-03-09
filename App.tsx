@@ -1288,15 +1288,44 @@ const AppInner: React.FC = () => {
                 </div>
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center -mt-10 animate-in zoom-in duration-700">
-                  <h2 className="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-white/20 mb-6 tracking-tighter text-center leading-none">
+                  <h2 className="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-white/20 mb-4 tracking-tighter text-center leading-none">
                     DIRECT
                     <br />
                     YOUR FILM
                   </h2>
-                  <p className="text-zinc-500 text-center max-w-md text-lg md:text-xl font-light tracking-wide mb-12">
-                    Collect your best generations to build sequences and
-                    storyboards.
+                  <p className="text-zinc-500 text-center max-w-md text-base font-light tracking-wide mb-8">
+                    Collect your best generations to build sequences, visual stories, and content campaigns.
                   </p>
+
+                  {/* Step indicators */}
+                  <div className="flex items-center gap-3 mb-8 text-xs font-jet">
+                    {['1. Generate images', '2. Add to Storyboard', '3. Export grid'].map((step, i, arr) => (
+                      <React.Fragment key={step}>
+                        <span className="px-3 py-1.5 rounded-lg" style={{ background: '#161110', border: '1px solid #2A1F1C', color: '#8C7570' }}>{step}</span>
+                        {i < arr.length - 1 && <span style={{ color: '#2A1F1C' }}>→</span>}
+                      </React.Fragment>
+                    ))}
+                  </div>
+
+                  {/* CTA buttons */}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setActiveWorkspace('director')}
+                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] active:scale-[0.97]"
+                      style={{ background: 'linear-gradient(135deg, #FF5C35, #FFB347)', boxShadow: '0 4px 24px rgba(255,92,53,0.35)' }}
+                    >
+                      Open Director
+                    </button>
+                    <button
+                      onClick={() => setActiveWorkspace('generate')}
+                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-sm transition-all hover:scale-[1.02]"
+                      style={{ color: '#B8A9A5', border: '1px solid #2A1F1C' }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,92,53,0.3)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = '#2A1F1C'; }}
+                    >
+                      Open Freestyle
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

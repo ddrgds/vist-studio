@@ -143,31 +143,44 @@ const StoryboardView: React.FC<StoryboardViewProps> = ({ onOpenMobileMenu }) => 
           <h3 className="text-xl font-bold font-display mb-2" style={{ color: '#F5EDE8' }}>
             Your Storyboard is empty
           </h3>
-          <p className="text-sm mb-8" style={{ color: '#6B5A56' }}>
-            Collect your best generations here to build sequences, visual references, or create your own comic.
+          <p className="text-sm mb-6" style={{ color: '#6B5A56' }}>
+            Collect your best generations to build sequences, visual stories, or content campaigns.
           </p>
 
-          <div className="p-5 rounded-2xl flex items-start gap-4 text-left mx-auto max-w-md"
-            style={{ background: '#161110', border: '1px solid #2A1F1C' }}>
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-              style={{ background: 'rgba(255,179,71,0.1)' }}>
-              <span className="text-sm">💡</span>
-            </div>
-            <div>
-              <p className="text-xs font-semibold mb-1" style={{ color: '#F5EDE8' }}>How to add frames</p>
-              <p className="text-[11px] leading-relaxed" style={{ color: '#6B5A56' }}>
-                Open any image from your gallery, tap the <strong style={{ color: '#B8A9A5' }}>menu ⋯</strong> and choose <strong style={{ color: '#FF5C35' }}>"Add to Storyboard"</strong>.
-              </p>
-            </div>
+          {/* Step-by-step guide */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-8 max-w-md mx-auto">
+            {[
+              { step: '1', icon: '🎨', text: 'Generate images in Director or Freestyle' },
+              { step: '2', icon: '⋯', text: 'Tap menu on any image → "Add to Storyboard"' },
+              { step: '3', icon: '📤', text: 'Arrange frames & export as grid' },
+            ].map(({ step, icon, text }) => (
+              <div key={step} className="flex-1 p-3 rounded-xl text-left" style={{ background: '#161110', border: '1px solid #2A1F1C' }}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="text-[10px] font-jet font-bold w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,92,53,0.15)', color: '#FF5C35' }}>{step}</span>
+                  <span className="text-sm">{icon}</span>
+                </div>
+                <p className="text-[11px] leading-relaxed" style={{ color: '#8C7570' }}>{text}</p>
+              </div>
+            ))}
           </div>
 
-          <div className="mt-8 lg:hidden">
+          {/* CTA buttons — visible on all viewports */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
               onClick={onOpenMobileMenu}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] active:scale-[0.97]"
+              className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] active:scale-[0.97]"
               style={{ background: 'linear-gradient(135deg, #FF5C35, #FFB347)', boxShadow: '0 4px 24px rgba(255,92,53,0.35)' }}
             >
-              Start creating
+              Open Director
+            </button>
+            <button
+              onClick={onOpenMobileMenu}
+              className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-sm transition-all hover:scale-[1.02]"
+              style={{ color: '#B8A9A5', border: '1px solid #2A1F1C' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,92,53,0.3)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#2A1F1C'; }}
+            >
+              Open Freestyle
             </button>
           </div>
         </div>

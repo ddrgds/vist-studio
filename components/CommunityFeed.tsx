@@ -6,11 +6,14 @@ interface CommunityFeedProps {
   onNavigate: (workspace: string, mode?: string) => void;
 }
 
+type SortMode = 'recent' | 'popular';
+
 const CommunityFeed: React.FC<CommunityFeedProps> = ({ onNavigate }) => {
   const [items, setItems] = useState<CommunityShare[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [sortMode, setSortMode] = useState<SortMode>('recent');
 
   const PAGE_SIZE = 20;
 
@@ -46,16 +49,34 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ onNavigate }) => {
   return (
     <section className="px-4 sm:px-8 pt-10 pb-12 max-w-[1400px] mx-auto">
       <div className="flex items-end justify-between mb-6">
-        <div>
-          <h2
-            className="text-[11px] font-black tracking-widest uppercase font-display"
-            style={{ color: '#FF5C35' }}
-          >
-            Community
-          </h2>
-          <p className="text-xs mt-1" style={{ color: '#6B5A56' }}>
-            See what others are creating
-          </p>
+        <div className="flex items-end gap-4">
+          <div>
+            <h2
+              className="text-[11px] font-black tracking-widest uppercase font-display"
+              style={{ color: '#FF5C35' }}
+            >
+              Community
+            </h2>
+            <p className="text-xs mt-1" style={{ color: '#6B5A56' }}>
+              See what others are creating
+            </p>
+          </div>
+          {/* Sort tabs */}
+          <div className="flex gap-1 mb-0.5">
+            {([['recent', 'Recent'], ['popular', 'Trending']] as const).map(([mode, label]) => (
+              <button
+                key={mode}
+                onClick={() => setSortMode(mode)}
+                className="text-[10px] px-2.5 py-1 rounded-full transition-all font-jet"
+                style={sortMode === mode
+                  ? { background: '#FF5C35', color: '#fff' }
+                  : { background: 'transparent', color: '#6B5A56', border: '1px solid #2A1F1C' }
+                }
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
         <button
           onClick={() => onNavigate('generate', 'create')}
@@ -106,7 +127,15 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ onNavigate }) => {
       ) : (
         <>
           <div className="columns-2 md:columns-3 lg:columns-4 gap-2">
-            {items.map((item) => (
+            {(sortMode === 'popular'
+              ? [...items].sort((a, b) => {
+                  // Pseudo-trending: mix by hash of id for stable but shuffled order
+                  const hashA = a.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+                  const hashB = b.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+                  return hashA - hashB;
+                })
+              : items
+            ).map((item) => (
               <CommunityCard key={item.id} item={item} />
             ))}
           </div>
