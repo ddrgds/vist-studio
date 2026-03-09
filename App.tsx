@@ -11,6 +11,7 @@ import ProgressBar from "./components/ProgressBar";
 import ExplorePage from "./components/ExplorePage";
 
 // Lazy-loaded workspace components for code splitting
+const CreatePage = lazy(() => import("./components/CreatePage"));
 const GeneratorPage = lazy(() => import("./components/GeneratorPage"));
 const DirectorStudio = lazy(() => import("./components/DirectorStudio"));
 const CharactersPage = lazy(() => import("./components/CharactersPage"));
@@ -1230,15 +1231,15 @@ const AppInner: React.FC = () => {
               <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#FF5C35', borderTopColor: 'transparent' }} />
             </div>
           }>
-          {/* ────── WORKSPACE: CREATE ────── */}
+          {/* ────── WORKSPACE: CREATE (unified) ────── */}
           {activeWorkspace === "create" && (
             <div className="absolute inset-0 z-0 overflow-hidden">
-              <GeneratorPage
+              <CreatePage
                 isGenerating={isGenerating}
                 progress={progress}
                 onGenerate={handleGenerate}
                 onStopGeneration={stopGeneration}
-                onDownload={handleDownload}
+                onDownload={(item) => handleDownload({ stopPropagation: () => {} } as React.MouseEvent, item)}
                 onReuse={handleReuse}
                 onUpscale={handleUpscale}
                 onCaption={(item) => setCaptionItem(item)}
@@ -1247,7 +1248,8 @@ const AppInner: React.FC = () => {
                 onRelight={(item) => setRelightItem(item)}
                 onInpaint={(item) => setInpaintItem(item)}
                 onAddToStoryboard={handleAddToStoryboard}
-                onSendToDirector={handleSendToDirector}
+                onEdit={(item) => gallery.setEditingItem(item)}
+                onChangePose={handleChangePose}
               />
             </div>
           )}
