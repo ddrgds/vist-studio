@@ -100,13 +100,11 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
 
       {/* Logo / title */}
       <div className="mb-6 text-center">
-        <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-purple-900/40">
-          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
-          </svg>
+        <div className="w-12 h-12 rounded-[10px] flex items-center justify-center mx-auto mb-4" style={{ background: 'linear-gradient(135deg, var(--accent), var(--magenta), var(--blue))' }}>
+          <span className="text-white font-bold text-lg">V</span>
         </div>
-        <h1 className="text-3xl font-bold text-white tracking-tight">VIST</h1>
-        <p className="text-zinc-500 text-sm mt-1">Virtual Influencer Studio</p>
+        <h1 className="text-3xl font-bold text-white tracking-tight" style={{ fontFamily: "'Instrument Serif', serif" }}>VERTEX</h1>
+        <p style={{ color: 'var(--text-3)', fontSize: 13, marginTop: 4 }}>AI Studio</p>
       </div>
 
       {/* Context banner */}
