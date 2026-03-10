@@ -7,8 +7,6 @@ import {
   Images,
   CreditCard,
   Settings,
-  Bell,
-  LogOut,
   Zap,
   ChevronRight,
 } from 'lucide-react';
@@ -26,8 +24,8 @@ interface SidebarNavProps {
 const NAV_ITEMS: { page: AppPage; icon: React.ElementType; label: string; tip: string }[] = [
   { page: 'dashboard', icon: LayoutDashboard, label: 'Dashboard', tip: 'Home & overview' },
   { page: 'create', icon: Sparkles, label: 'Create Character', tip: 'Character builder wizard' },
-  { page: 'session', icon: Camera, label: 'Photo Session', tip: 'Multi-angle photo shoots' },
   { page: 'studio', icon: PenTool, label: 'Studio Editor', tip: 'Pose, relight, camera & more' },
+  { page: 'session', icon: Camera, label: 'Photo Session', tip: 'Multi-angle photo shoots' },
   { page: 'gallery', icon: Images, label: 'Gallery', tip: 'Characters & generated images' },
 ];
 

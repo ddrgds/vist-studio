@@ -306,6 +306,30 @@ const AppInner: React.FC = () => {
     setActiveWorkspace("studio");
   };
 
+  // ─── Open character in Studio Editor ───────
+  const handleOpenInStudio = (char: SavedCharacter) => {
+    // Load character's first image as canvas image for the Studio
+    if (char.modelImageBlobs && char.modelImageBlobs.length > 0) {
+      const blob = char.modelImageBlobs[0];
+      const file = new File([blob], `${char.name}-ref.jpg`, { type: blob.type || 'image/jpeg' });
+      form.setBaseImageForEdit(file);
+    }
+    charLib.incrementUsage(char.id);
+    setActiveWorkspace("studio");
+  };
+
+  // ─── Start Photo Session with character ───────
+  const handleShootSession = (char: SavedCharacter) => {
+    // Load character's face image so PhotoSession has it preloaded
+    if (char.modelImageBlobs && char.modelImageBlobs.length > 0) {
+      const blob = char.modelImageBlobs[0];
+      const file = new File([blob], `${char.name}-ref.jpg`, { type: blob.type || 'image/jpeg' });
+      form.setDirectorFaceImages([file]);
+    }
+    charLib.incrementUsage(char.id);
+    setActiveWorkspace("session");
+  };
+
   // ─── Compute Studio canvas image from form state ───────
   const studioCanvasImage = useMemo(() => {
     const src = form.baseImageForEdit ?? form.directorFaceImages[0] ?? null;
@@ -1086,6 +1110,8 @@ const AppInner: React.FC = () => {
                   onNewCharacter={() => setActiveWorkspace("create")}
                   onNavigate={(ws) => setActiveWorkspace(ws as AppWorkspace)}
                   onUploadToStudio={handleUploadToStudio}
+                  onOpenInStudio={handleOpenInStudio}
+                  onShootSession={handleShootSession}
                 />
               </div>
             )}

@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useMemo } from 'react';
 import {
   Plus, Trash2, Pencil, ChevronRight, X, Check, Search, Image, Users,
   Download, Play, Heart, MoreHorizontal, Upload, ArrowUpDown, Eye,
+  PenTool, Camera,
 } from 'lucide-react';
 import { useCharacterLibrary } from '../contexts/CharacterLibraryContext';
 import { useGallery } from '../contexts/GalleryContext';
@@ -33,6 +34,8 @@ interface CharactersPageProps {
   onNewCharacter?: () => void;
   onNavigate?: (page: string) => void;
   onUploadToStudio?: (file: File) => void;
+  onOpenInStudio?: (char: SavedCharacter) => void;
+  onShootSession?: (char: SavedCharacter) => void;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -158,6 +161,8 @@ interface CardProps {
   onDelete: (id: string) => void;
   onRename: (id: string, name: string) => void;
   onLoadCharacter?: (char: SavedCharacter) => void;
+  onOpenInStudio?: (char: SavedCharacter) => void;
+  onShootSession?: (char: SavedCharacter) => void;
   onTrainSoulId: (id: string) => void;
   trainingProgress: number;
   isFavorite: boolean;
@@ -165,7 +170,7 @@ interface CardProps {
 }
 
 const CharacterCard: React.FC<CardProps> = ({
-  char, onDelete, onRename, onLoadCharacter, onTrainSoulId, trainingProgress,
+  char, onDelete, onRename, onLoadCharacter, onOpenInStudio, onShootSession, onTrainSoulId, trainingProgress,
   isFavorite, onToggleFavorite,
 }) => {
   const [isRenaming, setIsRenaming] = useState(false);
@@ -284,17 +289,30 @@ const CharacterCard: React.FC<CardProps> = ({
           </div>
         </div>
 
-        {/* Hover overlay — Edit in Studio */}
-        {onLoadCharacter && (
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center"
+        {/* Hover overlay — Studio & Session actions */}
+        {(onOpenInStudio || onShootSession) && (
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2"
             style={{ background: 'rgba(0,0,0,0.45)' }}>
-            <button
-              onClick={() => onLoadCharacter(char)}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.03] active:scale-95"
-              style={{ background: C.accent, color: '#fff' }}
-            >
-              Edit <ChevronRight className="w-3.5 h-3.5" />
-            </button>
+            {onOpenInStudio && (
+              <button
+                onClick={() => onOpenInStudio(char)}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.03] active:scale-95"
+                style={{ background: C.accent, color: '#fff' }}
+                title="Open in Studio Editor"
+              >
+                <PenTool className="w-3.5 h-3.5" /> Studio
+              </button>
+            )}
+            {onShootSession && (
+              <button
+                onClick={() => onShootSession(char)}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.03] active:scale-95"
+                style={{ background: '#1A1210', color: C.text, border: `1px solid ${C.borderHover}` }}
+                title="Start Photo Session"
+              >
+                <Camera className="w-3.5 h-3.5" /> Shoot
+              </button>
+            )}
           </div>
         )}
 
@@ -608,7 +626,7 @@ type CharFilter = 'all' | 'active' | 'editing' | 'draft';
 type SortMode = 'recent' | 'name' | 'uses';
 
 const CharactersPage: React.FC<CharactersPageProps> = ({
-  onLoadCharacter, onNewCharacter, onNavigate, onUploadToStudio,
+  onLoadCharacter, onNewCharacter, onNavigate, onUploadToStudio, onOpenInStudio, onShootSession,
 }) => {
   const { savedCharacters, deleteCharacter, renameCharacter, trainSoulId } = useCharacterLibrary();
   const { generatedHistory, deleteItem } = useGallery();
@@ -918,6 +936,8 @@ const CharactersPage: React.FC<CharactersPageProps> = ({
                     onDelete={deleteCharacter}
                     onRename={renameCharacter}
                     onLoadCharacter={onLoadCharacter}
+                    onOpenInStudio={onOpenInStudio}
+                    onShootSession={onShootSession}
                     onTrainSoulId={handleTrainSoulId}
                     trainingProgress={progressMap[char.id] ?? 0}
                     isFavorite={favorites.has(char.id)}

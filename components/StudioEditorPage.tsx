@@ -24,6 +24,8 @@ import {
   X,
   Wand2,
   Loader2,
+  Lock,
+  Zap,
 } from 'lucide-react';
 import { editImageWithAI, faceSwapWithGemini, modifyInfluencerPose } from '../services/geminiService';
 import { useProfile } from '../contexts/ProfileContext';
@@ -74,6 +76,28 @@ const TOOLS: { id: ToolId; label: string; Icon: React.ElementType }[] = [
   { id: 'objects', label: 'Objects', Icon: Box },
   { id: 'scenes', label: 'Scenes', Icon: Image },
   { id: 'aiedit', label: 'AI Edit', Icon: Wand2 },
+];
+
+/* ───────────────────── AI Model definitions ───────────────────── */
+
+type StudioModelId = 'gemini-flash' | 'gemini-pro' | 'flux-kontext' | 'gpt-image' | 'grok' | 'nsfw-modelslab';
+
+interface StudioModel {
+  id: StudioModelId;
+  label: string;
+  cost: number;
+  supportsRefPhoto: boolean;
+  locked?: boolean;
+  lockReason?: string;
+}
+
+const STUDIO_MODELS: StudioModel[] = [
+  { id: 'gemini-flash', label: 'Gemini Flash', cost: 2, supportsRefPhoto: false },
+  { id: 'gemini-pro', label: 'Gemini Pro', cost: 5, supportsRefPhoto: false },
+  { id: 'flux-kontext', label: 'FLUX Kontext', cost: 10, supportsRefPhoto: true },
+  { id: 'gpt-image', label: 'GPT Image 1.5', cost: 20, supportsRefPhoto: true },
+  { id: 'grok', label: 'Grok', cost: 12, supportsRefPhoto: false },
+  { id: 'nsfw-modelslab', label: 'NSFW Edit', cost: 15, supportsRefPhoto: false, locked: true, lockReason: 'NSFW models require age verification and a Studio+ plan.' },
 ];
 
 /* ───────────────────── Reusable tiny components ───────────────────── */
@@ -936,6 +960,10 @@ const StudioEditorPage: React.FC<StudioEditorPageProps> = ({ onNavigate, canvasI
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const [canvasImage, setCanvasImage] = useState<string | undefined>(initialCanvasImage);
+  const [selectedModel, setSelectedModel] = useState<StudioModelId>('gemini-flash');
+  const [referencePhoto, setReferencePhoto] = useState<string | null>(null);
+  const [nsfwWarning, setNsfwWarning] = useState(false);
+  const refPhotoInputRef = useRef<HTMLInputElement>(null);
   const [undoStack, setUndoStack] = useState<string[]>([]);
   const [redoStack, setRedoStack] = useState<string[]>([]);
   const uploadInputRef = useRef<HTMLInputElement>(null);
@@ -1486,6 +1514,96 @@ const StudioEditorPage: React.FC<StudioEditorPageProps> = ({ onNavigate, canvasI
               <X size={16} />
             </button>
           </div>
+
+          {/* Model selector */}
+          <div style={{ padding: '10px 16px 0', borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
+            <SectionHeader>AI Model</SectionHeader>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+              {STUDIO_MODELS.map((m) => {
+                const isActive = selectedModel === m.id;
+                const isLocked = !!m.locked;
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => {
+                      if (isLocked) { setNsfwWarning(true); setTimeout(() => setNsfwWarning(false), 4000); return; }
+                      setSelectedModel(m.id);
+                      setReferencePhoto(null);
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 4,
+                      padding: '4px 8px', borderRadius: 6, fontSize: 10, fontWeight: 600,
+                      border: `1px solid ${isActive ? C.accent : C.border}`,
+                      background: isActive ? C.accentDim : isLocked ? 'rgba(107,90,86,0.08)' : 'transparent',
+                      color: isLocked ? C.textFaint : isActive ? C.accent : C.textSec,
+                      cursor: isLocked ? 'not-allowed' : 'pointer',
+                      opacity: isLocked ? 0.6 : 1,
+                      transition: 'all 150ms',
+                    }}
+                    title={isLocked ? m.lockReason : `${m.label} — ⚡${m.cost} credits`}
+                  >
+                    {isLocked && <Lock size={10} />}
+                    {m.label}
+                    <span style={{ color: isActive ? C.accent : C.textMuted, fontSize: 9 }}>
+                      <Zap size={8} style={{ display: 'inline', verticalAlign: 'middle' }} />{m.cost}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            {nsfwWarning && (
+              <div style={{ marginTop: 6, padding: '6px 10px', borderRadius: 8, fontSize: 10, color: '#f87171', background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)' }}>
+                NSFW models require age verification and a Studio+ plan. Contact support to enable.
+              </div>
+            )}
+          </div>
+
+          {/* Reference photo upload (only for models that support it, and only for Scene/Pose/Object tools) */}
+          {(() => {
+            const model = STUDIO_MODELS.find(m => m.id === selectedModel);
+            const refTools: ToolId[] = ['pose', 'scenes', 'objects'];
+            if (!model?.supportsRefPhoto || !refTools.includes(activeTool)) return null;
+            return (
+              <div style={{ padding: '10px 16px 0', borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
+                <SectionHeader>Reference Photo (optional)</SectionHeader>
+                <input
+                  ref={refPhotoInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) setReferencePhoto(URL.createObjectURL(f));
+                  }}
+                />
+                {referencePhoto ? (
+                  <div style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', border: `1px solid ${C.border}` }}>
+                    <img src={referencePhoto} alt="Reference" style={{ width: '100%', height: 100, objectFit: 'cover', display: 'block' }} />
+                    <button
+                      onClick={() => setReferencePhoto(null)}
+                      style={{ position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => refPhotoInputRef.current?.click()}
+                    style={{
+                      width: '100%', padding: '14px 0', borderRadius: 8, fontSize: 11, fontWeight: 500,
+                      border: `1px dashed ${C.border}`, background: 'transparent', color: C.textMuted,
+                      cursor: 'pointer', transition: 'all 150ms',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.textSec; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textMuted; }}
+                  >
+                    <Upload size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 6 }} />
+                    Upload reference photo
+                  </button>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Panel body */}
           <div
