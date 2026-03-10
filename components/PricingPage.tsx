@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { createCheckoutSession } from '../services/lemonSqueezyService';
 import { useProfile } from '../contexts/ProfileContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -69,7 +70,7 @@ const PLANS: Plan[] = [
     id: 'pro', name: 'Pro', monthlyPrice: 19, annualPrice: 16,
     description: 'For creators building their AI presence.',
     badge: 'Most popular',
-    cta: 'Start Pro →', ctaStyle: 'coral',
+    cta: 'Start Pro', ctaStyle: 'coral',
     credits: '500 credits / mo',
     monthlyVariantId: V.proMonthly,
     annualVariantId:  V.proAnnual,
@@ -91,7 +92,7 @@ const PLANS: Plan[] = [
   {
     id: 'studio', name: 'Studio', monthlyPrice: 49, annualPrice: 41,
     description: 'For agencies and power creators.',
-    cta: 'Start Studio →', ctaStyle: 'white',
+    cta: 'Start Studio', ctaStyle: 'white',
     credits: '1,500 credits / mo',
     monthlyVariantId: V.studioMonthly,
     annualVariantId:  V.studioAnnual,
@@ -114,7 +115,7 @@ const PLANS: Plan[] = [
     id: 'brand', name: 'Brand', monthlyPrice: 149, annualPrice: 119,
     description: 'For brand teams and mass production.',
     badge: 'Enterprise',
-    cta: 'Start Brand →', ctaStyle: 'gold',
+    cta: 'Start Brand', ctaStyle: 'gold',
     credits: '8,000 credits / mo',
     monthlyVariantId: V.brandMonthly,
     annualVariantId:  V.brandAnnual,
@@ -155,37 +156,21 @@ const FAQ_ITEMS = [
 // Sub-components
 // ─────────────────────────────────────────────
 
-const CheckIcon: React.FC<{ dim?: boolean }> = ({ dim }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
-    fill="none" stroke={dim ? '#4A3A36' : '#FF5C35'} strokeWidth="2.5"
-    strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5" aria-hidden>
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
-
-const DashIcon: React.FC = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
-    fill="none" stroke="#2A1F1C" strokeWidth="2.5" strokeLinecap="round"
-    className="shrink-0 mt-0.5" aria-hidden>
-    <line x1="5" y1="12" x2="19" y2="12" />
-  </svg>
-);
-
 const FaqItem: React.FC<{ q: string; a: string }> = ({ q, a }) => {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border-b" style={{ borderColor: '#1A1210' }}>
+    <div className="border-b" style={{ borderColor: 'var(--border)' }}>
       <button className="w-full flex items-center justify-between py-4 text-left gap-4"
         onClick={() => setOpen(p => !p)}>
         <span className="text-[13px] font-medium transition-colors"
-          style={{ color: open ? '#fff' : '#B8A9A5' }}>{q}</span>
+          style={{ color: open ? 'var(--text-1)' : 'var(--text-2)' }}>{q}</span>
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-          fill="none" stroke="#4A3A36" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+          fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
           className={`shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>
           <polyline points="6 9 12 15 18 9" />
         </svg>
       </button>
-      {open && <p className="pb-4 text-[13px] leading-relaxed" style={{ color: '#6B5A56' }}>{a}</p>}
+      {open && <p className="pb-4 text-[13px] leading-relaxed" style={{ color: 'var(--text-2)' }}>{a}</p>}
     </div>
   );
 };
@@ -194,13 +179,10 @@ const FaqItem: React.FC<{ q: string; a: string }> = ({ q, a }) => {
 // PricingPage
 // ─────────────────────────────────────────────
 
-interface PricingPageProps {
-  onNavigate?: (workspace: string) => void;
-}
-
 const CHECKOUT_INTENT_KEY = 'vist_checkout_intent';
 
-const PricingPage: React.FC<PricingPageProps> = ({ onNavigate }) => {
+const PricingPage: React.FC = () => {
+  const navigate = useNavigate();
   const [annual, setAnnual] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
@@ -261,37 +243,40 @@ const PricingPage: React.FC<PricingPageProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="min-h-full overflow-y-auto pb-16 lg:pb-0 custom-scrollbar" style={{ background: '#080605' }}>
+    <div className="min-h-full overflow-y-auto pb-16 lg:pb-0 gradient-mesh custom-scrollbar" style={{ background: 'var(--bg-0)' }}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 pb-24">
 
         {/* ── Header ── */}
-        <div className="text-center mb-12">
-          <p className="text-[11px] font-jet uppercase tracking-widest mb-4" style={{ color: '#FF5C35' }}>Pricing</p>
-          <h1 className="text-[36px] sm:text-[44px] font-bold leading-tight mb-4" style={{ color: '#F5EDE8' }}>
-            Simple,{' '}
-            <span style={{ background: 'linear-gradient(135deg,#FF5C35,#FFB347)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              transparent
-            </span>{' '}
-            pricing
-          </h1>
-          <p className="text-[15px] max-w-md mx-auto mb-8" style={{ color: '#6B5A56' }}>
+        <div className="section-header">
+          <div className="section-label">Planes</div>
+          <h2 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 48, lineHeight: 1.1, marginBottom: 16 }}>
+            Empieza gratis.<br/>
+            <span className="text-gradient" style={{ fontStyle: 'italic' }}>Escala sin limites.</span>
+          </h2>
+          <p className="text-[15px] max-w-md mx-auto mb-8" style={{ color: 'var(--text-2)' }}>
             Pay as you grow. Credits reset monthly. No surprises.
           </p>
 
           {/* Billing toggle */}
-          <div className="inline-flex items-center gap-3 px-1 py-1 rounded-full"
-            style={{ background: '#0D0A0A', border: '1px solid #1A1210' }}>
+          <div className="inline-flex items-center gap-1 px-1 py-1 rounded-full"
+            style={{ background: 'var(--bg-3)', border: '1px solid var(--border)' }}>
             <button onClick={() => setAnnual(false)}
               className="px-4 py-1.5 rounded-full text-[12px] font-medium transition-all"
-              style={!annual ? { background: '#1A1210', color: '#F5EDE8' } : { color: '#4A3A36' }}>
+              style={!annual
+                ? { background: 'var(--accent)', color: '#fff' }
+                : { background: 'transparent', color: 'var(--text-3)' }
+              }>
               Monthly
             </button>
             <button onClick={() => setAnnual(true)}
               className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[12px] font-medium transition-all"
-              style={annual ? { background: '#1A1210', color: '#F5EDE8' } : { color: '#4A3A36' }}>
+              style={annual
+                ? { background: 'var(--accent)', color: '#fff' }
+                : { background: 'transparent', color: 'var(--text-3)' }
+              }>
               Annual
               <span className="text-[9px] px-1.5 py-0.5 rounded-full font-jet font-bold"
-                style={{ background: 'rgba(255,92,53,0.12)', color: '#FF5C35' }}>2 months free</span>
+                style={{ background: 'rgba(240,104,72,0.15)', color: 'var(--accent)' }}>2 months free</span>
             </button>
           </div>
         </div>
@@ -301,20 +286,20 @@ const PricingPage: React.FC<PricingPageProps> = ({ onNavigate }) => {
           <div
             className="mb-8 px-5 py-3.5 rounded-2xl flex items-center justify-center gap-3 text-center"
             style={{
-              background: 'linear-gradient(135deg, rgba(255,92,53,0.06) 0%, rgba(255,179,71,0.04) 100%)',
-              border: '1px solid rgba(255,92,53,0.15)',
+              background: 'linear-gradient(135deg, rgba(240,104,72,0.06) 0%, rgba(208,72,176,0.04) 100%)',
+              border: '1px solid rgba(240,104,72,0.15)',
             }}
           >
-            <span className="text-[13px] font-medium" style={{ color: '#B8A9A5' }}>
+            <span className="text-[13px] font-medium" style={{ color: 'var(--text-2)' }}>
               Annual billing saves you up to
             </span>
             <span
               className="text-[14px] font-bold font-jet px-2.5 py-0.5 rounded-full"
-              style={{ background: 'rgba(255,92,53,0.12)', color: '#FF5C35' }}
+              style={{ background: 'rgba(240,104,72,0.12)', color: 'var(--accent)' }}
             >
               ${(PLANS[3].monthlyPrice - PLANS[3].annualPrice) * 12}/yr
             </span>
-            <span className="text-[13px] font-medium" style={{ color: '#B8A9A5' }}>
+            <span className="text-[13px] font-medium" style={{ color: 'var(--text-2)' }}>
               on the Brand plan
             </span>
           </div>
@@ -323,19 +308,18 @@ const PricingPage: React.FC<PricingPageProps> = ({ onNavigate }) => {
         {/* ── Sign-up prompt for anonymous users ── */}
         {showSignUpPrompt && !user && (
           <div className="mb-6 px-5 py-4 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3"
-            style={{ background: 'rgba(255,92,53,0.06)', border: '1px solid rgba(255,92,53,0.2)' }}>
+            style={{ background: 'rgba(240,104,72,0.06)', border: '1px solid rgba(240,104,72,0.2)' }}>
             <div>
-              <p className="text-[13px] font-semibold" style={{ color: '#F5EDE8' }}>
+              <p className="text-[13px] font-semibold" style={{ color: 'var(--text-1)' }}>
                 Create a free account to subscribe
               </p>
-              <p className="text-[11px] mt-0.5" style={{ color: '#6B5A56' }}>
-                Sign up in seconds — you'll be redirected to checkout automatically.
+              <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-2)' }}>
+                Sign up in seconds -- you'll be redirected to checkout automatically.
               </p>
             </div>
             <button
-              onClick={() => onNavigate?.('generate')}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white shrink-0 transition-all hover:scale-[1.02] active:scale-95"
-              style={{ background: 'linear-gradient(135deg,#FF5C35,#FFB347)' }}>
+              onClick={() => navigate('/studio')}
+              className="btn-primary px-5 py-2.5 text-sm font-bold shrink-0">
               Sign up free
             </button>
           </div>
@@ -355,88 +339,83 @@ const PricingPage: React.FC<PricingPageProps> = ({ onNavigate }) => {
             const price = annual ? plan.annualPrice : plan.monthlyPrice;
             const isCurrent = currentPlan === plan.id || (currentPlan === 'starter' && plan.id === 'starter');
             const isFree = plan.id === 'starter';
-            const isPro  = plan.id === 'pro';
-            const isBrand = plan.id === 'brand';
+            const isFeatured = plan.badge === 'Most popular';
 
             return (
-              <div key={plan.id} className="relative flex flex-col rounded-2xl p-5 transition-all"
-                style={{
-                  background: isPro ? 'rgba(255,92,53,0.04)' : isBrand ? 'rgba(255,179,71,0.04)' : '#0D0A0A',
-                  border: isPro ? '1px solid rgba(255,92,53,0.25)' : isBrand ? '1px solid rgba(255,179,71,0.25)' : '1px solid #1A1210',
-                }}>
+              <div key={plan.id}
+                className={`price-card flex flex-col${isFeatured ? ' featured' : ''}`}>
 
                 {plan.badge && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-bold font-jet"
-                    style={{ background: isBrand ? '#FFB347' : '#FF5C35', color: '#000' }}>
+                    style={{ background: isFeatured ? 'linear-gradient(135deg, var(--accent), var(--magenta))' : 'var(--gold)', color: '#000' }}>
                     {plan.badge}
                   </div>
                 )}
 
                 <div className="mb-4">
-                  <h2 className="text-[14px] font-bold mb-1" style={{ color: '#F5EDE8' }}>{plan.name}</h2>
-                  <p className="text-[12px]" style={{ color: '#4A3A36' }}>{plan.description}</p>
+                  <h3 className="font-jet text-[10px] uppercase tracking-[0.15em] mb-2" style={{ color: 'var(--text-3)' }}>{plan.name}</h3>
+                  <p className="text-[13px]" style={{ color: 'var(--text-2)' }}>{plan.description}</p>
                 </div>
 
                 {/* Price */}
                 <div className="mb-5">
                   <div className="flex items-end gap-1.5">
-                    <span className="text-[36px] font-bold leading-none" style={{ color: '#F5EDE8' }}>${price}</span>
+                    <span className="font-display text-[42px] leading-none" style={{ color: 'var(--text-1)' }}>${price}</span>
                     {!isFree && (
-                      <span className="text-[12px] pb-1.5" style={{ color: '#4A3A36' }}>
-                        /mo{annual && <span className="ml-1 text-[10px]">billed annually</span>}
+                      <span className="text-base font-body pb-1.5" style={{ color: 'var(--text-3)' }}>
+                        /mes{annual && <span className="ml-1 text-[10px]">billed annually</span>}
                       </span>
                     )}
                   </div>
                   {!isFree && annual && (
-                    <p className="text-[11px] mt-1 font-jet" style={{ color: isBrand ? '#FFB347' : '#FF5C35' }}>
+                    <p className="text-[11px] mt-1 font-jet" style={{ color: 'var(--accent)' }}>
                       Save ${(plan.monthlyPrice - plan.annualPrice) * 12}/yr
                     </p>
                   )}
                   {/* Credits badge */}
                   <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-jet font-bold"
-                    style={{ background: 'rgba(255,179,71,0.1)', color: '#FFB347', border: '1px solid rgba(255,179,71,0.2)' }}>
-                    ⚡ {plan.credits}
+                    style={{ background: 'rgba(224,176,80,0.1)', color: 'var(--gold)', border: '1px solid rgba(224,176,80,0.2)' }}>
+                    {plan.credits}
                   </div>
                 </div>
 
                 {/* CTA */}
                 {isCurrent ? (
-                  <div className="w-full py-2.5 rounded-xl text-[13px] font-semibold mb-5 text-center"
-                    style={{ background: '#1A1210', color: '#6B5A56', border: '1px solid #2A1F1C' }}>
-                    ✓ Current plan
+                  <div className="w-full py-3 rounded-xl text-[13px] font-semibold mb-5 text-center"
+                    style={{ background: 'var(--bg-3)', color: 'var(--text-3)', border: '1px solid var(--border)' }}>
+                    Current plan
                   </div>
                 ) : isFree ? (
-                  <button onClick={() => onNavigate?.('generate')}
-                    className="w-full py-2.5 rounded-xl text-[13px] font-semibold mb-5 transition-all hover:scale-[1.02]"
-                    style={{ background: 'transparent', color: '#6B5A56', border: '1px solid #1A1210' }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#B8A9A5')}
-                    onMouseLeave={e => (e.currentTarget.style.color = '#6B5A56')}>
+                  <button onClick={() => navigate('/studio')}
+                    className="btn-ghost px-4 py-3 w-full justify-center text-[13px] font-semibold mb-5">
                     {plan.cta}
+                  </button>
+                ) : isFeatured ? (
+                  <button onClick={() => handleCheckout(plan)}
+                    disabled={checkoutLoading !== null}
+                    className="btn-primary px-4 py-3 w-full justify-center text-[13px] font-semibold mb-5 disabled:opacity-60">
+                    {checkoutLoading === plan.id
+                      ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Redirecting...</>
+                      : plan.cta}
                   </button>
                 ) : (
                   <button onClick={() => handleCheckout(plan)}
                     disabled={checkoutLoading !== null}
-                    className="w-full py-2.5 rounded-xl text-[13px] font-semibold mb-5 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-60 disabled:scale-100 flex items-center justify-center gap-2"
-                    style={
-                      plan.ctaStyle === 'coral'  ? { background: 'linear-gradient(135deg,#FF5C35,#FFB347)', color: '#fff' } :
-                      plan.ctaStyle === 'white'  ? { background: '#fff', color: '#000' } :
-                      plan.ctaStyle === 'gold'   ? { background: 'linear-gradient(135deg,#FFB347,#FF8C42)', color: '#000' } :
-                      { background: 'transparent', color: '#6B5A56', border: '1px solid #1A1210' }
-                    }>
+                    className="btn-ghost px-4 py-3 w-full justify-center text-[13px] font-semibold mb-5 disabled:opacity-60">
                     {checkoutLoading === plan.id
-                      ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Redirecting…</>
+                      ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Redirecting...</>
                       : plan.cta}
                   </button>
                 )}
 
                 {/* Limits */}
                 <div className="rounded-xl p-3 mb-4 space-y-2"
-                  style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #1A1210' }}>
+                  style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)' }}>
                   {plan.limits.map(l => (
                     <div key={l.label} className="flex items-center justify-between">
-                      <span className="text-[11px]" style={{ color: '#4A3A36' }}>{l.label}</span>
+                      <span className="text-[11px]" style={{ color: 'var(--text-3)' }}>{l.label}</span>
                       <span className="text-[11px] font-jet font-semibold"
-                        style={{ color: l.value === '—' ? '#2A1F1C' : '#B8A9A5' }}>{l.value}</span>
+                        style={{ color: l.value === '—' ? 'var(--bg-4)' : 'var(--text-2)' }}>{l.value}</span>
                     </div>
                   ))}
                 </div>
@@ -445,12 +424,12 @@ const PricingPage: React.FC<PricingPageProps> = ({ onNavigate }) => {
                 <ul className="space-y-2 flex-1">
                   {plan.features.map(f => (
                     <li key={f.label} className="flex items-start gap-2">
-                      <CheckIcon dim={isFree} />
-                      <span className="text-[12px] leading-snug" style={{ color: '#6B5A56' }}>
+                      <span className="shrink-0 mt-0.5 text-[13px]" style={{ color: 'var(--accent)' }}>&#8594;</span>
+                      <span className="text-[13px] leading-snug" style={{ color: 'var(--text-2)' }}>
                         {f.label}
                         {f.note && (
                           <span className="ml-1.5 text-[9px] font-jet px-1.5 py-0.5 rounded-full"
-                            style={{ background: '#1A1210', color: '#4A3A36' }}>{f.note}</span>
+                            style={{ background: 'var(--bg-3)', color: 'var(--text-3)' }}>{f.note}</span>
                         )}
                       </span>
                     </li>
@@ -462,8 +441,8 @@ const PricingPage: React.FC<PricingPageProps> = ({ onNavigate }) => {
         </div>
 
         {/* ── Credit cost reference ── */}
-        <div className="mb-20 rounded-2xl p-6" style={{ background: '#0D0A0A', border: '1px solid #1A1210' }}>
-          <p className="text-[11px] font-jet uppercase tracking-widest mb-5 text-center" style={{ color: '#2A1F1C' }}>
+        <div className="mb-20 rounded-2xl p-6" style={{ background: 'var(--bg-1)', border: '1px solid var(--border)' }}>
+          <p className="text-[11px] font-jet uppercase tracking-widest mb-5 text-center" style={{ color: 'var(--text-3)' }}>
             Credit cost per action
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -480,9 +459,9 @@ const PricingPage: React.FC<PricingPageProps> = ({ onNavigate }) => {
               { label: 'Kling Video',    cost: 80 },
             ].map(({ label, cost }) => (
               <div key={label} className="flex items-center justify-between px-3 py-2 rounded-xl"
-                style={{ background: '#161110', border: '1px solid #1A1210' }}>
-                <span className="text-[11px]" style={{ color: '#6B5A56' }}>{label}</span>
-                <span className="text-[11px] font-jet font-bold" style={{ color: '#FFB347' }}>⚡{cost}</span>
+                style={{ background: 'var(--bg-2)', border: '1px solid var(--border)' }}>
+                <span className="text-[11px]" style={{ color: 'var(--text-2)' }}>{label}</span>
+                <span className="text-[11px] font-jet font-bold" style={{ color: 'var(--gold)' }}>{cost}</span>
               </div>
             ))}
           </div>
@@ -490,61 +469,61 @@ const PricingPage: React.FC<PricingPageProps> = ({ onNavigate }) => {
 
         {/* ── Credit Packs ── */}
         <div className="mb-20">
-          <div className="text-center mb-8">
-            <p className="text-[11px] font-jet uppercase tracking-widest mb-3" style={{ color: '#FF5C35' }}>Need more?</p>
-            <h2 className="text-[24px] sm:text-[28px] font-bold mb-2" style={{ color: '#F5EDE8' }}>Credit Packs</h2>
-            <p className="text-[13px]" style={{ color: '#6B5A56' }}>
+          <div className="section-header" style={{ marginBottom: 32 }}>
+            <div className="section-label">Need more?</div>
+            <h2 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 32, lineHeight: 1.2, marginBottom: 8 }}>
+              Credit Packs
+            </h2>
+            <p className="text-[13px]" style={{ color: 'var(--text-2)' }}>
               One-time purchase. Never expires. Stacks with your plan.
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
-            {CREDIT_PACKS.map((pack) => (
-              <div key={pack.credits} className="relative flex flex-col items-center rounded-2xl p-6 transition-all hover:scale-[1.02]"
-                style={{
-                  background: pack.badge ? 'rgba(255,92,53,0.04)' : '#0D0A0A',
-                  border: pack.badge ? '1px solid rgba(255,92,53,0.25)' : '1px solid #1A1210',
-                }}>
-                {pack.badge && (
-                  <div className="absolute -top-3 px-3 py-1 rounded-full text-[10px] font-bold font-jet"
-                    style={{ background: '#FF5C35', color: '#000' }}>
-                    {pack.badge}
+            {CREDIT_PACKS.map((pack) => {
+              const isBestValue = !!pack.badge;
+              return (
+                <div key={pack.credits}
+                  className={`price-card flex flex-col items-center${isBestValue ? ' featured' : ''}`}
+                  style={{ textAlign: 'center' }}>
+                  {pack.badge && (
+                    <div className="absolute -top-3 px-3 py-1 rounded-full text-[10px] font-bold font-jet"
+                      style={{ background: 'linear-gradient(135deg, var(--accent), var(--magenta))', color: '#000' }}>
+                      {pack.badge}
+                    </div>
+                  )}
+                  <div className="font-display text-[32px] mb-1" style={{ color: 'var(--text-1)' }}>
+                    {pack.credits.toLocaleString('en-US')}
                   </div>
-                )}
-                <div className="text-[32px] font-bold mb-1" style={{ color: '#F5EDE8' }}>
-                  {pack.credits.toLocaleString('en-US')}
+                  <div className="text-[11px] font-jet mb-3" style={{ color: 'var(--gold)' }}>credits</div>
+                  <div className="font-display text-[24px] mb-1" style={{ color: 'var(--text-1)' }}>${pack.price}</div>
+                  <div className="text-[11px] font-jet mb-5" style={{ color: 'var(--text-3)' }}>{pack.perCredit} / credit</div>
+                  <button
+                    onClick={async () => {
+                      if (!pack.variantId) { setCheckoutError('Credit pack variant ID not configured.'); return; }
+                      if (!user) {
+                        sessionStorage.setItem(CHECKOUT_INTENT_KEY, JSON.stringify({ variantId: pack.variantId, planId: `pack-${pack.credits}` }));
+                        setShowSignUpPrompt(true);
+                        return;
+                      }
+                      await startCheckout(pack.variantId, `pack-${pack.credits}`);
+                    }}
+                    disabled={checkoutLoading !== null}
+                    className={`${isBestValue ? 'btn-primary' : 'btn-ghost'} px-4 py-3 w-full justify-center text-[13px] font-semibold disabled:opacity-60`}
+                  >
+                    {checkoutLoading === `pack-${pack.credits}`
+                      ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Redirecting...</>
+                      : `Buy ${pack.credits.toLocaleString('en-US')} credits`}
+                  </button>
                 </div>
-                <div className="text-[11px] font-jet mb-3" style={{ color: '#FFB347' }}>⚡ credits</div>
-                <div className="text-[24px] font-bold mb-1" style={{ color: '#F5EDE8' }}>${pack.price}</div>
-                <div className="text-[11px] font-jet mb-5" style={{ color: '#4A3A36' }}>{pack.perCredit} / credit</div>
-                <button
-                  onClick={async () => {
-                    if (!pack.variantId) { setCheckoutError('Credit pack variant ID not configured.'); return; }
-                    if (!user) {
-                      sessionStorage.setItem(CHECKOUT_INTENT_KEY, JSON.stringify({ variantId: pack.variantId, planId: `pack-${pack.credits}` }));
-                      setShowSignUpPrompt(true);
-                      return;
-                    }
-                    await startCheckout(pack.variantId, `pack-${pack.credits}`);
-                  }}
-                  disabled={checkoutLoading !== null}
-                  className="w-full py-2.5 rounded-xl text-[13px] font-semibold transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"
-                  style={{ background: '#1A1210', color: '#B8A9A5', border: '1px solid #2A1F1C' }}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#251A17'; e.currentTarget.style.borderColor = 'rgba(255,92,53,0.3)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = '#1A1210'; e.currentTarget.style.borderColor = '#2A1F1C'; }}
-                >
-                  {checkoutLoading === `pack-${pack.credits}`
-                    ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Redirecting…</>
-                    : `Buy ${pack.credits.toLocaleString('en-US')} credits`}
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
         {/* ── FAQ ── */}
         <div className="max-w-2xl mx-auto">
-          <p className="text-[11px] font-jet uppercase tracking-widest mb-6 text-center" style={{ color: '#2A1F1C' }}>FAQ</p>
+          <p className="text-[11px] font-jet uppercase tracking-widest mb-6 text-center" style={{ color: 'var(--text-3)' }}>FAQ</p>
           {FAQ_ITEMS.map(item => <FaqItem key={item.q} {...item} />)}
         </div>
 
