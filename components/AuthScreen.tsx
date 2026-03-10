@@ -11,11 +11,12 @@ const CONTEXT_BANNERS: Record<string, string> = {
 };
 
 interface AuthScreenProps {
-  onAuthenticated: () => void;
+  onAuthenticated?: () => void;
+  onClose?: () => void;
   intendedWorkspace?: string;
 }
 
-const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, intendedWorkspace }) => {
+const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, intendedWorkspace }) => {
   const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -60,7 +61,8 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, intendedWorksp
         setMode('login');
       } else if (mode === 'login') {
         await signInWithEmail(email, password);
-        onAuthenticated();
+        onAuthenticated?.();
+        onClose?.();
       } else {
         await signUpWithEmail(email, password);
         setSuccessMessage('Account created! Check your email to confirm your account, then sign in.');
@@ -83,10 +85,21 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, intendedWorksp
     }
   };
 
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-950 p-4">
+  const formContent = (
+    <>
+      {onClose && (
+        <button
+          onClick={onClose}
+          style={{
+            position: 'absolute', top: 16, right: 16,
+            background: 'none', border: 'none', color: 'var(--text-3)',
+            cursor: 'pointer', fontSize: 20,
+          }}
+        >&#x2715;</button>
+      )}
+
       {/* Logo / title */}
-      <div className="mb-8 text-center">
+      <div className="mb-6 text-center">
         <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-purple-900/40">
           <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
@@ -98,14 +111,11 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, intendedWorksp
 
       {/* Context banner */}
       {intendedWorkspace && CONTEXT_BANNERS[intendedWorkspace] && (
-        <div className="w-full max-w-sm mb-3 px-4 py-3 rounded-xl text-[13px] text-center"
+        <div className="w-full mb-3 px-4 py-3 rounded-xl text-[13px] text-center"
           style={{ background: 'rgba(255,92,53,0.08)', border: '1px solid rgba(255,92,53,0.2)', color: '#FF5C35' }}>
           {CONTEXT_BANNERS[intendedWorkspace]}
         </div>
       )}
-
-      {/* Card */}
-      <div className="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-2xl">
 
         {mode === 'forgot' ? (
           /* ── Forgot password view ── */
@@ -285,7 +295,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, intendedWorksp
               {import.meta.env.DEV && (
                 <button
                   type="button"
-                  onClick={(e) => { e.preventDefault(); onAuthenticated(); }}
+                  onClick={(e) => { e.preventDefault(); onAuthenticated?.(); onClose?.(); }}
                   className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 font-medium text-xs rounded-lg transition-colors border border-zinc-700 mt-2"
                 >
                   [DEV] Skip Login
@@ -294,8 +304,32 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, intendedWorksp
             </form>
           </>
         )}
-      </div>
+    </>
+  );
 
+  // Modal mode: no full-page wrapper
+  if (onClose) {
+    return (
+      <div style={{
+        background: 'var(--bg-2)',
+        border: '1px solid var(--border)',
+        borderRadius: 20,
+        padding: '40px 32px',
+        maxWidth: 420,
+        width: '100%',
+        position: 'relative',
+      }}>
+        {formContent}
+      </div>
+    );
+  }
+
+  // Standalone page mode
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-950 p-4">
+      <div className="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-2xl">
+        {formContent}
+      </div>
       <p className="mt-6 text-xs text-zinc-600 text-center">
         Your images and presets are securely saved in the cloud.
       </p>
