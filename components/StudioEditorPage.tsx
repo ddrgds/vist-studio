@@ -26,6 +26,7 @@ import {
   Loader2,
   Lock,
   Zap,
+  RotateCw,
 } from 'lucide-react';
 import { editImageWithAI, faceSwapWithGemini, modifyInfluencerPose } from '../services/geminiService';
 import { useProfile } from '../contexts/ProfileContext';
@@ -36,7 +37,7 @@ import type { GeneratedContent } from '../types';
 
 /* ───────────────────── Types ───────────────────── */
 
-type ToolId = 'pose' | 'faceswap' | 'relight' | 'camera' | 'objects' | 'scenes' | 'aiedit';
+type ToolId = 'pose' | 'faceswap' | 'relight' | 'camera' | 'objects' | 'scenes' | 'aiedit' | 'face360';
 
 interface SliderDef { label: string; value: number; min: number; max: number; unit: string; }
 
@@ -76,6 +77,7 @@ const TOOLS: { id: ToolId; label: string; Icon: React.ElementType }[] = [
   { id: 'objects', label: 'Objects', Icon: Box },
   { id: 'scenes', label: 'Scenes', Icon: Image },
   { id: 'aiedit', label: 'AI Edit', Icon: Wand2 },
+  { id: 'face360', label: '360 Face', Icon: RotateCw },
 ];
 
 /* ───────────────────── AI Model definitions ───────────────────── */
@@ -944,6 +946,199 @@ function AIEditPanel({ onApply, loading, disabled }: { onApply: (prompt: string)
   );
 }
 
+/* ─── 360 Face Panel ─── */
+const FACE360_ANGLES = [
+  { id: 'front', label: 'Front', angle: '0°', desc: 'looking directly at camera' },
+  { id: '3q-left', label: '3/4 Left', angle: '45°', desc: 'turned slightly to the left' },
+  { id: 'profile-left', label: 'Profile L', angle: '90°', desc: 'left side profile view' },
+  { id: '3q-right', label: '3/4 Right', angle: '-45°', desc: 'turned slightly to the right' },
+  { id: 'profile-right', label: 'Profile R', angle: '-90°', desc: 'right side profile view' },
+  { id: 'back', label: 'Back', angle: '180°', desc: 'viewed from behind' },
+] as const;
+
+function Face360Panel({
+  selectedAngles,
+  onToggleAngle,
+  onSelectAll,
+  results,
+  onApply,
+  loading,
+  disabled,
+  progress,
+}: {
+  selectedAngles: Set<string>;
+  onToggleAngle: (id: string) => void;
+  onSelectAll: () => void;
+  results: { angle: string; url: string }[];
+  onApply: (mode: 'all' | 'single', angleId?: string) => void;
+  loading: boolean;
+  disabled: boolean;
+  progress: string;
+}) {
+  return (
+    <>
+      <SectionHeader>Select Angles</SectionHeader>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 12 }}>
+        {FACE360_ANGLES.map((a) => {
+          const active = selectedAngles.has(a.id);
+          return (
+            <button
+              key={a.id}
+              onClick={() => onToggleAngle(a.id)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 4,
+                padding: '10px 4px',
+                borderRadius: 10,
+                border: `1px solid ${active ? C.accent : C.border}`,
+                background: active ? C.accentDim : C.card,
+                color: active ? C.accent : C.textSec,
+                fontSize: 10,
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'all 150ms',
+                position: 'relative',
+              }}
+            >
+              <RotateCw size={18} style={{ opacity: 0.7 }} />
+              <div style={{ fontWeight: 600, fontSize: 11 }}>{a.label}</div>
+              <div style={{ fontSize: 9, color: active ? C.accent : C.textMuted }}>{a.angle}</div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Select all / deselect */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+        <button
+          onClick={onSelectAll}
+          style={{
+            flex: 1,
+            padding: '6px 0',
+            borderRadius: 8,
+            border: `1px solid ${C.border}`,
+            background: selectedAngles.size === 6 ? C.accentDim : 'transparent',
+            color: selectedAngles.size === 6 ? C.accent : C.textSec,
+            fontSize: 11,
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 150ms',
+          }}
+        >
+          {selectedAngles.size === 6 ? 'Deselect All' : 'Select All'}
+        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: C.textMuted }}>
+          <Zap size={10} /> {selectedAngles.size} × 8 = {selectedAngles.size * 8} credits
+        </div>
+      </div>
+
+      {/* Per-angle generate buttons */}
+      <SectionHeader>Generate Individual</SectionHeader>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 14 }}>
+        {FACE360_ANGLES.map((a) => {
+          const hasResult = results.some((r) => r.angle === a.id);
+          return (
+            <div
+              key={a.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '6px 10px',
+                borderRadius: 8,
+                border: `1px solid ${C.border}`,
+                background: hasResult ? 'rgba(52,211,153,0.06)' : C.card,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: hasResult ? '#34d399' : C.text }}>{a.label}</span>
+                <span style={{ fontSize: 9, color: C.textMuted }}>{a.angle}</span>
+              </div>
+              <button
+                onClick={() => !loading && !disabled && onApply('single', a.id)}
+                style={{
+                  padding: '3px 10px',
+                  borderRadius: 6,
+                  border: `1px solid ${C.border}`,
+                  background: hasResult ? 'transparent' : C.accentDim,
+                  color: hasResult ? C.textMuted : C.accent,
+                  fontSize: 10,
+                  fontWeight: 600,
+                  cursor: loading || disabled ? 'not-allowed' : 'pointer',
+                  opacity: loading || disabled ? 0.5 : 1,
+                  transition: 'all 150ms',
+                }}
+              >
+                {hasResult ? 'Redo' : 'Generate'}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Progress indicator */}
+      {loading && progress && (
+        <div style={{
+          padding: '8px 12px',
+          borderRadius: 8,
+          background: C.accentDim,
+          color: C.accent,
+          fontSize: 11,
+          fontWeight: 600,
+          marginBottom: 12,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}>
+          <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+          {progress}
+        </div>
+      )}
+
+      {/* Results grid */}
+      {results.length > 0 && (
+        <>
+          <SectionHeader>Results ({results.length}/6)</SectionHeader>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: 14 }}>
+            {results.map((r) => {
+              const angleDef = FACE360_ANGLES.find((a) => a.id === r.angle);
+              return (
+                <div
+                  key={r.angle}
+                  style={{
+                    borderRadius: 8,
+                    overflow: 'hidden',
+                    border: `1px solid ${C.border}`,
+                    background: C.card,
+                  }}
+                >
+                  <img
+                    src={r.url}
+                    alt={angleDef?.label ?? r.angle}
+                    style={{ width: '100%', aspectRatio: '3/4', objectFit: 'cover', display: 'block' }}
+                  />
+                  <div style={{ padding: '4px 6px', fontSize: 9, fontWeight: 600, color: C.textSec, textAlign: 'center' }}>
+                    {angleDef?.label ?? r.angle}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      <ApplyButton
+        label={`Generate ${selectedAngles.size} Angle${selectedAngles.size !== 1 ? 's' : ''}`}
+        loading={loading}
+        disabled={disabled || selectedAngles.size === 0}
+        onClick={() => onApply('all')}
+      />
+    </>
+  );
+}
+
 /* ───────────────────── MAIN COMPONENT ───────────────────── */
 
 interface StudioEditorPageProps {
@@ -966,6 +1161,9 @@ const StudioEditorPage: React.FC<StudioEditorPageProps> = ({ onNavigate, canvasI
   const refPhotoInputRef = useRef<HTMLInputElement>(null);
   const [undoStack, setUndoStack] = useState<string[]>([]);
   const [redoStack, setRedoStack] = useState<string[]>([]);
+  const [face360Angles, setFace360Angles] = useState<Set<string>>(new Set(['front', '3q-left', 'profile-left', '3q-right', 'profile-right', 'back']));
+  const [face360Results, setFace360Results] = useState<{angle: string; url: string}[]>([]);
+  const [face360Progress, setFace360Progress] = useState('');
   const uploadInputRef = useRef<HTMLInputElement>(null);
 
   const { decrementCredits, restoreCredits } = useProfile();
@@ -1155,6 +1353,85 @@ const StudioEditorPage: React.FC<StudioEditorPageProps> = ({ onNavigate, canvasI
     }
   }, [canvasImage, isApplying, decrementCredits, restoreCredits, toast, pushCanvas, saveToGallery]);
 
+  const handleToggleFace360Angle = useCallback((id: string) => {
+    setFace360Angles(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleSelectAllFace360 = useCallback(() => {
+    setFace360Angles(prev => {
+      if (prev.size === 6) return new Set();
+      return new Set(['front', '3q-left', 'profile-left', '3q-right', 'profile-right', 'back']);
+    });
+  }, []);
+
+  const handleApplyFace360 = useCallback(async (mode: 'all' | 'single', angleId?: string) => {
+    if (!canvasImage || isApplying) return;
+
+    const anglesToGenerate = mode === 'single' && angleId
+      ? [angleId]
+      : Array.from(face360Angles);
+
+    if (anglesToGenerate.length === 0) {
+      toast.error('Select at least one angle');
+      return;
+    }
+
+    const totalCost = EDIT_CREDIT_COST * anglesToGenerate.length;
+    setIsApplying(true);
+
+    const ok = await decrementCredits(totalCost);
+    if (!ok) {
+      toast.error('Not enough credits');
+      setIsApplying(false);
+      return;
+    }
+
+    let creditsUsed = 0;
+    try {
+      const file = await urlToFile(canvasImage, 'canvas.png');
+
+      for (let i = 0; i < anglesToGenerate.length; i++) {
+        const aId = anglesToGenerate[i];
+        const angleDef = FACE360_ANGLES.find(a => a.id === aId);
+        if (!angleDef) continue;
+
+        setFace360Progress(`Generating ${angleDef.label} (${i + 1}/${anglesToGenerate.length})...`);
+
+        const instruction = `Generate this same character/person from a ${angleDef.label} (${angleDef.angle}) view angle. Keep the same identity, clothing, and style. Show the person ${angleDef.desc}. Maintain consistent lighting, proportions, and quality.`;
+
+        const results = await editImageWithAI({
+          baseImage: file,
+          instruction,
+          model: GeminiImageModel.Flash2,
+        });
+
+        if (results.length === 0) throw new Error(`No image returned for ${angleDef.label}`);
+
+        creditsUsed += EDIT_CREDIT_COST;
+
+        setFace360Results(prev => {
+          const filtered = prev.filter(r => r.angle !== aId);
+          return [...filtered, { angle: aId, url: results[0] }];
+        });
+
+        await saveToGallery(results[0], `360 Face: ${angleDef.label} (${angleDef.angle})`);
+      }
+
+      toast.success(`Generated ${anglesToGenerate.length} angle${anglesToGenerate.length !== 1 ? 's' : ''}`);
+    } catch (err: any) {
+      const refund = totalCost - creditsUsed;
+      if (refund > 0) restoreCredits(refund);
+      toast.error(err?.message || '360 Face generation failed');
+    } finally {
+      setIsApplying(false);
+      setFace360Progress('');
+    }
+  }, [canvasImage, isApplying, face360Angles, decrementCredits, restoreCredits, toast, saveToGallery]);
+
   const renderPanel = useCallback(() => {
     switch (activeTool) {
       case 'pose': return <PosePanel onApply={handleApplyPose} loading={isApplying} disabled={!hasCanvas} />;
@@ -1164,8 +1441,20 @@ const StudioEditorPage: React.FC<StudioEditorPageProps> = ({ onNavigate, canvasI
       case 'objects': return <ObjectsPanel onApply={handleApplyGenericEdit} loading={isApplying} disabled={!hasCanvas} />;
       case 'scenes': return <ScenesPanel onApply={handleApplyGenericEdit} loading={isApplying} disabled={!hasCanvas} />;
       case 'aiedit': return <AIEditPanel onApply={handleApplyAIEdit} loading={isApplying} disabled={!hasCanvas} />;
+      case 'face360': return (
+        <Face360Panel
+          selectedAngles={face360Angles}
+          onToggleAngle={handleToggleFace360Angle}
+          onSelectAll={handleSelectAllFace360}
+          results={face360Results}
+          onApply={handleApplyFace360}
+          loading={isApplying}
+          disabled={!hasCanvas}
+          progress={face360Progress}
+        />
+      );
     }
-  }, [activeTool, hasCanvas, isApplying, handleApplyPose, handleApplyFaceSwap, handleApplyRelight, handleApplyGenericEdit, handleApplyAIEdit]);
+  }, [activeTool, hasCanvas, isApplying, handleApplyPose, handleApplyFaceSwap, handleApplyRelight, handleApplyGenericEdit, handleApplyAIEdit, face360Angles, face360Results, handleToggleFace360Angle, handleSelectAllFace360, handleApplyFace360, face360Progress]);
 
   const activeToolLabel = TOOLS.find((t) => t.id === activeTool)?.label ?? '';
 

@@ -29,11 +29,11 @@ const VISUAL_STYLES = [
   { id: 'fantasy', label: 'Fantasy', desc: 'Magical and fantastical', icon: <Wand2 className="w-5 h-5" style={{ color: '#22D3EE' }} /> },
 ];
 
-const ETHNICITIES = ['Latina', 'Asian', 'European', 'African', 'Arab', 'Mixed'];
-const HAIR_COLORS = ['Black', 'Brown', 'Blonde', 'Red', 'Pink', 'Blue', 'White', 'Gradient'];
-const EYE_COLORS = ['Brown', 'Green', 'Blue', 'Gray', 'Hazel', 'Violet'];
-const BODY_TYPES = ['Slim', 'Athletic', 'Curvy', 'Natural', 'Muscular'];
-const PERSONALITIES = ['Sophisticated', 'Youthful', 'Mysterious', 'Cheerful', 'Rebellious', 'Elegant'];
+const ETHNICITIES = ['Latina', 'Asian', 'European', 'African', 'Arab', 'Mixed', 'Fantasy', 'Alien', 'Elf'];
+const HAIR_COLORS = ['Black', 'Brown', 'Blonde', 'Red', 'Pink', 'Blue', 'White', 'Gradient', 'Silver', 'Purple', 'Green', 'Rainbow', 'Neon'];
+const EYE_COLORS = ['Brown', 'Green', 'Blue', 'Gray', 'Hazel', 'Violet', 'Red', 'Gold', 'Heterochromia', 'Glowing', 'Black'];
+const BODY_TYPES = ['Slim', 'Athletic', 'Curvy', 'Natural', 'Muscular', 'Petite', 'Plus', 'Tall', 'Ethereal'];
+const PERSONALITIES = ['Sophisticated', 'Youthful', 'Mysterious', 'Cheerful', 'Rebellious', 'Elegant', 'Dark', 'Chaotic', 'Stoic', 'Playful', 'Fierce', 'Dreamy'];
 const NICHES = [
   'Fashion & Lifestyle',
   'Fitness & Health',
@@ -62,6 +62,8 @@ interface CharacterBuilderPageProps {
   onGenerate: (characteristics: string, style: string, niche: string) => void;
   onNavigate: (page: AppPage) => void;
   isGenerating?: boolean;
+  onSaveCharacter?: (name: string, characteristics: string, niche: string) => void;
+  generatedImageUrl?: string;
 }
 
 // ─── Steps ──────────────────────────────────────────────────
@@ -75,7 +77,7 @@ const STEPS = [
 
 // ─── Component ──────────────────────────────────────────────
 
-const CharacterBuilderPage: React.FC<CharacterBuilderPageProps> = ({ onGenerate, onNavigate, isGenerating }) => {
+const CharacterBuilderPage: React.FC<CharacterBuilderPageProps> = ({ onGenerate, onNavigate, isGenerating, onSaveCharacter, generatedImageUrl }) => {
   const [step, setStep] = useState(1);
   const [state, setState] = useState<CharacterBuilderState>({
     name: '',
@@ -115,7 +117,7 @@ const CharacterBuilderPage: React.FC<CharacterBuilderPageProps> = ({ onGenerate,
 
   const handleGenerate = () => {
     const parts: string[] = [];
-    if (state.style && state.style !== 'realistic') parts.push(`${state.style} style`);
+    if (state.style) parts.push(`${state.style} style`);
     if (state.age) parts.push(`${state.age} years old`);
     if (state.ethnicity) parts.push(`${state.ethnicity}`);
     if (state.bodyType) parts.push(`${state.bodyType} build`);
@@ -126,6 +128,9 @@ const CharacterBuilderPage: React.FC<CharacterBuilderPageProps> = ({ onGenerate,
 
     const characteristics = parts.join(', ');
     onGenerate(characteristics, state.style, state.niche);
+    if (onSaveCharacter) {
+      onSaveCharacter(state.name || 'My Character', characteristics, state.niche);
+    }
   };
 
   // ─── Chip helper ──────────────────────────────────────────
@@ -221,6 +226,16 @@ const CharacterBuilderPage: React.FC<CharacterBuilderPageProps> = ({ onGenerate,
               <div className="flex flex-wrap gap-2">
                 {ETHNICITIES.map(e => <Chip key={e} label={e} selected={state.ethnicity === e} onClick={() => set('ethnicity', e)} />)}
               </div>
+              <input
+                type="text"
+                value={state.ethnicity && !ETHNICITIES.includes(state.ethnicity) ? state.ethnicity : ''}
+                onChange={e => set('ethnicity', e.target.value)}
+                placeholder="Or type custom: e.g. Mediterranean, Nordic..."
+                className="w-full mt-2 px-3 py-2 rounded-lg text-xs outline-none"
+                style={{ background: '#0F0C0C', border: '1px solid #1A1210', color: '#F5EDE8' }}
+                onFocus={e => { (e.target as HTMLElement).style.borderColor = '#FF5C35'; }}
+                onBlur={e => { (e.target as HTMLElement).style.borderColor = '#1A1210'; }}
+              />
             </div>
             {/* Hair */}
             <div>
@@ -228,6 +243,16 @@ const CharacterBuilderPage: React.FC<CharacterBuilderPageProps> = ({ onGenerate,
               <div className="flex flex-wrap gap-2">
                 {HAIR_COLORS.map(c => <Chip key={c} label={c} selected={state.hairColor === c} onClick={() => set('hairColor', c)} />)}
               </div>
+              <input
+                type="text"
+                value={state.hairColor && !HAIR_COLORS.includes(state.hairColor) ? state.hairColor : ''}
+                onChange={e => set('hairColor', e.target.value)}
+                placeholder="Or type custom: e.g. silver with blue tips..."
+                className="w-full mt-2 px-3 py-2 rounded-lg text-xs outline-none"
+                style={{ background: '#0F0C0C', border: '1px solid #1A1210', color: '#F5EDE8' }}
+                onFocus={e => { (e.target as HTMLElement).style.borderColor = '#FF5C35'; }}
+                onBlur={e => { (e.target as HTMLElement).style.borderColor = '#1A1210'; }}
+              />
             </div>
             {/* Eyes */}
             <div>
@@ -235,6 +260,16 @@ const CharacterBuilderPage: React.FC<CharacterBuilderPageProps> = ({ onGenerate,
               <div className="flex flex-wrap gap-2">
                 {EYE_COLORS.map(c => <Chip key={c} label={c} selected={state.eyeColor === c} onClick={() => set('eyeColor', c)} />)}
               </div>
+              <input
+                type="text"
+                value={state.eyeColor && !EYE_COLORS.includes(state.eyeColor) ? state.eyeColor : ''}
+                onChange={e => set('eyeColor', e.target.value)}
+                placeholder="Or type custom: e.g. amber with gold flecks..."
+                className="w-full mt-2 px-3 py-2 rounded-lg text-xs outline-none"
+                style={{ background: '#0F0C0C', border: '1px solid #1A1210', color: '#F5EDE8' }}
+                onFocus={e => { (e.target as HTMLElement).style.borderColor = '#FF5C35'; }}
+                onBlur={e => { (e.target as HTMLElement).style.borderColor = '#1A1210'; }}
+              />
             </div>
             {/* Body */}
             <div>
@@ -242,6 +277,16 @@ const CharacterBuilderPage: React.FC<CharacterBuilderPageProps> = ({ onGenerate,
               <div className="flex flex-wrap gap-2">
                 {BODY_TYPES.map(b => <Chip key={b} label={b} selected={state.bodyType === b} onClick={() => set('bodyType', b)} />)}
               </div>
+              <input
+                type="text"
+                value={state.bodyType && !BODY_TYPES.includes(state.bodyType) ? state.bodyType : ''}
+                onChange={e => set('bodyType', e.target.value)}
+                placeholder="Or type custom: e.g. hourglass, lanky..."
+                className="w-full mt-2 px-3 py-2 rounded-lg text-xs outline-none"
+                style={{ background: '#0F0C0C', border: '1px solid #1A1210', color: '#F5EDE8' }}
+                onFocus={e => { (e.target as HTMLElement).style.borderColor = '#FF5C35'; }}
+                onBlur={e => { (e.target as HTMLElement).style.borderColor = '#1A1210'; }}
+              />
             </div>
           </div>
         );
@@ -412,16 +457,28 @@ const CharacterBuilderPage: React.FC<CharacterBuilderPageProps> = ({ onGenerate,
           </button>
         </div>
 
-        {/* Preview circle placeholder */}
-        <div
-          className="w-56 h-56 rounded-full flex items-center justify-center mb-6"
-          style={{ border: '2px dashed #2A1F1C' }}
-        >
-          <User className="w-12 h-12" style={{ color: '#2A1F1C' }} />
-        </div>
+        {/* Preview circle / generated image */}
+        {generatedImageUrl ? (
+          <img
+            src={generatedImageUrl}
+            alt={state.name || 'Generated character'}
+            className="w-56 h-56 rounded-full object-cover mb-6"
+          />
+        ) : (
+          <div
+            className="w-56 h-56 rounded-full flex items-center justify-center mb-6"
+            style={{ border: '2px dashed #2A1F1C' }}
+          >
+            <User className="w-12 h-12" style={{ color: '#2A1F1C' }} />
+          </div>
+        )}
 
-        <p className="text-sm font-semibold mb-1" style={{ color: '#6B5A56' }}>Configure your character</p>
-        <p className="text-xs mb-8" style={{ color: '#4A3A36' }}>Complete the steps and press Generate</p>
+        <p className="text-sm font-semibold mb-1" style={{ color: '#6B5A56' }}>
+          {generatedImageUrl ? 'Character generated!' : 'Configure your character'}
+        </p>
+        <p className="text-xs mb-8" style={{ color: '#4A3A36' }}>
+          {generatedImageUrl ? 'Saved to your character library' : 'Complete the steps and press Generate'}
+        </p>
 
         {/* Summary chips */}
         <div className="flex flex-wrap gap-2 justify-center max-w-sm">

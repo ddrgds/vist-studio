@@ -33,6 +33,28 @@ interface StylePreset {
   scenario: string;
 }
 
+interface Inspiration {
+  id: string;
+  emoji: string;
+  label: string;
+  scene: string;
+}
+
+const INSPIRATIONS: Inspiration[] = [
+  { id: 'neon-city', emoji: '🌆', label: 'Neon City', scene: 'neon-lit city street at night, vibrant colors, urban atmosphere' },
+  { id: 'tropical-beach', emoji: '🏝️', label: 'Tropical Beach', scene: 'tropical beach with turquoise water, palm trees, golden sand' },
+  { id: 'studio-white', emoji: '⬜', label: 'Studio White', scene: 'clean white photography studio, professional backdrop, even lighting' },
+  { id: 'night-skyline', emoji: '🌃', label: 'Night Skyline', scene: 'rooftop overlooking city skyline at night, twinkling lights' },
+  { id: 'luxury-apartment', emoji: '🛋️', label: 'Luxury Apartment', scene: 'luxury modern apartment interior, designer furniture, floor-to-ceiling windows' },
+  { id: 'coffee-shop', emoji: '☕', label: 'Coffee Shop', scene: 'cozy artisan coffee shop, warm wood tones, ambient café lighting' },
+  { id: 'park-garden', emoji: '🌿', label: 'Park Garden', scene: 'lush green park garden, dappled sunlight through trees, floral surroundings' },
+  { id: 'rooftop-sunset', emoji: '🌅', label: 'Rooftop Sunset', scene: 'rooftop terrace at sunset, golden hour sky, panoramic view' },
+  { id: 'gym', emoji: '🏋️', label: 'Gym', scene: 'modern gym interior, weights and equipment, motivational atmosphere' },
+  { id: 'library', emoji: '📚', label: 'Library', scene: 'grand library with bookshelves, warm reading light, intellectual setting' },
+  { id: 'street-market', emoji: '🏪', label: 'Street Market', scene: 'bustling street market, colorful stalls, lively crowd atmosphere' },
+  { id: 'art-gallery', emoji: '🖼️', label: 'Art Gallery', scene: 'minimalist art gallery, white walls, spotlit artworks, elegant space' },
+];
+
 const STYLE_PRESETS: StylePreset[] = [
   { id: 'selfies', emoji: '📱', label: 'Selfies', description: 'Close-up self-portrait, natural lighting', scenario: 'casual selfie, natural lighting, phone camera perspective' },
   { id: 'grwm', emoji: '💄', label: 'GRWM', description: 'Get Ready With Me mirror shots', scenario: 'getting ready in front of mirror, vanity setup, warm indoor lighting' },
@@ -70,7 +92,9 @@ const PhotoSessionPage: React.FC<PhotoSessionPageProps> = ({ onNavigate }) => {
 
   // State
   const [selectedCharId, setSelectedCharId] = useState<string | null>(null);
-  const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
+  const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
+  const [sceneText, setSceneText] = useState('');
+  const [selectedInspiration, setSelectedInspiration] = useState<string | null>(null);
   const [photoCount, setPhotoCount] = useState(4);
   const [engine, setEngine] = useState<EngineChoice>('nb2');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -79,15 +103,28 @@ const PhotoSessionPage: React.FC<PhotoSessionPageProps> = ({ onNavigate }) => {
   const abortRef = useRef<AbortController | null>(null);
 
   const selectedChar = savedCharacters.find(c => c.id === selectedCharId) ?? null;
-  const selectedPreset = STYLE_PRESETS.find(s => s.id === selectedStyle) ?? null;
+  const selectedPresets = STYLE_PRESETS.filter(s => selectedStyles.includes(s.id));
+  const combinedScenario = selectedPresets.map(p => p.scenario).join(', ');
+  const fullScenario = sceneText ? `${sceneText}, ${combinedScenario}` : combinedScenario;
   const costPerPhoto = ENGINE_OPTIONS.find(e => e.id === engine)!.cost;
   const totalCost = photoCount * costPerPhoto;
 
-  const canShoot = selectedChar && selectedPreset && !isGenerating;
+  const canShoot = selectedChar && selectedPresets.length > 0 && !isGenerating;
+
+  const toggleStyle = useCallback((id: string) => {
+    setSelectedStyles(prev =>
+      prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
+    );
+  }, []);
+
+  const handleInspirationClick = useCallback((insp: Inspiration) => {
+    setSelectedInspiration(insp.id);
+    setSceneText(insp.scene);
+  }, []);
 
   // ─── Shoot session ──────────────────────────
   const handleShoot = useCallback(async () => {
-    if (!selectedChar || !selectedPreset) return;
+    if (!selectedChar || selectedPresets.length === 0) return;
 
     // Need at least one model image as reference
     if (selectedChar.modelImageBlobs.length === 0) {
@@ -119,7 +156,7 @@ const PhotoSessionPage: React.FC<PhotoSessionPageProps> = ({ onNavigate }) => {
         sessionResults = await generatePhotoSession(
           refFile,
           photoCount,
-          { scenario: selectedPreset.scenario, lighting: 'natural cinematic' },
+          { scenario: fullScenario, lighting: 'natural cinematic' },
           (p) => setProgress(p),
           ctrl.signal,
         );
@@ -141,7 +178,7 @@ const PhotoSessionPage: React.FC<PhotoSessionPageProps> = ({ onNavigate }) => {
         url: r.url,
         params: {
           characteristics: selectedChar.characteristics,
-          scenario: selectedPreset.scenario,
+          scenario: fullScenario,
           characters: [],
           lighting: '',
           imageSize: '' as any,
@@ -165,7 +202,7 @@ const PhotoSessionPage: React.FC<PhotoSessionPageProps> = ({ onNavigate }) => {
       setIsGenerating(false);
       abortRef.current = null;
     }
-  }, [selectedChar, selectedPreset, engine, photoCount, totalCost, decrementCredits, restoreCredits, addItems, toast]);
+  }, [selectedChar, selectedPresets, fullScenario, engine, photoCount, totalCost, decrementCredits, restoreCredits, addItems, toast]);
 
   const handleCancel = useCallback(() => {
     abortRef.current?.abort();
@@ -253,34 +290,96 @@ const PhotoSessionPage: React.FC<PhotoSessionPageProps> = ({ onNavigate }) => {
           )}
         </Section>
 
-        {/* ── Style Presets ── */}
-        <Section title="Style">
+        {/* ── Style Presets (multi-select) ── */}
+        <Section title={`Style${selectedStyles.length > 0 ? ` (${selectedStyles.length} selected)` : ''}`}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-            {STYLE_PRESETS.map(preset => (
-              <button
-                key={preset.id}
-                onClick={() => setSelectedStyle(preset.id)}
-                title={preset.description}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '8px 10px',
-                  background: selectedStyle === preset.id ? 'rgba(255,92,53,0.12)' : COLORS.card,
-                  border: `1px solid ${selectedStyle === preset.id ? COLORS.borderActive : COLORS.border}`,
-                  borderRadius: 10,
-                  cursor: 'pointer',
-                  color: selectedStyle === preset.id ? COLORS.accent : COLORS.textSec,
-                  fontSize: 12,
-                  fontWeight: selectedStyle === preset.id ? 600 : 400,
-                  textAlign: 'left',
-                  transition: 'all 150ms ease',
-                }}
-              >
-                <span style={{ fontSize: 16 }}>{preset.emoji}</span>
-                <span>{preset.label}</span>
-              </button>
-            ))}
+            {STYLE_PRESETS.map(preset => {
+              const isActive = selectedStyles.includes(preset.id);
+              return (
+                <button
+                  key={preset.id}
+                  onClick={() => toggleStyle(preset.id)}
+                  title={preset.description}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '8px 10px',
+                    background: isActive ? 'rgba(255,92,53,0.12)' : COLORS.card,
+                    border: `1px solid ${isActive ? COLORS.borderActive : COLORS.border}`,
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    color: isActive ? COLORS.accent : COLORS.textSec,
+                    fontSize: 12,
+                    fontWeight: isActive ? 600 : 400,
+                    textAlign: 'left',
+                    transition: 'all 150ms ease',
+                  }}
+                >
+                  <span style={{ fontSize: 16 }}>{preset.emoji}</span>
+                  <span>{preset.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </Section>
+
+        {/* ── Scene ── */}
+        <Section title="Scene">
+          <input
+            type="text"
+            value={sceneText}
+            onChange={e => {
+              setSceneText(e.target.value);
+              setSelectedInspiration(null);
+            }}
+            placeholder="Describe the scene: café, beach, studio..."
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              background: COLORS.card,
+              border: `1px solid ${COLORS.border}`,
+              borderRadius: 10,
+              color: COLORS.text,
+              fontSize: 13,
+              outline: 'none',
+              transition: 'border-color 150ms ease',
+            }}
+            onFocus={e => (e.currentTarget.style.borderColor = COLORS.borderActive)}
+            onBlur={e => (e.currentTarget.style.borderColor = COLORS.border)}
+          />
+        </Section>
+
+        {/* ── Inspirations ── */}
+        <Section title="Inspirations">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+            {INSPIRATIONS.map(insp => {
+              const isActive = selectedInspiration === insp.id;
+              return (
+                <button
+                  key={insp.id}
+                  onClick={() => handleInspirationClick(insp)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 8px',
+                    background: isActive ? 'rgba(255,92,53,0.12)' : COLORS.card,
+                    border: `1px solid ${isActive ? COLORS.borderActive : COLORS.border}`,
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    color: isActive ? COLORS.accent : COLORS.textSec,
+                    fontSize: 11,
+                    fontWeight: isActive ? 600 : 400,
+                    textAlign: 'left',
+                    transition: 'all 150ms ease',
+                  }}
+                >
+                  <span style={{ fontSize: 14 }}>{insp.emoji}</span>
+                  <span>{insp.label}</span>
+                </button>
+              );
+            })}
           </div>
         </Section>
 
@@ -387,7 +486,7 @@ const PhotoSessionPage: React.FC<PhotoSessionPageProps> = ({ onNavigate }) => {
               }}
             >
               <Camera size={16} />
-              Shoot Session · ⚡{totalCost}
+              Shoot{selectedStyles.length > 0 ? ` (${selectedStyles.length} style${selectedStyles.length !== 1 ? 's' : ''})` : ''} · ⚡{totalCost}
             </button>
           )}
         </div>
@@ -407,13 +506,13 @@ const PhotoSessionPage: React.FC<PhotoSessionPageProps> = ({ onNavigate }) => {
           }}>
             <Camera size={48} style={{ color: COLORS.textMuted, opacity: 0.4 }} />
             <h2 style={{ fontSize: 18, fontWeight: 600, color: COLORS.textSec, margin: 0 }}>
-              {!selectedChar ? 'Select a character' : !selectedPreset ? 'Choose a style' : 'Ready to shoot'}
+              {!selectedChar ? 'Select a character' : selectedPresets.length === 0 ? 'Choose a style' : 'Ready to shoot'}
             </h2>
             <p style={{ fontSize: 13, color: COLORS.textMuted, margin: 0, maxWidth: 320, textAlign: 'center' }}>
               {!selectedChar
                 ? 'Pick a character from your library to start a photo session.'
-                : !selectedPreset
-                ? 'Choose a style preset to define the look of your session.'
+                : selectedPresets.length === 0
+                ? 'Choose one or more style presets to define the look of your session.'
                 : 'Hit "Shoot Session" to generate multi-angle photos of your character.'}
             </p>
           </div>
@@ -443,7 +542,7 @@ const PhotoSessionPage: React.FC<PhotoSessionPageProps> = ({ onNavigate }) => {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <h2 style={{ fontSize: 16, fontWeight: 600, color: COLORS.textSec, margin: 0 }}>
-                {selectedPreset?.label} Session — {results.length} photos
+                {selectedPresets.map(p => p.label).join(' + ') || 'Photo'} Session — {results.length} photos
               </h2>
               {isGenerating && (
                 <span style={{ fontSize: 12, color: COLORS.textMuted }}>

@@ -1079,6 +1079,15 @@ const AppInner: React.FC = () => {
                   }}
                   onNavigate={setActiveWorkspace}
                   isGenerating={isGenerating}
+                  onSaveCharacter={(name, characteristics, niche) => {
+                    charLib.saveCurrentCharacter(name, {
+                      id: crypto.randomUUID(),
+                      characteristics,
+                      outfitDescription: niche,
+                      accessory: '',
+                    });
+                  }}
+                  generatedImageUrl={gallery.generatedHistory[0]?.url}
                 />
               </div>
             )}
