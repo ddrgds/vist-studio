@@ -66,14 +66,14 @@ const ICONS: Record<ToastType, React.ReactNode> = {
 const COLORS: Record<ToastType, string> = {
   success: 'bg-emerald-900/90 border-emerald-700/60 text-emerald-100',
   error:   'bg-red-900/90 border-red-700/60 text-red-100',
-  info:    'bg-zinc-800/95 border-zinc-700/60 text-zinc-100',
+  info:    'bg-[#15121c]/95 border-[#1e1a28]/60 text-[#f0eaf0]',
   warning: 'bg-amber-900/90 border-amber-700/60 text-amber-100',
 };
 
 const ICON_COLORS: Record<ToastType, string> = {
   success: 'text-emerald-400',
   error:   'text-red-400',
-  info:    'text-zinc-400',
+  info:    'text-[#9088a0]',
   warning: 'text-amber-400',
 };
 
