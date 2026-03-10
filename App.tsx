@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, Suspense, lazy } from "react";
+import React, { useRef, useState, useEffect, useMemo, Suspense, lazy } from "react";
 import JSZip from "jszip";
 import ApiKeyGuard from "./components/ApiKeyGuard";
 import AuthScreen from "./components/AuthScreen";
@@ -8,13 +8,19 @@ import EnhancedInput from "./components/EnhancedInput";
 import CharacteristicsInput from "./components/CharacteristicsInput";
 import ReferenceInput from "./components/ReferenceInput";
 import ProgressBar from "./components/ProgressBar";
-import ExplorePage from "./components/ExplorePage";
+import SidebarNav from "./components/SidebarNav";
+import type { AppPage } from "./components/SidebarNav";
+import MobileNav from "./components/MobileNav";
 
 // Lazy-loaded workspace components for code splitting
+const DashboardPage = lazy(() => import("./components/DashboardPage"));
+const CharacterBuilderPage = lazy(() => import("./components/CharacterBuilderPage"));
 const CreatePage = lazy(() => import("./components/CreatePage"));
 const CharactersPage = lazy(() => import("./components/CharactersPage"));
 const StoryboardView = lazy(() => import("./components/StoryboardView"));
 const ToolsPage = lazy(() => import("./components/ToolsPage"));
+const StudioEditorPage = lazy(() => import("./components/StudioEditorPage"));
+const PhotoSessionPage = lazy(() => import("./components/PhotoSessionPage"));
 const PricingPage = lazy(() => import("./components/PricingPage"));
 const ProfilePage = lazy(() => import("./components/ProfilePage"));
 
@@ -92,7 +98,7 @@ const fileToContent = (file: File): GeneratedContent => ({
 
 // ─────────────────────────────────────────────
 // Inner App — consumes all contexts
-type AppWorkspace = "home" | "create" | "characters" | "tools" | "pricing" | "profile";
+type AppWorkspace = AppPage;
 
 const AppInner: React.FC = () => {
   const { user, signOut, authLoading } = useAuth();
@@ -120,22 +126,24 @@ const AppInner: React.FC = () => {
     return !localStorage.getItem(ONBOARDING_KEY);
   });
 
-  // Map URL paths to workspaces
-  const PATH_TO_WORKSPACE: Record<string, AppWorkspace> = {
-    '/': 'home', '/home': 'home', '/explore': 'home',
-    '/create': 'create', '/generate': 'create', '/director': 'create',
-    '/characters': 'characters', '/library': 'characters',
-    '/storyboard': 'characters',
-    '/tools': 'tools',
+  // Map URL paths to pages
+  const PATH_TO_PAGE: Record<string, AppPage> = {
+    '/': 'dashboard', '/home': 'dashboard', '/explore': 'dashboard', '/dashboard': 'dashboard',
+    '/create': 'create', '/generate': 'studio', '/director': 'studio',
+    '/session': 'session',
+    '/studio': 'studio',
+    '/gallery': 'gallery', '/characters': 'gallery', '/library': 'gallery',
+    '/storyboard': 'gallery',
+    '/tools': 'studio',
     '/pricing': 'pricing', '/profile': 'profile',
     '/login': 'create', '/register': 'create',
   };
-  const initialWs = PATH_TO_WORKSPACE[window.location.pathname] ?? 'home';
+  const initialWs = PATH_TO_PAGE[window.location.pathname] ?? 'dashboard';
   const [activeWorkspace, _setActiveWorkspace] =
     useState<AppWorkspace>(initialWs);
   const setActiveWorkspace = React.useCallback((ws: AppWorkspace) => {
     _setActiveWorkspace(ws);
-    const wsPath = ws === 'home' ? '/' : `/${ws}`;
+    const wsPath = ws === 'dashboard' ? '/' : `/${ws}`;
     if (window.location.pathname !== wsPath) {
       window.history.pushState({}, '', wsPath);
     }
@@ -144,7 +152,7 @@ const AppInner: React.FC = () => {
   // ─── Handle browser back/forward ────────────────────────────────────────
   React.useEffect(() => {
     const onPop = () => {
-      const ws = PATH_TO_WORKSPACE[window.location.pathname] ?? 'home';
+      const ws = PATH_TO_PAGE[window.location.pathname] ?? 'dashboard';
       _setActiveWorkspace(ws);
     };
     window.addEventListener('popstate', onPop);
@@ -153,12 +161,13 @@ const AppInner: React.FC = () => {
 
   // ─── Dynamic page title + meta description ──────────────────────────────
   useEffect(() => {
-    const PAGE_META: Record<AppWorkspace, { title: string; description: string }> = {
-      home: { title: 'VIST Studio — AI Character & Image Generator', description: 'Create AI-generated characters, images, and videos with multiple engines. Freestyle generation, character consistency, and storyboard planning.' },
-      create: { title: 'Create — VIST Studio', description: 'Generate AI images and videos with 10+ engines. Prompt-first with optional face, outfit, and scene control.' },
-      characters: { title: 'Library — VIST Studio', description: 'Manage your AI characters, browse generated images, and organize your creative assets.' },
-      tools: { title: 'AI Tools — VIST Studio', description: 'Try-On, Face Swap, Relight, Upscale, and more AI tools.' },
-      pricing: { title: 'Plans & Pricing — VIST Studio', description: 'Choose a plan for AI image and video generation. Free tier available. Pro, Studio, and Brand plans.' },
+    const PAGE_META: Record<AppPage, { title: string; description: string }> = {
+      dashboard: { title: 'VIST Studio — AI Character & Image Generator', description: 'Create AI-generated characters, images, and videos with multiple engines.' },
+      create: { title: 'Create Character — VIST Studio', description: 'Build AI characters with a step-by-step wizard. Choose style, appearance, personality and niche.' },
+      session: { title: 'Photo Session — VIST Studio', description: 'Generate multi-angle photo shoots from a reference image with 11 style presets.' },
+      studio: { title: 'Studio Editor — VIST Studio', description: 'Edit characters with Pose, Face Swap, Relight, Camera, Objects and Scenes tools.' },
+      gallery: { title: 'Gallery — VIST Studio', description: 'Browse your AI characters and generated images. Filter, search and manage your creative assets.' },
+      pricing: { title: 'Plans & Pricing — VIST Studio', description: 'Choose a plan for AI image and video generation. Free tier available.' },
       profile: { title: 'Profile — VIST Studio', description: 'Manage your VIST Studio account, subscription, and settings.' },
     };
     const meta = PAGE_META[activeWorkspace];
@@ -245,13 +254,14 @@ const AppInner: React.FC = () => {
     }
   };
 
-  // ─── Explore → Workspace navigation ───────
+  // ─── Navigate from Dashboard / legacy routes ───────
   const handleExploreNavigate = (workspace: string, mode?: string, modelId?: string) => {
-    // Map old workspace names to current ones
+    // Map old workspace names to new pages
     const mapped: AppWorkspace =
-      workspace === "create" || workspace === "video" || workspace === "generate" || workspace === "director" ? "create" :
-      workspace === "explore" ? "home" :
-      workspace === "storyboard" ? "characters" :
+      workspace === "create" || workspace === "video" || workspace === "generate" || workspace === "director" ? "studio" :
+      workspace === "explore" || workspace === "home" ? "dashboard" :
+      workspace === "storyboard" || workspace === "characters" || workspace === "library" ? "gallery" :
+      workspace === "tools" ? "studio" :
       workspace as AppWorkspace;
     setActiveWorkspace(mapped);
     // Apply model pre-selection first (takes priority over mode)
@@ -274,20 +284,34 @@ const AppInner: React.FC = () => {
       // Load as base image for editing in the VIST editor
       form.setBaseImageForEdit(file);
       form.setActiveMode("edit");
-      setActiveWorkspace("create");
+      setActiveWorkspace("studio");
     } catch {
       toast.error("Could not load the image for the editor.");
     }
   };
 
-  // ─── Load character from library into Director ───────
+  // ─── Load character from library into Studio ───────
   const handleLoadCharacterInDirector = (char: SavedCharacter) => {
     const char0 = form.characters[0];
     if (!char0) return;
     charLib.loadCharacterIntoForm(char, char0.id, form.updateCharacter);
     charLib.incrementUsage(char.id);
-    setActiveWorkspace("create");
+    setActiveWorkspace("studio");
   };
+
+  // ─── Upload image from computer to Studio ───────
+  const handleUploadToStudio = (file: File) => {
+    // Set the file as the first face image so the Studio canvas has something
+    form.setDirectorFaceImages([file]);
+    setActiveWorkspace("studio");
+  };
+
+  // ─── Compute Studio canvas image from form state ───────
+  const studioCanvasImage = useMemo(() => {
+    const src = form.baseImageForEdit ?? form.directorFaceImages[0] ?? null;
+    if (!src) return undefined;
+    return URL.createObjectURL(src);
+  }, [form.baseImageForEdit, form.directorFaceImages]);
 
   // ─── Reuse params ─────────────────────────
   const handleReuse = (item: GeneratedContent) => {
@@ -961,7 +985,7 @@ const AppInner: React.FC = () => {
   }
 
   // ─── Auth gate — public pages: explore, pricing ───────────────
-  const PUBLIC_WORKSPACES: AppWorkspace[] = ['home', 'pricing'];
+  const PUBLIC_WORKSPACES: AppWorkspace[] = ['dashboard', 'pricing'];
   const isPublicWorkspace = PUBLIC_WORKSPACES.includes(activeWorkspace);
 
   if (!user && !isPublicWorkspace) {
@@ -986,320 +1010,102 @@ const AppInner: React.FC = () => {
 
   return (
     <ApiKeyGuard>
-      <div className="relative w-screen h-screen overflow-hidden text-zinc-300 font-body" style={{ background: '#0D0A0A' }}>
-        {/* Mobile header */}
-        <header className="lg:hidden h-16 flex items-center justify-between px-4 shrink-0 z-40" style={{ background: 'rgba(13,10,10,0.92)', borderBottom: '1px solid #2A1F1C' }}>
-          <h1 className="flex items-center gap-1.5 font-display">
-            <span className="text-base font-extrabold text-gradient-brand">VIST</span>
-            <span className="text-base font-light" style={{ color: '#6B5A56' }}>Studio</span>
-          </h1>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowDbManager(true)}
-              className="p-2 text-zinc-400 hover:text-white"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" />
-                <path d="M12 12v9" />
-                <path d="m16 16-4-4-4 4" />
-              </svg>
-            </button>
-          </div>
-        </header>
+      <div className="relative w-screen h-screen overflow-hidden text-zinc-300 font-body flex" style={{ background: '#0D0A0A' }}>
+        {/* ─── Sidebar Navigation (desktop) ─── */}
+        <SidebarNav activePage={activeWorkspace} onNavigate={setActiveWorkspace} />
 
-        {/* ─── Global Top Navigation (Header) ─── */}
-        <header className="hidden lg:flex h-14 w-full sticky top-0 z-50 px-6 items-center justify-between" style={{ background: 'rgba(13,10,10,0.88)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #2A1F1C' }}>
-          <div className="flex items-center gap-8">
-            {/* VIST Wordmark */}
-            <h1 className="flex items-center gap-1.5 pr-5 font-display" style={{ borderRight: '1px solid #2A1F1C' }}>
-              <span className="text-base font-extrabold text-gradient-brand tracking-tight">VIST</span>
-              <span className="text-base font-light text-zinc-500 tracking-wide">Studio</span>
+        {/* ─── Mobile header ─── */}
+        <div className="flex-1 flex flex-col min-w-0">
+          <header className="lg:hidden h-14 flex items-center justify-between px-4 shrink-0 z-40" style={{ background: 'rgba(13,10,10,0.92)', borderBottom: '1px solid #2A1F1C' }}>
+            <h1 className="flex items-center gap-1.5 font-display">
+              <span className="text-base font-extrabold text-gradient-brand">VIST</span>
+              <span className="text-base font-light" style={{ color: '#6B5A56' }}>Studio</span>
             </h1>
+          </header>
 
-            <nav className="flex gap-0.5">
-              {(["home", "create", "characters", "tools"] as const).map((ws) => {
-                const TAB_LABELS: Record<string, string> = {
-                  home: "Home", create: "Create", characters: "Library", tools: "Tools",
-                };
-                const TAB_TIPS: Record<string, string> = {
-                  home: "Home & inspiration",
-                  create: "Generate images & video",
-                  characters: "Characters & gallery",
-                  tools: "Try-On, Face Swap & more",
-                };
-                const href = ws === 'home' ? '/' : `/${ws}`;
-                return (
-                  <a
-                    key={ws}
-                    href={href}
-                    onClick={(e) => { e.preventDefault(); setActiveWorkspace(ws); }}
-                    className="relative group px-4 py-2 text-xs font-semibold tracking-wide no-underline"
-                    style={activeWorkspace === ws ? { color: '#FF5C35', transition: 'color 0.15s ease' } : { color: '#6B5A56', transition: 'color 0.15s ease' }}
-                    onMouseEnter={e => { if (activeWorkspace !== ws) (e.currentTarget as HTMLElement).style.color = '#E8DDD9'; }}
-                    onMouseLeave={e => { if (activeWorkspace !== ws) (e.currentTarget as HTMLElement).style.color = '#6B5A56'; }}
-                  >
-                    {TAB_LABELS[ws]}
-                    {activeWorkspace === ws && (
-                      <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full" style={{ background: '#FF5C35' }} />
-                    )}
-                    {/* Tooltip */}
-                    <span
-                      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 rounded-lg text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none font-jet z-[100]"
-                      style={{ background: '#161110', border: '1px solid #2A1F1C', color: '#B8A9A5', boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}
-                    >
-                      {TAB_TIPS[ws]}
-                    </span>
-                  </a>
-                );
-              })}
-            </nav>
-          </div>
+          {/* ─── Mobile Bottom Tab Bar ─── */}
+          <MobileNav activePage={activeWorkspace} onNavigate={setActiveWorkspace} />
 
-          <div className="flex items-center gap-3">
-            {user ? (
-              <>
-                {/* Credits pill */}
-                <div className="relative group flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full font-jet cursor-pointer" style={{ color: '#B8A9A5', background: '#161110', border: '1px solid #2A1F1C' }}
-                  onClick={() => setActiveWorkspace('pricing')}>
-                  <span style={{ color: '#FFB347' }}>⚡</span>
-                  <span style={{
-                    color: sub.isUnlimited ? '#B8A9A5' : displayCreditsRaw < 20 ? '#EF4444' : displayCreditsRaw < 100 ? '#F59E0B' : '#B8A9A5',
-                    animation: !sub.isUnlimited && displayCreditsRaw < 20 ? 'pulse 2s infinite' : undefined,
-                  }}>
-                    {displayCredits}
-                  </span>
-                  {/* Credits dropdown */}
-                  <div
-                    className="absolute top-full right-0 mt-2 w-56 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto font-jet z-[100]"
-                    style={{ background: '#161110', border: '1px solid #2A1F1C', boxShadow: '0 8px 24px rgba(0,0,0,0.6)' }}
-                  >
-                    <div className="px-3 py-2.5 space-y-1.5">
-                      <div className="text-[11px]" style={{ color: '#F5EDE8' }}>
-                        {sub.isUnlimited ? 'Unlimited credits' : `${displayCredits} credits available`}
-                      </div>
-                      <div className="text-[10px]" style={{ color: '#4A3A36' }}>
-                        {(sub.profileLoaded || lastCreditsRef.current)
-                          ? `${sub.plan === 'starter' ? '50' : sub.plan === 'pro' ? '500' : sub.plan === 'studio' ? '1,500' : '8,000'} credits/mo included in ${sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1)}`
-                          : 'Loading plan info...'}
-                      </div>
-                      {sub.renewsAt && (
-                        <div className="text-[10px]" style={{ color: '#4A3A36' }}>
-                          Renews: {new Date(sub.renewsAt).toLocaleDateString()}
-                        </div>
-                      )}
-                    </div>
-                    <div style={{ borderTop: '1px solid #1A1210' }} className="px-3 py-2">
-                      <div className="text-[10px] font-semibold text-center py-1 rounded-lg transition-colors"
-                        style={{ background: 'rgba(255,92,53,0.08)', color: '#FF5C35' }}>
-                        + Buy credits
-                      </div>
-                    </div>
-                  </div>
-                </div>
+          {/* ─── Page Router ─── */}
+          <div className="relative flex-1 overflow-hidden">
+            <Suspense fallback={
+              <div className="absolute inset-0 flex items-center justify-center" style={{ background: '#0D0A0A' }}>
+                <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#FF5C35', borderTopColor: 'transparent' }} />
+              </div>
+            }>
 
-                <button
-                  onClick={() => setActiveWorkspace('pricing')}
-                  className="hidden xl:block px-4 py-1.5 rounded-full text-xs font-bold text-white transition-all hover:scale-[1.02]"
-                  style={{ background: 'linear-gradient(135deg, #FF5C35, #FFB347)', boxShadow: '0 2px 12px rgba(255,92,53,0.35)', fontFamily: 'var(--font-display)' }}
-                >
-                  Upgrade
-                </button>
-
-                {/* User avatar with dropdown */}
-                <div className="relative group">
-                  <button
-                    onClick={() => setActiveWorkspace('profile')}
-                    className="relative flex items-center justify-center w-8 h-8 rounded-full overflow-hidden transition-all"
-                    style={{
-                      background: '#1E1614',
-                      border: activeWorkspace === 'profile' ? '1.5px solid #FF5C35' : '1px solid #2A1F1C',
-                      boxShadow: activeWorkspace === 'profile' ? '0 0 0 2px rgba(255,92,53,0.2)' : 'none',
-                    }}
-                    title="Your profile"
-                  >
-                    {profileCtx.profile?.avatarUrl ? (
-                      <img src={profileCtx.profile.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-xs font-bold font-display" style={{ color: '#FF5C35' }}>
-                        {(profileCtx.profile?.displayName || user?.email || 'U')
-                          .split(/[\s@]/).filter(Boolean).map(s => s[0].toUpperCase()).slice(0, 2).join('')}
-                      </span>
-                    )}
-                  </button>
-                  {/* Avatar dropdown */}
-                  <div className="absolute top-full right-0 mt-2 w-44 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto z-[100] py-1"
-                    style={{ background: '#161110', border: '1px solid #2A1F1C', boxShadow: '0 8px 24px rgba(0,0,0,0.6)' }}>
-                    <button onClick={() => setActiveWorkspace('profile')}
-                      className="w-full text-left px-3 py-2 text-[11px] transition-colors hover:bg-white/5"
-                      style={{ color: '#B8A9A5' }}>
-                      My profile
-                    </button>
-                    <button onClick={() => setActiveWorkspace('pricing')}
-                      className="w-full text-left px-3 py-2 text-[11px] transition-colors hover:bg-white/5"
-                      style={{ color: '#B8A9A5' }}>
-                      Plans & billing
-                    </button>
-                    <div className="mx-2 my-1" style={{ borderTop: '1px solid #1A1210' }} />
-                    <button onClick={() => signOut()}
-                      className="w-full text-left px-3 py-2 text-[11px] transition-colors hover:bg-white/5"
-                      style={{ color: '#EF4444' }}>
-                      Sign out
-                    </button>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <>
-                {/* Anonymous — show login/signup buttons */}
-                <button
-                  onClick={() => setActiveWorkspace('create')}
-                  className="px-4 py-1.5 rounded-full text-xs font-semibold transition-all hover:bg-white/5"
-                  style={{ color: '#B8A9A5', border: '1px solid #2A1F1C' }}
-                >
-                  Sign in
-                </button>
-                <button
-                  onClick={() => setActiveWorkspace('create')}
-                  className="px-4 py-1.5 rounded-full text-xs font-bold text-white transition-all hover:scale-[1.02]"
-                  style={{ background: 'linear-gradient(135deg, #FF5C35, #FFB347)', boxShadow: '0 2px 12px rgba(255,92,53,0.35)', fontFamily: 'var(--font-display)' }}
-                >
-                  Get Started
-                </button>
-              </>
+            {/* ────── PAGE: DASHBOARD ────── */}
+            {activeWorkspace === "dashboard" && (
+              <div className="absolute inset-0 overflow-hidden">
+                <DashboardPage onNavigate={setActiveWorkspace} />
+              </div>
             )}
+
+            {/* ────── PAGE: CREATE CHARACTER ────── */}
+            {activeWorkspace === "create" && (
+              <div className="absolute inset-0 overflow-hidden">
+                <CharacterBuilderPage
+                  onGenerate={(characteristics, _style, _niche) => {
+                    // Set characteristics on the first character in form context
+                    const charId = form.characters[0]?.id;
+                    if (charId) {
+                      form.updateCharacter(charId, 'characteristics', characteristics);
+                    }
+                    handleGenerate();
+                  }}
+                  onNavigate={setActiveWorkspace}
+                  isGenerating={isGenerating}
+                />
+              </div>
+            )}
+
+            {/* ────── PAGE: PHOTO SESSION ────── */}
+            {activeWorkspace === "session" && (
+              <div className="absolute inset-0 overflow-hidden">
+                <PhotoSessionPage
+                  onNavigate={(ws) => setActiveWorkspace(ws as AppWorkspace)}
+                />
+              </div>
+            )}
+
+            {/* ────── PAGE: STUDIO EDITOR ────── */}
+            {activeWorkspace === "studio" && (
+              <div className="absolute inset-0 overflow-hidden">
+                <StudioEditorPage
+                  onNavigate={(ws) => setActiveWorkspace(ws as AppWorkspace)}
+                  canvasImage={studioCanvasImage}
+                />
+              </div>
+            )}
+
+            {/* ────── PAGE: GALLERY ────── */}
+            {activeWorkspace === "gallery" && (
+              <div className="absolute inset-0 overflow-hidden">
+                <CharactersPage
+                  onLoadCharacter={handleLoadCharacterInDirector}
+                  onNewCharacter={() => setActiveWorkspace("create")}
+                  onNavigate={(ws) => setActiveWorkspace(ws as AppWorkspace)}
+                  onUploadToStudio={handleUploadToStudio}
+                />
+              </div>
+            )}
+
+            {/* ────── PAGE: PRICING ────── */}
+            {activeWorkspace === "pricing" && (
+              <div className="absolute inset-0 overflow-y-auto">
+                <PricingPage onNavigate={(ws) => setActiveWorkspace(ws as AppWorkspace)} />
+              </div>
+            )}
+
+            {/* ────── PAGE: PROFILE ────── */}
+            {activeWorkspace === "profile" && (
+              <div className="absolute inset-0 overflow-hidden">
+                <ProfilePage onNavigate={(ws) => setActiveWorkspace(ws as AppWorkspace)} />
+              </div>
+            )}
+
+            </Suspense>
           </div>
-        </header>
-
-        {/* ─── Mobile Bottom Tab Bar ─── */}
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around px-2 py-2 border-t" style={{ background: 'rgba(13,10,10,0.96)', backdropFilter: 'blur(16px)', borderColor: '#1A1210' }}>
-          {([
-            { ws: 'home' as const,        icon: (
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            ), label: 'Home' },
-            { ws: 'create' as const,      icon: (
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            ), label: 'Create' },
-            { ws: 'characters' as const,  icon: (
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            ), label: 'Library' },
-            { ws: 'tools' as const,       icon: (
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-            ), label: 'Tools' },
-          ]).map(({ ws, icon, label }) => {
-            const isActive = activeWorkspace === ws;
-            return (
-              <button
-                key={ws}
-                onClick={() => setActiveWorkspace(ws)}
-                className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors min-w-[52px]"
-                style={{ color: isActive ? '#FF5C35' : '#4A3A36' }}
-              >
-                {icon}
-                <span className="text-[9px] font-jet font-semibold">{label}</span>
-                {isActive && (
-                  <span className="w-1 h-1 rounded-full" style={{ background: '#FF5C35' }} />
-                )}
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* ─── Workspace Router Container ─── */}
-        <div className="relative flex-1 w-full h-[calc(100vh-4rem-3.5rem)] lg:h-[calc(100vh-3.5rem)] overflow-hidden transition-opacity duration-300">
-          {/* ────── WORKSPACE: HOME ────── */}
-          {activeWorkspace === "home" && (
-            <div className="absolute inset-0 z-0 overflow-hidden">
-              <ExplorePage onNavigate={handleExploreNavigate} />
-            </div>
-          )}
-
-          {/* Suspense boundary for lazy-loaded workspaces */}
-          <Suspense fallback={
-            <div className="absolute inset-0 z-0 flex items-center justify-center" style={{ background: '#0D0A0A' }}>
-              <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#FF5C35', borderTopColor: 'transparent' }} />
-            </div>
-          }>
-          {/* ────── WORKSPACE: CREATE (unified) ────── */}
-          {activeWorkspace === "create" && (
-            <div className="absolute inset-0 z-0 overflow-hidden">
-              <CreatePage
-                isGenerating={isGenerating}
-                progress={progress}
-                onGenerate={handleGenerate}
-                onStopGeneration={stopGeneration}
-                onDownload={(item) => handleDownload({ stopPropagation: () => {} } as React.MouseEvent, item)}
-                onReuse={handleReuse}
-                onUpscale={handleUpscale}
-                onCaption={(item) => setCaptionItem(item)}
-                onFaceSwap={(item) => setFaceSwapItem(item)}
-                onTryOn={(item) => setTryOnItem(item)}
-                onRelight={(item) => setRelightItem(item)}
-                onInpaint={(item) => setInpaintItem(item)}
-                onAddToStoryboard={handleAddToStoryboard}
-                onEdit={(item) => gallery.setEditingItem(item)}
-                onChangePose={handleChangePose}
-                onSkinEnhance={(item) => setSkinEnhanceItem(item)}
-              />
-            </div>
-          )}
-
-          {/* ────── WORKSPACE: CHARACTERS ────── */}
-          {activeWorkspace === "characters" && (
-            <div className="absolute inset-0 z-0 overflow-hidden">
-              <CharactersPage
-                onLoadCharacter={handleLoadCharacterInDirector}
-                onNewCharacter={() => setActiveWorkspace("create")}
-                onNavigate={(ws) => setActiveWorkspace(ws as AppWorkspace)}
-                storyboardCount={gallery.storyboardIds.length}
-              />
-            </div>
-          )}
-
-
-          {/* ────── WORKSPACE: TOOLS ────── */}
-          {activeWorkspace === "tools" && (
-            <div className="absolute inset-0 z-0 overflow-hidden">
-              <ToolsPage
-                onTryOn={(file) => { const item = fileToContent(file); setTryOnItem(item); }}
-                onFaceSwap={(file) => { const item = fileToContent(file); setFaceSwapItem(item); }}
-                onRelight={(file) => { const item = fileToContent(file); setRelightItem(item); }}
-                onSkinEnhance={(file) => { const item = fileToContent(file); setSkinEnhanceItem(item); }}
-                onInpaint={(file) => { const item = fileToContent(file); setInpaintItem(item); }}
-                onUpscale={(file) => { const item = fileToContent(file); handleUpscale(item); }}
-                onPoseChange={(file) => {
-                  const item = fileToContent(file);
-                  form.setBaseImageForEdit(file);
-                  form.setActiveMode("edit");
-                  setActiveWorkspace("create");
-                }}
-              />
-            </div>
-          )}
-
-          {/* ────── WORKSPACE: PRICING ────── */}
-          {activeWorkspace === "pricing" && (
-            <div className="absolute inset-0 z-0 overflow-y-auto">
-              <PricingPage onNavigate={(ws) => setActiveWorkspace(ws as AppWorkspace)} />
-            </div>
-          )}
-
-          {/* ────── WORKSPACE: PROFILE ────── */}
-          {activeWorkspace === "profile" && (
-            <div className="absolute inset-0 z-0 overflow-hidden">
-              <ProfilePage onNavigate={(ws) => setActiveWorkspace(ws as AppWorkspace)} />
-            </div>
-          )}
-          </Suspense>
         </div>
 
         {/* Modals (lazy-loaded — Suspense with null fallback since modals overlay) */}
