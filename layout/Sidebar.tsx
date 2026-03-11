@@ -54,21 +54,27 @@ const Sidebar: React.FC = () => {
 
   const renderNavButton = (item: NavItem) => {
     const active = isActive(item.path);
+    const disabled = item.isPlaceholder;
     return (
       <button
         key={item.title}
-        onClick={() => handleNav(item.path)}
+        onClick={() => !disabled && handleNav(item.path)}
         className={`flex items-center gap-3 px-3 py-2.5 rounded-xl w-full text-left transition-all duration-150 ${
-          active
-            ? 'bg-[rgba(240,104,72,0.1)] text-[var(--text-1)]'
-            : 'text-[var(--text-2)] hover:bg-[rgba(255,255,255,0.03)] hover:text-[var(--text-1)]'
+          disabled
+            ? 'opacity-40 cursor-default'
+            : active
+              ? 'bg-[rgba(240,104,72,0.1)] text-[var(--text-1)]'
+              : 'text-[var(--text-2)] hover:bg-[rgba(255,255,255,0.03)] hover:text-[var(--text-1)]'
         } ${collapsed ? 'justify-center px-0' : ''}`}
-        title={collapsed ? item.title : undefined}
+        title={collapsed ? item.title : disabled ? 'Pr\u00f3ximamente' : undefined}
       >
         <span className="text-lg w-6 text-center shrink-0">{item.icon}</span>
         {!collapsed && (
           <div className="flex-1 min-w-0">
-            <div className="text-[13px] font-semibold">{item.title}</div>
+            <div className="text-[13px] font-semibold flex items-center gap-2">
+              {item.title}
+              {disabled && <span className="font-jet text-[8px] text-[var(--text-3)] uppercase tracking-wider">soon</span>}
+            </div>
             <div className="text-[10px] text-[var(--text-3)]">{item.subtitle}</div>
           </div>
         )}
