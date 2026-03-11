@@ -2,8 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Camera, LogOut, Check, User, Zap, Star, Building2, Pencil, ExternalLink, Infinity } from 'lucide-react';
 import { useProfile } from '../contexts/ProfileContext';
 import { useAuth } from '../contexts/AuthContext';
-import { useGallery } from '../contexts/GalleryContext';
-import { useCharacterLibrary } from '../contexts/CharacterLibraryContext';
+import { useGalleryStore } from '../stores/galleryStore';
+import { useCharacterStore } from '../stores/characterStore';
+import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '../hooks/useSubscription';
 import { getCustomerPortalUrl } from '../services/lemonSqueezyService';
 import { SubscriptionPlan } from '../types';
@@ -49,15 +50,12 @@ const StatCard: React.FC<{ label: string; value: string | number }> = ({ label, 
 // Main component
 // ─────────────────────────────────────────────
 
-interface ProfilePageProps {
-  onNavigate?: (ws: string) => void;
-}
-
-const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate }) => {
+const ProfilePage: React.FC = () => {
   const { profile, isLoading, updateProfile, uploadAvatar } = useProfile();
   const { user, signOut } = useAuth();
-  const gallery = useGallery();
-  const charLib = useCharacterLibrary();
+  const galleryItems = useGalleryStore((s) => s.items);
+  const characters = useCharacterStore((s) => s.characters);
+  const navigate = useNavigate();
   const sub = useSubscription();
 
   const [displayName, setDisplayName] = useState('');
@@ -193,7 +191,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate }) => {
               <PlanBadge plan={sub.plan} />
               {sub.plan === 'starter' && (
                 <button
-                  onClick={() => onNavigate?.('pricing')}
+                  onClick={() => navigate('/pricing')}
                   className="text-xs font-jet font-semibold transition-colors"
                   style={{ color: '#FF5C35' }}
                   onMouseEnter={e => (e.currentTarget.style.color = '#FFB347')}
@@ -208,8 +206,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate }) => {
 
         {/* ── Stats ── */}
         <div className="grid grid-cols-3 gap-3">
-          <StatCard label="Characters" value={charLib.savedCharacters.length} />
-          <StatCard label="Generations" value={gallery.generatedHistory.length} />
+          <StatCard label="Characters" value={characters.length} />
+          <StatCard label="Generations" value={galleryItems.length} />
           <StatCard label="Member since" value={memberSince} />
         </div>
 
@@ -270,7 +268,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate }) => {
           <div className="flex gap-2 pt-1">
             {sub.plan === 'starter' ? (
               <button
-                onClick={() => onNavigate?.('pricing')}
+                onClick={() => navigate('/pricing')}
                 className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all"
                 style={{
                   background: 'linear-gradient(135deg, #FF5C35, #FFB347)',
@@ -283,7 +281,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate }) => {
             ) : (
               <>
                 <button
-                  onClick={() => onNavigate?.('pricing')}
+                  onClick={() => navigate('/pricing')}
                   className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
                   style={{ background: '#161110', border: '1px solid #2A1F1C', color: '#B8A9A5', fontFamily: 'var(--font-display)' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,92,53,0.4)'; (e.currentTarget as HTMLElement).style.color = '#FF5C35'; }}

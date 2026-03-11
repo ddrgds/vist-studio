@@ -207,7 +207,7 @@ const generateWithFallback = async (
   } catch (err) {
     // If the primary model exhausts all retries (persistent 503/429),
     // try with the Flash model (more available and faster)
-    const fallbackModel = GeminiImageModel.Flash;
+    const fallbackModel = GeminiImageModel.Flash2;
     if (isRetryableError(err) && model !== fallbackModel) {
       console.warn(
         `🔄 Primary model "${model}" unavailable after retries. ` +
@@ -472,7 +472,7 @@ ${hasFaceRefs ? '- Outfit from [FACE/IDENTITY REFERENCE] images is IRRELEVANT �
     }
   }, 1500);
 
-  const selectedModel = params.model ?? GeminiImageModel.Flash;
+  const selectedModel = params.model ?? GeminiImageModel.Flash2;
 
   // Build tasks as deferred functions (do not execute yet)
   const tasks = Array.from({ length: count }, (_, i) =>
@@ -541,7 +541,7 @@ export const modifyInfluencerPose = async (
   const count = params.numberOfImages || 1;
   // Imagen 4 models only support generateImages (text-to-image), not generateContent (editing).
   // Fall back to Flash2 which supports multimodal generateContent for pose editing.
-  const rawModel = params.model ?? GeminiImageModel.Flash;
+  const rawModel = params.model ?? GeminiImageModel.Flash2;
   const selectedModel = IMAGEN4_MODELS.has(rawModel) ? GeminiImageModel.Flash2 : rawModel;
 
   const buildTask = (index: number) => async (): Promise<PoseGenerationResult | null> => {
@@ -834,7 +834,7 @@ ${outfit.outfitText && outfit.outfitImages.length > 0 ? `Additional outfit notes
 
     parts.push({ text: prompt });
 
-    const response = await generateWithFallback(ai, baseParams.model ?? GeminiImageModel.Flash, parts, {
+    const response = await generateWithFallback(ai, baseParams.model ?? GeminiImageModel.Flash2, parts, {
       imageSize: baseParams.imageSize,
       aspectRatio: baseParams.aspectRatio,
     });
@@ -1020,7 +1020,7 @@ OUTPUT: Return the complete edited photograph at the same quality and compositio
   parts.push({ text: promptText });
 
   // Imagen 4 models don't support generateContent — fall back to Flash2 for editing.
-  const rawModel = params.model ?? GeminiImageModel.Flash;
+  const rawModel = params.model ?? GeminiImageModel.Flash2;
   const selectedModel = IMAGEN4_MODELS.has(rawModel) ? GeminiImageModel.Flash2 : rawModel;
 
   let currentProgress = 20;

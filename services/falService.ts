@@ -1260,7 +1260,7 @@ const GROK_SESSION_ANGLES = [
 export const generatePhotoSessionWithGrok = async (
   referenceImage: File,
   count: number,
-  options: { angles?: string[] } = {},
+  options: { angles?: string[]; scenario?: string } = {},
   onProgress?: (percent: number) => void,
   abortSignal?: AbortSignal
 ): Promise<{ url: string; poseIndex: number }[]> => {
@@ -1292,7 +1292,8 @@ export const generatePhotoSessionWithGrok = async (
   for (let i = 0; i < clampedCount; i++) {
     if (abortSignal?.aborted) throw new Error('Cancelado');
     const angle = angles[i];
-    const prompt = `Photo session — shot ${i + 1} of ${clampedCount}. Preserve EXACTLY the same person, outfit, and scene from the reference image. Only the camera angle changes. Camera angle for this shot: ${angle}. Keep face, clothing, and background identical to the reference.`;
+    const scenePart = options.scenario ? ` Scene: ${options.scenario}.` : '';
+    const prompt = `Photo session — shot ${i + 1} of ${clampedCount}. Preserve EXACTLY the same person and outfit from the reference image. Camera angle for this shot: ${angle}.${scenePart} Keep face, clothing identical to the reference.`;
 
     const result = await fal.subscribe('xai/grok-imagine-image/edit', {
       input: { prompt, image_urls: [imageUrl], num_images: 1, output_format: 'jpeg' },
