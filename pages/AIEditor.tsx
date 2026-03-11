@@ -1,4 +1,4 @@
-import { useState, useRef, lazy, Suspense } from 'react'
+import { useState, useRef, useEffect, lazy, Suspense } from 'react'
 import { useGalleryStore } from '../stores/galleryStore'
 import { useCharacterStore } from '../stores/characterStore'
 import { useProfile } from '../contexts/ProfileContext'
@@ -6,6 +6,7 @@ import { useToast } from '../contexts/ToastContext'
 import { editImageWithAI } from '../services/geminiService'
 import { editImageWithFluxKontext } from '../services/falService'
 import { ENGINE_METADATA } from '../types'
+import { useNavigationStore } from '../stores/navigationStore'
 
 // Lazy load modals (they're heavy)
 const RelightModal = lazy(() => import('../components/RelightModal'))
@@ -73,6 +74,19 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
   const toast = useToast()
   const addItems = useGalleryStore(s => s.addItems)
   const characters = useCharacterStore(s => s.characters)
+  const { pendingImage, pendingTarget, consume: consumeNav } = useNavigationStore()
+
+  // Consume pending navigation (e.g. from Gallery → Editor)
+  useEffect(() => {
+    if (pendingTarget === 'editor' && pendingImage) {
+      setInputImage(pendingImage)
+      setResultImage(null)
+      urlToFile(pendingImage, 'from-gallery.png')
+        .then(file => setInputFile(file))
+        .catch(() => setInputFile(null))
+      consumeNav()
+    }
+  }, [pendingTarget, pendingImage])
 
   const handleApply = async () => {
     if (!inputImage) { toast.error('Upload an image first'); return }

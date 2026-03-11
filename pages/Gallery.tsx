@@ -1,6 +1,8 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useGalleryStore, type GalleryItem } from '../stores/galleryStore'
 import { useCharacterStore } from '../stores/characterStore'
+import { useToast } from '../contexts/ToastContext'
+import { useNavigationStore } from '../stores/navigationStore'
 
 const BASE_FILTERS = ['All','Relight','Face Swap','Try-On','360°','Background','Enhanced','Style Transfer','Inpaint']
 const sortOpts = ['Recent','Oldest','Most Edited','Favorites']
@@ -21,17 +23,49 @@ function getItemCategory(item: GalleryItem): string {
   return 'Other'
 }
 
+const FILTER_PRESETS: Record<string, { brightness: number, contrast: number, saturation: number, temperature: number }> = {
+  'Warm': { brightness: 5, contrast: 0, saturation: 20, temperature: 30 },
+  'B&W': { brightness: 0, contrast: 10, saturation: -100, temperature: 0 },
+  'Vintage': { brightness: 5, contrast: -10, saturation: -20, temperature: 20 },
+  'Cool': { brightness: 5, contrast: 0, saturation: -10, temperature: -30 },
+  'Dramatic': { brightness: -5, contrast: 30, saturation: 10, temperature: 0 },
+  'Fade': { brightness: 10, contrast: -10, saturation: -20, temperature: 0 },
+}
+
+function computeFilterCSS(v: { brightness: number, contrast: number, saturation: number, temperature: number }): string {
+  const b = 1 + v.brightness / 100
+  const c = 1 + v.contrast / 100
+  const s = 1 + v.saturation / 100
+  let css = `brightness(${b}) contrast(${c}) saturate(${s})`
+  if (v.temperature > 0) {
+    css += ` sepia(${v.temperature * 0.004}) hue-rotate(${v.temperature * 0.2}deg)`
+  } else if (v.temperature < 0) {
+    css += ` hue-rotate(${v.temperature * 0.2}deg)`
+  }
+  return css
+}
+
+const DEFAULT_FILTERS = { brightness: 0, contrast: 0, saturation: 0, temperature: 0 }
+
 export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
   const items = useGalleryStore(s => s.items)
   const characters = useCharacterStore(s => s.characters)
   const toggleFavorite = useGalleryStore(s => s.toggleFavorite)
+  const removeItem = useGalleryStore(s => s.removeItem)
+  const addItems = useGalleryStore(s => s.addItems)
+  const updateItem = useGalleryStore(s => s.updateItem)
+  const { addToast } = useToast()
+  const { navigateToEditor, navigateToSession, navigateToUpload } = useNavigationStore()
 
   const [activeFilter, setActiveFilter] = useState('All')
   const [viewMode, setViewMode] = useState<'grid'|'masonry'>('grid')
   const [selected, setSelected] = useState<string[]>([])
   const [sortBy, setSortBy] = useState('Recent')
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const [filterValues, setFilterValues] = useState({ ...DEFAULT_FILTERS })
+  const [activePreset, setActivePreset] = useState<string | null>(null)
 
-  // Build dynamic filters — add Sesión / Creación if items of those types exist
+  // Build dynamic filters
   const filters = useMemo(() => {
     const extra: string[] = []
     if (items.some(i => getItemCategory(i) === 'Session')) extra.push('Session')
@@ -54,13 +88,90 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
     setSelected(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id])
   }
 
-  // Stats derived from real data
   const stats = [
     { l:'Total Creations', v: filtered.length.toString(), c:'var(--accent)' },
     { l:'Face Swaps', v: items.filter(i => getItemCategory(i) === 'Face Swap').length.toString(), c:'var(--rose)' },
     { l:'Relights', v: items.filter(i => getItemCategory(i) === 'Relight').length.toString(), c:'var(--magenta)' },
     { l:'Try-Ons', v: items.filter(i => getItemCategory(i) === 'Try-On').length.toString(), c:'var(--mint)' },
   ]
+
+  // --- Handlers ---
+
+  const handleDownload = async (e: React.MouseEvent, url: string, id: string) => {
+    e.stopPropagation()
+    try {
+      const res = await fetch(url)
+      const blob = await res.blob()
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `vertex-${id.slice(0,8)}.png`
+      a.click()
+      URL.revokeObjectURL(a.href)
+      addToast('Image downloaded', 'success')
+    } catch {
+      addToast('Download failed', 'error')
+    }
+  }
+
+  const handleDelete = (e: React.MouseEvent, item: GalleryItem) => {
+    e.stopPropagation()
+    removeItem(item.id)
+    addToast('Image deleted', 'info')
+  }
+
+  const handleSaveFilter = async (item: GalleryItem) => {
+    const filterCSS = computeFilterCSS(filterValues)
+    if (filterCSS === computeFilterCSS(DEFAULT_FILTERS)) {
+      addToast('No filters applied', 'info')
+      return
+    }
+    try {
+      const res = await fetch(item.url)
+      const blob = await res.blob()
+      const blobUrl = URL.createObjectURL(blob)
+
+      const img = new Image()
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve()
+        img.onerror = reject
+        img.src = blobUrl
+      })
+
+      const canvas = document.createElement('canvas')
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      const ctx = canvas.getContext('2d')!
+      ctx.filter = filterCSS
+      ctx.drawImage(img, 0, 0)
+      URL.revokeObjectURL(blobUrl)
+
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.92)
+      updateItem(item.id, { url: dataUrl })
+      setFilterValues({ ...DEFAULT_FILTERS })
+      setActivePreset(null)
+      addToast('Filters saved', 'success')
+    } catch {
+      addToast('Failed to save filters', 'error')
+    }
+  }
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    if (lightboxIndex === null) return
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightboxIndex(null)
+      if (e.key === 'ArrowRight') {
+        setLightboxIndex(prev => prev !== null ? (prev < sorted.length - 1 ? prev + 1 : 0) : null)
+        setFilterValues({ ...DEFAULT_FILTERS }); setActivePreset(null)
+      }
+      if (e.key === 'ArrowLeft') {
+        setLightboxIndex(prev => prev !== null ? (prev > 0 ? prev - 1 : sorted.length - 1) : null)
+        setFilterValues({ ...DEFAULT_FILTERS }); setActivePreset(null)
+      }
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [lightboxIndex, sorted.length])
 
   return (
     <div className="min-h-screen gradient-mesh">
@@ -140,7 +251,7 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
             return (
               <div
                 key={img.id}
-                onClick={()=>toggleSelect(img.id)}
+                onClick={() => { setLightboxIndex(idx); setFilterValues({ ...DEFAULT_FILTERS }); setActivePreset(null) }}
                 className={`group cursor-pointer rounded-2xl overflow-hidden relative transition-all hover:scale-[1.02] ${viewMode==='masonry' ? 'break-inside-avoid' : ''}`}
                 style={{
                   border: `2px solid ${selected.includes(img.id) ? 'var(--accent)' : 'var(--border)'}`,
@@ -175,14 +286,25 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
                         <div className="text-[8px] font-mono text-white/60">{category} · {dateStr}</div>
                       </div>
                       <div className="flex gap-1">
-                        <button className="w-6 h-6 rounded-md flex items-center justify-center text-[10px]"
-                          style={{ background:'rgba(255,255,255,.15)' }}>↓</button>
+                        <button onClick={(e) => { e.stopPropagation(); navigateToEditor(img.url); onNav?.('editor') }}
+                          className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] transition-all hover:scale-110"
+                          style={{ background: 'rgba(240,104,72,.25)', color: 'var(--accent)' }}
+                          title="Edit in AI Editor">✦</button>
+                        <button onClick={(e) => handleDownload(e, img.url, img.id)}
+                          className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] transition-all hover:scale-110"
+                          style={{ background:'rgba(255,255,255,.15)', color: 'var(--text-2)' }}
+                          title="Download">↓</button>
                         <button
-                          className="w-6 h-6 rounded-md flex items-center justify-center text-[10px]"
+                          className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] transition-all hover:scale-110"
                           style={{ background: img.favorite ? 'rgba(240,104,72,.3)' : 'rgba(255,255,255,.15)' }}
-                          onClick={(e) => { e.stopPropagation(); toggleFavorite(img.id) }}>
+                          onClick={(e) => { e.stopPropagation(); toggleFavorite(img.id) }}
+                          title="Favorite">
                           {img.favorite ? '★' : '☆'}
                         </button>
+                        <button onClick={(e) => handleDelete(e, img)}
+                          className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] transition-all hover:scale-110"
+                          style={{ background: 'rgba(255,60,60,.2)', color: '#e05050' }}
+                          title="Delete">✕</button>
                       </div>
                     </div>
                   </div>
@@ -198,6 +320,141 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
           })}
         </div>
       )}
+
+      {/* ─── Lightbox ─── */}
+      {lightboxIndex !== null && (() => {
+        const item = sorted[lightboxIndex]
+        if (!item) return null
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.92)' }}
+            onClick={() => setLightboxIndex(null)}>
+
+            {/* Close */}
+            <button className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-lg z-10 transition-all hover:scale-110"
+              style={{ background: 'rgba(255,255,255,.1)', color: 'var(--text-2)' }}
+              onClick={() => setLightboxIndex(null)}>✕</button>
+
+            {/* Arrow left */}
+            <button className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-lg z-10 transition-all hover:scale-110"
+              style={{ background: 'rgba(255,255,255,.08)', color: 'var(--text-2)' }}
+              onClick={(e) => { e.stopPropagation(); setLightboxIndex(lightboxIndex > 0 ? lightboxIndex - 1 : sorted.length - 1); setFilterValues({ ...DEFAULT_FILTERS }); setActivePreset(null) }}>‹</button>
+
+            {/* Arrow right */}
+            <button className="absolute right-[300px] top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-lg z-10 transition-all hover:scale-110"
+              style={{ background: 'rgba(255,255,255,.08)', color: 'var(--text-2)' }}
+              onClick={(e) => { e.stopPropagation(); setLightboxIndex(lightboxIndex < sorted.length - 1 ? lightboxIndex + 1 : 0); setFilterValues({ ...DEFAULT_FILTERS }); setActivePreset(null) }}>›</button>
+
+            {/* Content */}
+            <div className="flex max-w-[95vw] max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+
+              {/* Image */}
+              <div className="flex-1 min-w-0 flex items-center justify-center p-4">
+                <img src={item.url} alt=""
+                  className="max-w-full max-h-[85vh] object-contain rounded-xl"
+                  style={{ filter: computeFilterCSS(filterValues) }} />
+              </div>
+
+              {/* Sidebar */}
+              <div className="w-[280px] shrink-0 flex flex-col gap-3 p-4 overflow-y-auto"
+                style={{ background: 'rgba(14,12,20,.85)', borderLeft: '1px solid var(--border)' }}>
+
+                {/* Navigation actions */}
+                <div className="text-[9px] font-mono uppercase tracking-wider" style={{ color: 'var(--text-3)' }}>Actions</div>
+                <div className="flex flex-col gap-1.5">
+                  <button onClick={() => { navigateToEditor(item.url); onNav?.('editor') }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] transition-all hover:scale-[1.02]"
+                    style={{ background: 'rgba(240,104,72,.08)', border: '1px solid rgba(240,104,72,.15)', color: 'var(--accent)' }}>
+                    ✦ Edit in AI Editor
+                  </button>
+                  <button onClick={() => { navigateToSession(item.url); onNav?.('session') }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] transition-all hover:scale-[1.02]"
+                    style={{ background: 'rgba(208,72,176,.08)', border: '1px solid rgba(208,72,176,.15)', color: 'var(--magenta)' }}>
+                    ◎ New Photo Session
+                  </button>
+                  <button onClick={() => { navigateToUpload(item.url); onNav?.('upload') }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] transition-all hover:scale-[1.02]"
+                    style={{ background: 'rgba(72,88,224,.08)', border: '1px solid rgba(72,88,224,.15)', color: 'var(--blue)' }}>
+                    ⊕ Create Character
+                  </button>
+                </div>
+
+                {/* Quick actions */}
+                <div className="flex gap-2">
+                  <button onClick={(e) => handleDownload(e, item.url, item.id)}
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] transition-all hover:scale-[1.02]"
+                    style={{ background: 'var(--bg-3)', color: 'var(--text-2)' }}>
+                    ↓ Download
+                  </button>
+                  <button onClick={(e) => { handleDelete(e, item); setLightboxIndex(null) }}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] transition-all hover:scale-[1.02]"
+                    style={{ background: 'rgba(255,60,60,.08)', color: '#e05050' }}>
+                    ✕ Delete
+                  </button>
+                </div>
+
+                <div className="glow-line my-1" />
+
+                {/* Filter Presets */}
+                <div className="text-[9px] font-mono uppercase tracking-wider" style={{ color: 'var(--text-3)' }}>Presets</div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {Object.keys(FILTER_PRESETS).map(name => (
+                    <button key={name} onClick={() => { setActivePreset(name); setFilterValues(FILTER_PRESETS[name]) }}
+                      className="px-2 py-1.5 rounded-lg text-[10px] font-medium transition-all"
+                      style={{
+                        background: activePreset === name ? 'rgba(240,104,72,.1)' : 'var(--bg-3)',
+                        border: `1px solid ${activePreset === name ? 'rgba(240,104,72,.2)' : 'var(--border)'}`,
+                        color: activePreset === name ? 'var(--accent)' : 'var(--text-2)',
+                      }}>{name}</button>
+                  ))}
+                </div>
+
+                {/* Sliders */}
+                <div className="text-[9px] font-mono uppercase tracking-wider mt-1" style={{ color: 'var(--text-3)' }}>Adjust</div>
+                {(['brightness', 'contrast', 'saturation', 'temperature'] as const).map(key => (
+                  <div key={key}>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-[9px] capitalize" style={{ color: 'var(--text-3)' }}>{key}</span>
+                      <span className="text-[9px] font-mono" style={{ color: filterValues[key] !== 0 ? 'var(--accent)' : 'var(--text-3)' }}>
+                        {filterValues[key] > 0 ? '+' : ''}{filterValues[key]}
+                      </span>
+                    </div>
+                    <input type="range" min={-100} max={100} value={filterValues[key]}
+                      className="slider-t w-full"
+                      onChange={e => {
+                        setActivePreset(null)
+                        setFilterValues(prev => ({ ...prev, [key]: parseInt(e.target.value) }))
+                      }} />
+                  </div>
+                ))}
+
+                {/* Reset / Save */}
+                <div className="flex gap-2 mt-1">
+                  <button onClick={() => { setFilterValues({ ...DEFAULT_FILTERS }); setActivePreset(null) }}
+                    className="flex-1 px-3 py-2 rounded-lg text-[10px] transition-all"
+                    style={{ background: 'rgba(240,104,72,.08)', border: '1px solid rgba(240,104,72,.15)', color: 'var(--accent)' }}>
+                    Reset
+                  </button>
+                  <button onClick={() => handleSaveFilter(item)}
+                    className="flex-1 px-3 py-2 rounded-lg text-[10px] font-bold transition-all"
+                    style={{ background: 'linear-gradient(135deg, var(--accent), var(--magenta))', color: 'white' }}>
+                    Save
+                  </button>
+                </div>
+
+                {/* Image info */}
+                <div className="glow-line my-1" />
+                <div className="text-[9px] font-mono uppercase tracking-wider" style={{ color: 'var(--text-3)' }}>Info</div>
+                <div className="text-[10px] space-y-1" style={{ color: 'var(--text-2)' }}>
+                  <div>Category: {getItemCategory(item)}</div>
+                  {item.model && <div>Model: {item.model}</div>}
+                  <div>Date: {new Date(item.timestamp).toLocaleDateString()}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }

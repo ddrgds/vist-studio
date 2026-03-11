@@ -1,10 +1,11 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useCharacterStore, type SavedCharacter } from '../stores/characterStore'
 import { useProfile } from '../contexts/ProfileContext'
 import { useToast } from '../contexts/ToastContext'
 import { generateInfluencerImage } from '../services/geminiService'
 import { ImageSize, AspectRatio, ENGINE_METADATA } from '../types'
 import type { InfluencerParams } from '../types'
+import { useNavigationStore } from '../stores/navigationStore'
 
 // Render styles — strong prompts to enforce artistic style
 const renderStyles = [
@@ -156,6 +157,22 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   const addCharacter = useCharacterStore(s => s.addCharacter)
   const { decrementCredits, restoreCredits } = useProfile()
   const toast = useToast()
+  const { pendingImage, pendingTarget, consume: consumeNav } = useNavigationStore()
+
+  // Consume pending navigation (e.g. from Gallery → Upload)
+  useEffect(() => {
+    if (pendingTarget === 'upload' && pendingImage) {
+      setMode('import')
+      fetch(pendingImage)
+        .then(res => res.blob())
+        .then(blob => {
+          const file = new File([blob], 'from-gallery.png', { type: blob.type || 'image/png' })
+          setImportFiles(prev => [...prev, file])
+        })
+        .catch(() => {})
+      consumeNav()
+    }
+  }, [pendingTarget, pendingImage])
 
   const steps = ['Render Style','Identity','Face','Body','Personality','Fashion']
   const toggleArr = (arr: number[], set: (v:number[])=>void, i: number, max: number) => {

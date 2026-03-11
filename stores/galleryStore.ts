@@ -101,6 +101,7 @@ interface GalleryState {
   addItems: (items: GalleryItem[]) => void;
   removeItem: (id: string) => void;
   toggleFavorite: (id: string) => void;
+  updateItem: (id: string, updates: Partial<GalleryItem>) => void;
   setSelectedItem: (item: GalleryItem | null) => void;
   setPreviewImage: (url: string | null) => void;
   setItems: (items: GalleryItem[]) => void;
@@ -206,6 +207,24 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
       updateGalleryItem(gc, _userId).catch((err) =>
         console.warn('Cloud update failed:', err),
       );
+    }
+  },
+
+  updateItem: (id, updates) => {
+    let updatedItem: GalleryItem | undefined;
+    set((s) => ({
+      items: s.items.map((item) => {
+        if (item.id !== id) return item;
+        updatedItem = { ...item, ...updates };
+        return updatedItem;
+      }),
+    }));
+    if (!updatedItem) return;
+    const gc = toGeneratedContent(updatedItem);
+    const { _userId } = get();
+    updateHistoryItem(gc).catch((err) => console.warn('IndexedDB update failed:', err));
+    if (_userId) {
+      updateGalleryItem(gc, _userId).catch((err) => console.warn('Cloud update failed:', err));
     }
   },
 

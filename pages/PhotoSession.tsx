@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useCharacterStore } from '../stores/characterStore'
 import { useGalleryStore, type GalleryItem } from '../stores/galleryStore'
+import { useNavigationStore } from '../stores/navigationStore'
 import { generatePhotoSession, generateInfluencerImage } from '../services/geminiService'
 import { useProfile } from '../contexts/ProfileContext'
 import { useToast } from '../contexts/ToastContext'
@@ -45,7 +46,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
   const [selAngle, setSelAngle] = useState(0)
   const [selLight, setSelLight] = useState(0)
   const [selExpr, setSelExpr] = useState(4)
-  const [sceneMode, setSceneMode] = useState<'preset'|'upload'|'prompt'>('preset')
+  const [sceneMode, setSceneMode] = useState<'preset'|'reference'|'prompt'>('preset')
   const [poseMode, setPoseMode] = useState<'preset'|'upload'>('preset')
   const [shotCount, setShotCount] = useState(4)
   const [activePreset, setActivePreset] = useState<number | null>(null)
@@ -84,6 +85,26 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
   // Credits & toast
   const { decrementCredits, restoreCredits } = useProfile()
   const toast = useToast()
+  const galleryItems = useGalleryStore(s => s.items)
+  const { pendingImage, pendingTarget, consume: consumeNav } = useNavigationStore()
+
+  // Consume pending navigation (e.g. from Gallery → Session)
+  useEffect(() => {
+    if (pendingTarget === 'session' && pendingImage) {
+      setSceneMode('reference')
+      setTab('scenario')
+      setScenarioRefImages([])
+      // Create a file from the pending image and add as scenario ref
+      fetch(pendingImage)
+        .then(res => res.blob())
+        .then(blob => {
+          const file = new File([blob], 'gallery-ref.png', { type: blob.type || 'image/png' })
+          setScenarioRefImages([{ file, preview: pendingImage }])
+        })
+        .catch(() => {})
+      consumeNav()
+    }
+  }, [pendingTarget, pendingImage])
 
   const handleScenarioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const fileList = e.target.files
@@ -134,7 +155,9 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
           {
             scenario: sceneMode === 'prompt' && scenarioPrompt.trim()
               ? scenarioPrompt.trim()
-              : scenarios[selScene].name,
+              : sceneMode === 'reference' && scenarioRefImages.length > 0
+                ? 'Place the character in the exact same location/setting shown in the reference image. Match the lighting, colors and atmosphere.'
+                : scenarios[selScene].name,
             lighting: lighting[selLight].n,
             angles: [angles[selAngle].n],
           },
@@ -171,7 +194,9 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
           }],
           scenario: sceneMode === 'prompt' && scenarioPrompt.trim()
             ? scenarioPrompt.trim()
-            : scenarios[selScene].name + ' \u2014 ' + scenarios[selScene].d,
+            : sceneMode === 'reference' && scenarioRefImages.length > 0
+              ? 'Place the character in the exact same location/setting shown in the reference image. Match the lighting, colors and atmosphere.'
+              : scenarios[selScene].name + ' \u2014 ' + scenarios[selScene].d,
           lighting: lighting[selLight].n,
           camera: angles[selAngle].n,
           imageSize: ImageSize.Size2K,
@@ -316,11 +341,15 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {tab === 'scenario' && <>
             <div className="flex gap-1.5 p-1 rounded-xl" style={{ background:'var(--bg-3)' }}>
-              {(['preset','upload','prompt'] as const).map(m=>(
-                <button key={m} onClick={()=>setSceneMode(m)}
+              {([
+                { id: 'preset' as const, label: '◎ Presets' },
+                { id: 'prompt' as const, label: '✎ Prompt' },
+                { id: 'reference' as const, label: '↑ Reference' },
+              ]).map(m=>(
+                <button key={m.id} onClick={()=>setSceneMode(m.id)}
                   className="flex-1 py-1.5 rounded-lg text-[10px] font-medium transition-all"
-                  style={{ background: sceneMode===m ? 'var(--bg-4)' : 'transparent', color: sceneMode===m ? 'var(--text-1)' : 'var(--text-3)' }}>
-                  {m==='preset' ? '\u25CE Presets' : m==='upload' ? '\u2191 Upload Photo' : '\u270E Prompt'}
+                  style={{ background: sceneMode===m.id ? 'rgba(240,104,72,.1)' : 'transparent', color: sceneMode===m.id ? 'var(--accent)' : 'var(--text-3)' }}>
+                  {m.label}
                 </button>
               ))}
             </div>
@@ -342,36 +371,87 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
               </div>
             )}
 
-            {sceneMode === 'upload' && (
+            {sceneMode === 'reference' && (
               <div className="space-y-3">
+                {/* Upload drop zone */}
                 <input ref={scenarioInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleScenarioUpload} />
-                <div className="rounded-xl p-6 text-center cursor-pointer transition-all hover:border-[var(--border-h)]"
+                <div className="rounded-xl p-4 text-center cursor-pointer transition-all hover:border-[var(--border-h)]"
                   style={{ background:'var(--bg-3)', border:'1px dashed var(--border)' }}
                   onClick={() => scenarioInputRef.current?.click()}>
-                  <div className="text-2xl mb-2" style={{ color:'var(--accent)' }}>{'\u2191'}</div>
-                  <div className="text-[11px]" style={{ color:'var(--text-2)' }}>Upload a scenario photo as reference</div>
-                  <div className="text-[9px] mt-1" style={{ color:'var(--text-3)' }}>AI will maintain scenario consistency</div>
+                  {scenarioRefImages.length > 0 ? (
+                    <img src={scenarioRefImages[0].preview} className="w-full h-20 object-cover rounded-lg" alt="" />
+                  ) : (
+                    <>
+                      <div className="text-lg mb-1" style={{ color:'var(--accent)' }}>{'\u2191'}</div>
+                      <div className="text-[10px]" style={{ color:'var(--text-2)' }}>Upload scenario image</div>
+                    </>
+                  )}
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {[0,1,2].map(i => (
-                    <div key={i} className="aspect-square rounded-xl overflow-hidden" style={{ background:'var(--bg-3)', border:'1px solid var(--border)' }}>
-                      {scenarioRefImages[i] ? (
-                        <img src={scenarioRefImages[i].preview} className="w-full h-full object-cover" alt="" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[10px]" style={{ color:'var(--text-3)' }}>Ref {i+1}</div>
-                      )}
+
+                {/* From gallery */}
+                {galleryItems.length > 0 && (
+                  <div>
+                    <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5" style={{ color:'var(--text-3)' }}>From gallery</div>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {galleryItems.slice(0, 8).map(g => (
+                        <button key={g.id} onClick={() => {
+                          fetch(g.url).then(r => r.blob()).then(b => {
+                            const file = new File([b], 'gallery-ref.png', { type: b.type || 'image/png' })
+                            setScenarioRefImages([{ file, preview: g.url }])
+                          })
+                        }}
+                          className="w-11 h-11 rounded-lg overflow-hidden transition-all hover:scale-105"
+                          style={{ border: scenarioRefImages[0]?.preview === g.url ? '2px solid var(--accent)' : '1px solid var(--border)' }}>
+                          <img src={g.url} className="w-full h-full object-cover" alt="" />
+                        </button>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                )}
+
+                {/* From characters */}
+                {characters.filter(c => c.thumbnail).length > 0 && (
+                  <div>
+                    <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5" style={{ color:'var(--text-3)' }}>From characters</div>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {characters.filter(c => c.thumbnail).map(c => (
+                        <button key={c.id} onClick={() => {
+                          fetch(c.thumbnail).then(r => r.blob()).then(b => {
+                            const file = new File([b], `${c.name}-ref.png`, { type: b.type || 'image/png' })
+                            setScenarioRefImages([{ file, preview: c.thumbnail }])
+                          })
+                        }}
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] transition-all"
+                          style={{
+                            background: scenarioRefImages[0]?.preview === c.thumbnail ? 'rgba(240,104,72,.08)' : 'var(--bg-3)',
+                            border: `1px solid ${scenarioRefImages[0]?.preview === c.thumbnail ? 'rgba(240,104,72,.2)' : 'var(--border)'}`,
+                            color: scenarioRefImages[0]?.preview === c.thumbnail ? 'var(--accent)' : 'var(--text-2)',
+                          }}>
+                          <img src={c.thumbnail} className="w-5 h-5 rounded-full object-cover" alt="" />
+                          {c.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
             {sceneMode === 'prompt' && (
-              <textarea rows={5} placeholder="Describe the scenario in detail... E.g.: Terrace overlooking the Mediterranean sea, pink sunset, tropical plants, marble table with a glass of wine..."
-                className="w-full px-3 py-3 rounded-xl text-xs border outline-none resize-none transition-colors"
-                style={{ background:'var(--bg-3)', borderColor:'var(--border)', color:'var(--text-1)' }}
-                value={scenarioPrompt}
-                onChange={e => setScenarioPrompt(e.target.value)} />
+              <div className="space-y-2">
+                <textarea rows={4} placeholder="Describe the scenario in detail... E.g.: Terrace overlooking the Mediterranean sea, pink sunset, tropical plants..."
+                  className="w-full px-3 py-3 rounded-xl text-xs border outline-none resize-none transition-colors"
+                  style={{ background:'var(--bg-3)', borderColor:'var(--border)', color:'var(--text-1)' }}
+                  value={scenarioPrompt}
+                  onChange={e => setScenarioPrompt(e.target.value)} />
+                <div className="flex gap-1.5 flex-wrap">
+                  {['Café in Paris', 'Neon city at night', 'Enchanted forest', 'Rooftop sunset', 'Underwater', 'Space station'].map(q => (
+                    <button key={q} onClick={() => setScenarioPrompt(q)}
+                      className="px-2 py-1 rounded-md text-[9px] transition-all hover:scale-105"
+                      style={{ background: 'var(--bg-3)', border: '1px solid var(--border)', color: 'var(--text-2)' }}>{q}</button>
+                  ))}
+                </div>
+              </div>
             )}
           </>}
 
