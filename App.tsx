@@ -1,25 +1,37 @@
-import React, { Suspense, lazy, useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import React, { Suspense, lazy, useState, useEffect, useRef, useCallback } from 'react';
+import { BrowserRouter } from 'react-router-dom';
 
-// Contexts (kept from v1 — auth, profile, toast are truly global)
+// Contexts
 import { AuthProvider } from './contexts/AuthContext';
 import { ProfileProvider } from './contexts/ProfileContext';
 import { ToastProvider } from './contexts/ToastContext';
 
+// Sidebar — reference design
+import { Sidebar } from './components/Sidebar';
+
 // Layout
-import Sidebar from './layout/Sidebar';
 import MobileNav from './layout/MobileNav';
 
-// Lazy-loaded pages
+// Lazy-loaded pages (reference 9-page architecture)
 const Dashboard = lazy(() => import('./pages/Dashboard'));
-const Studio = lazy(() => import('./pages/Studio'));
+const UploadCharacter = lazy(() => import('./pages/UploadCharacter'));
+const PhotoSession = lazy(() => import('./pages/PhotoSession'));
+const AIEditor = lazy(() => import('./pages/AIEditor'));
 const Gallery = lazy(() => import('./pages/Gallery'));
+const CharacterGallery = lazy(() => import('./pages/CharacterGallery'));
+const UniverseBuilder = lazy(() => import('./pages/UniverseBuilder'));
+const ContentCalendar = lazy(() => import('./pages/ContentCalendar'));
+const Analytics = lazy(() => import('./pages/Analytics'));
+
+// Auth
+const AuthScreen = lazy(() => import('./components/AuthScreen'));
+const Landing = lazy(() => import('./pages/Landing'));
+
+// Extra pages
 const PricingPage = lazy(() => import('./components/PricingPage'));
 const ProfilePage = lazy(() => import('./components/ProfilePage'));
 
-// Auth guard
-const AuthScreen = lazy(() => import('./components/AuthScreen'));
-const Landing = lazy(() => import('./pages/Landing'));
+export type Page = 'dashboard' | 'upload' | 'session' | 'editor' | 'gallery' | 'characters' | 'universe' | 'content' | 'analytics' | 'pricing' | 'profile';
 
 function App() {
   return (
@@ -80,14 +92,73 @@ function AppLayout() {
     );
   }
 
-  return (
-    <div style={{ display: 'flex', height: '100vh', background: 'var(--bg-0)' }}>
-      <StoreHydrator />
-      {/* Desktop sidebar */}
-      <Sidebar />
+  return <AuthenticatedApp />;
+}
 
-      {/* Main content area */}
-      <main style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+/** Main app shell — matches vertex-studio-source/src/App.tsx */
+function AuthenticatedApp() {
+  const [page, setPage] = useState<Page>('dashboard');
+  const [collapsed, setCollapsed] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [transitioning, setTransitioning] = useState(false);
+  const mainRef = useRef<HTMLDivElement>(null);
+
+  const handleNav = useCallback((p: Page) => {
+    if (p === page) return;
+    setTransitioning(true);
+    setTimeout(() => {
+      setPage(p);
+      setTransitioning(false);
+      if (mainRef.current) mainRef.current.scrollTop = 0;
+    }, 150);
+  }, [page]);
+
+  // Cursor glow + card hover effect
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+      document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
+      document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
+    };
+    window.addEventListener('mousemove', handler);
+    return () => window.removeEventListener('mousemove', handler);
+  }, []);
+
+  const pages: Record<Page, JSX.Element> = {
+    dashboard: <Dashboard onNav={handleNav} />,
+    upload: <UploadCharacter onNav={handleNav} />,
+    session: <PhotoSession onNav={handleNav} />,
+    editor: <AIEditor onNav={handleNav} />,
+    gallery: <Gallery onNav={handleNav} />,
+    characters: <CharacterGallery />,
+    universe: <UniverseBuilder />,
+    content: <ContentCalendar />,
+    analytics: <Analytics />,
+    pricing: <PricingPage />,
+    profile: <ProfilePage />,
+  };
+
+  return (
+    <div className="flex h-screen w-screen overflow-hidden" style={{ background: 'var(--bg-0)' }}>
+      <StoreHydrator />
+
+      {/* Ambient cursor glow */}
+      <div
+        className="cursor-glow"
+        style={{ left: mousePos.x, top: mousePos.y, opacity: 0.8 }}
+      />
+
+      <Sidebar page={page} onNav={handleNav} collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
+
+      <main
+        ref={mainRef}
+        className="flex-1 overflow-y-auto overflow-x-hidden relative"
+        style={{
+          opacity: transitioning ? 0 : 1,
+          transform: transitioning ? 'translateY(6px)' : 'translateY(0)',
+          transition: 'opacity .15s ease, transform .15s ease',
+        }}
+      >
         <Suspense fallback={
           <div style={{
             height: '100%',
@@ -99,28 +170,20 @@ function AppLayout() {
             Loading...
           </div>
         }>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/studio" element={<Studio />} />
-            <Route path="/gallery" element={<Gallery />} />
-            <Route path="/pricing" element={<PricingPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-          </Routes>
+          {pages[page]}
         </Suspense>
       </main>
 
-      {/* Mobile bottom nav */}
       <MobileNav />
     </div>
   );
 }
 
-// Import at top level to avoid circular dependency
+// Imports at bottom to avoid circular deps
 import { useAuth } from './contexts/AuthContext';
 import { useCharacterStore } from './stores/characterStore';
 import { useGalleryStore } from './stores/galleryStore';
 
-/** Hydrates Zustand stores from IndexedDB / Supabase on mount */
 function StoreHydrator() {
   const { user } = useAuth();
   const hydrateCharacters = useCharacterStore(s => s.hydrate);

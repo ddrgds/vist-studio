@@ -1,196 +1,205 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus, PenTool, Camera, Images, User, ImageIcon } from 'lucide-react';
-import { useCharacterStore } from '../stores/characterStore';
-import { useGalleryStore } from '../stores/galleryStore';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
+import { useState, useMemo } from 'react'
+import { useGalleryStore, type GalleryItem } from '../stores/galleryStore'
+import { useCharacterStore } from '../stores/characterStore'
 
-type Tab = 'characters' | 'images';
+const BASE_FILTERS = ['All','Relight','Face Swap','Try-On','360°','Background','Enhanced','Style Transfer','Inpaint']
+const sortOpts = ['Recent','Oldest','Most Edited','Favorites']
 
-const Gallery: React.FC = () => {
-  const navigate = useNavigate();
-  const { characters } = useCharacterStore();
-  const { items: galleryItems } = useGalleryStore();
-  const [activeTab, setActiveTab] = useState<Tab>('characters');
-  const [search, setSearch] = useState('');
+function getItemCategory(item: GalleryItem): string {
+  const model = (item.model || '').toLowerCase()
+  const tags = item.tags || []
+  if (model.includes('relight') || tags.includes('relight')) return 'Relight'
+  if (model.includes('swap') || tags.includes('faceswap')) return 'Face Swap'
+  if (model.includes('try') || model.includes('tryon') || tags.includes('tryon')) return 'Try-On'
+  if (model.includes('360') || tags.includes('360')) return '360°'
+  if (model.includes('background') || model.includes('bg') || tags.includes('background')) return 'Background'
+  if (model.includes('enhance') || model.includes('skin') || tags.includes('enhance')) return 'Enhanced'
+  if (model.includes('style') || tags.includes('style')) return 'Style Transfer'
+  if (model.includes('inpaint') || tags.includes('inpaint')) return 'Inpaint'
+  if (item.type === 'session') return 'Session'
+  if (item.type === 'create') return 'Creation'
+  return 'Other'
+}
 
-  const filteredChars = characters.filter(c =>
-    c.name.toLowerCase().includes(search.toLowerCase())
-  );
+export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
+  const items = useGalleryStore(s => s.items)
+  const characters = useCharacterStore(s => s.characters)
+  const toggleFavorite = useGalleryStore(s => s.toggleFavorite)
 
-  const filteredImages = galleryItems.filter(item =>
-    item.prompt?.toLowerCase().includes(search.toLowerCase()) || !search
-  );
+  const [activeFilter, setActiveFilter] = useState('All')
+  const [viewMode, setViewMode] = useState<'grid'|'masonry'>('grid')
+  const [selected, setSelected] = useState<string[]>([])
+  const [sortBy, setSortBy] = useState('Recent')
+
+  // Build dynamic filters — add Sesión / Creación if items of those types exist
+  const filters = useMemo(() => {
+    const extra: string[] = []
+    if (items.some(i => getItemCategory(i) === 'Session')) extra.push('Session')
+    if (items.some(i => getItemCategory(i) === 'Creation')) extra.push('Creation')
+    return [...BASE_FILTERS, ...extra]
+  }, [items])
+
+  const filtered = activeFilter === 'All' ? items : items.filter(i => getItemCategory(i) === activeFilter)
+
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      if (sortBy === 'Recent') return b.timestamp - a.timestamp
+      if (sortBy === 'Oldest') return a.timestamp - b.timestamp
+      if (sortBy === 'Favorites') return (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0)
+      return 0
+    })
+  }, [filtered, sortBy])
+
+  const toggleSelect = (id: string) => {
+    setSelected(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id])
+  }
+
+  // Stats derived from real data
+  const stats = [
+    { l:'Total Creations', v: filtered.length.toString(), c:'var(--accent)' },
+    { l:'Face Swaps', v: items.filter(i => getItemCategory(i) === 'Face Swap').length.toString(), c:'var(--rose)' },
+    { l:'Relights', v: items.filter(i => getItemCategory(i) === 'Relight').length.toString(), c:'var(--magenta)' },
+    { l:'Try-Ons', v: items.filter(i => getItemCategory(i) === 'Try-On').length.toString(), c:'var(--mint)' },
+  ]
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar" style={{ background: 'var(--bg-0)' }}>
-      <div className="max-w-6xl mx-auto px-6 py-8">
-
-        {/* ── Header ── */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 style={{ fontSize: 28, lineHeight: 1.1 }}>
-              <span style={{ fontFamily: "'Instrument Serif', serif", color: 'var(--text-1)' }}>Galería</span>
-            </h1>
-            <p style={{ color: 'var(--text-3)', fontSize: 13, marginTop: 6 }}>
-              {characters.length} personajes &middot; {galleryItems.length} imágenes
-            </p>
-          </div>
-          <Button onClick={() => navigate('/studio?tool=create')} icon={<Plus size={16} />}>
-            New Character
-          </Button>
+    <div className="min-h-screen gradient-mesh">
+      <div className="px-8 pt-8 pb-2 flex items-end justify-between">
+        <div>
+          <h1 className="text-2xl font-bold font-serif" style={{ color:'var(--text-1)' }}>
+            Gallery of <span className="text-gradient">Creations</span>
+          </h1>
+          <p className="text-sm mt-1" style={{ color:'var(--text-2)' }}>All your AI-edited images in one place</p>
         </div>
-
-        {/* ── Tabs + Search ── */}
-        <div className="flex items-center gap-4 mb-6">
-          <div className="inline-flex rounded-xl overflow-hidden" style={{ background: 'var(--bg-2)', border: '1px solid var(--border)' }}>
-            {(['characters', 'images'] as Tab[]).map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className="px-5 py-2 text-sm font-semibold transition-all duration-150 capitalize cursor-pointer"
-                style={{
-                  background: activeTab === tab ? 'var(--accent)' : 'transparent',
-                  color: activeTab === tab ? '#fff' : 'var(--text-3)',
-                }}
-              >
-                {tab === 'characters' ? 'Personajes' : 'Imágenes'}
+        <div className="flex items-center gap-2">
+          {selected.length > 0 && (
+            <span className="text-[11px] font-mono px-3 py-1.5 rounded-lg" style={{ background:'rgba(240,104,72,.1)', color:'var(--accent)' }}>
+              {selected.length} selected
+            </span>
+          )}
+          <div className="flex p-0.5 rounded-lg" style={{ background:'var(--bg-2)' }}>
+            {(['grid','masonry'] as const).map(m=>(
+              <button key={m} onClick={()=>setViewMode(m)}
+                className="px-2.5 py-1 rounded-md text-[11px] transition-all"
+                style={{ background: viewMode===m ? 'var(--bg-4)' : 'transparent', color: viewMode===m ? 'var(--text-1)' : 'var(--text-3)' }}>
+                {m==='grid' ? '⊞' : '⊟'}
               </button>
             ))}
           </div>
-          <div className="flex-1 max-w-xs">
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search..."
-            />
+          <select value={sortBy} onChange={e=>setSortBy(e.target.value)}
+            className="px-3 py-1.5 rounded-lg text-[11px] outline-none"
+            style={{ background:'var(--bg-2)', border:'1px solid var(--border)', color:'var(--text-2)' }}>
+            {sortOpts.map(s=><option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* Filter chips */}
+      <div className="px-8 py-3 flex gap-1.5 overflow-x-auto">
+        {filters.map(f => (
+          <button key={f} onClick={()=>setActiveFilter(f)}
+            className="px-3.5 py-1.5 rounded-full text-[11px] font-medium shrink-0 transition-all"
+            style={{
+              background: activeFilter===f ? 'rgba(240,104,72,.1)' : 'var(--bg-2)',
+              border: `1px solid ${activeFilter===f ? 'rgba(240,104,72,.25)' : 'var(--border)'}`,
+              color: activeFilter===f ? 'var(--accent)' : 'var(--text-2)',
+            }}>{f}</button>
+        ))}
+      </div>
+
+      {/* Stats bar */}
+      <div className="px-8 py-2 flex gap-4">
+        {stats.map(s=>(
+          <div key={s.l} className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full" style={{ background:s.c }} />
+            <span className="text-[10px]" style={{ color:'var(--text-3)' }}>{s.l}:</span>
+            <span className="text-[11px] font-mono font-bold" style={{ color:s.c }}>{s.v}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Empty state */}
+      {items.length === 0 ? (
+        <div className="px-8 pb-8 flex items-center justify-center" style={{ minHeight: '40vh' }}>
+          <div className="card px-8 py-10 text-center" style={{ maxWidth: '420px' }}>
+            <p className="text-sm" style={{ color:'var(--text-2)' }}>
+              No creations yet. Use the AI Editor or Photo Session to get started.
+            </p>
           </div>
         </div>
+      ) : (
+        /* Image Grid */
+        <div className={`px-8 pb-8 ${viewMode==='grid' ? 'grid grid-cols-6 gap-3' : 'columns-5 gap-3 space-y-3'}`}>
+          {sorted.map((img, idx) => {
+            const charName = characters.find(c => c.id === img.characterId)?.name || 'No character'
+            const category = getItemCategory(img)
+            const dateStr = new Date(img.timestamp).toLocaleDateString('en', { day:'numeric', month:'short' })
+            const colorMap: Record<number, string> = { 0:'var(--accent)', 1:'var(--blue)', 2:'var(--rose)' }
+            const fallbackColor = colorMap[idx % 3] || 'var(--accent)'
 
-        {/* ── Characters Grid ── */}
-        {activeTab === 'characters' && (
-          <>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {filteredChars.map(char => (
+            return (
+              <div
+                key={img.id}
+                onClick={()=>toggleSelect(img.id)}
+                className={`group cursor-pointer rounded-2xl overflow-hidden relative transition-all hover:scale-[1.02] ${viewMode==='masonry' ? 'break-inside-avoid' : ''}`}
+                style={{
+                  border: `2px solid ${selected.includes(img.id) ? 'var(--accent)' : 'var(--border)'}`,
+                  boxShadow: selected.includes(img.id) ? '0 0 20px rgba(240,104,72,.15)' : 'none',
+                }}
+              >
                 <div
-                  key={char.id}
-                  className="card rounded-xl overflow-hidden group cursor-pointer"
-                  style={{ border: '1px solid var(--border)' }}
+                  className={viewMode==='grid' ? 'aspect-square' : ''}
+                  style={{
+                    background: img.url ? undefined : `linear-gradient(${90 + idx * 15}deg, ${fallbackColor}18, var(--bg-2))`,
+                    minHeight: viewMode==='masonry' ? `${140 + (idx%4)*40}px` : undefined,
+                  }}
                 >
-                  {char.thumbnail ? (
-                    <img
-                      src={char.thumbnail}
-                      alt={char.name}
-                      className="w-full h-[220px] object-cover group-hover:scale-[1.02] transition-transform duration-300"
-                    />
+                  {img.url ? (
+                    <img src={img.url} className="w-full h-full object-cover" alt="" />
                   ) : (
-                    <div className="w-full h-[220px] flex items-center justify-center" style={{ background: 'var(--bg-3)' }}>
-                      <User className="w-10 h-10" style={{ color: 'var(--text-3)' }} />
+                    <div className="w-full h-full flex items-center justify-center p-4">
+                      <div className="text-center">
+                        <span className="text-2xl block mb-1 opacity-30">{charName[0]}</span>
+                        <span className="text-[9px] font-mono opacity-40" style={{ color:'var(--text-1)' }}>{category}</span>
+                      </div>
                     </div>
                   )}
-                  <div className="p-3" style={{ background: 'var(--bg-2)' }}>
-                    <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-1)' }}>
-                      {char.name}
-                    </div>
-                    <div className="text-[11px] mb-2" style={{ color: 'var(--text-3)' }}>
-                      {char.modelImageBlobs.length} fotos &middot; usado {char.usageCount}x
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => navigate(`/studio?character=${char.id}`)}
-                        icon={<PenTool size={12} />}
-                      >
-                        Studio
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => navigate(`/studio?tool=session&character=${char.id}`)}
-                        icon={<Camera size={12} />}
-                      >
-                        Shoot
-                      </Button>
+                </div>
+
+                {/* Overlay */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-end">
+                  <div className="w-full p-2.5 translate-y-full group-hover:translate-y-0 transition-transform">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-[10px] font-semibold text-white">{charName}</div>
+                        <div className="text-[8px] font-mono text-white/60">{category} · {dateStr}</div>
+                      </div>
+                      <div className="flex gap-1">
+                        <button className="w-6 h-6 rounded-md flex items-center justify-center text-[10px]"
+                          style={{ background:'rgba(255,255,255,.15)' }}>↓</button>
+                        <button
+                          className="w-6 h-6 rounded-md flex items-center justify-center text-[10px]"
+                          style={{ background: img.favorite ? 'rgba(240,104,72,.3)' : 'rgba(255,255,255,.15)' }}
+                          onClick={(e) => { e.stopPropagation(); toggleFavorite(img.id) }}>
+                          {img.favorite ? '★' : '☆'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
 
-            {filteredChars.length === 0 && (
-              <div className="flex flex-col items-center justify-center text-center py-20 px-4 col-span-full">
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--bg-3)' }}>
-                  <Images className="w-7 h-7" style={{ color: 'var(--text-3)' }} />
-                </div>
-                <p className="text-sm mb-4" style={{ color: 'var(--text-3)' }}>
-                  {search ? 'No se encontraron personajes' : 'Aún no tienes personajes'}
-                </p>
-                {!search && (
-                  <Button
-                    onClick={() => navigate('/studio?tool=create')}
-                    icon={<Plus size={14} />}
-                    size="sm"
-                  >
-                    Create Character
-                  </Button>
+                {/* Select indicator */}
+                {selected.includes(img.id) && (
+                  <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white"
+                    style={{ background:'var(--accent)' }}>✓</div>
                 )}
               </div>
-            )}
-          </>
-        )}
-
-        {/* ── Images Grid ── */}
-        {activeTab === 'images' && (
-          <>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {filteredImages.map(item => (
-                <div
-                  key={item.id}
-                  className="card group relative rounded-xl overflow-hidden"
-                  style={{ border: '1px solid var(--border)' }}
-                >
-                  <img
-                    src={item.url}
-                    alt=""
-                    className="w-full aspect-[3/4] object-cover"
-                  />
-                  <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <div className="text-[11px] truncate" style={{ color: 'var(--text-2)' }}>
-                      {item.prompt || item.type}
-                    </div>
-                    <div className="text-[10px]" style={{ color: 'var(--text-3)' }}>
-                      {item.model || 'Modelo desconocido'} &middot; {new Date(item.timestamp).toLocaleDateString()}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {filteredImages.length === 0 && (
-              <div className="flex flex-col items-center justify-center text-center py-20 px-4">
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--bg-3)' }}>
-                  <ImageIcon className="w-7 h-7" style={{ color: 'var(--text-3)' }} />
-                </div>
-                <p className="text-sm mb-4" style={{ color: 'var(--text-3)' }}>
-                  {search ? 'No se encontraron imágenes' : 'Aún no tienes imágenes. ¡Genera algunas en el Studio!'}
-                </p>
-                {!search && (
-                  <Button
-                    onClick={() => navigate('/studio')}
-                    icon={<Plus size={14} />}
-                    size="sm"
-                  >
-                    Open Studio
-                  </Button>
-                )}
-              </div>
-            )}
-          </>
-        )}
-      </div>
+            )
+          })}
+        </div>
+      )}
     </div>
-  );
-};
+  )
+}
 
-export default Gallery;
+export default Gallery
