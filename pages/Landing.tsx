@@ -1,434 +1,556 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 
 interface LandingProps {
   onAuth: () => void;
 }
 
-const marqueeItems = [
-  { icon: '◎', label: 'Photo Sessions' },
-  { icon: '✦', label: 'AI Face Swap' },
-  { icon: '💡', label: 'Relight Engine' },
-  { icon: '🔄', label: '360° Angles' },
-  { icon: '👗', label: 'Virtual Try-On' },
-  { icon: '🎨', label: 'Style Transfer' },
-  { icon: '✧', label: 'Universe Builder' },
-  { icon: '📐', label: 'Pose Reference' },
-];
+/* ── Typing hook ──────────────────────────────────────────── */
+function useTypingEffect(text: string, speed = 50, delay = 500) {
+  const [displayed, setDisplayed] = useState('');
+  const [done, setDone] = useState(false);
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      let i = 0;
+      const interval = setInterval(() => {
+        if (i < text.length) {
+          setDisplayed(text.slice(0, i + 1));
+          i++;
+        } else {
+          setDone(true);
+          clearInterval(interval);
+        }
+      }, speed);
+      return () => clearInterval(interval);
+    }, delay);
+    return () => clearTimeout(timeout);
+  }, [text, speed, delay]);
+  return { displayed, done };
+}
 
+/* ── Feature data ─────────────────────────────────────────── */
 const features = [
-  { icon: '⊕', title: 'Character DNA', desc: 'Crea personajes únicos con rasgos faciales, estilos y personalidades generadas por IA.', bg: 'rgba(240,104,72,0.1)' },
-  { icon: '◎', title: 'Sesiones de Fotos', desc: 'Genera sesiones de fotos completas con múltiples ángulos, poses y escenarios.', bg: 'rgba(208,72,176,0.1)' },
-  { icon: '💡', title: 'Relight Engine', desc: 'Cambia la iluminación de cualquier imagen con IA. Estudio, golden hour, neon y más.', bg: 'rgba(72,88,224,0.1)' },
-  { icon: '🔄', title: '360° Angles', desc: 'Visualiza tu personaje desde cualquier ángulo con rotación completa impulsada por IA.', bg: 'rgba(240,104,72,0.1)' },
-  { icon: '🎭', title: 'Face Swap', desc: 'Intercambia rostros entre personajes manteniendo la identidad y expresiones naturales.', bg: 'rgba(208,72,176,0.1)' },
-  { icon: '👗', title: 'Try-On Virtual', desc: 'Prueba cualquier prenda en tus personajes con probador virtual impulsado por IA.', bg: 'rgba(72,88,224,0.1)' },
-  { icon: '✧', title: 'Universe Builder', desc: 'Construye universos completos con lore, escenarios y narrativas consistentes.', bg: 'rgba(240,104,72,0.1)' },
-  { icon: '▣', title: 'Content Calendar', desc: 'Planifica y programa contenido automatizado para todas tus plataformas sociales.', bg: 'rgba(208,72,176,0.1)' },
-  { icon: '◇', title: 'Analytics Hub', desc: 'Métricas en tiempo real de engagement, crecimiento y rendimiento de contenido.', bg: 'rgba(72,88,224,0.1)' },
+  { icon: '\u2B21', title: 'DIRECTOR', desc: 'Dirige la escena', color: 'var(--accent)' },
+  { icon: '\u25C8', title: 'AI EDITOR', desc: 'Edici\u00f3n con 8 herramientas', color: 'var(--cyan)' },
+  { icon: '\u25A3', title: 'GALLERY', desc: 'Tu colecci\u00f3n, organizada', color: 'var(--magenta)' },
+  { icon: '\u25CE', title: 'PHOTO SESSION', desc: 'Sesiones autom\u00e1ticas', color: 'var(--accent)' },
 ];
 
-const plans = [
-  {
-    name: 'Starter',
-    price: '$0',
-    period: '/mes',
-    features: ['50 créditos/mes', '3 personajes', 'Galería básica', 'Community support'],
-    cta: 'Comenzar Gratis',
-    featured: false,
-    btnClass: 'btn-outline',
-  },
-  {
-    name: 'Pro',
-    price: '$19',
-    period: '/mes',
-    features: ['500 créditos/mes', '25 personajes', 'Todas las herramientas', 'Priority support'],
-    cta: 'Elegir Pro',
-    featured: true,
-    btnClass: 'btn-plasma',
-  },
-  {
-    name: 'Studio',
-    price: '$49',
-    period: '/mes',
-    features: ['1,500 créditos/mes', 'Personajes ilimitados', 'API access', 'Analytics completo'],
-    cta: 'Elegir Studio',
-    featured: false,
-    btnClass: 'btn-outline',
-  },
-  {
-    name: 'Brand',
-    price: '$149',
-    period: '/mes',
-    features: ['8,000 créditos/mes', 'Todo en Studio', 'Team collaboration', 'White-label', 'Dedicated support'],
-    cta: 'Contactar Ventas',
-    featured: false,
-    btnClass: 'btn-outline',
-  },
+/* ── Stats data ───────────────────────────────────────────── */
+const previewStats = [
+  { label: 'CHARACTERS', value: '12', sub: '+3 this week', color: 'var(--accent)' },
+  { label: 'RENDERS', value: '847', sub: '14.2h GPU time', color: 'var(--cyan)' },
+  { label: 'CREDITS', value: '2,450', sub: '~23/day burn', color: 'var(--cyan)' },
 ];
 
-const Landing: React.FC<LandingProps> = ({ onAuth }) => {
+const ctaStats = [
+  '12,000+ CHARACTERS CREATED',
+  '89,000+ IMAGES GENERATED',
+  '4.9/5 CREATOR RATING',
+];
+
+/* ── Reveal wrapper ───────────────────────────────────────── */
+const Reveal = ({
+  children,
+  delay = 0,
+  y = 20,
+  scale,
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  y?: number;
+  scale?: number;
+}) => (
+  <motion.div
+    initial={{ opacity: 0, y, ...(scale != null ? { scale } : {}) }}
+    whileInView={{ opacity: 1, y: 0, ...(scale != null ? { scale: 1 } : {}) }}
+    viewport={{ once: true, margin: '-100px' }}
+    transition={{ delay, duration: 0.35, type: 'spring', stiffness: 400, damping: 30 }}
+  >
+    {children}
+  </motion.div>
+);
+
+/* ════════════════════════════════════════════════════════════
+   Landing — Netrunner OS
+   ════════════════════════════════════════════════════════════ */
+export default function Landing({ onAuth }: LandingProps) {
+  const { displayed, done } = useTypingEffect(
+    'Tu universo digital. Tus personajes. Tu imperio.',
+    50,
+    600,
+  );
+
   return (
-    <div style={{ background: 'var(--bg-0)', color: 'var(--text-1)', minHeight: '100vh' }}>
-      {/* ── Fixed Nav ──────────────────────────────────────────── */}
-      <nav style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 100,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 40px',
-        height: '64px',
-        background: 'rgba(6,5,10,0.7)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        borderBottom: '1px solid rgba(240,234,240,0.06)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '10px',
-            background: 'linear-gradient(135deg, var(--accent), var(--magenta))',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 700,
-            fontSize: '16px',
-            color: '#fff',
-          }}>V</div>
-          <span style={{ fontWeight: 700, fontSize: '16px', letterSpacing: '0.05em' }}>VERTEX</span>
-          <span className="font-jet" style={{ fontSize: '10px', color: 'var(--text-3)', letterSpacing: '0.1em' }}>AI STUDIO</span>
+    <div
+      style={{
+        background: 'var(--nr-bg-0)',
+        color: 'var(--nr-text-1)',
+        minHeight: '100vh',
+        overflowX: 'hidden',
+      }}
+    >
+      {/* ── Fixed Nav ─────────────────────────────────────────── */}
+      <nav
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 100,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 40px',
+          height: '56px',
+          background: 'rgba(6,6,10,0.9)',
+          borderBottom: '1px solid var(--nr-border)',
+        }}
+      >
+        {/* Brand */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div
+            style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '2px',
+              background: 'var(--accent)',
+              boxShadow: '0 0 10px rgba(240,104,72,0.5)',
+            }}
+          />
+          <span
+            style={{
+              fontFamily: 'var(--font-heading)',
+              fontWeight: 700,
+              fontSize: '18px',
+              letterSpacing: '0.06em',
+              color: 'var(--accent)',
+            }}
+          >
+            VIST
+          </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-          <a href="#features" style={{ fontSize: '13px', color: 'var(--text-2)', textDecoration: 'none', transition: 'color 0.2s' }}>Features</a>
-          <a href="#showcase" style={{ fontSize: '13px', color: 'var(--text-2)', textDecoration: 'none', transition: 'color 0.2s' }}>Product</a>
-          <a href="#pricing" style={{ fontSize: '13px', color: 'var(--text-2)', textDecoration: 'none', transition: 'color 0.2s' }}>Pricing</a>
-          <button className="btn-plasma" onClick={onAuth} style={{ padding: '10px 24px', fontSize: '13px' }}>Comenzar Gratis</button>
-        </div>
+
+        {/* Enter */}
+        <button className="nr-btn" onClick={onAuth} style={{ padding: '0.5rem 1.4rem', fontSize: '0.75rem' }}>
+          ENTER
+        </button>
       </nav>
 
-      {/* ── Hero ───────────────────────────────────────────────── */}
-      <section className="hero">
-        <div className="hero-mesh" />
-        <div className="orb orb-1" />
-        <div className="orb orb-2" />
-        <div className="orb orb-3" />
+      {/* ── Hero ──────────────────────────────────────────────── */}
+      <section
+        className="nr-scanlines"
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          textAlign: 'center',
+          position: 'relative',
+          padding: '0 24px',
+        }}
+      >
+        {/* Grid background */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: `
+              linear-gradient(rgba(240,104,72,0.03) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(240,104,72,0.03) 1px, transparent 1px)
+            `,
+            backgroundSize: '60px 60px',
+            maskImage: 'radial-gradient(ellipse at center, black 30%, transparent 70%)',
+            WebkitMaskImage: 'radial-gradient(ellipse at center, black 30%, transparent 70%)',
+            zIndex: 0,
+          }}
+        />
+
         <div style={{ position: 'relative', zIndex: 2 }}>
-          <div className="hero-badge animate-reveal">Plataforma de Influencers Virtuales #1</div>
-          <h1 className="animate-reveal delay-1" style={{
-            fontSize: 'clamp(56px,8vw,110px)',
-            lineHeight: 1,
-            letterSpacing: '-0.02em',
-            margin: '24px 0 20px',
-          }}>
-            Crea influencers<br /><span className="text-gradient">impulsados por IA</span>
-          </h1>
-          <p className="animate-reveal delay-2" style={{
-            fontSize: '18px',
-            color: 'var(--text-2)',
-            maxWidth: '540px',
-            lineHeight: 1.6,
-            marginBottom: '36px',
-          }}>
-            El templo definitivo de los personajes virtuales. Genera, edita, relight, face swap, try-on y construye universos completos — todo con inteligencia artificial.
-          </p>
-          <div className="animate-reveal delay-3" style={{ display: 'flex', gap: '14px', alignItems: 'center', justifyContent: 'center' }}>
-            <button className="btn-plasma" onClick={onAuth}>✦ Comenzar Gratis</button>
-            <button className="btn-outline">Ver Demo ↗</button>
-          </div>
+          {/* System status */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4 }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginBottom: '32px',
+            }}
+          >
+            <div
+              style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: 'var(--cyan)',
+                boxShadow: '0 0 8px var(--cyan)',
+              }}
+            />
+            <span className="nr-label" style={{ color: 'var(--cyan)' }}>
+              SYSTEM ONLINE
+            </span>
+          </motion.div>
+
+          {/* Title */}
+          <motion.h1
+            className="nr-heading"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15, duration: 0.4 }}
+            style={{
+              fontSize: 'clamp(2.5rem, 6vw, 4rem)',
+              lineHeight: 1.1,
+              marginBottom: '24px',
+            }}
+          >
+            <span style={{ color: 'var(--accent)' }}>VIST</span>{' '}
+            <span style={{ color: 'var(--nr-text-1)' }}>STUDIO</span>
+          </motion.h1>
+
+          {/* Typing subtitle */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.35, duration: 0.3 }}
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 'clamp(0.8rem, 1.5vw, 0.95rem)',
+              color: 'var(--nr-text-2)',
+              minHeight: '1.6em',
+              marginBottom: '40px',
+            }}
+          >
+            {displayed}
+            <span
+              style={{
+                display: 'inline-block',
+                width: '2px',
+                height: '1em',
+                background: 'var(--cyan)',
+                marginLeft: '2px',
+                verticalAlign: 'text-bottom',
+                animation: 'blink 1s step-end infinite',
+              }}
+            />
+          </motion.p>
+
+          {/* CTAs — appear after typing */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={done ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.35, type: 'spring', stiffness: 400, damping: 30 }}
+            style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}
+          >
+            <button className="nr-btn" onClick={onAuth}>
+              ENTER THE SYSTEM
+            </button>
+            <button className="nr-btn-ghost" onClick={onAuth}>
+              EXPLORE
+            </button>
+          </motion.div>
         </div>
-        <div className="scroll-indicator"><div className="scroll-line" />SCROLL</div>
+
+        {/* Bottom fade */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '120px',
+            background: 'linear-gradient(transparent, var(--nr-bg-0))',
+            zIndex: 2,
+            pointerEvents: 'none',
+          }}
+        />
       </section>
 
-      {/* ── Marquee ────────────────────────────────────────────── */}
-      <div className="marquee-wrap">
-        <div className="marquee-track">
-          {[...marqueeItems, ...marqueeItems].map((item, i) => (
-            <div className="marquee-item" key={i}>
-              <span>{item.icon}</span> {item.label}
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* ── Features ──────────────────────────────────────────── */}
+      <section style={{ padding: '100px 24px', maxWidth: '1100px', margin: '0 auto' }}>
+        <Reveal>
+          <span className="nr-label" style={{ color: 'var(--cyan)', display: 'block', marginBottom: '16px' }}>
+            CAPABILITIES
+          </span>
+        </Reveal>
 
-      {/* ── Features ───────────────────────────────────────────── */}
-      <section id="features" style={{ padding: '120px 40px', maxWidth: '1200px', margin: '0 auto' }}>
-        <div className="section-header">
-          <div className="section-label">Herramientas</div>
-          <h2 className="font-display" style={{ fontSize: '48px', lineHeight: 1.1, marginBottom: '16px' }}>
-            Todo lo que necesitas.<br /><span className="text-gradient">Nada que te sobre.</span>
+        <Reveal delay={0.05}>
+          <h2
+            className="nr-heading"
+            style={{ fontSize: 'clamp(1.8rem, 4vw, 2.5rem)', marginBottom: '48px' }}
+          >
+            Todo lo que necesitas.{' '}
+            <span style={{ color: 'var(--nr-text-3)' }}>Nada que no.</span>
           </h2>
-          <p style={{ fontSize: '16px', color: 'var(--text-2)', lineHeight: 1.6 }}>
-            Cada herramienta diseñada para maximizar tu creatividad sin complejidad innecesaria.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3" style={{ gap: '20px' }}>
+        </Reveal>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '1rem',
+          }}
+        >
           {features.map((f, i) => (
-            <div className="feature-card" key={i}>
-              <div className="feature-icon" style={{ background: f.bg }}>{f.icon}</div>
-              <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', fontFamily: "'DM Sans', sans-serif" }}>{f.title}</h3>
-              <p style={{ fontSize: '14px', color: 'var(--text-2)', lineHeight: 1.6 }}>{f.desc}</p>
-            </div>
+            <motion.div
+              key={f.title}
+              className="nr-feature-card"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-100px' }}
+              transition={{ delay: i * 0.08, duration: 0.35 }}
+            >
+              <div
+                style={{
+                  fontSize: '1.5rem',
+                  color: f.color,
+                  marginBottom: '12px',
+                  lineHeight: 1,
+                }}
+              >
+                {f.icon}
+              </div>
+              <h3
+                style={{
+                  fontFamily: 'var(--font-heading)',
+                  fontWeight: 700,
+                  fontSize: '1rem',
+                  letterSpacing: '0.06em',
+                  marginBottom: '6px',
+                  color: 'var(--nr-text-1)',
+                }}
+              >
+                {f.title}
+              </h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--nr-text-2)', lineHeight: 1.5 }}>
+                {f.desc}
+              </p>
+            </motion.div>
           ))}
         </div>
       </section>
 
-      {/* ── Showcase ───────────────────────────────────────────── */}
-      <section id="showcase" style={{ padding: '120px 40px', maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px', alignItems: 'center' }}>
-          {/* Left: Mock UI */}
-          <div className="showcase-screen">
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'radial-gradient(ellipse at 30% 40%, rgba(240,104,72,0.06) 0%, transparent 50%), radial-gradient(ellipse at 70% 60%, rgba(208,72,176,0.04) 0%, transparent 50%)',
-            }} />
-            <div style={{ display: 'flex', height: '100%', position: 'relative' }}>
-              {/* Mock sidebar */}
-              <div style={{
-                width: '48px',
-                borderRight: '1px solid rgba(240,234,240,0.06)',
+      {/* ── Preview Section ───────────────────────────────────── */}
+      <section style={{ padding: '80px 24px', maxWidth: '1100px', margin: '0 auto' }}>
+        <Reveal scale={0.97}>
+          <div
+            className="nr-scanlines"
+            style={{
+              background: 'var(--nr-bg-1)',
+              border: '1px solid var(--nr-border)',
+              borderRadius: '8px',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Terminal header */}
+            <div
+              style={{
                 display: 'flex',
-                flexDirection: 'column',
                 alignItems: 'center',
-                paddingTop: '16px',
-                gap: '12px',
-              }}>
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    background: i === 0 ? 'var(--accent)' : 'var(--bg-4)',
-                  }} />
-                ))}
-              </div>
-              {/* Mock content */}
-              <div style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {/* Stats row */}
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  {['var(--accent)', 'var(--magenta)', 'var(--blue)'].map((color, i) => (
-                    <div key={i} style={{
-                      flex: 1,
-                      height: '48px',
-                      borderRadius: '10px',
-                      background: `linear-gradient(135deg, ${color}15, ${color}05)`,
-                      border: '1px solid rgba(240,234,240,0.04)',
-                    }} />
-                  ))}
-                </div>
-                {/* Chart bars */}
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '80px' }}>
-                  {[60, 80, 45, 90, 70, 55, 85].map((h, i) => (
-                    <div key={i} style={{
-                      flex: 1,
-                      height: `${h}%`,
-                      borderRadius: '4px 4px 0 0',
-                      background: `linear-gradient(180deg, var(--accent), var(--magenta))`,
-                      opacity: 0.3 + (h / 150),
-                    }} />
-                  ))}
-                </div>
-                {/* Gradient cards */}
-                <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
-                  <div style={{
-                    flex: 1,
-                    borderRadius: '12px',
-                    background: 'linear-gradient(135deg, rgba(240,104,72,0.1), rgba(208,72,176,0.05))',
-                    border: '1px solid rgba(240,234,240,0.04)',
-                  }} />
-                  <div style={{
-                    flex: 1,
-                    borderRadius: '12px',
-                    background: 'linear-gradient(135deg, rgba(208,72,176,0.1), rgba(72,88,224,0.05))',
-                    border: '1px solid rgba(240,234,240,0.04)',
-                  }} />
-                </div>
-              </div>
+                gap: '8px',
+                padding: '12px 16px',
+                borderBottom: '1px solid var(--nr-border)',
+              }}
+            >
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)' }} />
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--cyan-dim)' }} />
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--nr-text-3)', opacity: 0.4 }} />
+              <span
+                className="nr-label"
+                style={{ marginLeft: '8px', color: 'var(--nr-text-3)' }}
+              >
+                VIST.SYS — DASHBOARD
+              </span>
             </div>
-          </div>
-          {/* Right: Text */}
-          <div>
-            <div className="section-label" style={{ textAlign: 'left' }}>La Plataforma</div>
-            <h2 className="font-display" style={{ fontSize: '44px', lineHeight: 1.1, marginBottom: '20px' }}>
-              Un estudio completo<br />para <span className="text-gradient">creadores</span>
-            </h2>
-            <p style={{ fontSize: '16px', color: 'var(--text-2)', lineHeight: 1.7, marginBottom: '32px' }}>
-              Diseñado para creadores que necesitan resultados profesionales sin la complejidad de herramientas fragmentadas.
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {[
-                { color: 'var(--accent)', text: 'Generación de imágenes con 6+ motores de IA' },
-                { color: 'var(--magenta)', text: 'Edición no destructiva con historial completo' },
-                { color: 'var(--blue)', text: 'Exportación en alta resolución para cualquier plataforma' },
-                { color: 'var(--mint)', text: 'Colaboración en equipo con roles y permisos' },
-              ].map((item, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    background: item.color,
-                    flexShrink: 0,
-                  }} />
-                  <span style={{ fontSize: '15px', color: 'var(--text-2)' }}>{item.text}</span>
+
+            {/* Stats inside */}
+            <div
+              className="nr-preview-stats"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '1px',
+                background: 'var(--nr-border)',
+                padding: '1px',
+              }}
+            >
+              {previewStats.map((s) => (
+                <div key={s.label} className="nr-card-wrap nr-card-wrap--sys" style={{ clipPath: 'none' }}>
+                  <div className="nr-card" style={{ clipPath: 'none' }}>
+                    <div className="nr-label" style={{ marginBottom: '8px', color: 'var(--nr-text-3)' }}>
+                      {s.label}
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: 'var(--font-heading)',
+                        fontSize: '1.8rem',
+                        fontWeight: 700,
+                        color: s.color,
+                        lineHeight: 1,
+                        marginBottom: '4px',
+                      }}
+                    >
+                      {s.value}
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: '0.65rem',
+                        color: 'var(--nr-text-3)',
+                      }}
+                    >
+                      {s.sub}
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
-        </div>
+        </Reveal>
       </section>
 
-      {/* ── Stats Band ─────────────────────────────────────────── */}
-      <div className="stats-band">
-        {[
-          { num: '10K+', lbl: 'Creadores Activos' },
-          { num: '2.4M', lbl: 'Imágenes Generadas' },
-          { num: '50K+', lbl: 'Personajes Creados' },
-          { num: '99.2%', lbl: 'Uptime' },
-        ].map((s, i) => (
-          <div className="stat-item" key={i}>
-            <div className="stat-num">{s.num}</div>
-            <div className="stat-lbl">{s.lbl}</div>
-          </div>
-        ))}
-      </div>
+      {/* ── CTA Final ─────────────────────────────────────────── */}
+      <section
+        style={{
+          padding: '120px 24px',
+          textAlign: 'center',
+          position: 'relative',
+        }}
+      >
+        {/* Ambient coral glow */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '0',
+            transform: 'translateY(-50%)',
+            width: '50%',
+            height: '60%',
+            background: 'radial-gradient(ellipse at center left, rgba(240,104,72,0.06), transparent 70%)',
+            pointerEvents: 'none',
+          }}
+        />
 
-      {/* ── Pricing ────────────────────────────────────────────── */}
-      <section id="pricing" style={{ padding: '120px 40px', maxWidth: '1200px', margin: '0 auto' }}>
-        <div className="section-header">
-          <div className="section-label">Planes</div>
-          <h2 className="font-display" style={{ fontSize: '48px', lineHeight: 1.1, marginBottom: '16px' }}>
-            Elige tu plan <span className="text-gradient">perfecto</span>
-          </h2>
-          <p style={{ fontSize: '16px', color: 'var(--text-2)', lineHeight: 1.6 }}>
-            Comienza gratis. Escala cuando estés listo.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4" style={{ gap: '20px' }}>
-          {plans.map((plan, i) => (
-            <div className={`price-card${plan.featured ? ' featured' : ''}`} key={i}>
-              <div style={{ marginBottom: '24px' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', fontFamily: "'DM Sans', sans-serif" }}>{plan.name}</h3>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                  <span style={{ fontSize: '40px', fontWeight: 700, fontFamily: "'Instrument Serif', serif" }}>{plan.price}</span>
-                  <span style={{ fontSize: '14px', color: 'var(--text-3)' }}>{plan.period}</span>
-                </div>
-              </div>
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {plan.features.map((feat, j) => (
-                  <li key={j} style={{ fontSize: '14px', color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ color: 'var(--accent)', fontSize: '12px' }}>✦</span>
-                    {feat}
-                  </li>
-                ))}
-              </ul>
-              <button className={plan.btnClass} onClick={onAuth} style={{ width: '100%', justifyContent: 'center' }}>
-                {plan.cta}
-              </button>
-            </div>
-          ))}
-        </div>
-      </section>
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: '600px', margin: '0 auto' }}>
+          <Reveal>
+            <span className="nr-label" style={{ color: 'var(--cyan)', display: 'block', marginBottom: '16px' }}>
+              READY?
+            </span>
+          </Reveal>
 
-      {/* ── Final CTA ──────────────────────────────────────────── */}
-      <section style={{
-        padding: '120px 40px',
-        textAlign: 'center',
-        background: 'radial-gradient(ellipse at 50% 50%, rgba(240,104,72,0.08) 0%, transparent 60%)',
-      }}>
-        <h2 className="font-display" style={{ fontSize: '52px', lineHeight: 1.1, marginBottom: '20px' }}>
-          Comienza a crear<br /><span className="text-gradient">tu universo</span>
-        </h2>
-        <p style={{ fontSize: '17px', color: 'var(--text-2)', maxWidth: '480px', margin: '0 auto 36px', lineHeight: 1.6 }}>
-          Únete a miles de creadores que ya están construyendo sus personajes virtuales con IA.
-        </p>
-        <button className="btn-plasma" onClick={onAuth}>✦ Comenzar Gratis</button>
-      </section>
+          <Reveal delay={0.05}>
+            <h2
+              className="nr-heading"
+              style={{ fontSize: 'clamp(1.8rem, 4vw, 2.5rem)', marginBottom: '16px' }}
+            >
+              Construye tu universo
+            </h2>
+          </Reveal>
 
-      {/* ── Footer ─────────────────────────────────────────────── */}
-      <footer style={{ padding: '0 40px 40px' }}>
-        <div className="footer-glow" />
-        <div style={{ display: 'flex', justifyContent: 'space-between', maxWidth: '1200px', margin: '0 auto', gap: '60px', flexWrap: 'wrap' }}>
-          {/* Left */}
-          <div style={{ maxWidth: '280px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-              <div style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '8px',
-                background: 'linear-gradient(135deg, var(--accent), var(--magenta))',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 700,
-                fontSize: '13px',
-                color: '#fff',
-              }}>V</div>
-              <span style={{ fontWeight: 700, fontSize: '14px', letterSpacing: '0.05em' }}>VERTEX</span>
-            </div>
-            <p style={{ fontSize: '13px', color: 'var(--text-3)', lineHeight: 1.7 }}>
-              El estudio de IA definitivo para crear y gestionar influencers virtuales.
+          <Reveal delay={0.1}>
+            <p style={{ fontSize: '0.95rem', color: 'var(--nr-text-2)', lineHeight: 1.6, marginBottom: '32px' }}>
+              Cada personaje que imaginas puede existir. Cada escena que ves en tu mente puede renderizarse.
+              Entra al sistema y empieza a crear.
             </p>
-          </div>
-          {/* Right columns */}
-          {[
-            {
-              title: 'Producto',
-              links: ['Character Creator', 'Photo Studio', 'AI Editor', 'Universe Builder'],
-            },
-            {
-              title: 'Empresa',
-              links: ['About', 'Blog', 'Careers', 'Contact'],
-            },
-            {
-              title: 'Legal',
-              links: ['Privacy', 'Terms', 'Cookies'],
-            },
-          ].map((col, i) => (
-            <div key={i}>
-              <h4 style={{
-                fontSize: '12px',
-                fontFamily: "'JetBrains Mono', monospace",
-                letterSpacing: '0.15em',
-                textTransform: 'uppercase',
-                color: 'var(--text-2)',
-                marginBottom: '16px',
-                fontWeight: 600,
-              }}>{col.title}</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {col.links.map((link, j) => (
-                  <a key={j} href="#" style={{ fontSize: '13px', color: 'var(--text-3)', textDecoration: 'none', transition: 'color 0.2s' }}>
-                    {link}
-                  </a>
-                ))}
-              </div>
+          </Reveal>
+
+          <Reveal delay={0.15}>
+            <button className="nr-btn" onClick={onAuth}>
+              START BUILDING
+            </button>
+          </Reveal>
+
+          <Reveal delay={0.2}>
+            <div
+              className="nr-cta-stats"
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '2.5rem',
+                marginTop: '48px',
+                flexWrap: 'wrap',
+              }}
+            >
+              {ctaStats.map((s) => (
+                <span key={s} className="nr-data" style={{ fontSize: '0.7rem', letterSpacing: '0.05em' }}>
+                  {s}
+                </span>
+              ))}
             </div>
-          ))}
+          </Reveal>
         </div>
-        {/* Bottom bar */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          maxWidth: '1200px',
-          margin: '40px auto 0',
-          paddingTop: '20px',
-          borderTop: '1px solid rgba(240,234,240,0.04)',
-        }}>
-          <span style={{ fontSize: '12px', color: 'var(--text-3)', fontFamily: "'JetBrains Mono', monospace" }}>
-            © 2026 Vertex Studio
-          </span>
-          <span style={{ fontSize: '11px', color: 'var(--text-3)', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.1em' }}>
-            CRAFTED WITH ✦ AI
-          </span>
+      </section>
+
+      {/* ── Footer ────────────────────────────────────────────── */}
+      <footer
+        style={{
+          borderTop: '1px solid var(--nr-border)',
+          padding: '32px 24px',
+          maxWidth: '1100px',
+          margin: '0 auto',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '16px',
+          }}
+        >
+          {/* Brand */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '2px',
+                background: 'var(--accent)',
+                boxShadow: '0 0 8px rgba(240,104,72,0.4)',
+              }}
+            />
+            <span
+              style={{
+                fontFamily: 'var(--font-heading)',
+                fontWeight: 700,
+                fontSize: '14px',
+                letterSpacing: '0.06em',
+                color: 'var(--accent)',
+              }}
+            >
+              VIST
+            </span>
+          </div>
+
+          {/* Links */}
+          <div style={{ display: 'flex', gap: '24px' }}>
+            {['Pricing', 'Docs', 'Community', 'Contact'].map((link) => (
+              <a
+                key={link}
+                href="#"
+                style={{
+                  fontSize: '0.75rem',
+                  color: 'var(--nr-text-3)',
+                  textDecoration: 'none',
+                  transition: 'color 150ms',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  letterSpacing: '0.04em',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--nr-text-2)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--nr-text-3)')}
+              >
+                {link}
+              </a>
+            ))}
+          </div>
+
+          {/* Year */}
+          <span className="nr-label">2026 VIST STUDIO</span>
         </div>
       </footer>
     </div>
   );
-};
-
-export default Landing;
+}
