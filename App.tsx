@@ -14,6 +14,7 @@ import MobileNav from './layout/MobileNav';
 
 // Lazy-loaded pages (reference 9-page architecture)
 const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Director = lazy(() => import('./pages/Director'));
 const UploadCharacter = lazy(() => import('./pages/UploadCharacter'));
 const PhotoSession = lazy(() => import('./pages/PhotoSession'));
 const AIEditor = lazy(() => import('./pages/AIEditor'));
@@ -31,7 +32,7 @@ const Landing = lazy(() => import('./pages/Landing'));
 const PricingPage = lazy(() => import('./components/PricingPage'));
 const ProfilePage = lazy(() => import('./components/ProfilePage'));
 
-export type Page = 'dashboard' | 'upload' | 'session' | 'editor' | 'gallery' | 'characters' | 'universe' | 'content' | 'analytics' | 'pricing' | 'profile';
+export type Page = 'dashboard' | 'director' | 'upload' | 'session' | 'editor' | 'gallery' | 'characters' | 'universe' | 'content' | 'analytics' | 'pricing' | 'profile';
 
 function App() {
   return (
@@ -126,6 +127,7 @@ function AuthenticatedApp() {
 
   const pages: Record<Page, JSX.Element> = {
     dashboard: <Dashboard onNav={handleNav} />,
+    director: <Director onNav={handleNav} />,
     upload: <UploadCharacter onNav={handleNav} />,
     session: <PhotoSession onNav={handleNav} />,
     editor: <AIEditor onNav={handleNav} />,
