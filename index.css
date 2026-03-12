@@ -32,6 +32,7 @@
   --font-display: "Instrument Serif", serif;
   --font-body: "DM Sans", sans-serif;
   --font-jet: "JetBrains Mono", monospace;
+  --font-heading: "Rajdhani", "DM Sans", sans-serif;
 
   --background-image-plasma-gradient: linear-gradient(135deg, #f06848, #d048b0, #4858e0, #d048b0, #f06848);
 }
@@ -60,6 +61,22 @@
   --text-3: #58506c;
   --border: rgba(240,234,240,0.06);
   --border-h: rgba(240,104,72,0.22);
+
+  /* ── Netrunner Identity System ──────────────────────────── */
+  --nr-bg-0: #06060a;
+  --nr-bg-1: #0a0a12;
+  --nr-bg-2: #0e0d15;
+  --nr-bg-3: #141320;
+  --nr-bg-4: #1a1828;
+  --cyan: #00ffc8;
+  --cyan-dim: rgba(0, 255, 200, 0.15);
+  --cyan-glow: rgba(0, 255, 200, 0.25);
+  --nr-text-1: #f0eaf0;
+  --nr-text-2: #706880;
+  --nr-text-3: #585068;
+  --nr-border: rgba(255,255,255,0.04);
+  --nr-border-coral: rgba(240,104,72,0.15);
+  --nr-border-cyan: rgba(0,255,200,0.12);
 }
 
 /* ── Base ─────────────────────────────────────────────────── */
@@ -116,6 +133,7 @@ body::after {
 .font-body    { font-family: 'DM Sans', sans-serif !important; }
 .font-jet     { font-family: 'JetBrains Mono', monospace !important; }
 .font-mono    { font-family: 'JetBrains Mono', monospace; }
+.font-serif   { font-family: 'Playfair Display', serif; }
 .serif        { font-family: 'Instrument Serif', serif; }
 
 /* ══════════════════════════════════════════════════════════════
@@ -237,6 +255,8 @@ body::after {
 
 /* ── Gradient text ────────────────────────────────────────── */
 .text-gradient {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
   background: linear-gradient(135deg, var(--accent), var(--magenta), var(--blue), var(--magenta), var(--accent));
   background-size: 300% 300%;
   -webkit-background-clip: text;
@@ -734,6 +754,41 @@ progress::-moz-progress-bar { background: var(--accent) !important; }
   margin-bottom: 40px;
 }
 
+/* ── Cursor Glow ─────────────────────────────────────────── */
+.cursor-glow {
+  position: fixed;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(circle, rgba(240,104,72,0.03) 0%, rgba(208,72,176,0.015) 40%, transparent 70%);
+  transform: translate(-50%, -50%);
+  transition: opacity 0.3s;
+}
+
+/* ── Slider (from reference) ─────────────────────────────── */
+.slider-t {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--bg-3), var(--bg-4));
+  outline: none;
+  width: 100%;
+  transition: all 0.2s;
+}
+.slider-t:hover { background: linear-gradient(90deg, var(--bg-4), rgba(240,104,72,0.15)); }
+.slider-t::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(240,104,72,0.4), 0 0 20px rgba(240,104,72,0.1);
+}
+
 /* ── Prompt shake ─────────────────────────────────────────── */
 @keyframes prompt-shake {
   0%, 100% { transform: translateX(0); }
@@ -748,4 +803,171 @@ progress::-moz-progress-bar { background: var(--accent) !important; }
   .hero { padding: 0 20px; }
   .stats-band { padding: 40px 20px; gap: 30px; flex-wrap: wrap; }
   .stat-num { font-size: 36px; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   NETRUNNER IDENTITY SYSTEM — Components
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Chamfered Card (wrapper + inner pattern) ────────────── */
+.nr-card-wrap {
+  clip-path: polygon(14px 0%, 100% 0%, 100% 100%, 0% 100%, 0% 14px);
+  padding: 1px;
+  background: var(--nr-border);
+  position: relative;
+  transition: background 150ms ease;
+}
+.nr-card-wrap:hover {
+  background: var(--nr-border-coral);
+}
+.nr-card-wrap::before {
+  content: '';
+  position: absolute;
+  top: -1px; left: -1px;
+  width: 20px; height: 2px;
+  background: var(--accent);
+  transform: rotate(45deg);
+  transform-origin: top left;
+  opacity: 0.6;
+  z-index: 2;
+}
+
+.nr-card {
+  clip-path: polygon(14px 0%, 100% 0%, 100% 100%, 0% 100%, 0% 14px);
+  background: var(--nr-bg-2);
+  padding: 1.25rem;
+}
+
+/* System variant (cyan accent) */
+.nr-card-wrap--sys::before { background: var(--cyan); }
+.nr-card-wrap--sys:hover { background: var(--nr-border-cyan); }
+
+/* Feature card for landing (no chamfer) */
+.nr-feature-card {
+  background: var(--nr-bg-2);
+  border: 1px solid var(--nr-border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: border-color 200ms, box-shadow 200ms;
+}
+.nr-feature-card:hover {
+  border-color: var(--nr-border-coral);
+  box-shadow: 0 0 30px rgba(240,104,72,0.06);
+}
+
+/* ── Netrunner Buttons ───────────────────────────────────── */
+.nr-btn {
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: none;
+  padding: 0.7rem 2rem;
+  clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  cursor: pointer;
+  transition: background 150ms, box-shadow 200ms;
+}
+.nr-btn:hover {
+  background: #f87858;
+  box-shadow: 0 0 25px rgba(240,104,72,0.3);
+}
+
+.nr-btn-ghost {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--nr-text-2);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.65rem 1.8rem;
+  cursor: pointer;
+  transition: border-color 150ms, color 150ms;
+}
+.nr-btn-ghost:hover {
+  border-color: rgba(0,255,200,0.2);
+  color: var(--cyan);
+}
+
+/* ── Scanlines & Textures ────────────────────────────────── */
+.nr-scanlines { position: relative; }
+.nr-scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 255, 200, 0.012) 2px,
+    rgba(0, 255, 200, 0.012) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Scan line loading */
+@keyframes nr-scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+.nr-loading { position: relative; overflow: hidden; }
+.nr-loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(0,255,200,0.06) 50%, transparent 60%);
+  animation: nr-scan 2s ease-in-out infinite;
+}
+
+/* Netrunner scrollbar */
+.nr-scroll::-webkit-scrollbar { width: 6px; }
+.nr-scroll::-webkit-scrollbar-track { background: var(--nr-bg-0); }
+.nr-scroll::-webkit-scrollbar-thumb {
+  background: rgba(240,104,72,0.25);
+  border-radius: 3px;
+}
+.nr-scroll::-webkit-scrollbar-thumb:hover { background: rgba(240,104,72,0.4); }
+
+/* ── Netrunner Typography ────────────────────────────────── */
+.nr-heading {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--nr-text-1);
+}
+
+.nr-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--nr-text-3);
+}
+
+.nr-data {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--cyan);
+}
+
+.nr-accent { color: var(--accent); }
+
+/* ── Blink cursor ────────────────────────────────────────── */
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+/* ── Reduced Motion ──────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .nr-loading::after { animation: none; }
+}
+
+/* ── Netrunner Responsive ────────────────────────────────── */
+@media (max-width: 640px) {
+  .nr-preview-stats { grid-template-columns: 1fr !important; }
+  .nr-cta-stats { flex-direction: column !important; gap: 1.5rem !important; }
 }

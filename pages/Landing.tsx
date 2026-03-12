@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import NeuralBackground from '@/components/ui/flow-field-background';
+import { MatrixText } from '@/components/ui/matrix-text';
 
 interface LandingProps {
   onAuth: () => void;
@@ -10,9 +12,10 @@ function useTypingEffect(text: string, speed = 50, delay = 500) {
   const [displayed, setDisplayed] = useState('');
   const [done, setDone] = useState(false);
   useEffect(() => {
+    let i = 0;
+    let interval: ReturnType<typeof setInterval>;
     const timeout = setTimeout(() => {
-      let i = 0;
-      const interval = setInterval(() => {
+      interval = setInterval(() => {
         if (i < text.length) {
           setDisplayed(text.slice(0, i + 1));
           i++;
@@ -21,9 +24,11 @@ function useTypingEffect(text: string, speed = 50, delay = 500) {
           clearInterval(interval);
         }
       }, speed);
-      return () => clearInterval(interval);
     }, delay);
-    return () => clearTimeout(timeout);
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(interval);
+    };
   }, [text, speed, delay]);
   return { displayed, done };
 }
@@ -88,8 +93,19 @@ export default function Landing({ onAuth }: LandingProps) {
         color: 'var(--nr-text-1)',
         minHeight: '100vh',
         overflowX: 'hidden',
+        position: 'relative',
       }}
     >
+      {/* Flow field particle background — full page */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0 }}>
+        <NeuralBackground
+          color="#f06848"
+          trailOpacity={0.06}
+          particleCount={600}
+          speed={0.5}
+          className="bg-[var(--nr-bg-0)]"
+        />
+      </div>
       {/* ── Fixed Nav ─────────────────────────────────────────── */}
       <nav
         style={{
@@ -97,7 +113,7 @@ export default function Landing({ onAuth }: LandingProps) {
           top: 0,
           left: 0,
           right: 0,
-          zIndex: 100,
+          zIndex: 50,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -151,22 +167,6 @@ export default function Landing({ onAuth }: LandingProps) {
           padding: '0 24px',
         }}
       >
-        {/* Grid background */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage: `
-              linear-gradient(rgba(240,104,72,0.03) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(240,104,72,0.03) 1px, transparent 1px)
-            `,
-            backgroundSize: '60px 60px',
-            maskImage: 'radial-gradient(ellipse at center, black 30%, transparent 70%)',
-            WebkitMaskImage: 'radial-gradient(ellipse at center, black 30%, transparent 70%)',
-            zIndex: 0,
-          }}
-        />
-
         <div style={{ position: 'relative', zIndex: 2 }}>
           {/* System status */}
           <motion.div
@@ -194,21 +194,27 @@ export default function Landing({ onAuth }: LandingProps) {
             </span>
           </motion.div>
 
-          {/* Title */}
-          <motion.h1
-            className="nr-heading"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.4 }}
-            style={{
-              fontSize: 'clamp(2.5rem, 6vw, 4rem)',
-              lineHeight: 1.1,
-              marginBottom: '24px',
-            }}
+          {/* Title — Matrix scramble effect */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.15, duration: 0.3 }}
+            style={{ marginBottom: '24px' }}
           >
-            <span style={{ color: 'var(--accent)' }}>VIST</span>{' '}
-            <span style={{ color: 'var(--nr-text-1)' }}>STUDIO</span>
-          </motion.h1>
+            <MatrixText
+              text="VIST STUDIO"
+              matrixColor="#00ffc8"
+              initialDelay={400}
+              letterAnimationDuration={600}
+              letterInterval={80}
+              className="nr-heading"
+              style={{
+                fontSize: 'clamp(2.5rem, 6vw, 4rem)',
+                lineHeight: 1.1,
+                color: 'var(--accent)',
+              }}
+            />
+          </motion.div>
 
           {/* Typing subtitle */}
           <motion.p
@@ -247,7 +253,7 @@ export default function Landing({ onAuth }: LandingProps) {
             <button className="nr-btn" onClick={onAuth}>
               ENTER THE SYSTEM
             </button>
-            <button className="nr-btn-ghost" onClick={onAuth}>
+            <button className="nr-btn-ghost" onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}>
               EXPLORE
             </button>
           </motion.div>
@@ -269,7 +275,7 @@ export default function Landing({ onAuth }: LandingProps) {
       </section>
 
       {/* ── Features ──────────────────────────────────────────── */}
-      <section style={{ padding: '100px 24px', maxWidth: '1100px', margin: '0 auto' }}>
+      <section id="features" style={{ padding: '100px 24px', maxWidth: '1100px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <Reveal>
           <span className="nr-label" style={{ color: 'var(--cyan)', display: 'block', marginBottom: '16px' }}>
             CAPABILITIES
@@ -333,7 +339,7 @@ export default function Landing({ onAuth }: LandingProps) {
       </section>
 
       {/* ── Preview Section ───────────────────────────────────── */}
-      <section style={{ padding: '80px 24px', maxWidth: '1100px', margin: '0 auto' }}>
+      <section style={{ padding: '80px 24px', maxWidth: '1100px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <Reveal scale={0.97}>
           <div
             className="nr-scanlines"
@@ -417,6 +423,7 @@ export default function Landing({ onAuth }: LandingProps) {
           padding: '120px 24px',
           textAlign: 'center',
           position: 'relative',
+          zIndex: 1,
         }}
       >
         {/* Ambient coral glow */}
@@ -490,6 +497,8 @@ export default function Landing({ onAuth }: LandingProps) {
           padding: '32px 24px',
           maxWidth: '1100px',
           margin: '0 auto',
+          position: 'relative',
+          zIndex: 1,
         }}
       >
         <div
