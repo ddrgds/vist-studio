@@ -236,11 +236,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
         }
 
         const sessionPrompt = sceneOverride || 'professional photo studio'
-        const vibeDescriptions = PHOTO_SESSION_PRESETS
-          .filter(p => selectedPresets.has(p.id))
-          .map(p => p.description)
-          .join('. ')
-        const fullPrompt = `${sessionPrompt}. VIBE: ${vibeDescriptions}.`
+        const fullPrompt = `${sessionPrompt}. ${mixedShots.length > 0 ? '' : PHOTO_SESSION_PRESETS.filter(p => selectedPresets.has(p.id)).map(p => p.description).join('. ') + '.'}`
 
         if (refFile) {
           const useGrok = selectedEngine === 'auto' || selectedEngine === 'grok' || selectedEngine.includes('grok')
@@ -263,6 +259,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
               {
                 scenario: fullPrompt,
                 lighting: 'natural, varied per shot',
+                angles: mixedShots.length > 0 ? mixedShots : undefined,
               },
               (p) => setProgress(p),
               abortRef.current.signal
