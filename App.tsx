@@ -59,8 +59,8 @@ function AppLayout() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'var(--bg-0)',
-        color: 'var(--text-3)',
+        background: 'var(--joi-bg-0)',
+        color: 'var(--joi-text-3)',
         fontSize: 14,
       }}>
         Loading...
@@ -72,7 +72,7 @@ function AppLayout() {
     return (
       <>
         <Suspense fallback={
-          <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-0)', color: 'var(--text-3)', fontSize: 14 }}>
+          <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--joi-bg-0)', color: 'var(--joi-text-3)', fontSize: 14 }}>
             Loading...
           </div>
         }>
@@ -100,7 +100,6 @@ function AppLayout() {
 function AuthenticatedApp() {
   const [page, setPage] = useState<Page>('dashboard');
   const [collapsed, setCollapsed] = useState(false);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [transitioning, setTransitioning] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
 
@@ -114,16 +113,6 @@ function AuthenticatedApp() {
     }, 150);
   }, [page]);
 
-  // Cursor glow + card hover effect
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      setMousePos({ x: e.clientX, y: e.clientY });
-      document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
-      document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
-    };
-    window.addEventListener('mousemove', handler);
-    return () => window.removeEventListener('mousemove', handler);
-  }, []);
 
   const pages: Record<Page, JSX.Element> = {
     dashboard: <Dashboard onNav={handleNav} />,
@@ -141,14 +130,8 @@ function AuthenticatedApp() {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden" style={{ background: 'var(--bg-0)' }}>
+    <div className="flex h-screen w-screen overflow-hidden" style={{ background: 'var(--joi-bg-0)' }}>
       <StoreHydrator />
-
-      {/* Ambient cursor glow */}
-      <div
-        className="cursor-glow"
-        style={{ left: mousePos.x, top: mousePos.y, opacity: 0.8 }}
-      />
 
       <Sidebar page={page} onNav={handleNav} collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
 
@@ -167,7 +150,7 @@ function AuthenticatedApp() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'var(--text-3)',
+            color: 'var(--joi-text-3)',
           }}>
             Loading...
           </div>

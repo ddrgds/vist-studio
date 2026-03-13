@@ -18,8 +18,8 @@ const Chip: React.FC<ChipProps> = ({ label, selected, onClick, icon, size = 'md'
   <button
     onClick={onClick}
     style={selected
-      ? { background: 'var(--accent-dim)', borderColor: 'rgba(240,104,72,0.4)', color: 'var(--accent)' }
-      : { background: 'var(--bg-3)', borderColor: 'var(--border)', color: 'var(--text-3)' }
+      ? { background: 'rgba(255,107,157,0.08)', borderColor: 'rgba(255,107,157,0.2)', color: 'var(--joi-pink)' }
+      : { background: 'var(--joi-bg-2)', borderColor: 'rgba(255,255,255,.04)', color: 'var(--joi-text-3)' }
     }
     className={`inline-flex items-center gap-1.5 rounded-lg cursor-pointer transition-all duration-150 font-medium select-none border hover:scale-[1.02] ${sizeClasses[size]} ${className ?? ''}`}
   >

@@ -354,12 +354,13 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     e.target.value = ''
   }
 
-  const Chip = ({ label, active, onClick, color='var(--accent)' }: { label:string; active:boolean; onClick:()=>void; color?:string; [key:string]:any }) => (
+  const Chip = ({ label, active, onClick, color='var(--joi-pink)' }: { label:string; active:boolean; onClick:()=>void; color?:string; [key:string]:any }) => (
     <button onClick={onClick} className="px-3 py-2 rounded-xl text-[11px] font-medium transition-all"
       style={{
-        background: active ? `${color}12` : 'var(--bg-3)',
-        border: `1px solid ${active ? `${color}30` : 'var(--border)'}`,
-        color: active ? color : 'var(--text-2)',
+        background: active ? `${color}12` : 'var(--joi-bg-3)',
+        border: `1px solid ${active ? `${color}30` : 'rgba(255,255,255,.04)'}`,
+        color: active ? color : 'var(--joi-text-2)',
+        backdropFilter: 'blur(8px)',
       }}>{label}</button>
   )
 
@@ -375,27 +376,27 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
   // Style background for preview
   const previewBg = generatedImage
-    ? 'var(--bg-2)'
-    : renderStyles[selRenderStyle]?.bg || 'var(--bg-2)'
+    ? 'var(--joi-bg-2)'
+    : renderStyles[selRenderStyle]?.bg || 'var(--joi-bg-2)'
 
   return (
-    <div className="min-h-screen gradient-mesh">
+    <div className="min-h-screen joi-mesh">
       <div className="px-8 pt-8 pb-2">
-        <h1 className="text-2xl font-bold font-serif" style={{ color:'var(--text-1)' }}>
-          Upload <span className="text-gradient">Character</span>
+        <h1 className="joi-heading joi-glow text-2xl font-bold">
+          <span style={{ color: 'var(--joi-pink)' }}>Upload</span> <span style={{ color: 'var(--joi-text-1)' }}>Character</span>
         </h1>
-        <p className="text-sm mt-1" style={{ color:'var(--text-2)' }}>Create from scratch or import reference images</p>
+        <p className="joi-label mt-1" style={{ color: 'var(--joi-cyan-warm)' }}>Create from scratch or import reference images</p>
       </div>
 
       {/* Mode Toggle */}
       <div className="px-8 py-4">
-        <div className="inline-flex rounded-xl p-1" style={{ background:'var(--bg-2)' }}>
+        <div className="inline-flex rounded-xl p-1" style={{ background:'var(--joi-bg-2)', backdropFilter:'blur(8px)' }}>
           {(['create','import'] as const).map(m => (
             <button key={m} onClick={()=>setMode(m)}
-              className="px-5 py-2 rounded-lg text-sm font-medium transition-all"
+              className="px-5 py-2 rounded-xl text-sm font-medium transition-all"
               style={{
-                background: mode===m ? 'var(--bg-4)' : 'transparent',
-                color: mode===m ? 'var(--text-1)' : 'var(--text-3)',
+                background: mode===m ? 'var(--joi-bg-3)' : 'transparent',
+                color: mode===m ? 'var(--joi-text-1)' : 'var(--joi-text-3)',
                 boxShadow: mode===m ? '0 2px 8px rgba(0,0,0,.2)' : 'none',
               }}>
               {m === 'create' ? '\u2295 Create from Scratch' : '\u2191 Import Images'}
@@ -410,24 +411,24 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
           <div className="flex-1">
             {/* Drop Zone */}
             <input ref={fileInputRef} type="file" multiple accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleFileSelect} />
-            <div className="card p-8 text-center cursor-pointer hover:border-[var(--border-h)] transition-all mb-5"
-              style={{ borderStyle:'dashed', borderColor: dragOver ? 'var(--accent)' : undefined }}
+            <div className="p-8 text-center cursor-pointer transition-all mb-5 rounded-xl joi-glass"
+              style={{ border: '1px dashed var(--joi-border)', borderColor: dragOver ? 'var(--joi-pink)' : undefined }}
               onClick={() => fileInputRef.current?.click()}
               onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
               onDragEnter={(e) => { e.preventDefault(); setDragOver(true) }}
               onDragLeave={() => setDragOver(false)}
               onDrop={handleFileDrop}>
-              <div className="text-4xl mb-3" style={{ color:'var(--accent)' }}>{'\u2191'}</div>
-              <div className="text-sm font-semibold mb-1" style={{ color:'var(--text-1)' }}>Drag images of your character</div>
-              <div className="text-[11px]" style={{ color:'var(--text-3)' }}>PNG, JPG, WEBP · Up to 20 images · Max 10MB each</div>
-              <div className="text-[11px] mt-2 px-3 py-1.5 rounded-lg inline-block"
-                style={{ background:'rgba(240,104,72,.1)', color:'var(--accent)' }}>
+              <div className="text-4xl mb-3" style={{ color:'var(--joi-pink)' }}>{'\u2191'}</div>
+              <div className="text-sm font-semibold mb-1" style={{ color:'var(--joi-text-1)' }}>Drag images of your character</div>
+              <div className="text-[11px]" style={{ color:'var(--joi-text-3)' }}>PNG, JPG, WEBP · Up to 20 images · Max 10MB each</div>
+              <div className="text-[11px] mt-2 px-3 py-1.5 rounded-xl inline-block"
+                style={{ background:'rgba(255,107,157,.1)', color:'var(--joi-pink)' }}>
                 or click to select files
               </div>
             </div>
 
             {/* Uploaded preview grid */}
-            <div className="text-[10px] font-mono uppercase tracking-wider mb-2" style={{ color:'var(--text-3)' }}>
+            <div className="text-[10px] font-mono uppercase tracking-wider mb-2" style={{ color:'var(--joi-text-3)' }}>
               Uploaded Images ({importFiles.length}/20)
             </div>
             <div className="grid grid-cols-5 gap-3">
@@ -435,14 +436,15 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                 <div key={i} className="aspect-square rounded-xl overflow-hidden cursor-pointer transition-all hover:scale-[1.03]"
                   onClick={() => { if (i >= importFiles.length) fileInputRef.current?.click() }}
                   style={{
-                    background: i < importFiles.length ? 'var(--bg-3)' : 'var(--bg-2)',
-                    border: `1px solid ${i < importFiles.length ? 'var(--border-h)' : 'var(--border)'}`,
+                    background: i < importFiles.length ? 'var(--joi-bg-3)' : 'var(--joi-bg-2)',
+                    border: `1px solid ${i < importFiles.length ? 'var(--joi-border-h)' : 'rgba(255,255,255,.04)'}`,
+                    backdropFilter: 'blur(8px)',
                   }}>
                   {i < importFiles.length ? (
                     <img src={URL.createObjectURL(importFiles[i])} className="w-full h-full object-cover" alt={importFiles[i].name} />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-lg" style={{ color:'var(--text-3)' }}>+</span>
+                      <span className="text-lg" style={{ color:'var(--joi-text-3)' }}>+</span>
                     </div>
                   )}
                 </div>
@@ -450,34 +452,34 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
             </div>
 
             {/* Import Settings */}
-            <div className="card p-5 mt-5 space-y-4">
-              <div className="text-xs font-semibold" style={{ color:'var(--text-1)' }}>Import Settings</div>
+            <div className="p-5 mt-5 space-y-4 rounded-xl joi-glass">
+              <div className="text-xs font-semibold" style={{ color:'var(--joi-text-1)' }}>Import Settings</div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[10px] font-mono uppercase block mb-1.5" style={{ color:'var(--text-3)' }}>Name</label>
-                  <input value={importName} onChange={e => setImportName(e.target.value)} placeholder="Character name" className="w-full px-3 py-2 rounded-lg text-xs border outline-none transition-colors"
-                    style={{ background:'var(--bg-3)', borderColor:'var(--border)', color:'var(--text-1)' }} />
+                  <label className="joi-label block mb-1.5">Name</label>
+                  <input value={importName} onChange={e => setImportName(e.target.value)} placeholder="Character name" className="w-full px-3 py-2 rounded-xl text-xs border outline-none transition-colors"
+                    style={{ background:'var(--joi-bg-2)', borderColor:'rgba(255,255,255,.04)', color:'var(--joi-text-1)', backdropFilter:'blur(8px)' }} />
                 </div>
                 <div>
-                  <label className="text-[10px] font-mono uppercase block mb-1.5" style={{ color:'var(--text-3)' }}>Style</label>
-                  <input value={importStyle} onChange={e => setImportStyle(e.target.value)} placeholder="E.g.: Streetwear, Fashion" className="w-full px-3 py-2 rounded-lg text-xs border outline-none transition-colors"
-                    style={{ background:'var(--bg-3)', borderColor:'var(--border)', color:'var(--text-1)' }} />
+                  <label className="joi-label block mb-1.5">Style</label>
+                  <input value={importStyle} onChange={e => setImportStyle(e.target.value)} placeholder="E.g.: Streetwear, Fashion" className="w-full px-3 py-2 rounded-xl text-xs border outline-none transition-colors"
+                    style={{ background:'var(--joi-bg-2)', borderColor:'rgba(255,255,255,.04)', color:'var(--joi-text-1)', backdropFilter:'blur(8px)' }} />
                 </div>
               </div>
               <div>
-                <label className="text-[10px] font-mono uppercase block mb-1.5" style={{ color:'var(--text-3)' }}>Description / Bio</label>
-                <textarea value={importBio} onChange={e => setImportBio(e.target.value)} rows={3} placeholder="Describe the character, AI will use this to maintain consistency..." className="w-full px-3 py-2 rounded-lg text-xs border outline-none transition-colors resize-none"
-                  style={{ background:'var(--bg-3)', borderColor:'var(--border)', color:'var(--text-1)' }} />
+                <label className="joi-label block mb-1.5">Description / Bio</label>
+                <textarea value={importBio} onChange={e => setImportBio(e.target.value)} rows={3} placeholder="Describe the character, AI will use this to maintain consistency..." className="w-full px-3 py-2 rounded-xl text-xs border outline-none transition-colors resize-none"
+                  style={{ background:'var(--joi-bg-2)', borderColor:'rgba(255,255,255,.04)', color:'var(--joi-text-1)', backdropFilter:'blur(8px)' }} />
               </div>
               <div>
-                <div className="text-[10px] font-mono uppercase mb-2" style={{ color:'var(--text-3)' }}>AI will automatically extract</div>
+                <div className="joi-label mb-2">AI will automatically extract</div>
                 <div className="flex flex-wrap gap-1.5">
                   {['Face','Body','Skin','Hair','Features','Default Pose','Clothing Style','Color Palette'].map(t => (
-                    <span key={t} className="badge" style={{ background:'rgba(208,72,176,.1)', color:'var(--magenta)' }}>{t}</span>
+                    <span key={t} className="badge" style={{ background:'rgba(208,72,176,.1)', color:'var(--joi-magenta)' }}>{t}</span>
                   ))}
                 </div>
               </div>
-              <button onClick={handleImport} disabled={generating} className="btn-primary w-full py-3 text-sm">
+              <button onClick={handleImport} disabled={generating} className={`joi-btn-solid w-full py-3 text-sm${!generating ? ' joi-breathe' : ''}`}>
                 {generating ? '\u21BB Importing...' : '\u2726 Analyze with AI and Create Character'}
               </button>
             </div>
@@ -485,21 +487,21 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
           {/* Right: Preview */}
           <div className="w-[300px] shrink-0">
-            <div className="card p-5 sticky top-8">
-              <div className="text-[10px] font-mono uppercase tracking-wider text-center mb-3" style={{ color:'var(--text-3)' }}>Preview</div>
-              <div className="aspect-[3/4] rounded-2xl overflow-hidden mb-3" style={{ background:'var(--bg-3)', border:'1px solid var(--border)' }}>
+            <div className="p-5 sticky top-8 rounded-xl joi-glass">
+              <div className="joi-label text-center mb-3">Preview</div>
+              <div className="aspect-[3/4] rounded-xl overflow-hidden mb-3" style={{ background:'var(--joi-bg-3)', border:'1px solid rgba(255,255,255,.04)' }}>
                 {importFiles.length > 0 ? (
                   <img src={URL.createObjectURL(importFiles[0])} className="w-full h-full object-cover" alt="Preview" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <div className="text-center">
-                      <div className="text-3xl mb-2" style={{ color:'var(--text-3)' }}>{'\u25C8'}</div>
-                      <div className="text-[11px]" style={{ color:'var(--text-3)' }}>Upload images to<br/>generate preview</div>
+                      <div className="text-3xl mb-2" style={{ color:'var(--joi-text-3)' }}>{'\u25C8'}</div>
+                      <div className="text-[11px]" style={{ color:'var(--joi-text-3)' }}>Upload images to<br/>generate preview</div>
                     </div>
                   </div>
                 )}
               </div>
-              <div className="text-[10px] text-center" style={{ color:'var(--text-3)' }}>
+              <div className="text-[10px] text-center" style={{ color:'var(--joi-text-3)' }}>
                 AI will generate a consistent 3D model from your images
               </div>
             </div>
@@ -513,16 +515,16 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
             <div className="flex gap-1 mb-6 overflow-x-auto pb-1">
               {steps.map((s,i) => (
                 <button key={s} onClick={()=>setStep(i)}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all shrink-0"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-medium transition-all shrink-0"
                   style={{
-                    background: step===i ? 'rgba(240,104,72,.1)' : 'transparent',
-                    color: step===i ? 'var(--accent)' : step>i ? 'var(--magenta)' : 'var(--text-3)',
-                    border: step===i ? '1px solid rgba(240,104,72,.2)' : '1px solid transparent',
+                    background: step===i ? 'rgba(255,107,157,.08)' : 'transparent',
+                    color: step===i ? 'var(--joi-pink)' : step>i ? 'var(--joi-magenta)' : 'var(--joi-text-3)',
+                    border: step===i ? '1px solid rgba(255,107,157,.2)' : '1px solid transparent',
                   }}>
                   <span className="rounded-full flex items-center justify-center text-[9px] font-bold"
                     style={{
-                      background: step>=i ? (step===i ? 'var(--accent)' : 'var(--magenta)') : 'var(--bg-3)',
-                      color: step>=i ? '#fff' : 'var(--text-3)',
+                      background: step>=i ? (step===i ? 'var(--joi-pink)' : 'var(--joi-magenta)') : 'var(--joi-bg-3)',
+                      color: step>=i ? '#fff' : 'var(--joi-text-3)',
                       width:18, height:18,
                     }}>
                     {step>i ? '\u2713' : i+1}
@@ -535,12 +537,12 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               <div className="relative shrink-0 ml-auto">
                 <button
                   onClick={() => setShowEngineModal(v => !v)}
-                  className="btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-sm relative"
+                  className="joi-btn-ghost w-8 h-8 rounded-xl flex items-center justify-center text-sm relative"
                   title="Generation Engine"
                 >
                   🔧
                   {selectedEngine !== 'auto' && (
-                    <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full" style={{ background: 'var(--accent)' }} />
+                    <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full" style={{ background: 'var(--joi-pink)' }} />
                   )}
                 </button>
 
@@ -548,23 +550,24 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               </div>
             </div>
 
-            <div className="card p-6 space-y-5">
+            <div className="p-6 space-y-5 rounded-xl joi-glass">
               {/* Step 0: Render Style */}
               {step===0 && <>
                 <div>
-                  <label className="text-[10px] font-mono uppercase block mb-3" style={{ color:'var(--text-3)' }}>Choose Render Style</label>
+                  <label className="joi-label block mb-3">Choose Render Style</label>
                   <div className="grid grid-cols-3 gap-3">
                     {renderStyles.map((rs, i) => (
                       <button key={rs.id} onClick={() => setSelRenderStyle(i)}
-                        className="p-4 rounded-xl text-left transition-all hover:scale-[1.02]"
+                        className="p-4 rounded-xl text-left transition-all hover:scale-[1.02] joi-border-glow"
                         style={{
-                          background: selRenderStyle===i ? rs.bg : 'var(--bg-3)',
-                          border: `1.5px solid ${selRenderStyle===i ? 'rgba(240,104,72,.3)' : 'var(--border)'}`,
-                          boxShadow: selRenderStyle===i ? '0 0 20px rgba(240,104,72,.08)' : 'none',
+                          background: selRenderStyle===i ? rs.bg : 'var(--joi-bg-3)',
+                          border: `1.5px solid ${selRenderStyle===i ? 'rgba(255,107,157,.3)' : 'rgba(255,255,255,.04)'}`,
+                          boxShadow: selRenderStyle===i ? '0 0 20px rgba(255,107,157,.08)' : 'none',
+                          backdropFilter: 'blur(8px)',
                         }}>
                         <span className="text-xl block mb-1.5">{rs.icon}</span>
-                        <div className="text-[12px] font-semibold" style={{ color: selRenderStyle===i ? 'var(--accent)' : 'var(--text-1)' }}>{rs.label}</div>
-                        <div className="text-[9px] mt-0.5" style={{ color:'var(--text-3)' }}>{rs.desc}</div>
+                        <div className="text-[12px] font-semibold" style={{ color: selRenderStyle===i ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{rs.label}</div>
+                        <div className="text-[9px] mt-0.5" style={{ color:'var(--joi-text-3)' }}>{rs.desc}</div>
                       </button>
                     ))}
                   </div>
@@ -574,21 +577,21 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               {/* Step 1: Identity */}
               {step===1 && <>
                 <div>
-                  <label className="text-[10px] font-mono uppercase block mb-1.5" style={{ color:'var(--text-3)' }}>Name</label>
+                  <label className="joi-label block mb-1.5">Name</label>
                   <input value={name} onChange={e=>setName(e.target.value)} placeholder="E.g.: Luna Vex"
-                    className="w-full px-4 py-3 rounded-xl text-sm border outline-none focus:border-[rgba(240,104,72,.4)] transition-colors"
-                    style={{ background:'var(--bg-3)', borderColor:'var(--border)', color:'var(--text-1)' }} />
+                    className="w-full px-4 py-3 rounded-xl text-sm border outline-none focus:border-[rgba(255,107,157,.4)] transition-colors"
+                    style={{ background:'var(--joi-bg-2)', borderColor:'rgba(255,255,255,.04)', color:'var(--joi-text-1)', backdropFilter:'blur(8px)' }} />
                 </div>
                 <div>
-                  <label className="text-[10px] font-mono uppercase block mb-2" style={{ color:'var(--text-3)' }}>Gender</label>
+                  <label className="joi-label block mb-2">Gender</label>
                   <div className="grid grid-cols-4 gap-2">
                     {genders.map((g,i) => <Chip key={g} label={g} active={selGender===i} onClick={()=>setSelGender(i)} />)}
                   </div>
                 </div>
                 <div>
-                  <label className="text-[10px] font-mono uppercase block mb-2" style={{ color:'var(--text-3)' }}>Age</label>
+                  <label className="joi-label block mb-2">Age</label>
                   <div className="flex gap-2">
-                    {ages.map((a,i) => <Chip key={a} label={a} active={selAge===i} onClick={()=>setSelAge(i)} color="var(--magenta)" />)}
+                    {ages.map((a,i) => <Chip key={a} label={a} active={selAge===i} onClick={()=>setSelAge(i)} color="var(--joi-magenta)" />)}
                   </div>
                 </div>
               </>}
@@ -596,7 +599,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               {/* Step 2: Face */}
               {step===2 && <>
                 <div>
-                  <label className="text-[10px] font-mono uppercase block mb-2" style={{ color:'var(--text-3)' }}>Face Shape</label>
+                  <label className="joi-label block mb-2">Face Shape</label>
                   <div className="grid grid-cols-3 gap-2">
                     {faceShapes.map((f,i) => <Chip key={f} label={f} active={selFace===i} onClick={()=>setSelFace(i)} />)}
                   </div>
@@ -604,18 +607,18 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
                 {/* Skin Tones — Human */}
                 <div>
-                  <label className="text-[10px] font-mono uppercase block mb-2" style={{ color:'var(--text-3)' }}>Skin Tone</label>
+                  <label className="joi-label block mb-2">Skin Tone</label>
                   <div className="flex gap-2.5 flex-wrap">
                     {skinTonesHuman.map((c,i) => (
                       <button key={c} onClick={()=>setSelSkin(i)} className="w-8 h-8 rounded-full transition-all"
-                        style={{ background:c, border: selSkin===i ? '3px solid var(--accent)' : '3px solid transparent',
-                          boxShadow: selSkin===i ? '0 0 12px rgba(240,104,72,.3)' : 'none', transform: selSkin===i ? 'scale(1.15)' : 'scale(1)' }} />
+                        style={{ background:c, border: selSkin===i ? '3px solid var(--joi-pink)' : '3px solid transparent',
+                          boxShadow: selSkin===i ? '0 0 12px rgba(255,107,157,.3)' : 'none', transform: selSkin===i ? 'scale(1.15)' : 'scale(1)' }} />
                     ))}
                   </div>
                 </div>
                 {/* Skin Tones — Fantasy */}
                 <div>
-                  <label className="text-[9px] font-mono uppercase block mb-2" style={{ color:'var(--text-3)' }}>Fantasy / Non-Human</label>
+                  <label className="text-[9px] font-mono uppercase block mb-2" style={{ color:'var(--joi-text-3)' }}>Fantasy / Non-Human</label>
                   <div className="flex gap-2 flex-wrap">
                     {skinTonesFantasy.map((s, i) => {
                       const idx = skinTonesHuman.length + i
@@ -623,9 +626,9 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                         <button key={s.c} onClick={()=>setSelSkin(idx)} className="flex flex-col items-center gap-0.5 group"
                           title={s.label}>
                           <div className="w-8 h-8 rounded-full transition-all"
-                            style={{ background:s.c, border: selSkin===idx ? '3px solid var(--accent)' : '2px solid rgba(255,255,255,.08)',
-                              boxShadow: selSkin===idx ? '0 0 12px rgba(240,104,72,.3)' : 'none', transform: selSkin===idx ? 'scale(1.15)' : 'scale(1)' }} />
-                          <span className="text-[7px] font-mono" style={{ color: selSkin===idx ? 'var(--accent)' : 'var(--text-3)' }}>{s.label}</span>
+                            style={{ background:s.c, border: selSkin===idx ? '3px solid var(--joi-pink)' : '2px solid rgba(255,255,255,.08)',
+                              boxShadow: selSkin===idx ? '0 0 12px rgba(255,107,157,.3)' : 'none', transform: selSkin===idx ? 'scale(1.15)' : 'scale(1)' }} />
+                          <span className="text-[7px] font-mono" style={{ color: selSkin===idx ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>{s.label}</span>
                         </button>
                       )
                     })}
@@ -634,29 +637,30 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                       <input type="color" value={customSkinColor} onChange={e => { setCustomSkinColor(e.target.value); setSelSkin(allSkinTones.length) }}
                         className="absolute inset-0 w-8 h-8 opacity-0 cursor-pointer" />
                       <div className="w-8 h-8 rounded-full transition-all flex items-center justify-center text-[10px]"
-                        style={{ background: selSkin >= allSkinTones.length ? customSkinColor : 'var(--bg-3)',
-                          border: selSkin >= allSkinTones.length ? '3px solid var(--accent)' : '2px dashed var(--border)',
-                          color:'var(--text-3)' }}>
+                        style={{ background: selSkin >= allSkinTones.length ? customSkinColor : 'var(--joi-bg-3)',
+                          border: selSkin >= allSkinTones.length ? '3px solid var(--joi-pink)' : '2px dashed var(--joi-border)',
+                          color:'var(--joi-text-3)' }}>
                         {selSkin < allSkinTones.length && '+'}
                       </div>
-                      <span className="text-[7px] font-mono" style={{ color:'var(--text-3)' }}>Custom</span>
+                      <span className="text-[7px] font-mono" style={{ color:'var(--joi-text-3)' }}>Custom</span>
                     </button>
                   </div>
                 </div>
 
                 {/* Skin Texture */}
                 <div>
-                  <label className="text-[10px] font-mono uppercase block mb-2" style={{ color:'var(--text-3)' }}>Skin Texture</label>
+                  <label className="joi-label block mb-2">Skin Texture</label>
                   <div className="grid grid-cols-5 gap-1.5">
                     {skinTextures.map((t, i) => (
                       <button key={t.id} onClick={() => setSelSkinTexture(i)}
-                        className="px-2 py-2 rounded-lg text-center transition-all"
+                        className="px-2 py-2 rounded-xl text-center transition-all"
                         style={{
-                          background: selSkinTexture === i ? 'rgba(208,72,176,.12)' : 'var(--bg-3)',
-                          border: `1px solid ${selSkinTexture === i ? 'rgba(208,72,176,.3)' : 'var(--border)'}`,
+                          background: selSkinTexture === i ? 'rgba(208,72,176,.12)' : 'var(--joi-bg-3)',
+                          border: `1px solid ${selSkinTexture === i ? 'rgba(208,72,176,.3)' : 'rgba(255,255,255,.04)'}`,
+                          backdropFilter: 'blur(8px)',
                         }}>
-                        <div className="text-[10px] font-medium" style={{ color: selSkinTexture === i ? 'var(--magenta)' : 'var(--text-1)' }}>{t.label}</div>
-                        <div className="text-[7px] font-mono" style={{ color:'var(--text-3)' }}>{t.desc}</div>
+                        <div className="text-[10px] font-medium" style={{ color: selSkinTexture === i ? 'var(--joi-magenta)' : 'var(--joi-text-1)' }}>{t.label}</div>
+                        <div className="text-[7px] font-mono" style={{ color:'var(--joi-text-3)' }}>{t.desc}</div>
                       </button>
                     ))}
                   </div>
@@ -664,27 +668,27 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
                 {/* Eye Colors — Natural */}
                 <div>
-                  <label className="text-[10px] font-mono uppercase block mb-2" style={{ color:'var(--text-3)' }}>Eye Color</label>
+                  <label className="joi-label block mb-2">Eye Color</label>
                   <div className="flex gap-2.5">
                     {eyeColorsNatural.map((c,i) => (
                       <button key={c} onClick={()=>setSelEyes(i)} className="w-7 h-7 rounded-full transition-all"
-                        style={{ background:c, border: selEyes===i ? '3px solid var(--magenta)' : '2px solid rgba(255,255,255,.08)',
+                        style={{ background:c, border: selEyes===i ? '3px solid var(--joi-magenta)' : '2px solid rgba(255,255,255,.08)',
                           boxShadow: selEyes===i ? `0 0 10px ${c}` : 'none', transform: selEyes===i ? 'scale(1.2)' : 'scale(1)' }} />
                     ))}
                   </div>
                 </div>
                 {/* Eye Colors — Fantasy */}
                 <div>
-                  <label className="text-[9px] font-mono uppercase block mb-2" style={{ color:'var(--text-3)' }}>Fantasy Eyes</label>
+                  <label className="text-[9px] font-mono uppercase block mb-2" style={{ color:'var(--joi-text-3)' }}>Fantasy Eyes</label>
                   <div className="flex gap-2">
                     {eyeColorsFantasy.map((e, i) => {
                       const idx = eyeColorsNatural.length + i
                       return (
                         <button key={e.c} onClick={()=>setSelEyes(idx)} className="flex flex-col items-center gap-0.5" title={e.label}>
                           <div className="w-7 h-7 rounded-full transition-all"
-                            style={{ background:e.c, border: selEyes===idx ? '3px solid var(--magenta)' : '2px solid rgba(255,255,255,.08)',
+                            style={{ background:e.c, border: selEyes===idx ? '3px solid var(--joi-magenta)' : '2px solid rgba(255,255,255,.08)',
                               boxShadow: selEyes===idx ? `0 0 10px ${e.c}` : 'none', transform: selEyes===idx ? 'scale(1.2)' : 'scale(1)' }} />
-                          <span className="text-[7px] font-mono" style={{ color: selEyes===idx ? 'var(--magenta)' : 'var(--text-3)' }}>{e.label}</span>
+                          <span className="text-[7px] font-mono" style={{ color: selEyes===idx ? 'var(--joi-magenta)' : 'var(--joi-text-3)' }}>{e.label}</span>
                         </button>
                       )
                     })}
@@ -692,20 +696,20 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-[10px] font-mono uppercase block" style={{ color:'var(--text-3)' }}>Fine Tuning</label>
+                  <label className="joi-label block">Fine Tuning</label>
                   {Object.entries({ jaw:'Jaw', cheek:'Cheekbones', nose:'Nose', lip:'Lips', eye:'Eyes', brow:'Brows' }).map(([k,l]) => (
                     <div key={k} className="flex items-center gap-3">
-                      <span className="text-[10px] w-20 shrink-0" style={{ color:'var(--text-2)' }}>{l}</span>
+                      <span className="text-[10px] w-20 shrink-0" style={{ color:'var(--joi-text-2)' }}>{l}</span>
                       <input type="range" min={0} max={100} value={(sliders as any)[k]}
                         onChange={e => setSliders({...sliders, [k]: +e.target.value})} className="flex-1 slider-t" />
-                      <span className="text-[10px] font-mono w-6 text-right" style={{ color:'var(--accent)' }}>{(sliders as any)[k]}</span>
+                      <span className="text-[10px] font-mono w-6 text-right" style={{ color:'var(--joi-pink)' }}>{(sliders as any)[k]}</span>
                     </div>
                   ))}
                 </div>
 
                 {/* Hair Style */}
                 <div>
-                  <label className="text-[10px] font-mono uppercase block mb-2" style={{ color:'var(--text-3)' }}>Hair Style</label>
+                  <label className="joi-label block mb-2">Hair Style</label>
                   <div className="grid grid-cols-3 gap-2">
                     {hairStyles.map((h,i) => <Chip key={h} label={h} active={selHairS===i} onClick={()=>setSelHairS(i)} />)}
                   </div>
@@ -713,27 +717,27 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
                 {/* Hair Colors — Natural */}
                 <div>
-                  <label className="text-[10px] font-mono uppercase block mb-2" style={{ color:'var(--text-3)' }}>Hair Color</label>
+                  <label className="joi-label block mb-2">Hair Color</label>
                   <div className="flex gap-2.5">
                     {hairColorsNatural.map((c,i) => (
                       <button key={c+i} onClick={()=>setSelHairC(i)} className="w-7 h-7 rounded-full transition-all"
-                        style={{ background:c, border: selHairC===i ? '3px solid var(--accent)' : '2px solid rgba(255,255,255,.06)',
+                        style={{ background:c, border: selHairC===i ? '3px solid var(--joi-pink)' : '2px solid rgba(255,255,255,.06)',
                           transform: selHairC===i ? 'scale(1.2)' : 'scale(1)' }} />
                     ))}
                   </div>
                 </div>
                 {/* Hair Colors — Fantasy */}
                 <div>
-                  <label className="text-[9px] font-mono uppercase block mb-2" style={{ color:'var(--text-3)' }}>Unnatural Hair</label>
+                  <label className="text-[9px] font-mono uppercase block mb-2" style={{ color:'var(--joi-text-3)' }}>Unnatural Hair</label>
                   <div className="flex gap-2">
                     {hairColorsFantasy.map((h, i) => {
                       const idx = hairColorsNatural.length + i
                       return (
                         <button key={h.c} onClick={()=>setSelHairC(idx)} className="flex flex-col items-center gap-0.5" title={h.label}>
                           <div className="w-7 h-7 rounded-full transition-all"
-                            style={{ background:h.c, border: selHairC===idx ? '3px solid var(--accent)' : '2px solid rgba(255,255,255,.06)',
+                            style={{ background:h.c, border: selHairC===idx ? '3px solid var(--joi-pink)' : '2px solid rgba(255,255,255,.06)',
                               transform: selHairC===idx ? 'scale(1.2)' : 'scale(1)' }} />
-                          <span className="text-[7px] font-mono" style={{ color: selHairC===idx ? 'var(--accent)' : 'var(--text-3)' }}>{h.label}</span>
+                          <span className="text-[7px] font-mono" style={{ color: selHairC===idx ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>{h.label}</span>
                         </button>
                       )
                     })}
@@ -744,13 +748,13 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               {/* Step 3: Body */}
               {step===3 && <>
                 <div>
-                  <label className="text-[10px] font-mono uppercase block mb-1" style={{ color:'var(--text-3)' }}>Body Type <span style={{ color:'var(--text-3)', fontWeight:400 }}>(pick up to 3, combine them)</span></label>
+                  <label className="joi-label block mb-1">Body Type <span style={{ color:'var(--joi-text-3)', fontWeight:400 }}>(pick up to 3, combine them)</span></label>
                   <div className="grid grid-cols-4 gap-2 mt-2">
-                    {bodyTypes.map((b,i) => <Chip key={b} label={b} active={selBody.includes(i)} onClick={()=>toggleBody(i)} color="var(--magenta)" />)}
+                    {bodyTypes.map((b,i) => <Chip key={b} label={b} active={selBody.includes(i)} onClick={()=>toggleBody(i)} color="var(--joi-magenta)" />)}
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-mono uppercase block" style={{ color:'var(--text-3)' }}>Proportions</label>
+                  <label className="joi-label block">Proportions</label>
                   {([
                     { key:'height', label:'Height', lo:'Short / Compact', hi:'Tall / Towering' },
                     { key:'shoulders', label:'Shoulders', lo:'Narrow / Slim', hi:'Broad / Wide' },
@@ -760,9 +764,9 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                   ] as const).map(p => (
                     <div key={p.key}>
                       <div className="flex justify-between mb-0.5">
-                        <span className="text-[8px] font-mono" style={{ color:'var(--text-3)' }}>{p.lo}</span>
-                        <span className="text-[10px] font-medium" style={{ color:'var(--text-2)' }}>{p.label}</span>
-                        <span className="text-[8px] font-mono" style={{ color:'var(--text-3)' }}>{p.hi}</span>
+                        <span className="text-[8px] font-mono" style={{ color:'var(--joi-text-3)' }}>{p.lo}</span>
+                        <span className="text-[10px] font-medium" style={{ color:'var(--joi-text-2)' }}>{p.label}</span>
+                        <span className="text-[8px] font-mono" style={{ color:'var(--joi-text-3)' }}>{p.hi}</span>
                       </div>
                       <input type="range" min={0} max={100} value={(bodySliders as any)[p.key]}
                         onChange={e => setBodySliders({...bodySliders, [p.key]: +e.target.value})} className="w-full slider-t" />
@@ -774,78 +778,78 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               {/* Step 4: Personality */}
               {step===4 && <>
                 <div>
-                  <label className="text-[10px] font-mono uppercase block mb-1" style={{ color:'var(--text-3)' }}>Personality Traits (max 5)</label>
+                  <label className="joi-label block mb-1">Personality Traits (max 5)</label>
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {personalityTraits.map((t,i) => (
                       <button key={t} onClick={()=>toggleArr(selTraits,setSelTraits,i,5)}
                         className="px-3 py-1.5 rounded-full text-[11px] transition-all"
                         style={{
-                          background: selTraits.includes(i) ? 'rgba(240,104,72,.12)' : 'var(--bg-3)',
-                          border: `1px solid ${selTraits.includes(i) ? 'rgba(240,104,72,.3)' : 'var(--border)'}`,
-                          color: selTraits.includes(i) ? 'var(--accent)' : 'var(--text-2)',
+                          background: selTraits.includes(i) ? 'rgba(255,107,157,.12)' : 'var(--joi-bg-3)',
+                          border: `1px solid ${selTraits.includes(i) ? 'rgba(255,107,157,.3)' : 'rgba(255,255,255,.04)'}`,
+                          color: selTraits.includes(i) ? 'var(--joi-pink)' : 'var(--joi-text-2)',
                         }}>{t}</button>
                     ))}
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-mono uppercase block" style={{ color:'var(--text-3)' }}>Voice and Tone</label>
+                  <label className="joi-label block">Voice and Tone</label>
                   {[{l:'Formality',a:'Casual',b:'Formal'},{l:'Humor',a:'Serious',b:'Fun'},{l:'Energy',a:'Calm',b:'Intense'},{l:'Confidence',a:'Humble',b:'Bold'}].map(v=>(
                     <div key={v.l}>
                       <div className="flex justify-between mb-1">
-                        <span className="text-[9px]" style={{ color:'var(--text-3)' }}>{v.a}</span>
-                        <span className="text-[10px]" style={{ color:'var(--text-2)' }}>{v.l}</span>
-                        <span className="text-[9px]" style={{ color:'var(--text-3)' }}>{v.b}</span>
+                        <span className="text-[9px]" style={{ color:'var(--joi-text-3)' }}>{v.a}</span>
+                        <span className="text-[10px]" style={{ color:'var(--joi-text-2)' }}>{v.l}</span>
+                        <span className="text-[9px]" style={{ color:'var(--joi-text-3)' }}>{v.b}</span>
                       </div>
                       <input type="range" min={0} max={100} defaultValue={50} className="slider-t" />
                     </div>
                   ))}
                 </div>
                 <div>
-                  <label className="text-[10px] font-mono uppercase block mb-1.5" style={{ color:'var(--text-3)' }}>Backstory</label>
+                  <label className="joi-label block mb-1.5">Backstory</label>
                   <textarea rows={4} placeholder="Character backstory..."
                     className="w-full px-3 py-2.5 rounded-xl text-xs border outline-none resize-none transition-colors"
-                    style={{ background:'var(--bg-3)', borderColor:'var(--border)', color:'var(--text-1)' }} />
+                    style={{ background:'var(--joi-bg-2)', borderColor:'rgba(255,255,255,.04)', color:'var(--joi-text-1)', backdropFilter:'blur(8px)' }} />
                 </div>
               </>}
 
               {/* Step 5: Fashion */}
               {step===5 && <>
                 <div>
-                  <label className="text-[10px] font-mono uppercase block mb-1" style={{ color:'var(--text-3)' }}>Fashion Styles (max 4)</label>
+                  <label className="joi-label block mb-1">Fashion Styles (max 4)</label>
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {fashionStyles.map((f,i) => (
                       <button key={f} onClick={()=>toggleArr(selFashion,setSelFashion,i,4)}
                         className="px-3 py-1.5 rounded-full text-[11px] transition-all"
                         style={{
-                          background: selFashion.includes(i) ? 'rgba(208,72,176,.12)' : 'var(--bg-3)',
-                          border: `1px solid ${selFashion.includes(i) ? 'rgba(208,72,176,.3)' : 'var(--border)'}`,
-                          color: selFashion.includes(i) ? 'var(--magenta)' : 'var(--text-2)',
+                          background: selFashion.includes(i) ? 'rgba(208,72,176,.12)' : 'var(--joi-bg-3)',
+                          border: `1px solid ${selFashion.includes(i) ? 'rgba(208,72,176,.3)' : 'rgba(255,255,255,.04)'}`,
+                          color: selFashion.includes(i) ? 'var(--joi-magenta)' : 'var(--joi-text-2)',
                         }}>{f}</button>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <label className="text-[10px] font-mono uppercase block mb-2" style={{ color:'var(--text-3)' }}>Signature Accessories</label>
+                  <label className="joi-label block mb-2">Signature Accessories</label>
                   <div className="grid grid-cols-4 gap-2">
                     {accessories.map(a=>(
                       <button key={a} onClick={() => toggleAccessory(a)}
-                        className="btn-ghost px-2 py-2 text-[10px] transition-all"
+                        className="joi-btn-ghost px-2 py-2 text-[10px] transition-all"
                         style={{
-                          background: selAccessories.includes(a) ? 'rgba(72,88,224,.12)' : undefined,
-                          borderColor: selAccessories.includes(a) ? 'rgba(72,88,224,.3)' : undefined,
-                          color: selAccessories.includes(a) ? 'var(--blue)' : undefined,
+                          background: selAccessories.includes(a) ? 'rgba(104,120,240,.12)' : undefined,
+                          borderColor: selAccessories.includes(a) ? 'rgba(104,120,240,.3)' : undefined,
+                          color: selAccessories.includes(a) ? 'var(--joi-blue)' : undefined,
                         }}>{a}</button>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <label className="text-[10px] font-mono uppercase block mb-2" style={{ color:'var(--text-3)' }}>Color Palette</label>
+                  <label className="joi-label block mb-2">Color Palette</label>
                   <div className="flex gap-2">
                     {['#E8725C','#C9A55C','#B86068','#1A191F','#F0DCC0'].map(c => (
-                      <div key={c} className="w-11 h-11 rounded-xl" style={{ background:c, border:'1px solid var(--border)' }} />
+                      <div key={c} className="w-11 h-11 rounded-xl" style={{ background:c, border:'1px solid rgba(255,255,255,.04)' }} />
                     ))}
                     <button className="w-11 h-11 rounded-xl flex items-center justify-center text-lg"
-                      style={{ border:'1px dashed var(--border)', color:'var(--text-3)' }}>+</button>
+                      style={{ border:'1px dashed var(--joi-border)', color:'var(--joi-text-3)' }}>+</button>
                   </div>
                 </div>
               </>}
@@ -853,9 +857,9 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
             {/* Nav */}
             <div className="flex justify-between mt-5">
-              <button onClick={()=>setStep(Math.max(0,step-1))} className="btn-ghost px-5 py-2.5 text-sm"
+              <button onClick={()=>setStep(Math.max(0,step-1))} className="joi-btn-ghost px-5 py-2.5 text-sm"
                 style={{ opacity: step===0?.3:1 }} disabled={step===0}>{'\u2190'} Back</button>
-              <button onClick={() => step < 5 ? setStep(step + 1) : handleGenerate()} className="btn-primary px-6 py-2.5 text-sm"
+              <button onClick={() => step < 5 ? setStep(step + 1) : handleGenerate()} className={`joi-btn-solid px-6 py-2.5 text-sm${!generating ? ' joi-breathe' : ''}`}
                 disabled={generating}>
                 {generating ? '\u21BB Generating...' : step === 5 ? '\u2726 Generate Character' : 'Next \u2192'}
               </button>
@@ -864,22 +868,22 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
           {/* Right: Live Preview */}
           <div className="w-[320px] shrink-0">
-            <div className="card p-5 sticky top-8">
+            <div className="p-5 sticky top-8 rounded-xl joi-glass">
               <div className="flex items-center justify-between mb-3">
-                <div className="text-[10px] font-mono uppercase tracking-wider" style={{ color:'var(--text-3)' }}>Live Preview</div>
+                <div className="joi-label">Live Preview</div>
                 {/* Render style badge */}
-                <span className="text-[8px] font-mono font-bold px-2 py-0.5 rounded-md"
-                  style={{ background:'linear-gradient(135deg, rgba(240,104,72,.15), rgba(208,72,176,.15))', color:'var(--accent)' }}>
+                <span className="text-[8px] font-mono font-bold px-2 py-0.5 rounded-lg"
+                  style={{ background:'linear-gradient(135deg, rgba(255,107,157,.15), rgba(208,72,176,.15))', color:'var(--joi-pink)' }}>
                   {renderStyles[selRenderStyle]?.label.toUpperCase()}
                 </span>
               </div>
-              <div className="aspect-[3/4] rounded-2xl overflow-hidden relative"
-                style={{ background: generatedImage ? 'var(--bg-2)' : previewBg, border:'1px solid var(--border)' }}>
+              <div className="aspect-[3/4] rounded-xl overflow-hidden relative"
+                style={{ background: generatedImage ? 'var(--joi-bg-2)' : previewBg, border:'1px solid rgba(255,255,255,.04)' }}>
                 {generatedImage ? (
                   <div className="relative w-full h-full group cursor-pointer" onClick={() => setShowLightbox(true)}>
                     <img src={generatedImage} className="w-full h-full object-cover" alt={name} />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center">
-                      <span className="text-white text-sm opacity-0 group-hover:opacity-100 transition-opacity font-medium backdrop-blur-sm px-3 py-1.5 rounded-lg"
+                      <span className="text-white text-sm opacity-0 group-hover:opacity-100 transition-opacity font-medium backdrop-blur-sm px-3 py-1.5 rounded-xl"
                         style={{ background:'rgba(0,0,0,.4)' }}>Click to enlarge</span>
                     </div>
                   </div>
@@ -887,7 +891,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     {/* Texture overlay pattern */}
                     {textureOverlay && (
-                      <div className="absolute inset-0 rounded-2xl opacity-10 pointer-events-none" style={{
+                      <div className="absolute inset-0 rounded-xl opacity-10 pointer-events-none" style={{
                         background: textureOverlay === 'scales' ? 'repeating-conic-gradient(rgba(255,255,255,.15) 0% 25%, transparent 0% 50%) 0 0/12px 12px'
                           : textureOverlay === 'fur' ? 'repeating-linear-gradient(45deg, rgba(255,255,255,.08) 0px, transparent 2px, transparent 4px)'
                           : textureOverlay === 'crystal' ? 'repeating-linear-gradient(60deg, rgba(200,220,255,.1) 0px, transparent 1px, transparent 8px)'
@@ -943,7 +947,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                     </div>
                     {/* Skin texture label */}
                     {selSkinTexture > 0 && (
-                      <span className="mt-1.5 text-[7px] px-2 py-0.5 rounded-full font-mono" style={{ background:'rgba(208,72,176,.1)', color:'var(--magenta)' }}>
+                      <span className="mt-1.5 text-[7px] px-2 py-0.5 rounded-full font-mono" style={{ background:'rgba(208,72,176,.1)', color:'var(--joi-magenta)' }}>
                         {skinTextures[selSkinTexture].label} skin
                       </span>
                     )}
@@ -951,7 +955,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                     {selAccessories.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1.5 justify-center px-2">
                         {selAccessories.map(a => (
-                          <span key={a} className="text-[7px] px-1.5 py-0.5 rounded" style={{ background:'rgba(72,88,224,.1)', color:'var(--blue)' }}>{a}</span>
+                          <span key={a} className="text-[7px] px-1.5 py-0.5 rounded" style={{ background:'rgba(104,120,240,.1)', color:'var(--joi-blue)' }}>{a}</span>
                         ))}
                       </div>
                     )}
@@ -959,7 +963,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                 )}
                 <div className="absolute bottom-0 left-0 right-0 p-3" style={{ background:'linear-gradient(transparent, rgba(0,0,0,.7))' }}>
                   <div className="text-sm font-bold text-white">{name || 'Unnamed'}</div>
-                  <div className="text-[9px] font-mono" style={{ color:'var(--accent)' }}>
+                  <div className="text-[9px] font-mono" style={{ color:'var(--joi-pink)' }}>
                     {genders[selGender]} · {ages[selAge]} · {selBody.map(i => bodyTypes[i]).join('+')}
                   </div>
                 </div>
@@ -968,20 +972,20 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               {/* Post-generation buttons */}
               {generatedImage && pendingCharacter ? (
                 <div className="mt-3 space-y-2">
-                  <button onClick={handleSaveCharacter} className="btn-primary w-full py-2.5 text-sm">Save Character</button>
+                  <button onClick={handleSaveCharacter} className="joi-btn-solid w-full py-2.5 text-sm">Save Character</button>
                   <div className="flex gap-2">
-                    <button onClick={handleGenerate} disabled={generating} className="btn-ghost flex-1 py-2 text-[11px]"
-                      style={{ color:'var(--accent)' }}>
+                    <button onClick={handleGenerate} disabled={generating} className="joi-btn-ghost flex-1 py-2 text-[11px]"
+                      style={{ color:'var(--joi-pink)' }}>
                       {generating ? '\u21BB ...' : '\u27F3 Regenerate'}
                     </button>
-                    <button onClick={handleDiscardCharacter} className="btn-ghost flex-1 py-2 text-[11px]"
-                      style={{ color:'var(--rose)' }}>Discard</button>
+                    <button onClick={handleDiscardCharacter} className="joi-btn-ghost flex-1 py-2 text-[11px]"
+                      style={{ color:'var(--joi-coral)' }}>Discard</button>
                   </div>
                 </div>
               ) : (
                 <div className="mt-3 flex flex-wrap gap-1 justify-center">
-                  {selTraits.map(i => <span key={i} className="badge" style={{ background:'rgba(240,104,72,.1)', color:'var(--accent)' }}>{personalityTraits[i]}</span>)}
-                  {selFashion.map(i => <span key={i} className="badge" style={{ background:'rgba(208,72,176,.1)', color:'var(--magenta)' }}>{fashionStyles[i]}</span>)}
+                  {selTraits.map(i => <span key={i} className="badge" style={{ background:'rgba(255,107,157,.1)', color:'var(--joi-pink)' }}>{personalityTraits[i]}</span>)}
+                  {selFashion.map(i => <span key={i} className="badge" style={{ background:'rgba(208,72,176,.1)', color:'var(--joi-magenta)' }}>{fashionStyles[i]}</span>)}
                 </div>
               )}
             </div>
@@ -995,37 +999,37 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
         <>
           <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setShowEngineModal(false)} />
           <div
-            className="fixed z-50 w-[340px] max-h-[90vh] rounded-2xl"
+            className="fixed z-50 w-[340px] max-h-[90vh] rounded-xl"
             style={{
               display: 'flex', flexDirection: 'column',
               top: '50%', left: 'calc(50% + 110px)', transform: 'translate(-50%, -50%)',
-              background: 'rgba(14,12,20,.95)',
+              background: 'var(--joi-bg-glass)',
               backdropFilter: 'blur(24px)',
-              border: '1px solid var(--border)',
+              border: '1px solid rgba(255,255,255,.04)',
               boxShadow: '0 20px 60px rgba(0,0,0,.6)',
               overflow: 'hidden',
             }}
           >
             {/* Scrollable engine list */}
-            <div className="overflow-y-auto p-4 pb-2 space-y-1 flex-1 min-h-0">
-              <div className="text-[9px] font-mono uppercase tracking-wider mb-2 px-1" style={{ color: 'var(--text-3)' }}>Generation Engine</div>
+            <div className="overflow-y-auto p-4 pb-2 space-y-1 flex-1 min-h-0 joi-scroll">
+              <div className="joi-label mb-2 px-1">Generation Engine</div>
 
               <button
                 onClick={() => { setSelectedEngine('auto'); setShowEngineModal(false) }}
                 className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-left transition-all"
                 style={{
-                  background: selectedEngine === 'auto' ? 'rgba(240,104,72,.08)' : 'transparent',
-                  border: `1px solid ${selectedEngine === 'auto' ? 'rgba(240,104,72,.2)' : 'transparent'}`,
+                  background: selectedEngine === 'auto' ? 'rgba(255,107,157,.08)' : 'transparent',
+                  border: `1px solid ${selectedEngine === 'auto' ? 'rgba(255,107,157,.2)' : 'transparent'}`,
                 }}
               >
                 <span className="text-base">✨</span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[11px] font-medium" style={{ color: selectedEngine === 'auto' ? 'var(--accent)' : 'var(--text-1)' }}>Auto</div>
-                  <div className="text-[9px]" style={{ color: 'var(--text-3)' }}>Best engine automatically</div>
+                  <div className="text-[11px] font-medium" style={{ color: selectedEngine === 'auto' ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>Auto</div>
+                  <div className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>Best engine automatically</div>
                 </div>
               </button>
 
-              <div className="h-px my-1" style={{ background: 'var(--border)' }} />
+              <div className="h-px my-1 joi-divider" />
 
               {ENGINE_METADATA.map(engine => (
                 <button
@@ -1033,26 +1037,26 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                   onClick={() => { setSelectedEngine(engine.key); setShowEngineModal(false) }}
                   className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-left transition-all"
                   style={{
-                    background: selectedEngine === engine.key ? 'rgba(240,104,72,.08)' : 'transparent',
-                    border: `1px solid ${selectedEngine === engine.key ? 'rgba(240,104,72,.2)' : 'transparent'}`,
+                    background: selectedEngine === engine.key ? 'rgba(255,107,157,.08)' : 'transparent',
+                    border: `1px solid ${selectedEngine === engine.key ? 'rgba(255,107,157,.2)' : 'transparent'}`,
                   }}
                 >
-                  <span className="text-sm" style={{ color: 'var(--text-3)' }}>⚙</span>
+                  <span className="text-sm" style={{ color: 'var(--joi-text-3)' }}>⚙</span>
                   <div className="flex-1 min-w-0">
-                    <div className="text-[11px] font-medium" style={{ color: selectedEngine === engine.key ? 'var(--accent)' : 'var(--text-1)' }}>{engine.userFriendlyName}</div>
-                    <div className="text-[8px]" style={{ color: 'var(--text-3)' }}>{engine.description}</div>
+                    <div className="text-[11px] font-medium" style={{ color: selectedEngine === engine.key ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{engine.userFriendlyName}</div>
+                    <div className="text-[8px]" style={{ color: 'var(--joi-text-3)' }}>{engine.description}</div>
                   </div>
                   <div className="shrink-0 text-right">
-                    <div className="text-[9px] font-mono" style={{ color: 'var(--accent)' }}>{engine.creditCost}cr</div>
-                    <div className="text-[8px] font-mono" style={{ color: 'var(--text-3)' }}>{engine.estimatedTime}</div>
+                    <div className="text-[9px] font-mono" style={{ color: 'var(--joi-pink)' }}>{engine.creditCost}cr</div>
+                    <div className="text-[8px] font-mono" style={{ color: 'var(--joi-text-3)' }}>{engine.estimatedTime}</div>
                   </div>
                 </button>
               ))}
             </div>
 
             {/* Sticky resolution footer */}
-            <div className="shrink-0 px-4 pb-4 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
-              <div className="text-[9px] font-mono uppercase tracking-wider mb-2 px-1" style={{ color: 'var(--text-3)' }}>Resolution</div>
+            <div className="shrink-0 px-4 pb-4 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,.04)' }}>
+              <div className="joi-label mb-2 px-1">Resolution</div>
               <div className="flex gap-2">
                 {[
                   { id: '1k', label: '1K', desc: '1024px' },
@@ -1061,13 +1065,14 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                 ].map(r => (
                   <button key={r.id}
                     onClick={() => setSelectedResolution(r.id)}
-                    className="flex-1 px-3 py-2 rounded-lg text-center transition-all"
+                    className="flex-1 px-3 py-2 rounded-xl text-center transition-all"
                     style={{
-                      background: selectedResolution === r.id ? 'rgba(240,104,72,.08)' : 'var(--bg-3)',
-                      border: `1px solid ${selectedResolution === r.id ? 'rgba(240,104,72,.25)' : 'var(--border)'}`,
+                      background: selectedResolution === r.id ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)',
+                      border: `1px solid ${selectedResolution === r.id ? 'rgba(255,107,157,.25)' : 'rgba(255,255,255,.04)'}`,
+                      backdropFilter: 'blur(8px)',
                     }}>
-                    <div className="text-[11px] font-mono font-bold" style={{ color: selectedResolution === r.id ? 'var(--accent)' : 'var(--text-1)' }}>{r.label}</div>
-                    <div className="text-[8px] font-mono" style={{ color: 'var(--text-3)' }}>{r.desc}</div>
+                    <div className="text-[11px] font-mono font-bold" style={{ color: selectedResolution === r.id ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{r.label}</div>
+                    <div className="text-[8px] font-mono" style={{ color: 'var(--joi-text-3)' }}>{r.desc}</div>
                   </button>
                 ))}
               </div>
@@ -1086,8 +1091,8 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
             {'\u2715'}
           </button>
           <img src={generatedImage} alt={name}
-            className="max-w-[90vw] max-h-[90vh] object-contain rounded-2xl"
-            style={{ boxShadow:'0 0 60px rgba(240,104,72,.15)' }}
+            className="max-w-[90vw] max-h-[90vh] object-contain rounded-xl"
+            style={{ boxShadow:'0 0 60px rgba(255,107,157,.15)' }}
             onClick={e => e.stopPropagation()} />
         </div>
       )}

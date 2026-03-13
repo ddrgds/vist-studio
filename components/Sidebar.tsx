@@ -1,30 +1,36 @@
 import { type Page } from '../App'
 import { useAuth } from '../contexts/AuthContext'
 import { useProfile } from '../contexts/ProfileContext'
+import {
+  LayoutDashboard, Clapperboard, Upload, Camera, Wand2,
+  Globe, Images, Users, CalendarDays, BarChart3,
+  CreditCard, PanelLeftClose, PanelLeftOpen,
+} from 'lucide-react'
+import { type LucideIcon } from 'lucide-react'
 
-const navSections: { title?: string; items: { id: Page; label: string; icon: string; sub: string }[] }[] = [
+const navSections: { title?: string; items: { id: Page; label: string; Icon: LucideIcon; sub: string }[] }[] = [
   {
     items: [
-      { id: 'dashboard', label: 'Dashboard', icon: '\u2B21', sub: 'Overview' },
+      { id: 'dashboard', label: 'Dashboard', Icon: LayoutDashboard, sub: 'Overview' },
     ]
   },
   {
     title: 'CREATE',
     items: [
-      { id: 'director', label: 'Director', icon: '\u2726', sub: 'Hero Shot' },
-      { id: 'upload', label: 'Upload Character', icon: '\u2295', sub: 'Create / Import' },
-      { id: 'session', label: 'Photo Session', icon: '\u25CE', sub: 'Photo Shoot' },
-      { id: 'editor', label: 'AI Editor', icon: '\u2736', sub: 'Relight \u00b7 360 \u00b7 Swap' },
-      { id: 'universe', label: 'Universe', icon: '\u2727', sub: 'World Building' },
+      { id: 'director', label: 'Director', Icon: Clapperboard, sub: 'Hero Shot' },
+      { id: 'upload', label: 'Upload Character', Icon: Upload, sub: 'Create / Import' },
+      { id: 'session', label: 'Photo Session', Icon: Camera, sub: 'Photo Shoot' },
+      { id: 'editor', label: 'AI Editor', Icon: Wand2, sub: 'Relight \u00b7 360 \u00b7 Swap' },
+      { id: 'universe', label: 'Universe', Icon: Globe, sub: 'World Building' },
     ]
   },
   {
     title: 'MANAGE',
     items: [
-      { id: 'gallery', label: 'Gallery', icon: '\u25A6', sub: 'Creations' },
-      { id: 'characters', label: 'Characters', icon: '\u25C8', sub: 'Collection' },
-      { id: 'content', label: 'Content', icon: '\u25A3', sub: 'Calendar' },
-      { id: 'analytics', label: 'Analytics', icon: '\u25C7', sub: 'Metrics' },
+      { id: 'gallery', label: 'Gallery', Icon: Images, sub: 'Creations' },
+      { id: 'characters', label: 'Characters', Icon: Users, sub: 'Collection' },
+      { id: 'content', label: 'Content', Icon: CalendarDays, sub: 'Calendar' },
+      { id: 'analytics', label: 'Analytics', Icon: BarChart3, sub: 'Metrics' },
     ]
   },
 ]
@@ -40,45 +46,59 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
   const { user } = useAuth()
   const { profile } = useProfile()
 
-  const displayName = profile?.display_name || user?.email?.split('@')[0] || 'User'
+  const displayName = profile?.displayName || user?.email?.split('@')[0] || 'User'
   const initial = displayName[0]?.toUpperCase() || 'U'
-  const planLabel = profile?.plan === 'pro' ? 'Pro Plan' : profile?.plan === 'premium' ? 'Premium' : 'Free Plan'
+  const planLabel = profile?.subscriptionPlan === 'pro' ? 'Pro Plan' : profile?.subscriptionPlan === 'premium' ? 'Premium' : 'Free Plan'
 
   return (
     <aside
       className="h-screen flex-col shrink-0 transition-all duration-300 hidden md:flex"
       style={{
         width: collapsed ? 68 : 230,
-        background: 'var(--bg-1)',
-        borderRight: '1px solid var(--border)',
+        background: 'var(--joi-bg-1)',
+        borderRight: '1px solid rgba(255,255,255,.03)',
       }}
     >
       {/* Logo */}
-      <div className="flex items-center gap-3 px-4 h-16 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
-        <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold text-white shrink-0 plasma-glow"
-          style={{ background: 'linear-gradient(135deg, var(--accent), var(--magenta), var(--blue))' }}
-        >
-          V
-        </div>
+      <div className="flex items-center gap-3 px-4 h-16 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,.03)' }}>
+        <div className="joi-status" style={{ flexShrink: 0 }} />
         {!collapsed && (
           <div>
-            <div className="text-sm font-bold tracking-wide" style={{ color: 'var(--text-1)' }}>VERTEX</div>
-            <div className="text-[9px] font-mono tracking-[.25em] uppercase" style={{ color: 'var(--text-3)' }}>ai studio</div>
+            <div className="joi-glow--subtle" style={{
+              fontFamily: 'var(--font-heading)',
+              fontWeight: 700,
+              fontSize: '14px',
+              letterSpacing: '0.08em',
+              color: 'var(--joi-pink)',
+            }}>VIST</div>
+            <div style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '0.55rem',
+              letterSpacing: '0.25em',
+              textTransform: 'uppercase' as const,
+              color: 'var(--joi-text-3)',
+            }}>STUDIO</div>
           </div>
         )}
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-2 px-2 overflow-y-auto">
+      <nav className="flex-1 py-2 px-2 overflow-y-auto joi-scroll">
         {navSections.map((section, si) => (
           <div key={si}>
             {section.title && (
               <div className="px-3 pt-3 pb-1">
                 {!collapsed ? (
-                  <span className="text-[9px] font-mono uppercase tracking-[.2em] font-semibold" style={{ color: 'var(--text-3)' }}>{section.title}</span>
+                  <span style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: '0.6rem',
+                    textTransform: 'uppercase' as const,
+                    letterSpacing: '0.2em',
+                    fontWeight: 600,
+                    color: 'var(--joi-text-3)',
+                  }}>{section.title}</span>
                 ) : (
-                  <div className="w-5 mx-auto border-t" style={{ borderColor: 'var(--border)' }} />
+                  <div className="w-5 h-px mx-auto" style={{ background: 'rgba(255,107,157,.15)' }} />
                 )}
               </div>
             )}
@@ -89,26 +109,30 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
                   <button
                     key={n.id}
                     onClick={() => onNav(n.id)}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all group relative"
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all group relative"
                     style={{
-                      background: active ? 'rgba(240,104,72,0.08)' : 'transparent',
-                      border: active ? '1px solid rgba(240,104,72,0.15)' : '1px solid transparent',
+                      background: active ? 'rgba(255,107,157,0.06)' : 'transparent',
+                      border: active ? '1px solid rgba(255,107,157,0.10)' : '1px solid transparent',
                     }}
                   >
                     {active && (
-                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full" style={{ background: 'var(--accent)' }} />
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2" style={{
+                        width: '2px',
+                        height: '16px',
+                        background: 'var(--joi-pink)',
+                        borderRadius: '1px',
+                        boxShadow: '0 0 8px rgba(255,107,157,0.4), 0 0 16px rgba(255,107,157,0.15)',
+                      }} />
                     )}
-                    <span
-                      className="text-[14px] shrink-0 transition-transform group-hover:scale-110"
-                      style={{ color: active ? 'var(--accent)' : 'var(--text-3)' }}
-                    >
-                      {n.icon}
+                    <span className="shrink-0 transition-transform group-hover:scale-110 flex items-center justify-center"
+                      style={{ color: active ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>
+                      <n.Icon size={16} />
                     </span>
                     {!collapsed && (
                       <div className="text-left min-w-0">
                         <div className="text-[12px] font-medium leading-tight truncate"
-                          style={{ color: active ? 'var(--text-1)' : 'var(--text-2)' }}>{n.label}</div>
-                        <div className="text-[9px] truncate" style={{ color: 'var(--text-3)' }}>{n.sub}</div>
+                          style={{ color: active ? 'var(--joi-text-1)' : 'var(--joi-text-2)' }}>{n.label}</div>
+                        <div className="text-[9px] truncate" style={{ color: 'var(--joi-text-3)' }}>{n.sub}</div>
                       </div>
                     )}
                   </button>
@@ -120,29 +144,35 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
       </nav>
 
       {/* Bottom */}
-      <div className="px-3 py-2" style={{ borderTop: '1px solid var(--border)' }}>
+      <div className="px-3 py-2" style={{ borderTop: '1px solid rgba(255,255,255,.03)' }}>
         <div className="flex gap-1">
           <button onClick={() => onNav('pricing')} className="flex-1 py-1.5 rounded-lg text-[11px] transition-colors"
-            style={{ color: 'var(--text-3)', background: 'var(--bg-2)' }}>
-            {collapsed ? '$' : 'Pricing'}
+            style={{ color: 'var(--joi-text-3)', background: 'var(--joi-bg-2)' }}>
+            {collapsed ? <CreditCard size={14} className="mx-auto" /> : 'Pricing'}
           </button>
-          <button onClick={onToggle} className="flex-1 py-1.5 rounded-lg text-[11px] transition-colors"
-            style={{ color: 'var(--text-3)', background: 'var(--bg-2)' }}>
-            {collapsed ? '\u203A' : '\u2039 Collapse'}
+          <button onClick={onToggle} className="flex-1 py-1.5 rounded-lg text-[11px] transition-colors flex items-center justify-center gap-1"
+            style={{ color: 'var(--joi-text-3)', background: 'var(--joi-bg-2)' }}>
+            {collapsed ? <PanelLeftOpen size={14} /> : <><PanelLeftClose size={14} /> Collapse</>}
           </button>
         </div>
       </div>
       <button
         onClick={() => onNav('profile')}
         className="px-3 py-3 flex items-center gap-2 transition-colors hover:bg-white/[0.02]"
-        style={{ borderTop: '1px solid var(--border)' }}
+        style={{ borderTop: '1px solid rgba(255,255,255,.03)' }}
       >
-        <div className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold text-white"
-          style={{ background: 'linear-gradient(135deg, var(--accent), var(--magenta))' }}>{initial}</div>
+        <div className="shrink-0 flex items-center justify-center text-[11px] font-bold text-white"
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: '8px',
+            background: 'linear-gradient(135deg, var(--joi-pink), var(--joi-magenta))',
+            boxShadow: '0 2px 8px rgba(255,107,157,.15)',
+          }}>{initial}</div>
         {!collapsed && (
           <div className="min-w-0 text-left">
-            <div className="text-xs font-medium truncate" style={{ color: 'var(--text-1)' }}>{displayName}</div>
-            <div className="text-[10px]" style={{ color: 'var(--text-3)' }}>{planLabel}</div>
+            <div className="text-xs font-medium truncate" style={{ color: 'var(--joi-text-1)' }}>{displayName}</div>
+            <div className="text-[10px]" style={{ color: 'var(--joi-text-3)' }}>{planLabel}</div>
           </div>
         )}
       </button>

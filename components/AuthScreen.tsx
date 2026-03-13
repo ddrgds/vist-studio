@@ -92,7 +92,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
           onClick={onClose}
           style={{
             position: 'absolute', top: 16, right: 16,
-            background: 'none', border: 'none', color: 'var(--text-3)',
+            background: 'none', border: 'none', color: 'var(--joi-text-3)',
             cursor: 'pointer', fontSize: 20,
           }}
         >&#x2715;</button>
@@ -100,11 +100,11 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
 
       {/* Logo / title */}
       <div className="mb-6 text-center">
-        <div className="w-12 h-12 rounded-[10px] flex items-center justify-center mx-auto mb-4" style={{ background: 'linear-gradient(135deg, var(--accent), var(--magenta), var(--blue))' }}>
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ background: 'linear-gradient(135deg, var(--joi-pink), var(--joi-magenta))', boxShadow: '0 4px 20px rgba(255,107,157,0.2)' }}>
           <span className="text-white font-bold text-lg">V</span>
         </div>
-        <h1 className="text-3xl font-bold text-white tracking-tight" style={{ fontFamily: "'Instrument Serif', serif" }}>VERTEX</h1>
-        <p style={{ color: 'var(--text-3)', fontSize: 13, marginTop: 4 }}>AI Studio</p>
+        <h1 className="text-3xl font-bold text-white tracking-tight" style={{ fontFamily: "'Instrument Serif', serif" }}>VIST</h1>
+        <p style={{ color: 'var(--joi-text-3)', fontSize: 13, marginTop: 4 }}>AI Studio</p>
       </div>
 
       {/* Context banner */}
@@ -152,13 +152,13 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
                   required
                   autoComplete="email"
                   placeholder="you@email.com"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition-all"
                 />
               </div>
               <button
                 type="submit"
                 disabled={loading || !email}
-                className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:from-zinc-700 disabled:to-zinc-700 disabled:text-zinc-500 text-white font-semibold text-sm rounded-lg transition-all shadow-lg shadow-purple-900/20 flex items-center justify-center gap-2"
+                className="w-full py-2.5 bg-gradient-to-r from-pink-500 to-fuchsia-600 hover:from-pink-400 hover:to-fuchsia-500 disabled:from-zinc-700 disabled:to-zinc-700 disabled:text-zinc-500 text-white font-semibold text-sm rounded-lg transition-all shadow-lg shadow-pink-900/20 flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -223,7 +223,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
                   required
                   autoComplete="email"
                   placeholder="you@email.com"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition-all"
                 />
               </div>
 
@@ -240,7 +240,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
                     required
                     autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                     placeholder={mode === 'register' ? 'Minimum 6 characters' : '••••••••'}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 pr-10 text-sm text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 pr-10 text-sm text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition-all"
                   />
                   <button
                     type="button"
@@ -263,7 +263,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
                   <button
                     type="button"
                     onClick={() => switchMode('forgot')}
-                    className="text-xs text-zinc-500 hover:text-purple-400 transition-colors"
+                    className="text-xs text-zinc-500 hover:text-pink-400 transition-colors"
                   >
                     Forgot your password?
                   </button>
@@ -274,7 +274,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
                 type="submit"
                 disabled={loading || !email || !password}
                 aria-busy={loading}
-                className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:from-zinc-700 disabled:to-zinc-700 disabled:text-zinc-500 text-white font-semibold text-sm rounded-lg transition-all shadow-lg shadow-purple-900/20 flex items-center justify-center gap-2"
+                className="w-full py-2.5 bg-gradient-to-r from-pink-500 to-fuchsia-600 hover:from-pink-400 hover:to-fuchsia-500 disabled:from-zinc-700 disabled:to-zinc-700 disabled:text-zinc-500 text-white font-semibold text-sm rounded-lg transition-all shadow-lg shadow-pink-900/20 flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -309,8 +309,9 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
   if (onClose) {
     return (
       <div style={{
-        background: 'var(--bg-2)',
-        border: '1px solid var(--border)',
+        background: 'var(--joi-bg-glass)',
+        border: '1px solid rgba(255,255,255,.04)',
+        backdropFilter: 'blur(24px)',
         borderRadius: 20,
         padding: '40px 32px',
         maxWidth: 420,

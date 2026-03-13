@@ -10,32 +10,51 @@ import { POSE_OPTIONS, CAMERA_OPTIONS, LIGHTING_OPTIONS, INSPIRATIONS } from '..
 import type { ChipOption } from '../data/directorOptions'
 import { ENHANCERS, buildEnhancerPrompt } from '../data/enhancers'
 
-// ─── Accordion Section ─────────────────────────────────
+// ─── Accordion Section (Joi style) ─────────────────────
 const AccordionSection: React.FC<{
-  title: string; isOpen: boolean; onToggle: () => void; children: React.ReactNode
-}> = ({ title, isOpen, onToggle, children }) => (
-  <div style={{ borderBottom: '1px solid var(--border)' }}>
-    <button onClick={onToggle} className="w-full px-4 py-2.5 flex items-center justify-between"
-      style={{ color: 'var(--text-2)' }}>
-      <span className="text-[9px] font-mono uppercase tracking-wider">{title}</span>
-      <span className="text-[10px]" style={{ color: 'var(--text-3)' }}>{isOpen ? '\u25B2' : '\u25BC'}</span>
+  title: string; icon: string; isOpen: boolean; onToggle: () => void; badge?: string; children: React.ReactNode
+}> = ({ title, icon, isOpen, onToggle, badge, children }) => (
+  <div style={{ borderBottom: '1px solid rgba(255,255,255,.03)' }}>
+    <button onClick={onToggle} className="w-full px-5 py-3.5 flex items-center gap-2.5 group transition-colors"
+      style={{ color: 'var(--joi-text-2)' }}>
+      <span className="text-sm" style={{ opacity: 0.5 }}>{icon}</span>
+      <span className="text-xs font-medium tracking-wide uppercase" style={{ letterSpacing: '0.08em' }}>{title}</span>
+      {badge && (
+        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-md" style={{
+          background: 'rgba(255,107,157,.08)',
+          color: 'var(--joi-pink)',
+          border: '1px solid rgba(255,107,157,.12)',
+        }}>{badge}</span>
+      )}
+      <span className="ml-auto text-[10px] transition-transform" style={{
+        color: 'var(--joi-text-3)',
+        transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+      }}>{'\u25BC'}</span>
     </button>
-    {isOpen && <div className="px-4 pb-3">{children}</div>}
+    <div className="overflow-hidden transition-all" style={{
+      maxHeight: isOpen ? '800px' : '0',
+      opacity: isOpen ? 1 : 0,
+      transition: 'max-height .3s ease, opacity .2s ease',
+    }}>
+      <div className="px-5 pb-5">{children}</div>
+    </div>
   </div>
 )
 
-// ─── Option Chip ────────────────────────────────────────
+// ─── Option Chip (holographic) ──────────────────────────
 const OptionChip: React.FC<{
   option: ChipOption; selected: boolean; onClick: () => void
 }> = ({ option, selected, onClick }) => (
   <button onClick={onClick}
-    className="px-2.5 py-1.5 rounded-xl text-[10px] font-medium flex items-center gap-1.5 transition-all whitespace-nowrap"
+    className="px-3.5 py-2.5 rounded-xl text-[12px] font-medium flex items-center gap-2 transition-all whitespace-nowrap"
     style={{
-      background: selected ? 'rgba(240,104,72,.08)' : 'var(--bg-3)',
-      border: `1px solid ${selected ? 'rgba(240,104,72,.2)' : 'var(--border)'}`,
-      color: selected ? 'var(--accent)' : 'var(--text-2)',
+      background: selected ? 'rgba(255,107,157,.10)' : 'rgba(255,255,255,.02)',
+      border: `1px solid ${selected ? 'rgba(255,107,157,.25)' : 'rgba(255,255,255,.06)'}`,
+      color: selected ? 'var(--joi-pink)' : 'var(--joi-text-2)',
+      backdropFilter: 'blur(8px)',
+      boxShadow: selected ? '0 0 16px rgba(255,107,157,.08), inset 0 1px 0 rgba(255,107,157,.06)' : 'none',
     }}>
-    <span>{option.icon}</span>{option.label}
+    <span className="text-sm">{option.icon}</span>{option.label}
   </button>
 )
 
@@ -44,13 +63,15 @@ const EnhancerChip: React.FC<{
   enhancer: { id: string; label: string; icon: string }; selected: boolean; onClick: () => void
 }> = ({ enhancer, selected, onClick }) => (
   <button onClick={onClick}
-    className="px-2.5 py-1.5 rounded-xl text-[10px] font-medium flex items-center gap-1.5 transition-all whitespace-nowrap"
+    className="px-3 py-2 rounded-xl text-[11px] font-medium flex items-center gap-2 transition-all whitespace-nowrap"
     style={{
-      background: selected ? 'rgba(240,104,72,.08)' : 'var(--bg-3)',
-      border: `1px solid ${selected ? 'rgba(240,104,72,.2)' : 'var(--border)'}`,
-      color: selected ? 'var(--accent)' : 'var(--text-2)',
+      background: selected ? 'rgba(255,107,157,.10)' : 'rgba(255,255,255,.02)',
+      border: `1px solid ${selected ? 'rgba(255,107,157,.25)' : 'rgba(255,255,255,.06)'}`,
+      color: selected ? 'var(--joi-pink)' : 'var(--joi-text-2)',
+      backdropFilter: 'blur(8px)',
+      boxShadow: selected ? '0 0 16px rgba(255,107,157,.08), inset 0 1px 0 rgba(255,107,157,.06)' : 'none',
     }}>
-    <span>{enhancer.icon}</span>{enhancer.label}
+    <span className="text-sm">{enhancer.icon}</span>{enhancer.label}
   </button>
 )
 
@@ -65,24 +86,36 @@ const ImageSlot: React.FC<{
       <input ref={inputRef} type="file" accept="image/*" className="hidden"
         onChange={e => { const f = e.target.files?.[0]; if (f) onUpload(f); e.target.value = '' }} />
       {preview ? (
-        <div className="relative w-16 h-16 rounded-xl overflow-hidden"
-          style={{ border: '1px solid rgba(240,104,72,.2)' }}>
+        <div className="relative w-20 h-20 rounded-xl overflow-hidden group"
+          style={{ border: '1px solid rgba(255,107,157,.25)', boxShadow: '0 0 16px rgba(255,107,157,.1)' }}>
           <img src={preview} className="w-full h-full object-cover" alt="" />
           <button onClick={onRemove}
-            className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[8px]"
-            style={{ background: 'rgba(0,0,0,.7)', color: 'var(--text-1)' }}>{'\u2715'}</button>
+            className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] opacity-0 group-hover:opacity-100 transition-opacity"
+            style={{ background: 'rgba(0,0,0,.8)', color: 'var(--joi-text-1)' }}>{'\u2715'}</button>
         </div>
       ) : (
         <button onClick={() => inputRef.current?.click()}
-          className="w-16 h-16 rounded-xl flex flex-col items-center justify-center transition-all hover:border-[var(--border-h)]"
-          style={{ background: 'var(--bg-3)', border: '1px dashed var(--border)' }}>
-          <span className="text-xs" style={{ color: 'var(--accent)' }}>{'\u2191'}</span>
-          <span className="text-[8px] mt-0.5" style={{ color: 'var(--text-3)' }}>{label}</span>
+          className="w-20 h-20 rounded-xl flex flex-col items-center justify-center gap-1 transition-all hover:border-[rgba(255,107,157,.15)]"
+          style={{
+            background: 'rgba(255,255,255,.02)',
+            border: '1px dashed rgba(255,255,255,.08)',
+            backdropFilter: 'blur(8px)',
+          }}>
+          <span className="text-base" style={{ color: 'var(--joi-pink)', opacity: 0.6 }}>{'\u2191'}</span>
+          <span className="text-[10px]" style={{ color: 'var(--joi-text-3)' }}>{label}</span>
         </button>
       )}
     </div>
   )
 }
+
+// Input style helper
+const joiInputStyle = (hasValue: boolean) => ({
+  background: 'var(--joi-bg-2)',
+  borderColor: hasValue ? 'rgba(255,107,157,.15)' : 'rgba(255,255,255,.04)',
+  color: 'var(--joi-text-1)',
+  backdropFilter: 'blur(8px)',
+})
 
 export function Director({ onNav }: { onNav?: (page: string) => void }) {
   // ── Character ──
@@ -98,7 +131,6 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
 
   const selectedChar = characters.find(c => c.id === selectedCharId)
 
-  // Sync characteristics textarea when character changes
   useEffect(() => {
     if (selectedChar) {
       setCharacteristics(selectedChar.characteristics || '')
@@ -141,11 +173,10 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
   const [numberOfImages, setNumberOfImages] = useState(1)
   const abortRef = useRef<AbortController | null>(null)
 
-  // Credits & toast
   const { decrementCredits, restoreCredits } = useProfile()
   const toast = useToast()
 
-  // ── Accordion state (persisted to localStorage) ──
+  // ── Accordion state ──
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
     try {
       const s = localStorage.getItem('vertex-director-sections')
@@ -185,7 +216,6 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
     const lightingValue = customLighting.trim() || LIGHTING_OPTIONS.find(l => l.id === selectedLighting)?.value || 'soft natural light'
     const enhancerPrompt = buildEnhancerPrompt(selectedEnhancers, customEnhancer)
 
-    // Build model images: character store blobs + manually uploaded face refs
     const modelImages: File[] = []
     if (selectedChar && selectedChar.modelImageBlobs.length > 0) {
       selectedChar.modelImageBlobs.forEach((blob, i) => {
@@ -196,14 +226,12 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
 
     const scenarioText = [scenario, enhancerPrompt].filter(Boolean).join('. ').trim()
 
-    // Resolve engine model
     let model = undefined as any
     if (selectedEngine !== 'auto') {
       const eng = ENGINE_METADATA.find(e => e.key === selectedEngine)
       if (eng) model = eng.geminiModel
     }
 
-    // Resolve image size from resolution picker
     const imageSizeMap: Record<string, ImageSize> = { '1k': ImageSize.Size1K, '2k': ImageSize.Size2K, '4k': ImageSize.Size4K }
     const imageSize = imageSizeMap[selectedResolution] || ImageSize.Size2K
 
@@ -233,7 +261,6 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
 
   // ── Generate ──
   const handleGenerate = async () => {
-    // Validate — need either a character or face refs
     const hasIdentity = selectedChar || faceRefs.length > 0
     if (!hasIdentity) {
       toast.error('Select a character or upload face references')
@@ -257,14 +284,12 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
       setGeneratedImages(results)
       setSelectedResult(0)
 
-      // Determine engine label
       let engineLabel = 'gemini-nb2'
       if (selectedEngine !== 'auto') {
         const eng = ENGINE_METADATA.find(e => e.key === selectedEngine)
         if (eng) engineLabel = eng.userFriendlyName
       }
 
-      // Save to gallery
       const items: GalleryItem[] = results.map((url) => ({
         id: crypto.randomUUID(),
         url,
@@ -296,43 +321,65 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
   const activeEngineLabel = selectedEngine === 'auto' ? 'Auto' : (ENGINE_METADATA.find(e => e.key === selectedEngine)?.userFriendlyName || selectedEngine)
 
   return (
-    <div className="h-screen flex gradient-mesh">
-      {/* Hidden file input for face refs */}
+    <div className="h-screen flex" style={{ background: 'var(--joi-bg-0)' }}>
       <input ref={faceInputRef} type="file" accept="image/*" className="hidden" onChange={handleFaceRefUpload} />
 
-      {/* ── Left Panel ── */}
-      <div className="w-[360px] shrink-0 flex flex-col" style={{ background: 'var(--bg-1)', borderRight: '1px solid var(--border)' }}>
-        <div className="px-5 h-14 flex items-center shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
-          <h2 className="text-base font-bold" style={{ color: 'var(--text-1)' }}>
-            {'\u2726'} <span className="text-gradient">Director</span>
-          </h2>
+      {/* ── Left Panel — Frosted Glass ── */}
+      <div className="w-[400px] shrink-0 flex flex-col" style={{
+        background: 'var(--joi-bg-1)',
+        borderRight: '1px solid rgba(255,255,255,.04)',
+      }}>
+        {/* Header */}
+        <div className="px-6 h-16 flex items-center justify-between shrink-0" style={{
+          borderBottom: '1px solid rgba(255,255,255,.04)',
+        }}>
+          <h1 className="joi-heading joi-glow--subtle" style={{ fontSize: '1.5rem' }}>
+            <span className="joi-text-gradient">Director</span>
+          </h1>
+          <button onClick={() => setShowEngineModal(!showEngineModal)}
+            className="px-3 py-1.5 rounded-xl text-[11px] font-mono flex items-center gap-1.5 transition-all"
+            style={{
+              background: selectedEngine !== 'auto' ? 'rgba(255,107,157,.08)' : 'rgba(255,255,255,.03)',
+              border: `1px solid ${selectedEngine !== 'auto' ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.06)'}`,
+              color: selectedEngine !== 'auto' ? 'var(--joi-pink)' : 'var(--joi-text-3)',
+            }}>
+            <span className="text-xs">{'\u2699'}</span> {activeEngineLabel}
+          </button>
         </div>
 
-        {/* Scrollable accordion sections */}
-        <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+        {/* Scrollable accordion */}
+        <div className="flex-1 overflow-y-auto joi-scroll">
 
           {/* ── IDENTITY ── */}
-          <AccordionSection title="Identity" isOpen={!!openSections.identity} onToggle={() => toggleSection('identity')}>
-            <div className="space-y-3">
-              {/* Character chips */}
+          <AccordionSection title="Identity" icon="👤" isOpen={!!openSections.identity} onToggle={() => toggleSection('identity')}>
+            <div className="space-y-4">
               <div>
-                <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-3)' }}>Character</div>
-                <div className="flex gap-1.5 flex-wrap">
+                <div className="text-[11px] font-medium mb-2" style={{ color: 'var(--joi-text-2)' }}>Character</div>
+                <div className="flex gap-2 flex-wrap">
                   {characters.length === 0 ? (
-                    <div className="text-[11px] py-2" style={{ color: 'var(--text-3)' }}>No characters created</div>
+                    <div className="text-[12px] py-3 px-4 rounded-xl w-full text-center" style={{
+                      color: 'var(--joi-text-3)',
+                      background: 'rgba(255,255,255,.02)',
+                      border: '1px dashed rgba(255,255,255,.06)',
+                    }}>No characters yet — <span style={{ color: 'var(--joi-pink)', cursor: 'pointer' }} onClick={() => onNav?.('upload')}>create one</span></div>
                   ) : (
                     characters.slice(0, 6).map(c => (
                       <button key={c.id} onClick={() => setSelectedCharId(c.id)}
-                        className="px-2.5 py-1.5 rounded-xl text-[10px] font-medium flex items-center gap-1.5 transition-all"
+                        className="px-3.5 py-2.5 rounded-xl text-[12px] font-medium flex items-center gap-2 transition-all"
                         style={{
-                          background: selectedCharId === c.id ? 'rgba(240,104,72,.08)' : 'var(--bg-3)',
-                          border: `1px solid ${selectedCharId === c.id ? 'rgba(240,104,72,.2)' : 'var(--border)'}`,
-                          color: selectedCharId === c.id ? 'var(--accent)' : 'var(--text-2)',
+                          background: selectedCharId === c.id ? 'rgba(255,107,157,.10)' : 'rgba(255,255,255,.02)',
+                          border: `1px solid ${selectedCharId === c.id ? 'rgba(255,107,157,.25)' : 'rgba(255,255,255,.06)'}`,
+                          color: selectedCharId === c.id ? 'var(--joi-pink)' : 'var(--joi-text-2)',
+                          boxShadow: selectedCharId === c.id ? '0 0 16px rgba(255,107,157,.08)' : 'none',
                         }}>
                         {c.thumbnail ? (
-                          <img src={c.thumbnail} className="w-4 h-4 rounded-full object-cover" alt="" />
+                          <img src={c.thumbnail} className="w-6 h-6 rounded-full object-cover" alt="" style={{
+                            border: selectedCharId === c.id ? '1.5px solid rgba(255,107,157,.4)' : '1.5px solid rgba(255,255,255,.08)',
+                          }} />
                         ) : (
-                          <span className="text-[10px]">{c.name[0]}</span>
+                          <span className="w-6 h-6 rounded-full flex items-center justify-center text-[11px]" style={{
+                            background: selectedCharId === c.id ? 'rgba(255,107,157,.15)' : 'rgba(255,255,255,.06)',
+                          }}>{c.name[0]}</span>
                         )}
                         {c.name.split(' ')[0]}
                       </button>
@@ -341,40 +388,38 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
                 </div>
               </div>
 
-              {/* Face reference slots */}
               <div>
-                <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-3)' }}>
-                  Face refs <span style={{ opacity: 0.5 }}>({faceRefs.length}/3)</span>
+                <div className="text-[11px] font-medium mb-2" style={{ color: 'var(--joi-text-2)' }}>
+                  Face References <span className="font-mono" style={{ opacity: 0.4 }}>({faceRefs.length}/3)</span>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2.5">
                   {faceRefs.map((ref, i) => (
-                    <div key={i} className="relative w-14 h-14 rounded-xl overflow-hidden"
-                      style={{ border: '1px solid rgba(240,104,72,.2)' }}>
+                    <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden group"
+                      style={{ border: '1px solid rgba(255,107,157,.25)', boxShadow: '0 0 12px rgba(255,107,157,.08)' }}>
                       <img src={ref.preview} className="w-full h-full object-cover" alt="" />
                       <button onClick={() => { URL.revokeObjectURL(ref.preview); setFaceRefs(prev => prev.filter((_, j) => j !== i)) }}
-                        className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[8px]"
-                        style={{ background: 'rgba(0,0,0,.7)', color: 'var(--text-1)' }}>{'\u2715'}</button>
+                        className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[9px] opacity-0 group-hover:opacity-100 transition-opacity"
+                        style={{ background: 'rgba(0,0,0,.8)', color: 'var(--joi-text-1)' }}>{'\u2715'}</button>
                     </div>
                   ))}
                   {faceRefs.length < 3 && (
                     <button onClick={() => faceInputRef.current?.click()}
-                      className="w-14 h-14 rounded-xl flex flex-col items-center justify-center transition-all hover:border-[var(--border-h)]"
-                      style={{ background: 'var(--bg-3)', border: '1px dashed var(--border)' }}>
-                      <span className="text-xs" style={{ color: 'var(--accent)' }}>{'\u2191'}</span>
-                      <span className="text-[7px] mt-0.5" style={{ color: 'var(--text-3)' }}>Face</span>
+                      className="w-16 h-16 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all"
+                      style={{ background: 'rgba(255,255,255,.02)', border: '1px dashed rgba(255,255,255,.08)' }}>
+                      <span className="text-sm" style={{ color: 'var(--joi-pink)', opacity: 0.6 }}>{'\u002B'}</span>
+                      <span className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>Face</span>
                     </button>
                   )}
                 </div>
               </div>
 
-              {/* Characteristics textarea */}
               <div>
-                <div className="text-[9px] font-mono uppercase tracking-wider mb-1" style={{ color: 'var(--text-3)' }}>Characteristics</div>
+                <div className="text-[11px] font-medium mb-1.5" style={{ color: 'var(--joi-text-2)' }}>Characteristics</div>
                 <textarea
                   rows={2}
                   placeholder="e.g. Freckles, green eyes, wavy auburn hair..."
-                  className="w-full px-3 py-2 rounded-xl text-[11px] border outline-none resize-none transition-colors"
-                  style={{ background: 'var(--bg-3)', borderColor: characteristics ? 'rgba(240,104,72,.2)' : 'var(--border)', color: 'var(--text-1)' }}
+                  className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none resize-none transition-colors"
+                  style={joiInputStyle(!!characteristics)}
                   value={characteristics}
                   onChange={e => setCharacteristics(e.target.value)}
                 />
@@ -383,9 +428,9 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
           </AccordionSection>
 
           {/* ── OUTFIT ── */}
-          <AccordionSection title="Outfit" isOpen={!!openSections.outfit} onToggle={() => toggleSection('outfit')}>
+          <AccordionSection title="Outfit" icon="👔" isOpen={!!openSections.outfit} onToggle={() => toggleSection('outfit')}>
             <div className="space-y-3">
-              <div className="flex gap-2 items-start">
+              <div className="flex gap-3 items-start">
                 <ImageSlot
                   label="Outfit"
                   file={outfitRef?.file || null}
@@ -394,19 +439,23 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
                   onRemove={() => { if (outfitRef) URL.revokeObjectURL(outfitRef.preview); setOutfitRef(null) }}
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="text-[9px] font-mono uppercase tracking-wider mb-1" style={{ color: 'var(--text-3)' }}>
+                  <div className="text-[11px] font-medium mb-1.5" style={{ color: 'var(--joi-text-2)' }}>
                     {outfitRef ? 'Outfit from image' : 'Description'}
                   </div>
                   {outfitRef ? (
-                    <div className="text-[10px] p-2 rounded-lg" style={{ background: 'rgba(240,104,72,.05)', color: 'var(--text-2)', border: '1px solid rgba(240,104,72,.1)' }}>
+                    <div className="text-[11px] p-3 rounded-xl" style={{
+                      background: 'rgba(255,107,157,.04)',
+                      color: 'var(--joi-text-2)',
+                      border: '1px solid rgba(255,107,157,.08)',
+                    }}>
                       AI will extract garment from image and apply to character
                     </div>
                   ) : (
                     <textarea
                       rows={2}
                       placeholder="e.g. Black leather jacket, white t-shirt..."
-                      className="w-full px-3 py-2 rounded-xl text-[11px] border outline-none resize-none transition-colors"
-                      style={{ background: 'var(--bg-3)', borderColor: outfitDescription ? 'rgba(240,104,72,.2)' : 'var(--border)', color: 'var(--text-1)' }}
+                      className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none resize-none transition-colors"
+                      style={joiInputStyle(!!outfitDescription)}
                       value={outfitDescription}
                       onChange={e => setOutfitDescription(e.target.value)}
                     />
@@ -417,9 +466,9 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
           </AccordionSection>
 
           {/* ── POSE ── */}
-          <AccordionSection title="Pose" isOpen={!!openSections.pose} onToggle={() => toggleSection('pose')}>
+          <AccordionSection title="Pose" icon="🧍" isOpen={!!openSections.pose} onToggle={() => toggleSection('pose')}>
             <div className="space-y-3">
-              <div className="flex gap-2 items-start">
+              <div className="flex gap-3 items-start">
                 <ImageSlot
                   label="Pose"
                   file={poseRef?.file || null}
@@ -428,7 +477,7 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
                   onRemove={() => { if (poseRef) URL.revokeObjectURL(poseRef.preview); setPoseRef(null) }}
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="flex gap-1.5 flex-wrap">
+                  <div className="flex gap-2 flex-wrap">
                     {POSE_OPTIONS.map(p => (
                       <OptionChip key={p.id} option={p} selected={selectedPose === p.id && !customPose} onClick={() => { setSelectedPose(p.id); setCustomPose('') }} />
                     ))}
@@ -436,78 +485,77 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
                 </div>
               </div>
               <input type="text" placeholder="Or describe a custom pose..."
-                className="w-full px-3 py-2 rounded-xl text-[11px] border outline-none transition-colors"
-                style={{ background: 'var(--bg-3)', borderColor: customPose ? 'rgba(240,104,72,.2)' : 'var(--border)', color: 'var(--text-1)' }}
+                className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none transition-colors"
+                style={joiInputStyle(!!customPose)}
                 value={customPose}
                 onChange={e => setCustomPose(e.target.value)} />
             </div>
           </AccordionSection>
 
           {/* ── CAMERA ── */}
-          <AccordionSection title="Camera" isOpen={!!openSections.camera} onToggle={() => toggleSection('camera')}>
-            <div className="space-y-2">
-              <div className="flex gap-1.5 flex-wrap">
+          <AccordionSection title="Camera" icon="📷" isOpen={!!openSections.camera} onToggle={() => toggleSection('camera')}>
+            <div className="space-y-3">
+              <div className="flex gap-2 flex-wrap">
                 {CAMERA_OPTIONS.map(c => (
                   <OptionChip key={c.id} option={c} selected={selectedCamera === c.id && !customCamera} onClick={() => { setSelectedCamera(c.id); setCustomCamera('') }} />
                 ))}
               </div>
               <input type="text" placeholder="Or describe custom camera..."
-                className="w-full px-3 py-2 rounded-xl text-[11px] border outline-none transition-colors"
-                style={{ background: 'var(--bg-3)', borderColor: customCamera ? 'rgba(240,104,72,.2)' : 'var(--border)', color: 'var(--text-1)' }}
+                className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none transition-colors"
+                style={joiInputStyle(!!customCamera)}
                 value={customCamera}
                 onChange={e => setCustomCamera(e.target.value)} />
             </div>
           </AccordionSection>
 
           {/* ── LIGHTING ── */}
-          <AccordionSection title="Lighting" isOpen={!!openSections.lighting} onToggle={() => toggleSection('lighting')}>
-            <div className="space-y-2">
-              <div className="flex gap-1.5 flex-wrap">
+          <AccordionSection title="Lighting" icon="💡" isOpen={!!openSections.lighting} onToggle={() => toggleSection('lighting')}>
+            <div className="space-y-3">
+              <div className="flex gap-2 flex-wrap">
                 {LIGHTING_OPTIONS.map(l => (
                   <OptionChip key={l.id} option={l} selected={selectedLighting === l.id && !customLighting} onClick={() => { setSelectedLighting(l.id); setCustomLighting('') }} />
                 ))}
               </div>
               <input type="text" placeholder="Or describe custom lighting..."
-                className="w-full px-3 py-2 rounded-xl text-[11px] border outline-none transition-colors"
-                style={{ background: 'var(--bg-3)', borderColor: customLighting ? 'rgba(240,104,72,.2)' : 'var(--border)', color: 'var(--text-1)' }}
+                className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none transition-colors"
+                style={joiInputStyle(!!customLighting)}
                 value={customLighting}
                 onChange={e => setCustomLighting(e.target.value)} />
             </div>
           </AccordionSection>
 
           {/* ── SCENARIO ── */}
-          <AccordionSection title="Scenario" isOpen={!!openSections.scenario} onToggle={() => toggleSection('scenario')}>
-            <div className="space-y-3">
+          <AccordionSection title="Scenario" icon="🎬" isOpen={!!openSections.scenario} onToggle={() => toggleSection('scenario')}>
+            <div className="space-y-4">
               <textarea
                 rows={3}
                 placeholder="Describe the scene, environment, mood..."
-                className="w-full px-3 py-2 rounded-xl text-[11px] border outline-none resize-none transition-colors"
-                style={{ background: 'var(--bg-3)', borderColor: scenario ? 'rgba(240,104,72,.2)' : 'var(--border)', color: 'var(--text-1)' }}
+                className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none resize-none transition-colors"
+                style={joiInputStyle(!!scenario)}
                 value={scenario}
                 onChange={e => setScenario(e.target.value)}
               />
 
-              {/* Inspirations grid */}
               <div>
-                <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-3)' }}>Inspirations</div>
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="text-[11px] font-medium mb-2" style={{ color: 'var(--joi-text-2)' }}>Inspirations</div>
+                <div className="grid grid-cols-2 gap-2">
                   {INSPIRATIONS.map(ins => (
                     <button key={ins.id} onClick={() => setScenario(ins.scene)}
-                      className="px-2 py-1.5 rounded-xl text-[9px] font-medium flex items-center gap-1 transition-all whitespace-nowrap overflow-hidden"
+                      className="px-3 py-2.5 rounded-xl text-[11px] font-medium flex items-center gap-2 transition-all text-left"
                       style={{
-                        background: scenario === ins.scene ? 'rgba(240,104,72,.08)' : 'var(--bg-3)',
-                        border: `1px solid ${scenario === ins.scene ? 'rgba(240,104,72,.2)' : 'var(--border)'}`,
-                        color: scenario === ins.scene ? 'var(--accent)' : 'var(--text-2)',
+                        background: scenario === ins.scene ? 'rgba(255,107,157,.10)' : 'rgba(255,255,255,.02)',
+                        border: `1px solid ${scenario === ins.scene ? 'rgba(255,107,157,.25)' : 'rgba(255,255,255,.06)'}`,
+                        color: scenario === ins.scene ? 'var(--joi-pink)' : 'var(--joi-text-2)',
+                        boxShadow: scenario === ins.scene ? '0 0 12px rgba(255,107,157,.06)' : 'none',
                       }}>
-                      <span>{ins.emoji}</span>
+                      <span className="text-base shrink-0">{ins.emoji}</span>
                       <span className="truncate">{ins.label}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Scene reference image */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <ImageSlot
                   label="Scene"
                   file={scenarioRef?.file || null}
@@ -515,108 +563,125 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
                   onUpload={f => setScenarioRef({ file: f, preview: URL.createObjectURL(f) })}
                   onRemove={() => { if (scenarioRef) URL.revokeObjectURL(scenarioRef.preview); setScenarioRef(null) }}
                 />
-                <span className="text-[9px]" style={{ color: 'var(--text-3)' }}>Scene reference (optional)</span>
+                <span className="text-[11px]" style={{ color: 'var(--joi-text-3)' }}>Scene reference (optional)</span>
               </div>
             </div>
           </AccordionSection>
 
           {/* ── ENHANCERS ── */}
-          <AccordionSection title={`Enhancers${selectedEnhancers.size > 0 ? ` (${selectedEnhancers.size})` : ''}`} isOpen={!!openSections.enhancers} onToggle={() => toggleSection('enhancers')}>
-            <div className="space-y-2">
-              <div className="flex gap-1.5 flex-wrap">
+          <AccordionSection title="Enhancers" icon="✨" badge={selectedEnhancers.size > 0 ? `${selectedEnhancers.size}` : undefined} isOpen={!!openSections.enhancers} onToggle={() => toggleSection('enhancers')}>
+            <div className="space-y-3">
+              <div className="flex gap-2 flex-wrap">
                 {ENHANCERS.map(e => (
                   <EnhancerChip key={e.id} enhancer={e} selected={selectedEnhancers.has(e.id)} onClick={() => toggleEnhancer(e.id)} />
                 ))}
               </div>
               <input type="text" placeholder="Custom enhancer text..."
-                className="w-full px-3 py-2 rounded-xl text-[11px] border outline-none transition-colors"
-                style={{ background: 'var(--bg-3)', borderColor: customEnhancer ? 'rgba(240,104,72,.2)' : 'var(--border)', color: 'var(--text-1)' }}
+                className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none transition-colors"
+                style={joiInputStyle(!!customEnhancer)}
                 value={customEnhancer}
                 onChange={e => setCustomEnhancer(e.target.value)} />
             </div>
           </AccordionSection>
         </div>
 
-        {/* ── Bottom fixed area: number of images + generate + engine ── */}
-        <div className="px-4 py-3 shrink-0 space-y-3" style={{ borderTop: '1px solid var(--border)' }}>
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-[9px] font-mono uppercase tracking-wider" style={{ color: 'var(--text-3)' }}>Images</div>
-              <button onClick={() => setShowEngineModal(!showEngineModal)}
-                className="px-2 py-0.5 rounded-lg text-[9px] font-mono transition-all"
-                style={{
-                  background: selectedEngine !== 'auto' ? 'rgba(240,104,72,.08)' : 'var(--bg-3)',
-                  border: `1px solid ${selectedEngine !== 'auto' ? 'rgba(240,104,72,.2)' : 'var(--border)'}`,
-                  color: selectedEngine !== 'auto' ? 'var(--accent)' : 'var(--text-3)',
-                }}>
-                {'\uD83D\uDD27'} {activeEngineLabel}
-              </button>
-            </div>
-            <div className="flex gap-1.5">
+        {/* ── Bottom: images + generate ── */}
+        <div className="px-5 py-4 shrink-0 space-y-3" style={{
+          borderTop: '1px solid rgba(255,255,255,.04)',
+          background: 'linear-gradient(to top, var(--joi-bg-1), rgba(14,12,20,.95))',
+        }}>
+          <div className="flex items-center gap-2">
+            <div className="text-[11px] font-medium" style={{ color: 'var(--joi-text-2)' }}>Images</div>
+            <div className="flex gap-1.5 flex-1">
               {[1, 2, 3, 4].map(n => (
                 <button key={n} onClick={() => setNumberOfImages(n)}
-                  className="flex-1 py-1.5 rounded-lg text-[11px] font-medium transition-all"
+                  className="flex-1 py-2 rounded-lg text-[12px] font-medium transition-all"
                   style={{
-                    background: numberOfImages === n ? 'rgba(240,104,72,.12)' : 'var(--bg-3)',
-                    border: `1px solid ${numberOfImages === n ? 'rgba(240,104,72,.25)' : 'var(--border)'}`,
-                    color: numberOfImages === n ? 'var(--accent)' : 'var(--text-3)',
+                    background: numberOfImages === n ? 'rgba(255,107,157,.10)' : 'rgba(255,255,255,.03)',
+                    border: `1px solid ${numberOfImages === n ? 'rgba(255,107,157,.25)' : 'rgba(255,255,255,.05)'}`,
+                    color: numberOfImages === n ? 'var(--joi-pink)' : 'var(--joi-text-3)',
                   }}>{n}</button>
               ))}
             </div>
-            <div className="mt-1.5 flex items-center justify-end">
-              <span className="badge text-[9px] shrink-0" style={{ background: 'rgba(240,104,72,.08)', color: 'var(--accent)', border: '1px solid rgba(240,104,72,.15)' }}>
-                {numberOfImages * costPerShot} credits
-              </span>
-            </div>
+            <span className="text-[10px] font-mono shrink-0 px-2 py-1 rounded-lg" style={{
+              background: 'rgba(255,107,157,.06)',
+              color: 'var(--joi-pink)',
+              border: '1px solid rgba(255,107,157,.1)',
+            }}>
+              {numberOfImages * costPerShot}cr
+            </span>
           </div>
 
           <button onClick={handleGenerate} disabled={generating || (!selectedChar && faceRefs.length === 0)}
-            className="btn-primary w-full py-3 text-sm"
-            style={{ opacity: (generating || (!selectedChar && faceRefs.length === 0)) ? 0.5 : 1 }}>
-            {generating ? `\u27F3 Generating... ${Math.round(progress)}%` : `\u2726 Generate Hero Shot`}
+            className="joi-btn-solid w-full py-3.5 text-sm font-medium tracking-wide"
+            style={{
+              opacity: (generating || (!selectedChar && faceRefs.length === 0)) ? 0.4 : 1,
+              boxShadow: !(generating || (!selectedChar && faceRefs.length === 0))
+                ? '0 4px 30px rgba(255,107,157,.25), 0 0 50px rgba(208,72,176,.1)'
+                : 'none',
+            }}>
+            {generating ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                Generating... {Math.round(progress)}%
+              </span>
+            ) : '\u2726 Generate Hero Shot'}
           </button>
         </div>
       </div>
 
       {/* ── Center Canvas ── */}
-      <div className="flex-1 flex flex-col">
-        <div className="h-11 flex items-center px-4 gap-1.5 shrink-0" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-1)' }}>
-          <span className="text-[10px] font-mono" style={{ color: 'var(--text-3)' }}>
+      <div className="flex-1 flex flex-col joi-mesh" style={{ background: 'var(--joi-bg-0)' }}>
+        {/* Top bar */}
+        <div className="h-11 flex items-center px-5 gap-1.5 shrink-0" style={{
+          borderBottom: '1px solid rgba(255,255,255,.03)',
+          background: 'var(--joi-bg-1)',
+        }}>
+          <span className="joi-label">
             {'\u2726'} Director
           </span>
           <div className="flex-1" />
-          <span className="text-[10px] font-mono" style={{ color: 'var(--text-3)' }}>
+          <span className="font-jet text-[10px]" style={{ color: 'var(--joi-text-3)' }}>
             {activeEngineLabel} {'\u00b7'} {numberOfImages} image{numberOfImages > 1 ? 's' : ''}
           </span>
         </div>
 
-        <div className="flex-1 flex items-center justify-center p-8">
-          <div className="w-[520px] h-[520px] rounded-3xl relative overflow-hidden"
-            style={{ background: 'var(--bg-2)', border: '1px solid var(--border)' }}>
+        {/* Canvas area */}
+        <div className="flex-1 flex items-center justify-center p-8 relative">
+          {/* Atmospheric orbs */}
+          <div className="joi-orb" style={{ width: 300, height: 300, background: 'rgba(255,107,157,0.03)', top: '10%', right: '15%' }} />
+          <div className="joi-orb" style={{ width: 200, height: 200, background: 'rgba(208,72,176,0.025)', bottom: '15%', left: '20%' }} />
+
+          <div className="w-[520px] h-[520px] rounded-2xl relative overflow-hidden joi-glass"
+            style={{
+              boxShadow: generatedImages.length > 0
+                ? '0 8px 60px rgba(255,107,157,.1), 0 0 100px rgba(208,72,176,.05)'
+                : '0 4px 30px rgba(0,0,0,.3)',
+            }}>
 
             {generatedImages.length > 0 ? (
               <img src={generatedImages[selectedResult]} className="w-full h-full object-cover" alt="Generated hero shot" />
             ) : (
               <div className="absolute inset-0" style={{
-                background: 'linear-gradient(135deg, rgba(240,104,72,.06) 0%, var(--bg-2) 50%, rgba(208,72,176,.04) 100%)'
+                background: 'linear-gradient(135deg, rgba(255,107,157,.04) 0%, var(--joi-bg-1) 50%, rgba(208,72,176,.03) 100%)'
               }}>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center">
-                    <div className="w-14 h-14 rounded-2xl mx-auto mb-2 flex items-center justify-center pulse-soft"
-                      style={{ background: 'rgba(240,104,72,.1)', border: '1px solid rgba(240,104,72,.2)' }}>
-                      <span className="text-xl">{'\u2726'}</span>
+                    <div className="w-16 h-16 rounded-2xl mx-auto mb-3 flex items-center justify-center joi-breathe"
+                      style={{ background: 'rgba(255,107,157,.06)', border: '1px solid rgba(255,107,157,.1)' }}>
+                      <span className="text-2xl" style={{ opacity: 0.6 }}>{'\u2726'}</span>
                     </div>
-                    <p className="text-[11px]" style={{ color: 'var(--text-3)' }}>Configure and generate your hero shot</p>
+                    <p className="joi-heading text-[13px]" style={{ color: 'var(--joi-text-2)' }}>Configure and generate</p>
+                    <p className="text-[11px] mt-1" style={{ color: 'var(--joi-text-3)' }}>your hero shot</p>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Badges overlay */}
             {scenario && (
               <div className="absolute top-3 left-3 right-3 flex flex-wrap gap-1.5">
-                <span className="px-2 py-0.5 rounded-md text-[9px] font-mono backdrop-blur-sm"
-                  style={{ background: 'rgba(0,0,0,.4)', color: 'var(--text-1)' }}>
+                <span className="px-2.5 py-1 rounded-lg text-[9px] font-mono backdrop-blur-xl"
+                  style={{ background: 'rgba(0,0,0,.4)', color: 'var(--joi-text-1)', border: '1px solid rgba(255,255,255,.04)' }}>
                   {scenario.length > 40 ? scenario.slice(0, 40) + '...' : scenario}
                 </span>
               </div>
@@ -625,70 +690,85 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
         </div>
 
         {/* Bottom filmstrip */}
-        <div className="h-20 flex items-center px-5 gap-2.5 shrink-0" style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-1)' }}>
-          <span className="text-[9px] font-mono shrink-0 mr-1" style={{ color: 'var(--text-3)' }}>SHOTS</span>
+        <div className="h-20 flex items-center px-5 gap-3 shrink-0" style={{
+          borderTop: '1px solid rgba(255,255,255,.03)',
+          background: 'var(--joi-bg-1)',
+        }}>
+          <span className="joi-label shrink-0 mr-1">Shots</span>
           {generatedImages.length > 0 ? (
             generatedImages.map((url, i) => (
               <div key={i} onClick={() => setSelectedResult(i)}
                 className="w-12 h-12 rounded-xl shrink-0 cursor-pointer hover:scale-105 transition-transform overflow-hidden"
-                style={{ border: `2px solid ${selectedResult === i ? 'var(--accent)' : 'var(--border)'}` }}>
+                style={{
+                  border: `2px solid ${selectedResult === i ? 'var(--joi-pink)' : 'rgba(255,255,255,.04)'}`,
+                  boxShadow: selectedResult === i ? '0 0 12px rgba(255,107,157,.15)' : 'none',
+                }}>
                 <img src={url} className="w-full h-full object-cover" alt="" />
               </div>
             ))
           ) : (
             Array.from({ length: numberOfImages }, (_, i) => (
-              <div key={i} className="w-12 h-12 rounded-xl shrink-0 shimmer"
-                style={{ border: '1px solid var(--border)' }} />
+              <div key={i} className="w-12 h-12 rounded-xl shrink-0"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255,107,157,.04), rgba(208,72,176,.02))',
+                  border: '1px solid rgba(255,255,255,.04)',
+                }} />
             ))
           )}
         </div>
       </div>
 
-      {/* ── Engine selector modal ── */}
+      {/* ── Engine selector modal (holographic) ── */}
       {showEngineModal && <>
-        <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setShowEngineModal(false)} />
-        <div className="fixed z-50 w-[340px] max-h-[90vh] flex flex-col rounded-2xl backdrop-blur-xl"
-          style={{ top: '50%', left: 'calc(50% + 110px)', transform: 'translate(-50%,-50%)', background: 'rgba(14,12,20,.95)', border: '1px solid var(--border)', boxShadow: '0 20px 60px rgba(0,0,0,.6)', overflow: 'hidden' }}>
-          <div className="overflow-y-auto p-3 pb-2 space-y-1 flex-1 min-h-0">
-            <div className="text-[9px] font-mono uppercase tracking-wider mb-2 px-1" style={{ color: 'var(--text-3)' }}>Engine</div>
+        <div className="fixed inset-0 z-40" style={{ background: 'rgba(8,7,13,.6)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setShowEngineModal(false)} />
+        <div className="fixed z-50 w-[340px] max-h-[90vh] flex flex-col rounded-2xl joi-glass"
+          style={{
+            top: '50%', left: 'calc(50% + 110px)', transform: 'translate(-50%,-50%)',
+            background: 'rgba(14,12,22,.92)',
+            boxShadow: '0 20px 80px rgba(255,107,157,.08), 0 0 120px rgba(208,72,176,.04)',
+            overflow: 'hidden',
+          }}>
+          <div className="overflow-y-auto p-4 pb-2 space-y-1 flex-1 min-h-0">
+            <div className="joi-label mb-2 px-1">Engine</div>
 
             <button onClick={() => { setSelectedEngine('auto'); setShowEngineModal(false) }}
-              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-left transition-all"
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-all"
               style={{
-                background: selectedEngine === 'auto' ? 'rgba(240,104,72,.08)' : 'transparent',
-                border: `1px solid ${selectedEngine === 'auto' ? 'rgba(240,104,72,.2)' : 'transparent'}`,
+                background: selectedEngine === 'auto' ? 'rgba(255,107,157,.08)' : 'transparent',
+                border: `1px solid ${selectedEngine === 'auto' ? 'rgba(255,107,157,.15)' : 'transparent'}`,
               }}>
               <span className="text-base">{'\u2728'}</span>
               <div className="flex-1 min-w-0">
-                <div className="text-[11px] font-medium" style={{ color: selectedEngine === 'auto' ? 'var(--accent)' : 'var(--text-1)' }}>Auto</div>
-                <div className="text-[9px]" style={{ color: 'var(--text-3)' }}>Best engine automatically</div>
+                <div className="text-[11px] font-medium" style={{ color: selectedEngine === 'auto' ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>Auto</div>
+                <div className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>Best engine automatically</div>
               </div>
             </button>
 
-            <div className="h-px my-1" style={{ background: 'var(--border)' }} />
+            <div className="joi-divider my-1" />
 
             {ENGINE_METADATA.map(eng => (
               <button key={eng.key} onClick={() => { setSelectedEngine(eng.key); setShowEngineModal(false) }}
-                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-left transition-all"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-all"
                 style={{
-                  background: selectedEngine === eng.key ? 'rgba(240,104,72,.08)' : 'transparent',
-                  border: `1px solid ${selectedEngine === eng.key ? 'rgba(240,104,72,.2)' : 'transparent'}`,
+                  background: selectedEngine === eng.key ? 'rgba(255,107,157,.08)' : 'transparent',
+                  border: `1px solid ${selectedEngine === eng.key ? 'rgba(255,107,157,.15)' : 'transparent'}`,
                 }}>
-                <span className="text-sm" style={{ color: 'var(--text-3)' }}>{'\u2699'}</span>
+                <span className="text-sm" style={{ color: 'var(--joi-text-3)' }}>{'\u2699'}</span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[11px] font-medium" style={{ color: selectedEngine === eng.key ? 'var(--accent)' : 'var(--text-1)' }}>{eng.userFriendlyName}</div>
-                  <div className="text-[9px]" style={{ color: 'var(--text-3)' }}>{eng.description}</div>
+                  <div className="text-[11px] font-medium" style={{ color: selectedEngine === eng.key ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{eng.userFriendlyName}</div>
+                  <div className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>{eng.description}</div>
                 </div>
                 <div className="shrink-0 text-right">
-                  <div className="text-[9px] font-mono" style={{ color: 'var(--accent)' }}>{eng.creditCost}cr</div>
-                  <div className="text-[8px] font-mono" style={{ color: 'var(--text-3)' }}>{eng.estimatedTime}</div>
+                  <div className="text-[9px] font-mono" style={{ color: 'var(--joi-pink)' }}>{eng.creditCost}cr</div>
+                  <div className="text-[8px] font-mono" style={{ color: 'var(--joi-text-3)' }}>{eng.estimatedTime}</div>
                 </div>
               </button>
             ))}
           </div>
 
-          <div className="shrink-0 px-3 pb-3 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
-            <div className="text-[9px] font-mono uppercase tracking-wider mb-2 px-1" style={{ color: 'var(--text-3)' }}>Resolution</div>
+          <div className="shrink-0 px-4 pb-4 pt-2 joi-divider" style={{ borderBottom: 'none' }}>
+            <div className="joi-label mb-2 px-1">Resolution</div>
             <div className="flex gap-2">
               {[
                 { id: '1k', label: '1K', desc: '1024px' },
@@ -697,13 +777,13 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
               ].map(r => (
                 <button key={r.id}
                   onClick={() => setSelectedResolution(r.id)}
-                  className="flex-1 px-3 py-2 rounded-lg text-center transition-all"
+                  className="flex-1 px-3 py-2.5 rounded-xl text-center transition-all"
                   style={{
-                    background: selectedResolution === r.id ? 'rgba(240,104,72,.08)' : 'var(--bg-3)',
-                    border: `1px solid ${selectedResolution === r.id ? 'rgba(240,104,72,.25)' : 'var(--border)'}`,
+                    background: selectedResolution === r.id ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-2)',
+                    border: `1px solid ${selectedResolution === r.id ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}`,
                   }}>
-                  <div className="text-[11px] font-mono font-bold" style={{ color: selectedResolution === r.id ? 'var(--accent)' : 'var(--text-1)' }}>{r.label}</div>
-                  <div className="text-[8px] font-mono" style={{ color: 'var(--text-3)' }}>{r.desc}</div>
+                  <div className="text-[11px] font-mono font-bold" style={{ color: selectedResolution === r.id ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{r.label}</div>
+                  <div className="text-[8px] font-mono" style={{ color: 'var(--joi-text-3)' }}>{r.desc}</div>
                 </button>
               ))}
             </div>

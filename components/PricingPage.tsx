@@ -159,18 +159,18 @@ const FAQ_ITEMS = [
 const FaqItem: React.FC<{ q: string; a: string }> = ({ q, a }) => {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border-b" style={{ borderColor: 'var(--border)' }}>
+    <div className="border-b" style={{ borderColor: 'rgba(255,255,255,.04)' }}>
       <button className="w-full flex items-center justify-between py-4 text-left gap-4"
         onClick={() => setOpen(p => !p)}>
         <span className="text-[13px] font-medium transition-colors"
-          style={{ color: open ? 'var(--text-1)' : 'var(--text-2)' }}>{q}</span>
+          style={{ color: open ? 'var(--joi-text-1)' : 'var(--joi-text-2)' }}>{q}</span>
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-          fill="none" stroke="var(--text-3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+          fill="none" stroke="var(--joi-text-3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
           className={`shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>
           <polyline points="6 9 12 15 18 9" />
         </svg>
       </button>
-      {open && <p className="pb-4 text-[13px] leading-relaxed" style={{ color: 'var(--text-2)' }}>{a}</p>}
+      {open && <p className="pb-4 text-[13px] leading-relaxed" style={{ color: 'var(--joi-text-2)' }}>{a}</p>}
     </div>
   );
 };
@@ -243,40 +243,40 @@ const PricingPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-full overflow-y-auto pb-16 lg:pb-0 gradient-mesh custom-scrollbar" style={{ background: 'var(--bg-0)' }}>
+    <div className="min-h-full overflow-y-auto pb-16 lg:pb-0 custom-scrollbar" style={{ background: 'var(--joi-bg-0)' }}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 pb-24">
 
         {/* ── Header ── */}
         <div className="section-header">
-          <div className="section-label">Planes</div>
+          <div className="section-label">Plans</div>
           <h2 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 48, lineHeight: 1.1, marginBottom: 16 }}>
-            Empieza gratis.<br/>
-            <span className="text-gradient" style={{ fontStyle: 'italic' }}>Escala sin limites.</span>
+            Start free.<br/>
+            <span style={{ fontStyle: 'italic' }}>Scale without limits.</span>
           </h2>
-          <p className="text-[15px] max-w-md mx-auto mb-8" style={{ color: 'var(--text-2)' }}>
+          <p className="text-[15px] max-w-md mx-auto mb-8" style={{ color: 'var(--joi-text-2)' }}>
             Pay as you grow. Credits reset monthly. No surprises.
           </p>
 
           {/* Billing toggle */}
           <div className="inline-flex items-center gap-1 px-1 py-1 rounded-full"
-            style={{ background: 'var(--bg-3)', border: '1px solid var(--border)' }}>
+            style={{ background: 'var(--joi-bg-3)', border: '1px solid rgba(255,255,255,.04)' }}>
             <button onClick={() => setAnnual(false)}
               className="px-4 py-1.5 rounded-full text-[12px] font-medium transition-all"
               style={!annual
-                ? { background: 'var(--accent)', color: '#fff' }
-                : { background: 'transparent', color: 'var(--text-3)' }
+                ? { background: 'var(--joi-pink)', color: '#fff' }
+                : { background: 'transparent', color: 'var(--joi-text-3)' }
               }>
               Monthly
             </button>
             <button onClick={() => setAnnual(true)}
               className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[12px] font-medium transition-all"
               style={annual
-                ? { background: 'var(--accent)', color: '#fff' }
-                : { background: 'transparent', color: 'var(--text-3)' }
+                ? { background: 'var(--joi-pink)', color: '#fff' }
+                : { background: 'transparent', color: 'var(--joi-text-3)' }
               }>
               Annual
               <span className="text-[9px] px-1.5 py-0.5 rounded-full font-jet font-bold"
-                style={{ background: 'rgba(240,104,72,0.15)', color: 'var(--accent)' }}>2 months free</span>
+                style={{ background: 'rgba(255,107,157,0.15)', color: 'var(--joi-pink)' }}>2 months free</span>
             </button>
           </div>
         </div>
@@ -286,20 +286,20 @@ const PricingPage: React.FC = () => {
           <div
             className="mb-8 px-5 py-3.5 rounded-2xl flex items-center justify-center gap-3 text-center"
             style={{
-              background: 'linear-gradient(135deg, rgba(240,104,72,0.06) 0%, rgba(208,72,176,0.04) 100%)',
-              border: '1px solid rgba(240,104,72,0.15)',
+              background: 'linear-gradient(135deg, rgba(255,107,157,0.06) 0%, rgba(208,72,176,0.04) 100%)',
+              border: '1px solid rgba(255,107,157,0.15)',
             }}
           >
-            <span className="text-[13px] font-medium" style={{ color: 'var(--text-2)' }}>
+            <span className="text-[13px] font-medium" style={{ color: 'var(--joi-text-2)' }}>
               Annual billing saves you up to
             </span>
             <span
               className="text-[14px] font-bold font-jet px-2.5 py-0.5 rounded-full"
-              style={{ background: 'rgba(240,104,72,0.12)', color: 'var(--accent)' }}
+              style={{ background: 'rgba(255,107,157,0.12)', color: 'var(--joi-pink)' }}
             >
               ${(PLANS[3].monthlyPrice - PLANS[3].annualPrice) * 12}/yr
             </span>
-            <span className="text-[13px] font-medium" style={{ color: 'var(--text-2)' }}>
+            <span className="text-[13px] font-medium" style={{ color: 'var(--joi-text-2)' }}>
               on the Brand plan
             </span>
           </div>
@@ -308,12 +308,12 @@ const PricingPage: React.FC = () => {
         {/* ── Sign-up prompt for anonymous users ── */}
         {showSignUpPrompt && !user && (
           <div className="mb-6 px-5 py-4 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3"
-            style={{ background: 'rgba(240,104,72,0.06)', border: '1px solid rgba(240,104,72,0.2)' }}>
+            style={{ background: 'rgba(255,107,157,0.06)', border: '1px solid rgba(255,107,157,0.2)' }}>
             <div>
-              <p className="text-[13px] font-semibold" style={{ color: 'var(--text-1)' }}>
+              <p className="text-[13px] font-semibold" style={{ color: 'var(--joi-text-1)' }}>
                 Create a free account to subscribe
               </p>
-              <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-2)' }}>
+              <p className="text-[11px] mt-0.5" style={{ color: 'var(--joi-text-2)' }}>
                 Sign up in seconds -- you'll be redirected to checkout automatically.
               </p>
             </div>
@@ -347,28 +347,28 @@ const PricingPage: React.FC = () => {
 
                 {plan.badge && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-bold font-jet"
-                    style={{ background: isFeatured ? 'linear-gradient(135deg, var(--accent), var(--magenta))' : 'var(--gold)', color: '#000' }}>
+                    style={{ background: isFeatured ? 'linear-gradient(135deg, var(--joi-pink), var(--magenta))' : 'var(--gold)', color: '#000' }}>
                     {plan.badge}
                   </div>
                 )}
 
                 <div className="mb-4">
-                  <h3 className="font-jet text-[10px] uppercase tracking-[0.15em] mb-2" style={{ color: 'var(--text-3)' }}>{plan.name}</h3>
-                  <p className="text-[13px]" style={{ color: 'var(--text-2)' }}>{plan.description}</p>
+                  <h3 className="font-jet text-[10px] uppercase tracking-[0.15em] mb-2" style={{ color: 'var(--joi-text-3)' }}>{plan.name}</h3>
+                  <p className="text-[13px]" style={{ color: 'var(--joi-text-2)' }}>{plan.description}</p>
                 </div>
 
                 {/* Price */}
                 <div className="mb-5">
                   <div className="flex items-end gap-1.5">
-                    <span className="font-display text-[42px] leading-none" style={{ color: 'var(--text-1)' }}>${price}</span>
+                    <span className="font-display text-[42px] leading-none" style={{ color: 'var(--joi-text-1)' }}>${price}</span>
                     {!isFree && (
-                      <span className="text-base font-body pb-1.5" style={{ color: 'var(--text-3)' }}>
-                        /mes{annual && <span className="ml-1 text-[10px]">billed annually</span>}
+                      <span className="text-base font-body pb-1.5" style={{ color: 'var(--joi-text-3)' }}>
+                        /mo{annual && <span className="ml-1 text-[10px]">billed annually</span>}
                       </span>
                     )}
                   </div>
                   {!isFree && annual && (
-                    <p className="text-[11px] mt-1 font-jet" style={{ color: 'var(--accent)' }}>
+                    <p className="text-[11px] mt-1 font-jet" style={{ color: 'var(--joi-pink)' }}>
                       Save ${(plan.monthlyPrice - plan.annualPrice) * 12}/yr
                     </p>
                   )}
@@ -382,7 +382,7 @@ const PricingPage: React.FC = () => {
                 {/* CTA */}
                 {isCurrent ? (
                   <div className="w-full py-3 rounded-xl text-[13px] font-semibold mb-5 text-center"
-                    style={{ background: 'var(--bg-3)', color: 'var(--text-3)', border: '1px solid var(--border)' }}>
+                    style={{ background: 'var(--joi-bg-3)', color: 'var(--joi-text-3)', border: '1px solid rgba(255,255,255,.04)' }}>
                     Current plan
                   </div>
                 ) : isFree ? (
@@ -410,12 +410,12 @@ const PricingPage: React.FC = () => {
 
                 {/* Limits */}
                 <div className="rounded-xl p-3 mb-4 space-y-2"
-                  style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)' }}>
+                  style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,.04)' }}>
                   {plan.limits.map(l => (
                     <div key={l.label} className="flex items-center justify-between">
-                      <span className="text-[11px]" style={{ color: 'var(--text-3)' }}>{l.label}</span>
+                      <span className="text-[11px]" style={{ color: 'var(--joi-text-3)' }}>{l.label}</span>
                       <span className="text-[11px] font-jet font-semibold"
-                        style={{ color: l.value === '—' ? 'var(--bg-4)' : 'var(--text-2)' }}>{l.value}</span>
+                        style={{ color: l.value === '—' ? 'var(--joi-bg-3)' : 'var(--joi-text-2)' }}>{l.value}</span>
                     </div>
                   ))}
                 </div>
@@ -424,12 +424,12 @@ const PricingPage: React.FC = () => {
                 <ul className="space-y-2 flex-1">
                   {plan.features.map(f => (
                     <li key={f.label} className="flex items-start gap-2">
-                      <span className="shrink-0 mt-0.5 text-[13px]" style={{ color: 'var(--accent)' }}>&#8594;</span>
-                      <span className="text-[13px] leading-snug" style={{ color: 'var(--text-2)' }}>
+                      <span className="shrink-0 mt-0.5 text-[13px]" style={{ color: 'var(--joi-pink)' }}>&#8594;</span>
+                      <span className="text-[13px] leading-snug" style={{ color: 'var(--joi-text-2)' }}>
                         {f.label}
                         {f.note && (
                           <span className="ml-1.5 text-[9px] font-jet px-1.5 py-0.5 rounded-full"
-                            style={{ background: 'var(--bg-3)', color: 'var(--text-3)' }}>{f.note}</span>
+                            style={{ background: 'var(--joi-bg-3)', color: 'var(--joi-text-3)' }}>{f.note}</span>
                         )}
                       </span>
                     </li>
@@ -441,8 +441,8 @@ const PricingPage: React.FC = () => {
         </div>
 
         {/* ── Credit cost reference ── */}
-        <div className="mb-20 rounded-2xl p-6" style={{ background: 'var(--bg-1)', border: '1px solid var(--border)' }}>
-          <p className="text-[11px] font-jet uppercase tracking-widest mb-5 text-center" style={{ color: 'var(--text-3)' }}>
+        <div className="mb-20 rounded-2xl p-6" style={{ background: 'var(--joi-bg-1)', border: '1px solid rgba(255,255,255,.04)' }}>
+          <p className="text-[11px] font-jet uppercase tracking-widest mb-5 text-center" style={{ color: 'var(--joi-text-3)' }}>
             Credit cost per action
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -459,8 +459,8 @@ const PricingPage: React.FC = () => {
               { label: 'Kling Video',    cost: 80 },
             ].map(({ label, cost }) => (
               <div key={label} className="flex items-center justify-between px-3 py-2 rounded-xl"
-                style={{ background: 'var(--bg-2)', border: '1px solid var(--border)' }}>
-                <span className="text-[11px]" style={{ color: 'var(--text-2)' }}>{label}</span>
+                style={{ background: 'var(--joi-bg-2)', border: '1px solid rgba(255,255,255,.04)' }}>
+                <span className="text-[11px]" style={{ color: 'var(--joi-text-2)' }}>{label}</span>
                 <span className="text-[11px] font-jet font-bold" style={{ color: 'var(--gold)' }}>{cost}</span>
               </div>
             ))}
@@ -474,7 +474,7 @@ const PricingPage: React.FC = () => {
             <h2 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 32, lineHeight: 1.2, marginBottom: 8 }}>
               Credit Packs
             </h2>
-            <p className="text-[13px]" style={{ color: 'var(--text-2)' }}>
+            <p className="text-[13px]" style={{ color: 'var(--joi-text-2)' }}>
               One-time purchase. Never expires. Stacks with your plan.
             </p>
           </div>
@@ -488,16 +488,16 @@ const PricingPage: React.FC = () => {
                   style={{ textAlign: 'center' }}>
                   {pack.badge && (
                     <div className="absolute -top-3 px-3 py-1 rounded-full text-[10px] font-bold font-jet"
-                      style={{ background: 'linear-gradient(135deg, var(--accent), var(--magenta))', color: '#000' }}>
+                      style={{ background: 'linear-gradient(135deg, var(--joi-pink), var(--magenta))', color: '#000' }}>
                       {pack.badge}
                     </div>
                   )}
-                  <div className="font-display text-[32px] mb-1" style={{ color: 'var(--text-1)' }}>
+                  <div className="font-display text-[32px] mb-1" style={{ color: 'var(--joi-text-1)' }}>
                     {pack.credits.toLocaleString('en-US')}
                   </div>
                   <div className="text-[11px] font-jet mb-3" style={{ color: 'var(--gold)' }}>credits</div>
-                  <div className="font-display text-[24px] mb-1" style={{ color: 'var(--text-1)' }}>${pack.price}</div>
-                  <div className="text-[11px] font-jet mb-5" style={{ color: 'var(--text-3)' }}>{pack.perCredit} / credit</div>
+                  <div className="font-display text-[24px] mb-1" style={{ color: 'var(--joi-text-1)' }}>${pack.price}</div>
+                  <div className="text-[11px] font-jet mb-5" style={{ color: 'var(--joi-text-3)' }}>{pack.perCredit} / credit</div>
                   <button
                     onClick={async () => {
                       if (!pack.variantId) { setCheckoutError('Credit pack variant ID not configured.'); return; }
@@ -523,7 +523,7 @@ const PricingPage: React.FC = () => {
 
         {/* ── FAQ ── */}
         <div className="max-w-2xl mx-auto">
-          <p className="text-[11px] font-jet uppercase tracking-widest mb-6 text-center" style={{ color: 'var(--text-3)' }}>FAQ</p>
+          <p className="text-[11px] font-jet uppercase tracking-widest mb-6 text-center" style={{ color: 'var(--joi-text-3)' }}>FAQ</p>
           {FAQ_ITEMS.map(item => <FaqItem key={item.q} {...item} />)}
         </div>
 

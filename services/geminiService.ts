@@ -405,7 +405,7 @@ export const generateInfluencerImage = async (
     identity: (ch.modelImages && ch.modelImages.length > 0)
       ? {
           source: `[CHARACTER ${i + 1} — FACE/IDENTITY REFERENCE]`,
-          face_lock: "ABSOLUTE — reproduce with pixel-perfect fidelity",
+          face_lock: "ABSOLUTE — reproduce faithfully, same person recognizable instantly",
           preserve: ["bone_structure", "eye_shape", "eye_color", "nose_form", "lip_shape", "skin_tone", "skin_texture", "hair_color", "hair_texture"],
           ...(ch.characteristics ? { traits: ch.characteristics } : {}),
         }
@@ -590,7 +590,7 @@ export const modifyInfluencerPose = async (
       let promptText = `
 ⚠️ FACE LOCK — ABSOLUTE CONSTRAINT (process before anything else):
 The face in the Base Image is FROZEN. You are FORBIDDEN from altering, redesigning, smoothing, idealizing, or blending it in any way.
-Reproduce with pixel-perfect fidelity: bone structure, eye shape, eye color, iris color, nose, lips, skin tone, skin texture, hair color, hair style, and every distinguishing facial feature.
+Reproduce faithfully so the person is instantly recognizable: bone structure, eye shape, eye color, iris color, nose, lips, skin tone, skin texture, hair color, hair style, and every distinguishing facial feature.
 
 TASK: You are a photo retoucher performing a MINIMAL BODY-ONLY EDIT on a professional fashion editorial photograph.
 
@@ -628,7 +628,7 @@ FORBIDDEN CHANGES (do not touch under any circumstance):
 
       promptText += `\nOUTPUT: Ultra-photorealistic fashion editorial photograph. Sharp facial detail, natural skin texture, realistic fabric rendering. 85mm portrait lens quality. No plastic skin, no AI artifacts, no over-smoothing.`;
 
-      promptText += `\n⚠️ FINAL FACE CHECK: Before rendering — verify the face matches the Base Image exactly. If it does not, correct it to match. The face is the non-negotiable identity anchor of this edit.`;
+      promptText += `\nThe face is the non-negotiable identity anchor of this edit — it must match the Base Image.`;
 
       if (count > 1 && (!params.sessionPoses || params.sessionPoses.length === 0)) {
         promptText += `\n(Variation ${index + 1} of ${count} — explore pose variation only. Identity and face are locked.)`;
@@ -1051,14 +1051,14 @@ OUTPUT: Return the complete edited photograph at the same quality and compositio
 // ─────────────────────────────────────────────
 
 const SESSION_ANGLES = [
-  "front-facing portrait, eye-level, 85mm lens, subject looking directly into the camera",
-  "3/4 angle right, medium shot, subject looking slightly off-camera left, cinematic framing",
-  "side profile, 90-degree lateral view, full figure, elegant and architectural",
-  "3/4 back angle, subject looking over left shoulder toward the camera, editorial mystery",
-  "wide environmental shot, full body, subject positioned rule-of-thirds, rich background context",
-  "low angle, looking upward at subject, dynamic power perspective, dramatic sky if outdoors",
-  "high angle, overhead perspective, bird's eye view, subject looking up into the lens",
-  "intimate close-up, tight crop on face, very shallow depth of field, skin texture visible",
+  { camera: "front-facing portrait, eye-level, 85mm lens, subject looking directly into the camera", env: "background centered behind subject, medium depth, balanced composition" },
+  { camera: "3/4 angle from the right, medium shot, subject looking slightly off-camera left", env: "background shifted left, showing different wall/landscape than front view, parallax visible" },
+  { camera: "side profile, 90-degree lateral view, full figure, elegant pose", env: "background is completely different wall or side of room, perpendicular view of the space" },
+  { camera: "3/4 back angle, subject looking over left shoulder toward camera", env: "background now shows what was behind the camera in the front shot, reversed view of the space" },
+  { camera: "wide environmental shot, full body, subject small in frame, rule-of-thirds", env: "pull back to show MUCH more of the environment — floor, ceiling/sky, walls, furniture, surroundings" },
+  { camera: "low angle looking up at subject from knee height, dramatic power perspective", env: "ceiling or sky dominates upper frame, floor visible at bottom, walls foreshortened dramatically" },
+  { camera: "high angle looking down at subject from above, bird's eye tendency", env: "floor/ground dominates the frame, subject seen from above, furniture/objects visible around them" },
+  { camera: "intimate close-up, tight crop on face and shoulders, very shallow depth of field", env: "background heavily blurred bokeh, just soft shapes and colors, almost abstract" },
 ];
 
 export const generatePhotoSession = async (
@@ -1076,47 +1076,58 @@ export const generatePhotoSession = async (
   if (onProgress) onProgress(15);
 
   const clampedCount = Math.max(2, Math.min(8, count));
-  const anglePool = (options.angles && options.angles.length > 0) ? options.angles : SESSION_ANGLES;
-  const angles = Array.from({ length: clampedCount }, (_, i) => anglePool[i % anglePool.length]);
+  // Support both old string[] angles and new structured angles
+  const useStructuredAngles = !options.angles || options.angles.length === 0;
+  const structuredAngles = Array.from({ length: clampedCount }, (_, i) => SESSION_ANGLES[i % SESSION_ANGLES.length]);
 
   const buildTask = (index: number) => async (): Promise<PoseGenerationResult | null> => {
     if (abortSignal?.aborted) throw new Error('Cancelled by user.');
     if (index > 0) await wait(index * 300);
 
-    const angle = angles[index];
+    const angleData = useStructuredAngles ? structuredAngles[index] : null;
+    const cameraDesc = angleData ? angleData.camera : (options.angles?.[index % options.angles.length] || 'natural varied angle');
+    const envDesc = angleData ? angleData.env : '';
+
     const prompt = `PHOTO SESSION — Shot ${index + 1} of ${clampedCount}
 
-CORE DIRECTIVE: Generate an ultra-photorealistic photograph. The reference image is the absolute visual source of truth for the person, outfit, and scene. ONLY the camera angle changes between shots.
+Create a NEW photograph from scratch. Do NOT copy the reference photo — use it ONLY to learn the person's appearance.
 
-WHAT TO PRESERVE (pixel-faithful):
-- Person's face, skin tone, hair color, hair style, body proportions
-- Every garment: exact same colors, fabrics, cut, fit, and all details
-- Scene / Environment: same location, lighting condition, background elements, atmosphere
+PERSON (must match reference exactly):
+- Same face, bone structure, eye shape, eye color, skin tone, hair
+- Same body proportions
+- Same outfit: clothing, colors, fabrics, fit
 
-CAMERA ANGLE FOR THIS SHOT: ${angle}${options.scenario ? `\nSCENE: ${options.scenario}` : ''}${options.lighting ? `\nLIGHTING: ${options.lighting}` : ''}
+CAMERA: ${cameraDesc}
+SCENE: ${options.scenario || 'Same type of location as the reference image.'}
+${options.lighting ? `LIGHTING: ${options.lighting}` : ''}
 
-TECHNICAL: Ultra-photorealistic, no AI artifacts, natural skin texture, realistic fabric rendering, sharp focus on subject. Consistent color grade matching the reference.
+BACKGROUND FOR THIS SHOT: ${envDesc || 'Must look different from other shots — different framing of the same space.'}
+The camera has physically moved to a new position in a real 3D space. The background MUST change accordingly — different walls, different depth, different objects visible. Do NOT reuse the same background from the reference or other shots.
 
-CRITICAL: If the subject's face, clothing, or background differs from the reference image — that is a failure. Regenerate until they match exactly. Only the camera angle may differ.`;
+ONE photo only. No collages or grids. Ultra-photorealistic, natural skin, sharp focus.`;
 
     const parts: any[] = [
       refPart,
-      { text: '[REFERENCE IMAGE] — Source of truth for identity, outfit, and scene. Reproduce exactly.' },
+      { text: '[REFERENCE] Identity source only — copy the person\'s face, body, and outfit. Ignore the background and camera angle.' },
       { text: prompt },
     ];
 
     if (onProgress) onProgress(Math.round(15 + ((index + 1) / clampedCount) * 75));
 
-    const response = await generateWithFallback(ai, GeminiImageModel.Flash2, parts, {
-      imageSize: options.imageSize,
-      aspectRatio: options.aspectRatio,
-    });
-    const images = processResponse(response);
-    if (images.length > 0) return { url: images[0], poseIndex: index };
+    try {
+      const response = await generateWithFallback(ai, GeminiImageModel.Flash2, parts, {
+        imageSize: options.imageSize,
+        aspectRatio: options.aspectRatio,
+      });
+      const images = processResponse(response);
+      if (images.length > 0) return { url: images[0], poseIndex: index };
 
-    const parts2 = response.candidates?.[0]?.content?.parts || [];
-    const text = parts2.map((p: any) => p.text).filter(Boolean).join(' ');
-    throw new Error(text ? `Shot ${index + 1}: ${text}` : `Shot ${index + 1}: no image generated`);
+      console.warn(`Shot ${index + 1}: no image in response, skipping`);
+      return null;
+    } catch (shotErr) {
+      console.warn(`Shot ${index + 1} failed:`, shotErr);
+      return null;
+    }
   };
 
   const tasks = Array.from({ length: clampedCount }, (_, i) => buildTask(i));
@@ -1147,11 +1158,11 @@ export const faceSwapWithGemini = async (
     baseImage,
     instruction: [
       'Replace the face of the person in the Base Image with the face shown in the Reference image.',
-      'Keep everything else in the Base Image completely identical: body pose, body shape, clothing, hair style and color, background, lighting, color grade, and overall composition.',
-      'Only the facial identity should change: bone structure, eye shape, eye color, nose, lips, jaw, skin tone.',
-      'The new face must be seamlessly composited — match the original lighting direction, color temperature, and shadows.',
-      'Do NOT change the hair. Do NOT change the body. Do NOT change the background.',
-      'Output: a complete photorealistic image at the same resolution and quality as the Base Image.',
+      'Keep everything else identical: body pose, body shape, clothing, background, lighting, color grade, composition.',
+      'Only the facial identity changes: bone structure, eye shape, eye color, nose, lips, jaw, skin tone.',
+      'The new face must match the original lighting direction, color temperature, and shadow angles on the face.',
+      'Hair style and color: keep from the Base Image (do NOT import hair from the Reference).',
+      'Output: a complete photorealistic image at the same quality as the Base Image.',
     ].join(' '),
     referenceImage: faceImage,
     model: GeminiImageModel.Flash2,

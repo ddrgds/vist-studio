@@ -27,7 +27,8 @@ const MobileNav: React.FC = () => {
   }, [showMore]);
 
   return (
-    <div className="flex lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[var(--bg-0)]/95 backdrop-blur-sm border-t border-[var(--border)] pb-[env(safe-area-inset-bottom)]">
+    <div className="flex lg:hidden fixed bottom-0 left-0 right-0 z-50 backdrop-blur-sm pb-[env(safe-area-inset-bottom)]"
+      style={{ background: 'rgba(8,7,13,0.92)', borderTop: '1px solid rgba(255,255,255,.03)' }}>
       <div className="flex w-full justify-around items-center py-2">
         {TABS.map(({ path, icon, label }) => {
           const isActive = location.pathname === path;
@@ -35,10 +36,8 @@ const MobileNav: React.FC = () => {
             <button
               key={path}
               onClick={() => navigate(path)}
-              className={[
-                'flex flex-col items-center gap-0.5 px-4 py-1.5 transition-all duration-150',
-                isActive ? 'text-[var(--accent)]' : 'text-[var(--text-3)]',
-              ].join(' ')}
+              className="flex flex-col items-center gap-0.5 px-4 py-1.5 transition-all duration-150"
+              style={{ color: isActive ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}
             >
               <span className="text-xl leading-none">{icon}</span>
               <span className="text-[10px] font-medium">{label}</span>
@@ -50,23 +49,21 @@ const MobileNav: React.FC = () => {
         <div ref={moreRef} className="relative">
           <button
             onClick={() => setShowMore(!showMore)}
-            className={[
-              'flex flex-col items-center gap-0.5 px-4 py-1.5 transition-all duration-150',
-              showMore ? 'text-[var(--accent)]' : 'text-[var(--text-3)]',
-            ].join(' ')}
+            className="flex flex-col items-center gap-0.5 px-4 py-1.5 transition-all duration-150"
+            style={{ color: showMore ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}
           >
             <span className="text-xl leading-none">⋯</span>
             <span className="text-[10px] font-medium">More</span>
           </button>
 
           {showMore && (
-            <div className="absolute bottom-full right-4 mb-2 bg-[var(--bg-2)] border border-[var(--border)] rounded-xl shadow-2xl p-1.5 min-w-[160px]">
+            <div className="absolute bottom-full right-4 mb-2 rounded-xl shadow-2xl p-1.5 min-w-[160px] joi-glass">
               {MORE_ITEMS.map(({ path, icon, label }, idx) => (
                 <button
                   key={path}
                   onClick={() => { navigate(path); setShowMore(false); }}
-                  className="fade-in-stagger flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-[var(--text-2)] hover:bg-[rgba(255,255,255,0.03)] hover:text-[var(--text-1)] transition-all duration-150 w-full text-left"
-                  style={{ animationDelay: `${idx * 50}ms` }}
+                  className="fade-in-stagger flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm hover:bg-[rgba(255,255,255,0.03)] transition-all duration-150 w-full text-left"
+                  style={{ color: 'var(--joi-text-2)', animationDelay: `${idx * 50}ms` }}
                 >
                   <span className="text-base">{icon}</span>
                   <span>{label}</span>

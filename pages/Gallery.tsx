@@ -89,10 +89,10 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
   }
 
   const stats = [
-    { l:'Total Creations', v: filtered.length.toString(), c:'var(--accent)' },
-    { l:'Face Swaps', v: items.filter(i => getItemCategory(i) === 'Face Swap').length.toString(), c:'var(--rose)' },
-    { l:'Relights', v: items.filter(i => getItemCategory(i) === 'Relight').length.toString(), c:'var(--magenta)' },
-    { l:'Try-Ons', v: items.filter(i => getItemCategory(i) === 'Try-On').length.toString(), c:'var(--mint)' },
+    { l:'Total Creations', v: filtered.length.toString(), c:'var(--joi-pink)' },
+    { l:'Face Swaps', v: items.filter(i => getItemCategory(i) === 'Face Swap').length.toString(), c:'var(--joi-coral)' },
+    { l:'Relights', v: items.filter(i => getItemCategory(i) === 'Relight').length.toString(), c:'var(--joi-magenta)' },
+    { l:'Try-Ons', v: items.filter(i => getItemCategory(i) === 'Try-On').length.toString(), c:'var(--joi-cyan-warm)' },
   ]
 
   // --- Handlers ---
@@ -174,46 +174,48 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
   }, [lightboxIndex, sorted.length])
 
   return (
-    <div className="min-h-screen gradient-mesh">
+    <div className="min-h-screen joi-mesh">
       <div className="px-8 pt-8 pb-2 flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold font-serif" style={{ color:'var(--text-1)' }}>
-            Gallery of <span className="text-gradient">Creations</span>
+          <h1 className="joi-heading joi-glow--subtle" style={{ fontSize: '1.75rem' }}>
+            <span className="joi-text-gradient">Gallery</span>{' '}
+            <span style={{ color: 'var(--joi-text-1)' }}>of Creations</span>
           </h1>
-          <p className="text-sm mt-1" style={{ color:'var(--text-2)' }}>All your AI-edited images in one place</p>
+          <p className="joi-label mt-1" style={{ color: 'var(--joi-lavender)' }}>All your AI-edited images in one place</p>
         </div>
         <div className="flex items-center gap-2">
           {selected.length > 0 && (
-            <span className="text-[11px] font-mono px-3 py-1.5 rounded-lg" style={{ background:'rgba(240,104,72,.1)', color:'var(--accent)' }}>
+            <span className="text-[11px] font-mono px-3 py-1.5 rounded-lg" style={{ background:'rgba(255,107,157,.08)', color:'var(--joi-pink)' }}>
               {selected.length} selected
             </span>
           )}
-          <div className="flex p-0.5 rounded-lg" style={{ background:'var(--bg-2)' }}>
+          <div className="flex p-0.5 rounded-lg" style={{ background:'var(--joi-bg-2)', backdropFilter:'blur(8px)' }}>
             {(['grid','masonry'] as const).map(m=>(
               <button key={m} onClick={()=>setViewMode(m)}
-                className="px-2.5 py-1 rounded-md text-[11px] transition-all"
-                style={{ background: viewMode===m ? 'var(--bg-4)' : 'transparent', color: viewMode===m ? 'var(--text-1)' : 'var(--text-3)' }}>
-                {m==='grid' ? '⊞' : '⊟'}
+                className="px-2.5 py-1 rounded-lg text-[11px] transition-all"
+                style={{ background: viewMode===m ? 'var(--joi-bg-3)' : 'transparent', color: viewMode===m ? 'var(--joi-text-1)' : 'var(--joi-text-3)' }}>
+                {m==='grid' ? '\u229e' : '\u229f'}
               </button>
             ))}
           </div>
           <select value={sortBy} onChange={e=>setSortBy(e.target.value)}
-            className="px-3 py-1.5 rounded-lg text-[11px] outline-none"
-            style={{ background:'var(--bg-2)', border:'1px solid var(--border)', color:'var(--text-2)' }}>
+            className="px-3 py-1.5 rounded-xl text-[11px] outline-none"
+            style={{ background:'var(--joi-bg-2)', border:'1px solid rgba(255,255,255,.04)', color:'var(--joi-text-2)', backdropFilter:'blur(8px)' }}>
             {sortOpts.map(s=><option key={s} value={s}>{s}</option>)}
           </select>
         </div>
       </div>
 
       {/* Filter chips */}
-      <div className="px-8 py-3 flex gap-1.5 overflow-x-auto">
+      <div className="px-8 py-3 flex gap-1.5 overflow-x-auto joi-scroll">
         {filters.map(f => (
           <button key={f} onClick={()=>setActiveFilter(f)}
-            className="px-3.5 py-1.5 rounded-full text-[11px] font-medium shrink-0 transition-all"
+            className="px-3.5 py-1.5 rounded-lg text-[11px] font-medium shrink-0 transition-all"
             style={{
-              background: activeFilter===f ? 'rgba(240,104,72,.1)' : 'var(--bg-2)',
-              border: `1px solid ${activeFilter===f ? 'rgba(240,104,72,.25)' : 'var(--border)'}`,
-              color: activeFilter===f ? 'var(--accent)' : 'var(--text-2)',
+              background: activeFilter===f ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-2)',
+              border: `1px solid ${activeFilter===f ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}`,
+              color: activeFilter===f ? 'var(--joi-pink)' : 'var(--joi-text-2)',
+              backdropFilter: 'blur(8px)',
             }}>{f}</button>
         ))}
       </div>
@@ -222,8 +224,8 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
       <div className="px-8 py-2 flex gap-4">
         {stats.map(s=>(
           <div key={s.l} className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full" style={{ background:s.c }} />
-            <span className="text-[10px]" style={{ color:'var(--text-3)' }}>{s.l}:</span>
+            <div className="w-2 h-2 rounded-full joi-breathe" style={{ background:s.c }} />
+            <span className="text-[10px]" style={{ color:'var(--joi-text-3)' }}>{s.l}:</span>
             <span className="text-[11px] font-mono font-bold" style={{ color:s.c }}>{s.v}</span>
           </div>
         ))}
@@ -232,8 +234,8 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
       {/* Empty state */}
       {items.length === 0 ? (
         <div className="px-8 pb-8 flex items-center justify-center" style={{ minHeight: '40vh' }}>
-          <div className="card px-8 py-10 text-center" style={{ maxWidth: '420px' }}>
-            <p className="text-sm" style={{ color:'var(--text-2)' }}>
+          <div className="joi-glass px-8 py-10 text-center rounded-2xl" style={{ maxWidth: '420px' }}>
+            <p className="text-sm" style={{ color:'var(--joi-text-2)' }}>
               No creations yet. Use the AI Editor or Photo Session to get started.
             </p>
           </div>
@@ -245,23 +247,25 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
             const charName = characters.find(c => c.id === img.characterId)?.name || 'No character'
             const category = getItemCategory(img)
             const dateStr = new Date(img.timestamp).toLocaleDateString('en', { day:'numeric', month:'short' })
-            const colorMap: Record<number, string> = { 0:'var(--accent)', 1:'var(--blue)', 2:'var(--rose)' }
-            const fallbackColor = colorMap[idx % 3] || 'var(--accent)'
+            const colorMap: Record<number, string> = { 0:'var(--joi-pink)', 1:'var(--joi-lavender)', 2:'var(--joi-coral)' }
+            const fallbackColor = colorMap[idx % 3] || 'var(--joi-pink)'
 
             return (
               <div
                 key={img.id}
                 onClick={() => { setLightboxIndex(idx); setFilterValues({ ...DEFAULT_FILTERS }); setActivePreset(null) }}
-                className={`group cursor-pointer rounded-2xl overflow-hidden relative transition-all hover:scale-[1.02] ${viewMode==='masonry' ? 'break-inside-avoid' : ''}`}
+                className={`group cursor-pointer rounded-xl overflow-hidden relative transition-all hover:scale-[1.02] joi-border-glow ${viewMode==='masonry' ? 'break-inside-avoid' : ''}`}
                 style={{
-                  border: `2px solid ${selected.includes(img.id) ? 'var(--accent)' : 'var(--border)'}`,
-                  boxShadow: selected.includes(img.id) ? '0 0 20px rgba(240,104,72,.15)' : 'none',
+                  border: `1px solid ${selected.includes(img.id) ? 'rgba(255,107,157,.3)' : 'rgba(255,255,255,.04)'}`,
+                  boxShadow: selected.includes(img.id) ? '0 0 20px rgba(255,107,157,.12)' : 'none',
+                  background: 'var(--joi-bg-glass)',
+                  backdropFilter: 'blur(12px)',
                 }}
               >
                 <div
                   className={viewMode==='grid' ? 'aspect-square' : ''}
                   style={{
-                    background: img.url ? undefined : `linear-gradient(${90 + idx * 15}deg, ${fallbackColor}18, var(--bg-2))`,
+                    background: img.url ? undefined : `linear-gradient(${90 + idx * 15}deg, ${fallbackColor}18, var(--joi-bg-2))`,
                     minHeight: viewMode==='masonry' ? `${140 + (idx%4)*40}px` : undefined,
                   }}
                 >
@@ -271,7 +275,7 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
                     <div className="w-full h-full flex items-center justify-center p-4">
                       <div className="text-center">
                         <span className="text-2xl block mb-1 opacity-30">{charName[0]}</span>
-                        <span className="text-[9px] font-mono opacity-40" style={{ color:'var(--text-1)' }}>{category}</span>
+                        <span className="text-[9px] font-mono opacity-40" style={{ color:'var(--joi-text-1)' }}>{category}</span>
                       </div>
                     </div>
                   )}
@@ -287,24 +291,24 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
                       </div>
                       <div className="flex gap-1">
                         <button onClick={(e) => { e.stopPropagation(); navigateToEditor(img.url); onNav?.('editor') }}
-                          className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] transition-all hover:scale-110"
-                          style={{ background: 'rgba(240,104,72,.25)', color: 'var(--accent)' }}
-                          title="Edit in AI Editor">✦</button>
+                          className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] transition-all hover:scale-110"
+                          style={{ background: 'rgba(255,107,157,.2)', color: 'var(--joi-pink)' }}
+                          title="Edit in AI Editor">{'\u2726'}</button>
                         <button onClick={(e) => handleDownload(e, img.url, img.id)}
-                          className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] transition-all hover:scale-110"
-                          style={{ background:'rgba(255,255,255,.15)', color: 'var(--text-2)' }}
-                          title="Download">↓</button>
+                          className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] transition-all hover:scale-110"
+                          style={{ background:'rgba(255,255,255,.1)', color: 'var(--joi-text-2)' }}
+                          title="Download">{'\u2193'}</button>
                         <button
-                          className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] transition-all hover:scale-110"
-                          style={{ background: img.favorite ? 'rgba(240,104,72,.3)' : 'rgba(255,255,255,.15)' }}
+                          className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] transition-all hover:scale-110"
+                          style={{ background: img.favorite ? 'rgba(255,107,157,.25)' : 'rgba(255,255,255,.1)' }}
                           onClick={(e) => { e.stopPropagation(); toggleFavorite(img.id) }}
                           title="Favorite">
-                          {img.favorite ? '★' : '☆'}
+                          {img.favorite ? '\u2605' : '\u2606'}
                         </button>
                         <button onClick={(e) => handleDelete(e, img)}
-                          className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] transition-all hover:scale-110"
-                          style={{ background: 'rgba(255,60,60,.2)', color: '#e05050' }}
-                          title="Delete">✕</button>
+                          className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] transition-all hover:scale-110"
+                          style={{ background: 'rgba(255,60,60,.15)', color: '#e05050' }}
+                          title="Delete">{'\u2715'}</button>
                       </div>
                     </div>
                   </div>
@@ -312,8 +316,8 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
 
                 {/* Select indicator */}
                 {selected.includes(img.id) && (
-                  <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white"
-                    style={{ background:'var(--accent)' }}>✓</div>
+                  <div className="absolute top-2 right-2 w-5 h-5 rounded-lg flex items-center justify-center text-[10px] text-white"
+                    style={{ background:'var(--joi-pink)' }}>{'\u2713'}</div>
                 )}
               </div>
             )
@@ -321,29 +325,29 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
         </div>
       )}
 
-      {/* ─── Lightbox ─── */}
+      {/* --- Lightbox --- */}
       {lightboxIndex !== null && (() => {
         const item = sorted[lightboxIndex]
         if (!item) return null
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center"
-            style={{ background: 'rgba(0,0,0,0.92)' }}
+            style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(24px)' }}
             onClick={() => setLightboxIndex(null)}>
 
             {/* Close */}
-            <button className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-lg z-10 transition-all hover:scale-110"
-              style={{ background: 'rgba(255,255,255,.1)', color: 'var(--text-2)' }}
-              onClick={() => setLightboxIndex(null)}>✕</button>
+            <button className="absolute top-4 right-4 w-8 h-8 rounded-xl flex items-center justify-center text-lg z-10 transition-all hover:scale-110"
+              style={{ background: 'rgba(255,255,255,.06)', color: 'var(--joi-text-2)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,.04)' }}
+              onClick={() => setLightboxIndex(null)}>{'\u2715'}</button>
 
             {/* Arrow left */}
-            <button className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-lg z-10 transition-all hover:scale-110"
-              style={{ background: 'rgba(255,255,255,.08)', color: 'var(--text-2)' }}
-              onClick={(e) => { e.stopPropagation(); setLightboxIndex(lightboxIndex > 0 ? lightboxIndex - 1 : sorted.length - 1); setFilterValues({ ...DEFAULT_FILTERS }); setActivePreset(null) }}>‹</button>
+            <button className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl flex items-center justify-center text-lg z-10 transition-all hover:scale-110"
+              style={{ background: 'rgba(255,255,255,.06)', color: 'var(--joi-text-2)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,.04)' }}
+              onClick={(e) => { e.stopPropagation(); setLightboxIndex(lightboxIndex > 0 ? lightboxIndex - 1 : sorted.length - 1); setFilterValues({ ...DEFAULT_FILTERS }); setActivePreset(null) }}>{'\u2039'}</button>
 
             {/* Arrow right */}
-            <button className="absolute right-[300px] top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-lg z-10 transition-all hover:scale-110"
-              style={{ background: 'rgba(255,255,255,.08)', color: 'var(--text-2)' }}
-              onClick={(e) => { e.stopPropagation(); setLightboxIndex(lightboxIndex < sorted.length - 1 ? lightboxIndex + 1 : 0); setFilterValues({ ...DEFAULT_FILTERS }); setActivePreset(null) }}>›</button>
+            <button className="absolute right-[300px] top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl flex items-center justify-center text-lg z-10 transition-all hover:scale-110"
+              style={{ background: 'rgba(255,255,255,.06)', color: 'var(--joi-text-2)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,.04)' }}
+              onClick={(e) => { e.stopPropagation(); setLightboxIndex(lightboxIndex < sorted.length - 1 ? lightboxIndex + 1 : 0); setFilterValues({ ...DEFAULT_FILTERS }); setActivePreset(null) }}>{'\u203a'}</button>
 
             {/* Content */}
             <div className="flex max-w-[95vw] max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
@@ -351,71 +355,71 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
               {/* Image */}
               <div className="flex-1 min-w-0 flex items-center justify-center p-4">
                 <img src={item.url} alt=""
-                  className="max-w-full max-h-[85vh] object-contain rounded-xl"
+                  className="max-w-full max-h-[85vh] object-contain rounded-2xl"
                   style={{ filter: computeFilterCSS(filterValues) }} />
               </div>
 
               {/* Sidebar */}
-              <div className="w-[280px] shrink-0 flex flex-col gap-3 p-4 overflow-y-auto"
-                style={{ background: 'rgba(14,12,20,.85)', borderLeft: '1px solid var(--border)' }}>
+              <div className="w-[280px] shrink-0 flex flex-col gap-3 p-4 overflow-y-auto joi-scroll"
+                style={{ background: 'var(--joi-bg-1)', borderLeft: '1px solid var(--joi-border)', backdropFilter: 'blur(16px)' }}>
 
                 {/* Navigation actions */}
-                <div className="text-[9px] font-mono uppercase tracking-wider" style={{ color: 'var(--text-3)' }}>Actions</div>
+                <div className="joi-label" style={{ color: 'var(--joi-text-3)' }}>Actions</div>
                 <div className="flex flex-col gap-1.5">
-                  <button onClick={() => { navigateToEditor(item.url); onNav?.('editor') }}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] transition-all hover:scale-[1.02]"
-                    style={{ background: 'rgba(240,104,72,.08)', border: '1px solid rgba(240,104,72,.15)', color: 'var(--accent)' }}>
-                    ✦ Edit in AI Editor
+                  <button onClick={() => { setLightboxIndex(null); navigateToEditor(item.url); onNav?.('editor') }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
+                    style={{ background: 'rgba(255,107,157,.08)', border: '1px solid rgba(255,107,157,.15)', color: 'var(--joi-pink)' }}>
+                    {'\u2726'} Edit in AI Editor
                   </button>
-                  <button onClick={() => { navigateToSession(item.url); onNav?.('session') }}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] transition-all hover:scale-[1.02]"
-                    style={{ background: 'rgba(208,72,176,.08)', border: '1px solid rgba(208,72,176,.15)', color: 'var(--magenta)' }}>
-                    ◎ New Photo Session
+                  <button onClick={() => { setLightboxIndex(null); navigateToSession(item.url); onNav?.('session') }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
+                    style={{ background: 'rgba(200,120,255,.08)', border: '1px solid rgba(200,120,255,.15)', color: 'var(--joi-magenta)' }}>
+                    {'\u25ce'} New Photo Session
                   </button>
-                  <button onClick={() => { navigateToUpload(item.url); onNav?.('upload') }}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] transition-all hover:scale-[1.02]"
-                    style={{ background: 'rgba(72,88,224,.08)', border: '1px solid rgba(72,88,224,.15)', color: 'var(--blue)' }}>
-                    ⊕ Create Character
+                  <button onClick={() => { setLightboxIndex(null); navigateToUpload(item.url); onNav?.('upload') }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
+                    style={{ background: 'rgba(180,170,255,.08)', border: '1px solid rgba(180,170,255,.15)', color: 'var(--joi-lavender)' }}>
+                    {'\u2295'} Create Character
                   </button>
                 </div>
 
                 {/* Quick actions */}
                 <div className="flex gap-2">
                   <button onClick={(e) => handleDownload(e, item.url, item.id)}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] transition-all hover:scale-[1.02]"
-                    style={{ background: 'var(--bg-3)', color: 'var(--text-2)' }}>
-                    ↓ Download
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[10px] transition-all hover:scale-[1.02]"
+                    style={{ background: 'var(--joi-bg-3)', color: 'var(--joi-text-2)' }}>
+                    {'\u2193'} Download
                   </button>
                   <button onClick={(e) => { handleDelete(e, item); setLightboxIndex(null) }}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] transition-all hover:scale-[1.02]"
-                    style={{ background: 'rgba(255,60,60,.08)', color: '#e05050' }}>
-                    ✕ Delete
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[10px] transition-all hover:scale-[1.02]"
+                    style={{ background: 'rgba(255,60,60,.06)', color: '#e05050' }}>
+                    {'\u2715'} Delete
                   </button>
                 </div>
 
-                <div className="glow-line my-1" />
+                <div className="joi-divider my-1" />
 
                 {/* Filter Presets */}
-                <div className="text-[9px] font-mono uppercase tracking-wider" style={{ color: 'var(--text-3)' }}>Presets</div>
+                <div className="joi-label" style={{ color: 'var(--joi-text-3)' }}>Presets</div>
                 <div className="grid grid-cols-3 gap-1.5">
                   {Object.keys(FILTER_PRESETS).map(name => (
                     <button key={name} onClick={() => { setActivePreset(name); setFilterValues(FILTER_PRESETS[name]) }}
                       className="px-2 py-1.5 rounded-lg text-[10px] font-medium transition-all"
                       style={{
-                        background: activePreset === name ? 'rgba(240,104,72,.1)' : 'var(--bg-3)',
-                        border: `1px solid ${activePreset === name ? 'rgba(240,104,72,.2)' : 'var(--border)'}`,
-                        color: activePreset === name ? 'var(--accent)' : 'var(--text-2)',
+                        background: activePreset === name ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)',
+                        border: `1px solid ${activePreset === name ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}`,
+                        color: activePreset === name ? 'var(--joi-pink)' : 'var(--joi-text-2)',
                       }}>{name}</button>
                   ))}
                 </div>
 
                 {/* Sliders */}
-                <div className="text-[9px] font-mono uppercase tracking-wider mt-1" style={{ color: 'var(--text-3)' }}>Adjust</div>
+                <div className="joi-label mt-1" style={{ color: 'var(--joi-text-3)' }}>Adjust</div>
                 {(['brightness', 'contrast', 'saturation', 'temperature'] as const).map(key => (
                   <div key={key}>
                     <div className="flex justify-between mb-1">
-                      <span className="text-[9px] capitalize" style={{ color: 'var(--text-3)' }}>{key}</span>
-                      <span className="text-[9px] font-mono" style={{ color: filterValues[key] !== 0 ? 'var(--accent)' : 'var(--text-3)' }}>
+                      <span className="text-[9px] capitalize" style={{ color: 'var(--joi-text-3)' }}>{key}</span>
+                      <span className="text-[9px] font-mono" style={{ color: filterValues[key] !== 0 ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>
                         {filterValues[key] > 0 ? '+' : ''}{filterValues[key]}
                       </span>
                     </div>
@@ -431,21 +435,19 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
                 {/* Reset / Save */}
                 <div className="flex gap-2 mt-1">
                   <button onClick={() => { setFilterValues({ ...DEFAULT_FILTERS }); setActivePreset(null) }}
-                    className="flex-1 px-3 py-2 rounded-lg text-[10px] transition-all"
-                    style={{ background: 'rgba(240,104,72,.08)', border: '1px solid rgba(240,104,72,.15)', color: 'var(--accent)' }}>
+                    className="joi-btn-ghost flex-1 px-3 py-2 rounded-xl text-[10px] transition-all">
                     Reset
                   </button>
                   <button onClick={() => handleSaveFilter(item)}
-                    className="flex-1 px-3 py-2 rounded-lg text-[10px] font-bold transition-all"
-                    style={{ background: 'linear-gradient(135deg, var(--accent), var(--magenta))', color: 'white' }}>
+                    className="joi-btn-solid flex-1 px-3 py-2 rounded-xl text-[10px] font-bold transition-all">
                     Save
                   </button>
                 </div>
 
                 {/* Image info */}
-                <div className="glow-line my-1" />
-                <div className="text-[9px] font-mono uppercase tracking-wider" style={{ color: 'var(--text-3)' }}>Info</div>
-                <div className="text-[10px] space-y-1" style={{ color: 'var(--text-2)' }}>
+                <div className="joi-divider my-1" />
+                <div className="joi-label" style={{ color: 'var(--joi-text-3)' }}>Info</div>
+                <div className="text-[10px] space-y-1" style={{ color: 'var(--joi-text-2)' }}>
                   <div>Category: {getItemCategory(item)}</div>
                   {item.model && <div>Model: {item.model}</div>}
                   <div>Date: {new Date(item.timestamp).toLocaleDateString()}</div>
