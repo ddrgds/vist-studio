@@ -1051,14 +1051,14 @@ OUTPUT: Return the complete edited photograph at the same quality and compositio
 // ─────────────────────────────────────────────
 
 const SESSION_ANGLES = [
-  { camera: "front-facing portrait, eye-level, 85mm lens, subject looking directly into the camera", env: "background centered behind subject, medium depth, balanced composition" },
-  { camera: "3/4 angle from the right, medium shot, subject looking slightly off-camera left", env: "background shifted left, showing different wall/landscape than front view, parallax visible" },
-  { camera: "side profile, 90-degree lateral view, full figure, elegant pose", env: "background is completely different wall or side of room, perpendicular view of the space" },
-  { camera: "3/4 back angle, subject looking over left shoulder toward camera", env: "background now shows what was behind the camera in the front shot, reversed view of the space" },
-  { camera: "wide environmental shot, full body, subject small in frame, rule-of-thirds", env: "pull back to show MUCH more of the environment — floor, ceiling/sky, walls, furniture, surroundings" },
-  { camera: "low angle looking up at subject from knee height, dramatic power perspective", env: "ceiling or sky dominates upper frame, floor visible at bottom, walls foreshortened dramatically" },
-  { camera: "high angle looking down at subject from above, bird's eye tendency", env: "floor/ground dominates the frame, subject seen from above, furniture/objects visible around them" },
-  { camera: "intimate close-up, tight crop on face and shoulders, very shallow depth of field", env: "background heavily blurred bokeh, just soft shapes and colors, almost abstract" },
+  { camera: "front-facing portrait at eye-level on 85mm lens, relaxed confident expression, slight head tilt, natural warm smile, shoulders angled 15 degrees off axis", env: "background centered behind subject, medium depth, balanced composition" },
+  { camera: "three-quarter angle medium shot, weight on one hip, one hand in pocket or touching hair, contemplative expression looking past camera", env: "background shifted left, showing different wall/landscape, parallax visible" },
+  { camera: "full body walking toward camera mid-stride, natural arm swing, dynamic movement, candid energy", env: "background is completely different perspective of the space, motion blur on environment" },
+  { camera: "looking back over shoulder, body turned away, mysterious half-smile, three-quarter back view with head rotated toward camera", env: "background now shows what was behind the camera, reversed view of the space" },
+  { camera: "wide environmental shot, subject leaning against surface or sitting casually, relaxed authentic pose, rule-of-thirds", env: "pull back to show much more environment — floor, ceiling/sky, walls, furniture" },
+  { camera: "low angle from knee height, confident power stance with feet apart, assertive expression, looking down at camera", env: "ceiling or sky dominates upper frame, dramatic foreshortening" },
+  { camera: "candid mid-laugh, genuine joy with crinkled eyes, head thrown back slightly, natural unposed moment", env: "background soft bokeh, movement energy, spontaneous feel" },
+  { camera: "intimate close-up, eyes as focal point, dreamy or intense expression, slight smile, very shallow depth of field", env: "background heavily blurred bokeh, abstract soft colors" },
 ];
 
 export const generatePhotoSession = async (
@@ -1090,19 +1090,21 @@ export const generatePhotoSession = async (
 
     const prompt = `PHOTO SESSION — Shot ${index + 1} of ${clampedCount}
 
-Create a NEW photograph from scratch. Do NOT copy the reference photo — use it ONLY to learn the person's appearance.
+Create a NEW photograph from scratch. Do NOT copy the reference photo — use it ONLY to learn the person's identity.
 
-PERSON (must match reference exactly):
+PERSON (identity must match reference):
 - Same face, bone structure, eye shape, eye color, skin tone, hair
 - Same body proportions
 - Same outfit: clothing, colors, fabrics, fit
 
-CAMERA: ${cameraDesc}
+CREATIVE DIRECTION: ${cameraDesc}
+The person should adopt the pose, expression, and body language described above NATURALLY — do NOT make them stand stiffly or copy the reference pose. Each shot should feel like a different moment with different energy.
+
 SCENE: ${options.scenario || 'Same type of location as the reference image.'}
 ${options.lighting ? `LIGHTING: ${options.lighting}` : ''}
 
-BACKGROUND FOR THIS SHOT: ${envDesc || 'Must look different from other shots — different framing of the same space.'}
-The camera has physically moved to a new position in a real 3D space. The background MUST change accordingly — different walls, different depth, different objects visible. Do NOT reuse the same background from the reference or other shots.
+BACKGROUND: ${envDesc || 'Must look different from other shots — different framing of the same space.'}
+The camera has physically moved. Background MUST change — different walls, depth, objects visible.
 
 ONE photo only. No collages or grids. Ultra-photorealistic, natural skin, sharp focus.`;
 

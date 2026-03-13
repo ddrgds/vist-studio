@@ -1247,14 +1247,14 @@ export const editImageWithGrokFal = async (
 // ─────────────────────────────────────────────
 
 const GROK_SESSION_ANGLES = [
-  "front portrait, eye-level, subject looking straight at camera",
-  "3/4 angle right, medium shot, looking slightly off-camera",
-  "side profile, full body, clean lateral view",
-  "3/4 back angle, looking over left shoulder at camera",
-  "wide shot, full body at rule-of-thirds, rich background",
-  "low angle, looking upward at subject, dynamic power perspective",
-  "high angle, overhead, subject looking up into lens",
-  "close-up, tight crop on face, very shallow depth of field",
+  "front portrait at eye-level, relaxed confident expression, slight head tilt, natural warm smile, shoulders angled 15 degrees off camera axis",
+  "three-quarter angle medium shot, weight shifted to one hip, one hand on hip or in pocket, looking past camera with contemplative expression",
+  "full body walking toward camera mid-stride, natural arm swing, dynamic movement energy, candid street style",
+  "looking back over shoulder, body turned away, mysterious half-smile, three-quarter back view with head rotation",
+  "wide environmental shot, subject leaning against wall or sitting casually, relaxed authentic pose, rule-of-thirds placement",
+  "low angle looking up at subject, power stance with feet apart, confident assertive expression, dramatic perspective",
+  "candid mid-laugh, genuine joy with crinkled eyes, slightly off-center framing, natural unposed movement",
+  "intimate close-up, eyes as focal point, shallow depth of field, intense or dreamy expression, slight smile",
 ];
 
 export const generatePhotoSessionWithGrok = async (
@@ -1293,7 +1293,7 @@ export const generatePhotoSessionWithGrok = async (
     if (abortSignal?.aborted) throw new Error('Cancelado');
     const angle = angles[i];
     const scenePart = options.scenario ? ` Scene: ${options.scenario}.` : '';
-    const prompt = `Photo session — shot ${i + 1} of ${clampedCount}. Preserve EXACTLY the same person and outfit from the reference image. Camera angle for this shot: ${angle}.${scenePart} Keep face, clothing identical to the reference.`;
+    const prompt = `Professional photo session — shot ${i + 1} of ${clampedCount}. Same person (face identity, hair, skin tone) as reference image. Creative direction for this shot: ${angle}.${scenePart} The person should adopt the pose, expression, and body language described above naturally — NOT a stiff copy of the reference. Vary the pose and mood for each shot while keeping the same person recognizable.`;
 
     const result = await fal.subscribe('xai/grok-imagine-image/edit', {
       input: { prompt, image_urls: [imageUrl], num_images: 1, output_format: 'jpeg' },
