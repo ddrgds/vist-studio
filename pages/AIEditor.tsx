@@ -31,21 +31,31 @@ const tools = [
 
 // Relight presets — each has a light position on the sphere (azimuth/elevation in degrees) + color
 const relightPresets = [
-  { n:'Golden Hour',  c:'#f0b860', az: -60, el: 15,  prompt:'warm golden hour sunlight from the side, long soft shadows' },
-  { n:'Blue Hour',    c:'#6ba3d9', az: 0,   el: 30,  prompt:'cool blue twilight ambient light, soft and even' },
-  { n:'Studio',       c:'#e8e4dc', az: 0,   el: 45,  prompt:'clean studio lighting from above-front, professional, even' },
-  { n:'Neon Coral',   c:'#e8725c', az: 90,  el: 0,   prompt:'neon coral/pink light from the right side, dramatic color cast' },
-  { n:'Dramatic',     c:'#d4603e', az: -45, el: 60,  prompt:'dramatic top-side lighting, strong shadows, cinematic contrast' },
-  { n:'Moonlight',    c:'#9a90c4', az: 30,  el: 70,  prompt:'cool moonlight from above, silvery blue tones, night atmosphere' },
-  { n:'Sunset',       c:'#d9826a', az: -90, el: 10,  prompt:'warm sunset backlight, golden rim light, silhouette edges' },
-  { n:'Cool White',   c:'#b8c9d9', az: 0,   el: 50,  prompt:'clean cool white overhead light, neutral, minimal shadows' },
-  { n:'Ring Light',   c:'#f0e8e0', az: 0,   el: 0,   prompt:'frontal ring light, beauty lighting, catchlight in eyes, flat even' },
-  { n:'Rembrandt',    c:'#c8a060', az: -40, el: 35,  prompt:'Rembrandt triangle lighting, one side lit, moody classical portrait' },
+  { n:'Golden Hour',  c:'#f0b860', az: -60, el: 15,  prompt:'golden hour at 15 minutes before sunset, warm 3200K color temperature, long shadows at 15° elevation, Fresnel rim highlights on hair and shoulders, atmospheric haze diffusion, warm fill from ground bounce' },
+  { n:'Blue Hour',    c:'#6ba3d9', az: 0,   el: 30,  prompt:'civil twilight blue hour, cool 7500K ambient, no direct sun, diffused omnidirectional quality, deep blue sky reflecting on upward surfaces, warm artificial lights becoming prominent, contemplative mood' },
+  { n:'Studio',       c:'#e8e4dc', az: 0,   el: 45,  prompt:'professional beauty dish key light 45° camera-left, V-flat fill, 5500K neutral, hair light from above-behind with 10° grid, 3:1 ratio, catchlights at 10 o\'clock position' },
+  { n:'Neon Coral',   c:'#e8725c', az: 90,  el: 0,   prompt:'neon sign illumination in warm coral, hard colored light from right creating vivid color cast on skin, deep complementary teal shadows, wet surface reflections, urban night atmosphere' },
+  { n:'Dramatic',     c:'#d4603e', az: -45, el: 60,  prompt:'single hard key at 60° camera-left, Chiaroscuro lighting, 8:1 contrast ratio, minimal fill allowing true black shadows, Rembrandt triangle on shadow cheek, theatrical intensity' },
+  { n:'Moonlight',    c:'#9a90c4', az: 30,  el: 70,  prompt:'full moonlight at 4100K with blue-silver cast, very soft diffused quality, low intensity, gentle shadows with no hard edges, nocturnal atmosphere, cool silver tone on all surfaces' },
+  { n:'Sunset',       c:'#d9826a', az: -90, el: 10,  prompt:'late sunset warm amber-gold directional light at 10° elevation, extreme warm 2800K, long dramatic shadows, golden halo rim on hair, sky gradient peach to violet, nostalgic warmth' },
+  { n:'Cool White',   c:'#b8c9d9', az: 0,   el: 50,  prompt:'overcast daylight at 6500K, perfectly diffused shadowless illumination, neutral color rendering, even exposure across subject, clinical clean quality, fashion lookbook lighting' },
+  { n:'Ring Light',   c:'#f0e8e0', az: 0,   el: 0,   prompt:'LED ring light on camera axis creating circular catchlights in both eyes, flat front-fill with minimal shadow, beauty-influencer aesthetic, even face illumination, warm 4500K' },
+  { n:'Rembrandt',    c:'#c8a060', az: -40, el: 35,  prompt:'classic Rembrandt pattern, key 45° high creating illuminated triangle on shadow-side cheek below eye, nose shadow connecting to cheek shadow, painterly classical quality, 4:1 ratio' },
 ]
 
 const angleViews = ['Front','Right 45°','Right 90°','Back Right','Back','Back Left','Left 90°','Left 45°']
 
-const styleNames = ['Anime','Oil Painting','Watercolor','Pop Art','Sketch','Pixel Art','Vintage Film','Cyberpunk']
+const styleTransfers = [
+  { name: 'Anime', prompt: 'high-quality anime illustration: clean cel-shaded coloring, precise linework with variable weight, large expressive eyes with detailed iris reflections, stylized proportions, vibrant palette, studio Trigger quality' },
+  { name: 'Oil Painting', prompt: 'classical oil painting: visible impasto brushwork with texture, Renaissance color mixing with glazing layers, warm Rembrandt lighting, canvas texture underneath, rich deep shadows with burnt umber undertones' },
+  { name: 'Watercolor', prompt: 'delicate watercolor painting: transparent wash layers building form, wet-on-wet bleeding on edges, white paper showing through as highlights, granulation texture, soft color blooms, controlled dripping' },
+  { name: 'Pop Art', prompt: 'bold Pop Art: flat graphic colors with Ben-Day dot patterns, strong black outlines, Warhol/Lichtenstein aesthetic, limited 4-6 saturated colors, halftone screening, comic-book drama' },
+  { name: 'Sketch', prompt: 'detailed pencil sketch: graphite on textured paper, varied line weight from light construction to dark contour, cross-hatching for shadow, visible guide lines, white highlights where paper shows' },
+  { name: 'Pixel Art', prompt: 'pixel art: visible pixel grid at 128px scale, limited 32-color palette with intentional dithering, each pixel hand-placed quality, clean readable silhouette, retro game aesthetic' },
+  { name: 'Vintage Film', prompt: 'vintage 1970s film: Kodachrome color science with saturated reds, heavy organic grain, slight fading on edges, warm amber cast, soft focus from vintage optics, light leak artifacts' },
+  { name: 'Cyberpunk', prompt: 'cyberpunk digital art: neon-lit futuristic aesthetic, holographic UI elements on skin, circuit-board textures, teal-magenta color split, chrome accents, glitch artifacts, rain-streaked Blade Runner 2049 palette' },
+]
+const styleNames = styleTransfers.map(s => s.name)
 
 const bgPresets = ['Studio','Nature','City','Interior','Abstract','Custom']
 
@@ -236,8 +246,8 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         }
         resultUrls = await routeEdit(selectedEngine, inputFile, compositeInstruction, (p) => setProgress(p), undefined, sceneFile)
       } else if (activeTool === 'style') {
-        const styleName = styleNames[selStyle]
-        const instruction = `STYLE TRANSFER (overrides preservation rule): Transform the entire image into ${styleName} style. The person's face must remain recognizable (same identity, same pose, same expression) but the visual rendering style of EVERYTHING — skin, hair, clothing, background, colors, textures — should change to match ${styleName} aesthetics. Apply the style strongly and consistently across the whole image.`
+        const style = styleTransfers[selStyle]
+        const instruction = `STYLE TRANSFER (overrides preservation rule): Transform the entire image into ${style.name} style. ${style.prompt}. The person's face must remain recognizable (same identity, pose, expression) but the visual rendering of EVERYTHING should change to match this aesthetic. Apply strongly and consistently.`
         resultUrls = await routeEdit(selectedEngine, inputFile, instruction, (p) => setProgress(p))
       }
 
