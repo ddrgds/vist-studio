@@ -79,7 +79,18 @@ export default defineConfig(({ mode }) => {
             rewrite: (path) => path.replace(/^\/fal-api/, ''),
             secure: true,
             configure: (proxy) => {
-              proxy.on('proxyReq', (proxyReq) => {
+              // The @fal-ai/client SDK sends all requests to proxyUrl (/fal-api)
+              // with the real target in the "x-fal-target-url" header.
+              // We must read that header and redirect the request there.
+              proxy.on('proxyReq', (proxyReq, req) => {
+                const targetUrl = req.headers['x-fal-target-url'] as string | undefined;
+                if (targetUrl) {
+                  const parsed = new URL(targetUrl);
+                  proxyReq.setHeader('host', parsed.host);
+                  proxyReq.path = parsed.pathname + parsed.search;
+                  // Remove the SDK header — FAL backend doesn't need it
+                  proxyReq.removeHeader('x-fal-target-url');
+                }
                 proxyReq.setHeader('Authorization', `Key ${env.FAL_KEY}`);
                 proxyReq.removeHeader('origin');
               });
