@@ -243,12 +243,18 @@ export const AI_PROVIDER_LABELS: Record<AIProvider, { name: string; icon: string
 
 // Available models per provider
 export enum FalModel {
+  // ── Creation (text-to-image) ──
   KontextMulti = 'fal-ai/flux-pro/kontext/multi',      // FLUX.1 Kontext — multi-ref identity gen · 2026
   KontextMaxMulti = 'fal-ai/flux-pro/kontext/max/multi',  // FLUX.1 Kontext Max — maximum quality · 2026
   Flux2Pro = 'fal-ai/flux-2-pro/edit',                    // FLUX.2 Pro Edit — multi-ref image editor
   Seedream45 = 'fal-ai/bytedance/seedream/v4.5/text-to-image',   // ByteDance — photorealism 4K
   Seedream50 = 'fal-ai/bytedance/seedream/v5/lite/text-to-image', // ByteDance — web search + reasoning
   ZImageTurbo = 'fal-ai/z-image/turbo',                  // Alibaba Tongyi-MAI 6B — uncensored, $0.005/mp · 2025
+  // ── Editing (image-to-image) ──
+  QwenEdit = 'fal-ai/qwen-image-2/pro/edit',             // Alibaba Qwen — spatial reasoning, style & light
+  FireRedEdit = 'fal-ai/firered-image-edit-v1.1',        // FireRed — portrait editing, try-on, makeup
+  OneReward = 'fal-ai/onereward',                         // OneReward — mask-based inpainting (FLUX Fill fine-tune)
+  Seedream5Edit = 'fal-ai/bytedance/seedream/v5/lite/edit', // ByteDance — intelligent editing, low hallucination
 }
 
 // Models displayed in the generation panel
@@ -279,6 +285,7 @@ export enum ReplicateModel {
 export enum OpenAIModel {
   GptImage15 = 'gpt-image-1.5',   // Latest, fastest GPT Image model
   GptImage1 = 'gpt-image-1',     // Original GPT Image model
+  GptImageMini = 'gpt-image-1-mini', // Ultra-fast, cheapest — drafts & bulk
 }
 
 
@@ -295,6 +302,10 @@ export const FAL_MODEL_LABELS: Record<FalModel, { name: string; description: str
   [FalModel.Seedream45]: { name: 'Seedream 4.5', description: 'ByteDance — exceptional photorealism, 4K' },
   [FalModel.Seedream50]: { name: 'Seedream 5.0', description: 'ByteDance — web search + reasoning, 2K' },
   [FalModel.ZImageTurbo]: { name: 'Z-Image Turbo', description: 'Alibaba — uncensored · 8 steps · $0.005/mp' },
+  [FalModel.QwenEdit]: { name: 'Qwen Image 2 Pro', description: 'Alibaba — spatial reasoning, style & light editing' },
+  [FalModel.FireRedEdit]: { name: 'FireRed v1.1', description: 'Portrait editing, try-on, makeup · 2026' },
+  [FalModel.OneReward]: { name: 'OneReward', description: 'Mask-based inpainting & outpainting · FLUX Fill' },
+  [FalModel.Seedream5Edit]: { name: 'Seedream 5 Edit', description: 'ByteDance — intelligent editing, low hallucination' },
 };
 
 export const POSE_ENGINE_LABELS: Record<PoseEngine, { name: string; icon: string; description: string }> = {
@@ -332,6 +343,7 @@ export const MODELSLAB_MODEL_LABELS: Record<ModelsLabModel, { name: string; desc
 export const OPENAI_MODEL_LABELS: Record<OpenAIModel, { name: string; description: string }> = {
   [OpenAIModel.GptImage15]: { name: 'GPT Image 1.5', description: 'Faster, accepts reference images' },
   [OpenAIModel.GptImage1]: { name: 'GPT Image 1', description: 'Original, high fidelity, accepts references' },
+  [OpenAIModel.GptImageMini]: { name: 'GPT Image Mini', description: 'Ultra-fast, cheapest — drafts & bulk' },
 };
 
 
@@ -375,6 +387,10 @@ export const CREDIT_COSTS: Record<string, number> = {
   [FalModel.Seedream45]:      8,
   [FalModel.Seedream50]:      8,
   [FalModel.ZImageTurbo]:     8,
+  [FalModel.QwenEdit]:        12,
+  [FalModel.FireRedEdit]:     8,
+  [FalModel.OneReward]:       8,
+  [FalModel.Seedream5Edit]:   8,
   // Replicate
   [ReplicateModel.Flux2Max]:    12,
   [ReplicateModel.Gen4Image]:   15,
@@ -383,6 +399,7 @@ export const CREDIT_COSTS: Record<string, number> = {
   // OpenAI
   [OpenAIModel.GptImage15]: 20,
   [OpenAIModel.GptImage1]:  15,
+  [OpenAIModel.GptImageMini]: 5,
   // Ideogram
   [IdeogramModel.V3]:       15,
   [IdeogramModel.V2A]:      12,
@@ -563,16 +580,73 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     provider: AIProvider.Replicate,
     replicateModel: ReplicateModel.GrokImagine,
   },
+  // ── OpenAI (additional) ──
+  {
+    key: 'openai:gpt-mini',
+    userFriendlyName: 'GPT Image Mini',
+    description: 'Ultra-fast drafts at lowest cost',
+    tags: ['fast', 'economical'],
+    requiresFaceRef: false,
+    estimatedTime: '~3s',
+    creditCost: CREDIT_COSTS[OpenAIModel.GptImageMini],
+    provider: AIProvider.OpenAI,
+    openaiModel: OpenAIModel.GptImageMini,
+  },
+  // ── FAL Edit-only models ──
+  {
+    key: 'fal:qwen-edit',
+    userFriendlyName: 'Qwen Image 2 Pro',
+    description: 'Spatial reasoning, style & lighting edits',
+    tags: ['quality'],
+    requiresFaceRef: false,
+    estimatedTime: '~15s',
+    creditCost: CREDIT_COSTS[FalModel.QwenEdit],
+    provider: AIProvider.Fal,
+    falModel: FalModel.QwenEdit,
+  },
+  {
+    key: 'fal:firered-edit',
+    userFriendlyName: 'FireRed v1.1',
+    description: 'Portrait editing, try-on, makeup',
+    tags: ['quality', 'face'],
+    requiresFaceRef: false,
+    estimatedTime: '~10s',
+    creditCost: CREDIT_COSTS[FalModel.FireRedEdit],
+    provider: AIProvider.Fal,
+    falModel: FalModel.FireRedEdit,
+  },
+  {
+    key: 'fal:onereward',
+    userFriendlyName: 'OneReward',
+    description: 'Precise mask-based inpainting',
+    tags: ['quality'],
+    requiresFaceRef: false,
+    estimatedTime: '~8s',
+    creditCost: CREDIT_COSTS[FalModel.OneReward],
+    provider: AIProvider.Fal,
+    falModel: FalModel.OneReward,
+  },
+  {
+    key: 'fal:seedream5-edit',
+    userFriendlyName: 'Seedream 5 Edit',
+    description: 'Intelligent editing, low hallucination',
+    tags: ['quality'],
+    requiresFaceRef: false,
+    estimatedTime: '~12s',
+    creditCost: CREDIT_COSTS[FalModel.Seedream5Edit],
+    provider: AIProvider.Fal,
+    falModel: FalModel.Seedream5Edit,
+  },
 ];
 
 /**
  * Resolve the best engine automatically based on generation context.
- * Called when the user has engine set to 'auto' (or by the UI as a suggestion).
+ * Called when the user has engine set to 'auto' (Director / creation).
  *
  * Priority:
- * 1. Prompt mentions text/lettering/typography → OpenAI GPT Image 1.5
- * 2. Has face reference photos → FAL Kontext Multi (face consistency)
- * 3. No special needs → Gemini Flash (fast & cheap)
+ * 1. Prompt mentions text/lettering/typography → GPT Image 1.5
+ * 2. Has face reference → Gemini NB2 (handles refs well, fast & free)
+ * 3. No special needs → Gemini NB2
  *
  * Manual selection always overrides auto.
  */
@@ -582,19 +656,62 @@ export function resolveAutoEngine(context: {
 }): { provider: AIProvider; geminiModel?: GeminiImageModel; falModel?: FalModel; openaiModel?: OpenAIModel } {
   const lowerPrompt = context.prompt.toLowerCase();
 
-  // Check if prompt mentions text rendering needs → GPT Image 1.5
+  // Text rendering needs → GPT Image 1.5 (only model that does text well)
   const textKeywords = ['text', 'lettering', 'typography', 'logo', 'sign', 'label', 'caption', 'headline', 'poster', 'banner', 'written', 'writing', 'words'];
-  const wantsText = textKeywords.some(kw => lowerPrompt.includes(kw));
-
-  if (wantsText) {
+  if (textKeywords.some(kw => lowerPrompt.includes(kw))) {
     return { provider: AIProvider.OpenAI, openaiModel: OpenAIModel.GptImage15 };
   }
 
-  // Face reference → FLUX Kontext for identity consistency
-  if (context.hasFaceRef) {
-    return { provider: AIProvider.Fal, falModel: FalModel.KontextMulti };
-  }
-
-  // Default: Nano Banana 2 — pro quality at flash speed
+  // Default (with or without refs): Nano Banana 2 — fast, free, handles references
   return { provider: AIProvider.Gemini, geminiModel: GeminiImageModel.Flash2 };
 }
+
+// ─────────────────────────────────────────────
+// Per-feature engine filtering
+// ─────────────────────────────────────────────
+
+/** Which ENGINE_METADATA keys are available for each feature. */
+export const FEATURE_ENGINES: Record<string, { default: string; keys: string[] }> = {
+  // ── Creation ──
+  'director': {
+    default: 'gemini:nb2',
+    keys: ['gemini:nb2', 'gemini:pro', 'gemini:imagen4', 'openai:gpt15', 'openai:gpt-mini', 'fal:seedream50', 'fal:seedream45', 'replicate:grok', 'fal:kontext-multi', 'fal:kontext-max', 'fal:zimage-turbo'],
+  },
+  // ── Editing ──
+  'photo-session': {
+    default: 'grok',
+    keys: ['grok', 'gemini', 'fal:seedream5-edit'],
+  },
+  'relight': {
+    default: 'fal:qwen-edit',
+    keys: ['fal:qwen-edit', 'gemini', 'fal:flux-kontext'],
+  },
+  'style-transfer': {
+    default: 'fal:qwen-edit',
+    keys: ['fal:qwen-edit', 'gemini', 'openai:gpt15'],
+  },
+  'bg-swap': {
+    default: 'fal:flux-kontext',
+    keys: ['fal:flux-kontext', 'fal:qwen-edit', 'gemini'],
+  },
+  'face-swap': {
+    default: 'fal:face-swap',
+    keys: ['fal:face-swap', 'fal:firered-edit'],
+  },
+  'try-on': {
+    default: 'fal:firered-edit',
+    keys: ['fal:firered-edit'],
+  },
+  'inpaint': {
+    default: 'fal:onereward',
+    keys: ['fal:onereward', 'fal:flux-inpaint', 'fal:zimage-inpaint'],
+  },
+  'enhance': {
+    default: 'fal:aura-sr',
+    keys: ['fal:aura-sr'],
+  },
+  'skin-enhancer': {
+    default: 'fal:firered-edit',
+    keys: ['fal:firered-edit', 'gemini'],
+  },
+};
