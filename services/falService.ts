@@ -1338,6 +1338,225 @@ export const generatePhotoSessionWithGrok = async (
   return results;
 };
 
+// ─────────────────────────────────────────────
+// Image Editing — Qwen, FireRed, OneReward, Seedream5
+// ─────────────────────────────────────────────
+
+/**
+ * Edits an image using Qwen Image 2 Pro.
+ * Uploads the base image to fal.storage, then applies the prompt-based edit.
+ */
+export const editImageWithQwen = async (
+  baseImage: File,
+  prompt: string,
+  onProgress?: (percent: number) => void,
+  abortSignal?: AbortSignal
+): Promise<string[]> => {
+  if (abortSignal?.aborted) throw new Error('Cancelado');
+  if (onProgress) onProgress(10);
+
+  const imageUrl = await uploadToFalStorage(baseImage);
+  if (onProgress) onProgress(25);
+
+  const result = await fal.subscribe('fal-ai/qwen-image-2/pro/edit', {
+    input: {
+      prompt,
+      image_urls: [imageUrl],
+      guidance_scale: 4.5,
+      num_inference_steps: 35,
+      num_images: 1,
+    },
+    onQueueUpdate: (update: any) => {
+      if (update.status === 'IN_PROGRESS' && onProgress) {
+        onProgress(Math.min(85, 25 + Math.random() * 55));
+      }
+    },
+  }) as any;
+
+  const r = unwrap(result);
+  const imgUrl: string = r?.images?.[0]?.url ?? r?.image?.url;
+  if (!imgUrl) throw new Error('Qwen Image Edit did not return any images.');
+
+  if (onProgress) onProgress(90);
+  const resp = await fetch(imgUrl);
+  if (!resp.ok) throw new Error(`Error downloading Qwen edited image (${resp.status}).`);
+  const blob = await resp.blob();
+  const dataUrl = await new Promise<string>((res) => {
+    const reader = new FileReader();
+    reader.onloadend = () => res(reader.result as string);
+    reader.readAsDataURL(blob);
+  });
+
+  if (onProgress) onProgress(100);
+  return [dataUrl];
+};
+
+/**
+ * Edits an image using FireRed Image Edit v1.1.
+ * Supports optional reference images that are appended to the image_urls array.
+ */
+export const editImageWithFireRed = async (
+  baseImage: File,
+  prompt: string,
+  referenceImages?: File[],
+  onProgress?: (percent: number) => void,
+  abortSignal?: AbortSignal
+): Promise<string[]> => {
+  if (abortSignal?.aborted) throw new Error('Cancelado');
+  if (onProgress) onProgress(10);
+
+  const baseUrl = await uploadToFalStorage(baseImage);
+  if (onProgress) onProgress(20);
+
+  const referenceUrls: string[] = [];
+  if (referenceImages && referenceImages.length > 0) {
+    for (const ref of referenceImages) {
+      if (abortSignal?.aborted) throw new Error('Cancelado');
+      referenceUrls.push(await uploadToFalStorage(ref));
+    }
+  }
+  if (onProgress) onProgress(30);
+
+  const allImageUrls = [baseUrl, ...referenceUrls];
+
+  const result = await fal.subscribe('fal-ai/firered-image-edit-v1.1', {
+    input: {
+      prompt,
+      image_urls: allImageUrls,
+      guidance_scale: 4,
+      num_inference_steps: 30,
+      num_images: 1,
+      output_format: 'png',
+    },
+    onQueueUpdate: (update: any) => {
+      if (update.status === 'IN_PROGRESS' && onProgress) {
+        onProgress(Math.min(85, 30 + Math.random() * 50));
+      }
+    },
+  }) as any;
+
+  const r = unwrap(result);
+  const imgUrl: string = r?.images?.[0]?.url ?? r?.image?.url;
+  if (!imgUrl) throw new Error('FireRed Image Edit did not return any images.');
+
+  if (onProgress) onProgress(90);
+  const resp = await fetch(imgUrl);
+  if (!resp.ok) throw new Error(`Error downloading FireRed edited image (${resp.status}).`);
+  const blob = await resp.blob();
+  const dataUrl = await new Promise<string>((res) => {
+    const reader = new FileReader();
+    reader.onloadend = () => res(reader.result as string);
+    reader.readAsDataURL(blob);
+  });
+
+  if (onProgress) onProgress(100);
+  return [dataUrl];
+};
+
+/**
+ * Inpaints an image using OneReward model.
+ * Takes a base image and a mask image (white = area to inpaint).
+ * Uses singular image_url / mask_url (not arrays).
+ */
+export const inpaintWithOneReward = async (
+  baseImage: File,
+  maskImage: File,
+  prompt: string,
+  onProgress?: (percent: number) => void,
+  abortSignal?: AbortSignal
+): Promise<string[]> => {
+  if (abortSignal?.aborted) throw new Error('Cancelado');
+  if (onProgress) onProgress(10);
+
+  const imageUrl = await uploadToFalStorage(baseImage);
+  if (onProgress) onProgress(20);
+
+  const maskUrl = await uploadToFalStorage(maskImage);
+  if (onProgress) onProgress(30);
+
+  const result = await fal.subscribe('fal-ai/onereward', {
+    input: {
+      prompt,
+      image_url: imageUrl,
+      mask_url: maskUrl,
+      true_cfg: 4,
+      num_inference_steps: 28,
+      num_images: 1,
+      output_format: 'jpeg',
+    },
+    onQueueUpdate: (update: any) => {
+      if (update.status === 'IN_PROGRESS' && onProgress) {
+        onProgress(Math.min(85, 30 + Math.random() * 50));
+      }
+    },
+  }) as any;
+
+  const r = unwrap(result);
+  const imgUrl: string = r?.images?.[0]?.url ?? r?.image?.url;
+  if (!imgUrl) throw new Error('OneReward inpaint did not return any images.');
+
+  if (onProgress) onProgress(90);
+  const resp = await fetch(imgUrl);
+  if (!resp.ok) throw new Error(`Error downloading OneReward inpainted image (${resp.status}).`);
+  const blob = await resp.blob();
+  const dataUrl = await new Promise<string>((res) => {
+    const reader = new FileReader();
+    reader.onloadend = () => res(reader.result as string);
+    reader.readAsDataURL(blob);
+  });
+
+  if (onProgress) onProgress(100);
+  return [dataUrl];
+};
+
+/**
+ * Edits an image using ByteDance Seedream v5 Lite (simple single-image variant).
+ * Uploads the base image to fal.storage, then applies the prompt-based edit.
+ * For multi-reference editing, use the existing editImageWithSeedream5() instead.
+ */
+export const editImageWithSeedream5Lite = async (
+  baseImage: File,
+  prompt: string,
+  onProgress?: (percent: number) => void,
+  abortSignal?: AbortSignal
+): Promise<string[]> => {
+  if (abortSignal?.aborted) throw new Error('Cancelado');
+  if (onProgress) onProgress(10);
+
+  const imageUrl = await uploadToFalStorage(baseImage);
+  if (onProgress) onProgress(25);
+
+  const result = await fal.subscribe('fal-ai/bytedance/seedream/v5/lite/edit', {
+    input: {
+      prompt,
+      image_urls: [imageUrl],
+      num_images: 1,
+    },
+    onQueueUpdate: (update: any) => {
+      if (update.status === 'IN_PROGRESS' && onProgress) {
+        onProgress(Math.min(85, 25 + Math.random() * 55));
+      }
+    },
+  }) as any;
+
+  const r = unwrap(result);
+  const imgUrl: string = r?.images?.[0]?.url ?? r?.image?.url;
+  if (!imgUrl) throw new Error('Seedream 5 Lite Edit did not return any images.');
+
+  if (onProgress) onProgress(90);
+  const resp = await fetch(imgUrl);
+  if (!resp.ok) throw new Error(`Error downloading Seedream 5 Lite edited image (${resp.status}).`);
+  const blob = await resp.blob();
+  const dataUrl = await new Promise<string>((res) => {
+    const reader = new FileReader();
+    reader.onloadend = () => res(reader.result as string);
+    reader.readAsDataURL(blob);
+  });
+
+  if (onProgress) onProgress(100);
+  return [dataUrl];
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Soul ID — LoRA Training via fal-ai/flux-lora-fast-training
 // ─────────────────────────────────────────────────────────────────────────────
