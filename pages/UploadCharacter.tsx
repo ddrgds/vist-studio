@@ -3,7 +3,11 @@ import { useCharacterStore, type SavedCharacter } from '../stores/characterStore
 import { useProfile } from '../contexts/ProfileContext'
 import { useToast } from '../contexts/ToastContext'
 import { generateInfluencerImage, enhancePrompt } from '../services/geminiService'
-import { ImageSize, AspectRatio, ENGINE_METADATA } from '../types'
+import { generateWithSoul } from '../services/higgsfieldService'
+import { generateWithReplicate } from '../services/replicateService'
+import { generateWithOpenAI } from '../services/openaiService'
+import { generateWithFal } from '../services/falService'
+import { ImageSize, AspectRatio, ENGINE_METADATA, FEATURE_ENGINES, AIProvider } from '../types'
 import type { InfluencerParams } from '../types'
 import { useNavigationStore } from '../stores/navigationStore'
 import { usePipelineStore } from '../stores/pipelineStore'
@@ -13,6 +17,7 @@ import {
   FACE_SHAPES, BODY_TYPES, SKIN_TEXTURES, GENDERS, AGE_RANGES,
   PERSONALITY_TRAITS, FASHION_STYLES, ACCESSORIES, buildPromptFromChips,
 } from '../data/characterChips'
+import { SOUL_STYLES, SOUL_STYLE_CATEGORIES, type SoulStyleCategory } from '../data/soulStyles'
 
 // ─── Render styles ───────────────────────────────────────────────────
 const renderStyles = [
@@ -103,6 +108,8 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   // Step 2 — Style
   const [selFashion, setSelFashion] = useState<string[]>([])
   const [selPersonality, setSelPersonality] = useState<string[]>([])
+  const [selectedSoulStyle, setSelectedSoulStyle] = useState<string | null>(null)
+  const [soulStyleCategory, setSoulStyleCategory] = useState<SoulStyleCategory | 'all'>('all')
   const [selAccessories, setSelAccessories] = useState<string[]>([])
 
   // Generation
@@ -193,11 +200,34 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     return parts.filter(Boolean).join(', ')
   }
 
+  // ─── Engine cost & routing ──────────────────────────────────────
+  const engineMeta = selectedEngine !== 'auto' ? ENGINE_METADATA.find(e => e.key === selectedEngine) : null
+  const costPerVariant = engineMeta?.creditCost ?? 2
+
+  const routeGeneration = async (params: InfluencerParams): Promise<string[]> => {
+    if (!engineMeta || selectedEngine === 'auto') {
+      return generateInfluencerImage(params, () => {})
+    }
+    if (engineMeta.provider === AIProvider.Higgsfield) {
+      return generateWithSoul(params, () => {})
+    }
+    if (engineMeta.provider === AIProvider.Replicate) {
+      return generateWithReplicate(params, engineMeta.replicateModel, () => {})
+    }
+    if (engineMeta.provider === AIProvider.OpenAI) {
+      return generateWithOpenAI(params, engineMeta.openaiModel, () => {})
+    }
+    if (engineMeta.provider === AIProvider.Fal) {
+      return generateWithFal(params, engineMeta.falModel, () => {})
+    }
+    return generateInfluencerImage(params, () => {})
+  }
+
   // ─── Generate variants ───────────────────────────────────────────
   const handleGenerate = async () => {
     if (!name.trim()) { toast.error('Enter a name for the character'); return }
 
-    const cost = 2
+    const cost = costPerVariant
     setGenerating(true)
     setGenerationPhase('generating')
     setVariants([])
@@ -240,7 +270,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
           numberOfImages: 1,
         }
 
-        const genResults = await generateInfluencerImage(params, () => {})
+        const genResults = await routeGeneration(params)
         if (genResults.length > 0) {
           results.push(genResults[0])
           setVariants([...results])
@@ -272,7 +302,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   // ─── Generate consistency variants ───────────────────────────────
   const handleConsistency = async () => {
     if (selectedVariant === null) return
-    const cost = 2
+    const cost = costPerVariant
     setGenerating(true)
     setGenerationPhase('consistency')
 
@@ -301,7 +331,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
           aspectRatio: AspectRatio.Portrait,
           numberOfImages: 1,
         }
-        const genResults = await generateInfluencerImage(params, () => {})
+        const genResults = await routeGeneration(params)
         if (genResults.length > 0) {
           consistencyResults.push(genResults[0])
           setConsistencyPhotos([...consistencyResults])
@@ -346,6 +376,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
         updatedAt: Date.now(),
         usageCount: 0,
         renderStyle: renderStyles[selRenderStyle].id,
+        soulStyleId: selectedSoulStyle || undefined,
         personalityTraits: selPersonality,
       }
 
@@ -813,6 +844,40 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                     </div>
                   </div>
 
+                  {/* Soul Style — shown only when Soul engine is selected */}
+                  {engineMeta?.provider === AIProvider.Higgsfield && (
+                    <div>
+                      <label className="joi-label block mb-2">Soul Style</label>
+                      <div className="flex gap-1.5 mb-2 overflow-x-auto pb-1">
+                        {[{ id: 'all' as const, label: 'All' }, ...SOUL_STYLE_CATEGORIES].map(cat => (
+                          <button key={cat.id} onClick={() => setSoulStyleCategory(cat.id)}
+                            className="px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all shrink-0"
+                            style={{
+                              background: soulStyleCategory === cat.id ? 'rgba(255,107,157,.1)' : 'transparent',
+                              border: `1px solid ${soulStyleCategory === cat.id ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}`,
+                              color: soulStyleCategory === cat.id ? 'var(--joi-pink)' : 'var(--joi-text-3)',
+                            }}>
+                            {cat.label}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 max-h-[200px] overflow-y-auto joi-scroll">
+                        {SOUL_STYLES.filter(s => soulStyleCategory === 'all' || s.category === soulStyleCategory).map(style => (
+                          <button key={style.id} onClick={() => setSelectedSoulStyle(selectedSoulStyle === style.id ? null : style.id)}
+                            className="px-2.5 py-2 rounded-xl text-[10px] font-medium transition-all text-left flex items-center gap-1.5"
+                            style={{
+                              background: selectedSoulStyle === style.id ? 'rgba(255,107,157,.1)' : 'var(--joi-bg-3)',
+                              border: `1px solid ${selectedSoulStyle === style.id ? 'rgba(255,107,157,.25)' : 'rgba(255,255,255,.04)'}`,
+                              color: selectedSoulStyle === style.id ? 'var(--joi-pink)' : 'var(--joi-text-2)',
+                            }}>
+                            <span className="text-sm">{style.icon}</span>
+                            <span className="truncate">{style.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div>
                     <label className="joi-label block mb-1">Personality <span style={{ color: 'var(--joi-text-3)', fontWeight: 400 }}>(max 3)</span></label>
                     <div className="mt-2">
@@ -877,7 +942,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                           <button onClick={handleConsistency} disabled={generating}
                             className="joi-btn-ghost w-full py-2.5 text-[12px]"
                             style={{ color: 'var(--joi-magenta)' }}>
-                            {generating ? '\u21BB Generating...' : '\u{1F504} Generate consistency variants? (2 credits each)'}
+                            {generating ? '\u21BB Generating...' : `\u{1F504} Generate consistency variants? (${costPerVariant}cr each)`}
                           </button>
                         )}
                         <button onClick={handleSave}
@@ -925,7 +990,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                   <button onClick={handleGenerate}
                     className={`joi-btn-solid px-6 py-2.5 text-sm${!generating ? ' joi-breathe' : ''}`}
                     disabled={generating}>
-                    {generating ? '\u21BB Generating...' : '\u2726 Generate Character (3 variants)'}
+                    {generating ? '\u21BB Generating...' : `\u2726 Generate Character (3 variants, ${costPerVariant * 3}cr)`}
                   </button>
                 )
               )}
