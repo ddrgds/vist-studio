@@ -3,7 +3,7 @@ import { useCharacterStore } from '../stores/characterStore'
 import { useGalleryStore, type GalleryItem } from '../stores/galleryStore'
 import { useNavigationStore } from '../stores/navigationStore'
 import { generatePhotoSession, generateInfluencerImage } from '../services/geminiService'
-import { generatePhotoSessionWithGrok } from '../services/falService'
+import { generatePhotoSessionWithGrok, editImageWithSeedream5Lite } from '../services/falService'
 import { useProfile } from '../contexts/ProfileContext'
 import { useToast } from '../contexts/ToastContext'
 import { ImageSize, AspectRatio, ENGINE_METADATA, OPERATION_CREDIT_COSTS } from '../types'
@@ -181,29 +181,46 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
           refFile = uploadedSubject!.file
         }
 
-        const useGrok = selectedEngine !== 'gemini'
-        const engineLabel = useGrok ? 'grok-session' : 'gemini-photo-session'
+        const engineLabel = selectedEngine === 'seedream5-edit' ? 'seedream5-session' : selectedEngine !== 'gemini' ? 'grok-session' : 'gemini-photo-session'
 
         let results: { url: string; poseIndex: number }[]
 
-        if (useGrok) {
-          results = await generatePhotoSessionWithGrok(
-            refFile,
-            mixedShots.length,
-            {
-              scenario: sceneOverride || undefined,
-              angles: mixedShots,
-            },
-            (p) => setProgress(p),
-            abortRef.current.signal
-          )
-        } else {
+        if (selectedEngine === 'seedream5-edit') {
+          // Seedream 5 Edit: one call per shot
+          results = []
+          const scenePart = sceneOverride ? `Scene: ${sceneOverride}.` : ''
+          for (let i = 0; i < mixedShots.length; i++) {
+            const angle = mixedShots[i]
+            const prompt = `Edit this photo. Creative direction: ${angle}. ${scenePart} Keep the same person, vary the pose naturally.`
+            const urls = await editImageWithSeedream5Lite(
+              refFile,
+              prompt,
+              (p) => setProgress(((i + p / 100) / mixedShots.length) * 100),
+              abortRef.current!.signal
+            )
+            if (urls.length > 0) {
+              results.push({ url: urls[0], poseIndex: i })
+            }
+          }
+        } else if (selectedEngine === 'gemini') {
           results = await generatePhotoSession(
             refFile,
             mixedShots.length,
             {
               scenario: sceneOverride || 'Same type of location as the reference photo',
               lighting: 'natural, varied per shot',
+            },
+            (p) => setProgress(p),
+            abortRef.current.signal
+          )
+        } else {
+          // Grok (default)
+          results = await generatePhotoSessionWithGrok(
+            refFile,
+            mixedShots.length,
+            {
+              scenario: sceneOverride || undefined,
+              angles: mixedShots,
             },
             (p) => setProgress(p),
             abortRef.current.signal
@@ -239,20 +256,28 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
         const fullPrompt = `${sessionPrompt}. ${mixedShots.length > 0 ? '' : PHOTO_SESSION_PRESETS.filter(p => selectedPresets.has(p.id)).map(p => p.description).join('. ') + '.'}`
 
         if (refFile) {
-          const useGrok = selectedEngine !== 'gemini'
-          const engineLabel = useGrok ? 'grok-session' : 'gemini-photo-session'
+          const engineLabel = selectedEngine === 'seedream5-edit' ? 'seedream5-session' : selectedEngine !== 'gemini' ? 'grok-session' : 'gemini-photo-session'
 
           let results: { url: string; poseIndex: number }[]
 
-          if (useGrok) {
-            results = await generatePhotoSessionWithGrok(
-              refFile,
-              shotCount,
-              { scenario: fullPrompt, angles: mixedShots.length > 0 ? mixedShots : undefined },
-              (p) => setProgress(p),
-              abortRef.current.signal
-            )
-          } else {
+          if (selectedEngine === 'seedream5-edit') {
+            // Seedream 5 Edit: one call per shot
+            results = []
+            const angles = mixedShots.length > 0 ? mixedShots : Array.from({ length: shotCount }, (_, i) => `Shot ${i + 1}`)
+            for (let i = 0; i < angles.length; i++) {
+              const angle = angles[i]
+              const prompt = `Edit this photo. Creative direction: ${angle}. ${fullPrompt} Keep the same person, vary the pose naturally.`
+              const urls = await editImageWithSeedream5Lite(
+                refFile,
+                prompt,
+                (p) => setProgress(((i + p / 100) / angles.length) * 100),
+                abortRef.current!.signal
+              )
+              if (urls.length > 0) {
+                results.push({ url: urls[0], poseIndex: i })
+              }
+            }
+          } else if (selectedEngine === 'gemini') {
             results = await generatePhotoSession(
               refFile,
               shotCount,
@@ -261,6 +286,15 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                 lighting: 'natural, varied per shot',
                 angles: mixedShots.length > 0 ? mixedShots : undefined,
               },
+              (p) => setProgress(p),
+              abortRef.current.signal
+            )
+          } else {
+            // Grok (default)
+            results = await generatePhotoSessionWithGrok(
+              refFile,
+              shotCount,
+              { scenario: fullPrompt, angles: mixedShots.length > 0 ? mixedShots : undefined },
               (p) => setProgress(p),
               abortRef.current.signal
             )
@@ -768,6 +802,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
             {[
               { key: 'grok', label: 'Grok Imagine', desc: 'xAI creative edit — best for sessions', icon: '\u26A1', cost: '1cr', time: '~4s' },
               { key: 'gemini', label: 'Gemini Edit', desc: 'Google AI image editing', icon: '\u2728', cost: '1cr', time: '~8s' },
+              { key: 'seedream5-edit', label: 'Seedream 5 Edit', desc: 'ByteDance intelligent editing, low hallucination', icon: '\uD83E\uDDE0', cost: '8cr', time: '~12s' },
             ].map(eng => (
               <button key={eng.key} onClick={() => { setSelectedEngine(eng.key); setShowEngineModal(false) }}
                 className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all"

@@ -4,7 +4,7 @@ import { useGalleryStore, type GalleryItem } from '../stores/galleryStore'
 import { generateInfluencerImage } from '../services/geminiService'
 import { useProfile } from '../contexts/ProfileContext'
 import { useToast } from '../contexts/ToastContext'
-import { ImageSize, AspectRatio, ENGINE_METADATA, OPERATION_CREDIT_COSTS } from '../types'
+import { ImageSize, AspectRatio, ENGINE_METADATA, OPERATION_CREDIT_COSTS, FEATURE_ENGINES } from '../types'
 import type { InfluencerParams } from '../types'
 import { POSE_OPTIONS, CAMERA_OPTIONS, LIGHTING_OPTIONS, INSPIRATIONS } from '../data/directorOptions'
 import type { ChipOption } from '../data/directorOptions'
@@ -747,7 +747,7 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
 
             <div className="joi-divider my-1" />
 
-            {ENGINE_METADATA.map(eng => (
+            {ENGINE_METADATA.filter(eng => FEATURE_ENGINES['director'].keys.includes(eng.key)).map(eng => (
               <button key={eng.key} onClick={() => { setSelectedEngine(eng.key); setShowEngineModal(false) }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-all"
                 style={{
