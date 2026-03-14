@@ -4,11 +4,15 @@ import { useGalleryStore, type GalleryItem } from '../stores/galleryStore'
 import { useNavigationStore } from '../stores/navigationStore'
 import { generatePhotoSession, generateInfluencerImage } from '../services/geminiService'
 import { generatePhotoSessionWithGrok, editImageWithSeedream5Lite } from '../services/falService'
+import { editWithSoulReference } from '../services/higgsfieldService'
+import { VIBE_TO_SOUL_STYLE, SOUL_STYLES, SOUL_STYLE_CATEGORIES, type SoulStyleCategory } from '../data/soulStyles'
 import { useProfile } from '../contexts/ProfileContext'
 import { useToast } from '../contexts/ToastContext'
 import { ImageSize, AspectRatio, ENGINE_METADATA, OPERATION_CREDIT_COSTS } from '../types'
 import type { InfluencerParams } from '../types'
 import { PHOTO_SESSION_PRESETS, mixShots } from '../data/sessionPresets'
+import { usePipelineStore } from '../stores/pipelineStore'
+import { PipelineCTA } from '../components/PipelineCTA'
 
 // ─── Scene presets (used as optional override) ──────────
 const scenes = [
@@ -35,6 +39,8 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
 
   // Selected vibes / presets (multi-select)
   const [selectedPresets, setSelectedPresets] = useState<Set<string>>(new Set(['selfies']))
+  const [selectedSoulStyle, setSelectedSoulStyle] = useState<string>(SOUL_STYLES[0].id)
+  const [soulStyleCategory, setSoulStyleCategory] = useState<SoulStyleCategory | 'all'>('all')
   const [shotCount, setShotCount] = useState(4)
   const [selectedEngine, setSelectedEngine] = useState<string>('grok')
   const [selectedResolution, setSelectedResolution] = useState('1k')
@@ -99,6 +105,25 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
       consumeNav()
     }
   }, [pendingTarget, pendingImage])
+
+  // Auto-load from pipeline (edited hero or hero shot)
+  const pipelineEditedUrl = usePipelineStore(s => s.editedHeroUrl)
+  const pipelineHeroUrl = usePipelineStore(s => s.heroShotUrl)
+  const pipelineSuggestedNext = usePipelineStore(s => s.suggestedNext)
+
+  useEffect(() => {
+    const pipelineUrl = pipelineEditedUrl ?? pipelineHeroUrl
+    if (pipelineUrl && !pendingImage && !uploadedSubject && !selectedGalleryItem) {
+      setSourceMode('upload')
+      fetch(pipelineUrl)
+        .then(res => res.blob())
+        .then(blob => {
+          const file = new File([blob], 'pipeline-subject.png', { type: blob.type || 'image/png' })
+          setUploadedSubject({ file, preview: pipelineUrl })
+        })
+        .catch(() => {})
+    }
+  }, [pipelineEditedUrl, pipelineHeroUrl])
 
   const handleSubjectUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -181,11 +206,30 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
           refFile = uploadedSubject!.file
         }
 
-        const engineLabel = selectedEngine === 'seedream5-edit' ? 'seedream5-session' : selectedEngine !== 'gemini' ? 'grok-session' : 'gemini-photo-session'
+        const engineLabel = selectedEngine === 'higgsfield:soul' ? 'soul-session' : selectedEngine === 'seedream5-edit' ? 'seedream5-session' : selectedEngine !== 'gemini' ? 'grok-session' : 'gemini-photo-session'
 
         let results: { url: string; poseIndex: number }[]
 
-        if (selectedEngine === 'seedream5-edit') {
+        if (selectedEngine === 'higgsfield:soul') {
+          // Soul Reference: one call per shot with selected Soul Style
+          results = []
+          const scenePart = sceneOverride ? `Scene: ${sceneOverride}.` : ''
+          for (let i = 0; i < mixedShots.length; i++) {
+            const angle = mixedShots[i]
+            const prompt = `${angle}. ${scenePart} Same person, editorial fashion quality.`
+            const urls = await editWithSoulReference(
+              refFile,
+              prompt,
+              AspectRatio.Portrait,
+              (p) => setProgress(((i + p / 100) / mixedShots.length) * 100),
+              abortRef.current!.signal,
+              selectedSoulStyle
+            )
+            if (urls.length > 0) {
+              results.push({ url: urls[0], poseIndex: i })
+            }
+          }
+        } else if (selectedEngine === 'seedream5-edit') {
           // Seedream 5 Edit: one call per shot
           results = []
           const scenePart = sceneOverride ? `Scene: ${sceneOverride}.` : ''
@@ -256,11 +300,30 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
         const fullPrompt = `${sessionPrompt}. ${mixedShots.length > 0 ? '' : PHOTO_SESSION_PRESETS.filter(p => selectedPresets.has(p.id)).map(p => p.description).join('. ') + '.'}`
 
         if (refFile) {
-          const engineLabel = selectedEngine === 'seedream5-edit' ? 'seedream5-session' : selectedEngine !== 'gemini' ? 'grok-session' : 'gemini-photo-session'
+          const engineLabel = selectedEngine === 'higgsfield:soul' ? 'soul-session' : selectedEngine === 'seedream5-edit' ? 'seedream5-session' : selectedEngine !== 'gemini' ? 'grok-session' : 'gemini-photo-session'
 
           let results: { url: string; poseIndex: number }[]
 
-          if (selectedEngine === 'seedream5-edit') {
+          if (selectedEngine === 'higgsfield:soul') {
+            // Soul Reference: one call per shot with selected Soul Style
+            results = []
+            const angles = mixedShots.length > 0 ? mixedShots : Array.from({ length: shotCount }, (_, i) => `Shot ${i + 1}`)
+            for (let i = 0; i < angles.length; i++) {
+              const angle = angles[i]
+              const prompt = `${angle}. ${fullPrompt} Same person, editorial fashion quality.`
+              const urls = await editWithSoulReference(
+                refFile,
+                prompt,
+                AspectRatio.Portrait,
+                (p) => setProgress(((i + p / 100) / angles.length) * 100),
+                abortRef.current!.signal,
+                selectedSoulStyle
+              )
+              if (urls.length > 0) {
+                results.push({ url: urls[0], poseIndex: i })
+              }
+            }
+          } else if (selectedEngine === 'seedream5-edit') {
             // Seedream 5 Edit: one call per shot
             results = []
             const angles = mixedShots.length > 0 ? mixedShots : Array.from({ length: shotCount }, (_, i) => `Shot ${i + 1}`)
@@ -583,38 +646,80 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
               onChange={e => setCustomScene(e.target.value)} />
           </div>
 
-          {/* Vibes — Session Presets */}
+          {/* Vibes — Session Presets OR Soul Styles */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <div className="joi-label">Pick your vibes</div>
-              <div className="text-[9px] font-mono" style={{ color:'var(--joi-pink)' }}>
-                {selectedPresets.size} selected
-              </div>
+              <div className="joi-label">{selectedEngine === 'higgsfield:soul' ? 'Soul Style' : 'Pick your vibes'}</div>
+              {selectedEngine !== 'higgsfield:soul' && (
+                <div className="text-[9px] font-mono" style={{ color:'var(--joi-pink)' }}>
+                  {selectedPresets.size} selected
+                </div>
+              )}
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              {PHOTO_SESSION_PRESETS.map(p => {
-                const active = selectedPresets.has(p.id)
-                return (
-                  <button key={p.id} onClick={() => togglePreset(p.id)}
-                    className="p-3 rounded-lg text-left transition-all group"
-                    style={{
-                      background: active ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)',
-                      border: `1px solid ${active ? 'rgba(255,107,157,.25)' : 'var(--joi-border)'}`,
-                    }}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-base">{p.icon}</span>
-                      {active && (
-                        <span className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] ml-auto"
-                          style={{ background:'var(--joi-pink)', color:'#fff' }}>{'\u2713'}</span>
-                      )}
-                    </div>
-                    <div className="text-[11px] font-medium" style={{ color: active ? 'var(--joi-pink)' : 'var(--joi-text-2)' }}>{p.label}</div>
-                    <div className="text-[8px] mt-0.5 line-clamp-1" style={{ color:'var(--joi-text-3)' }}>{p.description}</div>
-                  </button>
-                )
-              })}
-            </div>
+            {selectedEngine === 'higgsfield:soul' ? (
+              <>
+                {/* Category filter tabs */}
+                <div className="flex gap-1 mb-2.5 overflow-x-auto pb-1" style={{ scrollbarWidth:'none' }}>
+                  {[{ key: 'all' as const, label: 'All', icon: '✦' }, ...Object.entries(SOUL_STYLE_CATEGORIES).map(([k, v]) => ({ key: k as SoulStyleCategory, label: v.label, icon: v.icon }))].map(cat => (
+                    <button key={cat.key} onClick={() => setSoulStyleCategory(cat.key)}
+                      className="px-2 py-1 rounded-md text-[9px] font-medium whitespace-nowrap transition-all flex items-center gap-1"
+                      style={{
+                        background: soulStyleCategory === cat.key ? 'rgba(255,107,157,.12)' : 'var(--joi-bg-3)',
+                        border: `1px solid ${soulStyleCategory === cat.key ? 'rgba(255,107,157,.3)' : 'transparent'}`,
+                        color: soulStyleCategory === cat.key ? 'var(--joi-pink)' : 'var(--joi-text-3)',
+                      }}>
+                      <span className="text-[10px]">{cat.icon}</span> {cat.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Soul Styles grid — single select */}
+                <div className="grid grid-cols-3 gap-1.5 max-h-[280px] overflow-y-auto pr-1" style={{ scrollbarWidth:'thin' }}>
+                  {SOUL_STYLES
+                    .filter(s => soulStyleCategory === 'all' || s.category === soulStyleCategory)
+                    .map(s => {
+                      const active = selectedSoulStyle === s.id
+                      return (
+                        <button key={s.id} onClick={() => setSelectedSoulStyle(s.id)}
+                          className="p-2 rounded-lg text-center transition-all"
+                          style={{
+                            background: active ? 'rgba(255,107,157,.1)' : 'var(--joi-bg-3)',
+                            border: `1px solid ${active ? 'rgba(255,107,157,.3)' : 'var(--joi-border)'}`,
+                            boxShadow: active ? '0 0 12px rgba(255,107,157,.08)' : 'none',
+                          }}>
+                          <span className="text-lg block">{s.icon}</span>
+                          <div className="text-[9px] font-medium mt-0.5 line-clamp-1" style={{ color: active ? 'var(--joi-pink)' : 'var(--joi-text-2)' }}>{s.name}</div>
+                        </button>
+                      )
+                    })}
+                </div>
+              </>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                {PHOTO_SESSION_PRESETS.map(p => {
+                  const active = selectedPresets.has(p.id)
+                  return (
+                    <button key={p.id} onClick={() => togglePreset(p.id)}
+                      className="p-3 rounded-lg text-left transition-all group"
+                      style={{
+                        background: active ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)',
+                        border: `1px solid ${active ? 'rgba(255,107,157,.25)' : 'var(--joi-border)'}`,
+                      }}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-base">{p.icon}</span>
+                        {active && (
+                          <span className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] ml-auto"
+                            style={{ background:'var(--joi-pink)', color:'#fff' }}>{'\u2713'}</span>
+                        )}
+                      </div>
+                      <div className="text-[11px] font-medium" style={{ color: active ? 'var(--joi-pink)' : 'var(--joi-text-2)' }}>{p.label}</div>
+                      <div className="text-[8px] mt-0.5 line-clamp-1" style={{ color:'var(--joi-text-3)' }}>{p.description}</div>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
           </div>
 
           {/* Reference image (optional) */}
@@ -733,9 +838,13 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
               }}>
                 {/* Floating vibe icons */}
                 <div className="absolute inset-0 flex items-center justify-center gap-4 opacity-20">
-                  {PHOTO_SESSION_PRESETS.filter(p => selectedPresets.has(p.id)).map(p => (
-                    <span key={p.id} className="text-[48px]">{p.icon}</span>
-                  ))}
+                  {selectedEngine === 'higgsfield:soul' ? (
+                    <span className="text-[48px]">{SOUL_STYLES.find(s => s.id === selectedSoulStyle)?.icon ?? '🌟'}</span>
+                  ) : (
+                    PHOTO_SESSION_PRESETS.filter(p => selectedPresets.has(p.id)).map(p => (
+                      <span key={p.id} className="text-[48px]">{p.icon}</span>
+                    ))
+                  )}
                 </div>
               </div>
             )}
@@ -748,12 +857,22 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                   {activeSceneIcon} {sceneOverride}
                 </span>
               )}
-              {PHOTO_SESSION_PRESETS.filter(p => selectedPresets.has(p.id)).map(p => (
-                <span key={p.id} className="px-2 py-0.5 rounded-md text-[9px] font-mono backdrop-blur-sm"
-                  style={{ background:'rgba(0,0,0,.4)', color:'var(--joi-pink)' }}>
-                  {p.icon} {p.label}
-                </span>
-              ))}
+              {selectedEngine === 'higgsfield:soul' ? (() => {
+                const style = SOUL_STYLES.find(s => s.id === selectedSoulStyle)
+                return style ? (
+                  <span className="px-2 py-0.5 rounded-md text-[9px] font-mono backdrop-blur-sm"
+                    style={{ background:'rgba(0,0,0,.4)', color:'var(--joi-pink)' }}>
+                    {style.icon} {style.name}
+                  </span>
+                ) : null
+              })() : (
+                PHOTO_SESSION_PRESETS.filter(p => selectedPresets.has(p.id)).map(p => (
+                  <span key={p.id} className="px-2 py-0.5 rounded-md text-[9px] font-mono backdrop-blur-sm"
+                    style={{ background:'rgba(0,0,0,.4)', color:'var(--joi-pink)' }}>
+                    {p.icon} {p.label}
+                  </span>
+                ))
+              )}
             </div>
 
             {generatedImages.length === 0 && !baseImagePreview && (
@@ -787,6 +906,11 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                 style={{ border:'1px solid var(--joi-border)' }} />
             ))
           )}
+          {generatedImages.length > 0 && onNav && (
+            <div className="ml-auto shrink-0 w-48">
+              <PipelineCTA label="View in Gallery" targetPage="gallery" onNav={onNav} icon="🖼️" />
+            </div>
+          )}
         </div>
       </div>
 
@@ -803,6 +927,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
               { key: 'grok', label: 'Grok Imagine', desc: 'xAI creative edit — best for sessions', icon: '\u26A1', cost: '1cr', time: '~4s' },
               { key: 'gemini', label: 'Gemini Edit', desc: 'Google AI image editing', icon: '\u2728', cost: '1cr', time: '~8s' },
               { key: 'seedream5-edit', label: 'Seedream 5 Edit', desc: 'ByteDance intelligent editing, low hallucination', icon: '\uD83E\uDDE0', cost: '8cr', time: '~12s' },
+              { key: 'higgsfield:soul', label: 'Soul 2.0', desc: 'Fashion-grade editorial realism · Higgsfield', icon: '\uD83C\uDF1F', cost: '6cr', time: '~15s' },
             ].map(eng => (
               <button key={eng.key} onClick={() => { setSelectedEngine(eng.key); setShowEngineModal(false) }}
                 className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all"

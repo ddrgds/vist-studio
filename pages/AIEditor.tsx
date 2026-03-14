@@ -8,6 +8,8 @@ import { editImageWithFluxKontext, editImageWithSeedream5, editImageWithFlux2Pro
 import { editImageWithGPT } from '../services/openaiService'
 import { ENGINE_METADATA, FEATURE_ENGINES, AIProvider } from '../types'
 import { useNavigationStore } from '../stores/navigationStore'
+import { usePipelineStore } from '../stores/pipelineStore'
+import { PipelineCTA } from '../components/PipelineCTA'
 
 // Lazy load modals (they're heavy)
 const RelightModal = lazy(() => import('../components/RelightModal'))
@@ -213,6 +215,20 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
     }
   }, [pendingTarget, pendingImage])
 
+  // Auto-load hero shot from pipeline
+  const pipelineHeroUrl = usePipelineStore(s => s.heroShotUrl)
+  const pipelineSetEditedHero = usePipelineStore(s => s.setEditedHero)
+
+  useEffect(() => {
+    if (pipelineHeroUrl && !inputImage && !pendingImage) {
+      setInputImage(pipelineHeroUrl)
+      setResultImage(null)
+      urlToFile(pipelineHeroUrl, 'pipeline-hero.png')
+        .then(file => setInputFile(file))
+        .catch(() => setInputFile(null))
+    }
+  }, [pipelineHeroUrl])
+
   const handleApply = async () => {
     if (!inputImage) { toast.error('Upload an image first'); return }
 
@@ -303,6 +319,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
       if (resultUrls.length > 0) {
         setResultImage(resultUrls[0])
         setEditHistory(prev => [resultUrls[0], ...prev].slice(0, 20))
+        pipelineSetEditedHero(resultUrls[0])
 
         addItems([{
           id: crypto.randomUUID(),
@@ -328,6 +345,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
   const handleModalSave = (toolTag: string, promptLabel: string) => async (dataUrl: string) => {
     setResultImage(dataUrl)
     setEditHistory(prev => [dataUrl, ...prev].slice(0, 20))
+    pipelineSetEditedHero(dataUrl)
     addItems([{
       id: crypto.randomUUID(),
       url: dataUrl,
@@ -909,6 +927,11 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
               <div key={i} className="w-12 h-12 rounded-lg shrink-0 cursor-pointer hover:scale-105 transition-transform shimmer"
                 style={{ border:'1px solid rgba(255,255,255,.04)' }} />
             ))
+          )}
+          {resultImage && onNav && (
+            <div className="ml-auto shrink-0 w-56">
+              <PipelineCTA label="Start Photo Session" targetPage="session" onNav={onNav} icon="📸" />
+            </div>
           )}
         </div>
       </div>

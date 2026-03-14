@@ -2,13 +2,19 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useCharacterStore } from '../stores/characterStore'
 import { useGalleryStore, type GalleryItem } from '../stores/galleryStore'
 import { generateInfluencerImage } from '../services/geminiService'
+import { generateWithSoul } from '../services/higgsfieldService'
+import { generateWithReplicate } from '../services/replicateService'
+import { generateWithOpenAI } from '../services/openaiService'
+import { generateWithFal } from '../services/falService'
 import { useProfile } from '../contexts/ProfileContext'
 import { useToast } from '../contexts/ToastContext'
-import { ImageSize, AspectRatio, ENGINE_METADATA, OPERATION_CREDIT_COSTS, FEATURE_ENGINES } from '../types'
+import { ImageSize, AspectRatio, ENGINE_METADATA, OPERATION_CREDIT_COSTS, FEATURE_ENGINES, AIProvider } from '../types'
 import type { InfluencerParams } from '../types'
 import { POSE_OPTIONS, CAMERA_OPTIONS, LIGHTING_OPTIONS, INSPIRATIONS } from '../data/directorOptions'
 import type { ChipOption } from '../data/directorOptions'
 import { ENHANCERS, buildEnhancerPrompt } from '../data/enhancers'
+import { usePipelineStore } from '../stores/pipelineStore'
+import { PipelineCTA } from '../components/PipelineCTA'
 
 // ─── Accordion Section (Joi style) ─────────────────────
 const AccordionSection: React.FC<{
@@ -123,11 +129,17 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
   const [selectedCharId, setSelectedCharId] = useState<string | null>(null)
   const [characteristics, setCharacteristics] = useState('')
 
+  const pipelineCharId = usePipelineStore(s => s.characterId)
+  const pipelineSetHeroShot = usePipelineStore(s => s.setHeroShot)
+
   useEffect(() => {
-    if (characters.length > 0 && !selectedCharId) {
+    // Auto-select from pipeline first, then fallback to first character
+    if (pipelineCharId && characters.find(c => c.id === pipelineCharId)) {
+      setSelectedCharId(pipelineCharId)
+    } else if (characters.length > 0 && !selectedCharId) {
       setSelectedCharId(characters[0].id)
     }
-  }, [characters, selectedCharId])
+  }, [characters, selectedCharId, pipelineCharId])
 
   const selectedChar = characters.find(c => c.id === selectedCharId)
 
@@ -279,7 +291,21 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
 
     try {
       const params = buildParams()
-      const results = await generateInfluencerImage(params, (p) => setProgress(p), abortRef.current.signal)
+      const eng = selectedEngine !== 'auto' ? ENGINE_METADATA.find(e => e.key === selectedEngine) : null
+
+      let results: string[]
+      if (eng?.provider === AIProvider.Higgsfield) {
+        results = await generateWithSoul(params, (p) => setProgress(p), abortRef.current.signal)
+      } else if (eng?.provider === AIProvider.Replicate) {
+        results = await generateWithReplicate(params, eng.replicateModel, (p) => setProgress(p), abortRef.current.signal)
+      } else if (eng?.provider === AIProvider.OpenAI) {
+        results = await generateWithOpenAI(params, eng.openaiModel, (p) => setProgress(p), abortRef.current.signal)
+      } else if (eng?.provider === AIProvider.Fal) {
+        results = await generateWithFal(params, eng.falModel, (p) => setProgress(p), abortRef.current.signal)
+      } else {
+        // Auto or Gemini
+        results = await generateInfluencerImage(params, (p) => setProgress(p), abortRef.current.signal)
+      }
 
       setGeneratedImages(results)
       setSelectedResult(0)
@@ -303,6 +329,7 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
 
       useGalleryStore.getState().addItems(items)
       if (selectedChar) useCharacterStore.getState().incrementUsage(selectedChar.id)
+      if (results.length > 0) pipelineSetHeroShot(results[0])
       toast.success(`${results.length} hero shot${results.length > 1 ? 's' : ''} generated`)
 
     } catch (err: any) {
@@ -625,7 +652,7 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
                 <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                 Generating... {Math.round(progress)}%
               </span>
-            ) : '\u2726 Generate Hero Shot'}
+            ) : (selectedChar || faceRefs.length > 0) ? '\u2726 Generate Hero Shot' : '\u2726 Generate Image'}
           </button>
         </div>
       </div>
@@ -714,6 +741,11 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
                   border: '1px solid rgba(255,255,255,.04)',
                 }} />
             ))
+          )}
+          {generatedImages.length > 0 && onNav && (
+            <div className="ml-auto shrink-0 w-56">
+              <PipelineCTA label="Perfect it in Editor" targetPage="editor" onNav={onNav} icon="🪄" />
+            </div>
           )}
         </div>
       </div>
