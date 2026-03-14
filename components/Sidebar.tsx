@@ -10,28 +10,21 @@ import { type LucideIcon } from 'lucide-react'
 
 const navSections: { title?: string; items: { id: Page; label: string; Icon: LucideIcon; sub: string }[] }[] = [
   {
+    title: 'PIPELINE',
     items: [
-      { id: 'dashboard', label: 'Dashboard', Icon: LayoutDashboard, sub: 'Overview' },
-    ]
-  },
-  {
-    title: 'CREATE',
-    items: [
+      { id: 'upload', label: 'Create Character', Icon: Upload, sub: 'Create / Import' },
       { id: 'director', label: 'Director', Icon: Clapperboard, sub: 'Hero Shot' },
-      { id: 'upload', label: 'Upload Character', Icon: Upload, sub: 'Create / Import' },
+      { id: 'editor', label: 'AI Editor', Icon: Wand2, sub: 'Relight · Swap · Enhance' },
       { id: 'session', label: 'Photo Session', Icon: Camera, sub: 'Photo Shoot' },
-      { id: 'editor', label: 'AI Editor', Icon: Wand2, sub: 'Relight \u00b7 360 \u00b7 Swap' },
-      { id: 'universe', label: 'Universe', Icon: Globe, sub: 'World Building' },
-    ]
+    ],
   },
   {
     title: 'MANAGE',
     items: [
+      { id: 'dashboard', label: 'Dashboard', Icon: LayoutDashboard, sub: 'Overview' },
       { id: 'gallery', label: 'Gallery', Icon: Images, sub: 'Creations' },
       { id: 'characters', label: 'Characters', Icon: Users, sub: 'Collection' },
-      { id: 'content', label: 'Content', Icon: CalendarDays, sub: 'Calendar' },
-      { id: 'analytics', label: 'Analytics', Icon: BarChart3, sub: 'Metrics' },
-    ]
+    ],
   },
 ]
 
