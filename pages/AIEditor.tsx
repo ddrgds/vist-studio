@@ -4,9 +4,9 @@ import { useCharacterStore } from '../stores/characterStore'
 import { useProfile } from '../contexts/ProfileContext'
 import { useToast } from '../contexts/ToastContext'
 import { editImageWithAI } from '../services/geminiService'
-import { editImageWithFluxKontext, editImageWithSeedream5, editImageWithFlux2Pro, editImageWithGrokFal } from '../services/falService'
+import { editImageWithFluxKontext, editImageWithSeedream5, editImageWithFlux2Pro, editImageWithGrokFal, editImageWithQwen, editImageWithFireRed, inpaintWithOneReward, editImageWithSeedream5Lite } from '../services/falService'
 import { editImageWithGPT } from '../services/openaiService'
-import { ENGINE_METADATA, AIProvider } from '../types'
+import { ENGINE_METADATA, FEATURE_ENGINES, AIProvider } from '../types'
 import { useNavigationStore } from '../stores/navigationStore'
 
 // Lazy load modals (they're heavy)
@@ -59,6 +59,20 @@ const styleNames = styleTransfers.map(s => s.name)
 
 const bgPresets = ['Studio','Nature','City','Interior','Abstract','Custom']
 
+// Map AI Editor tool IDs → FEATURE_ENGINES keys
+const TOOL_TO_FEATURE: Record<string, string> = {
+  'freeai': 'relight',       // freeai uses same engines as relight (general editing)
+  'relight': 'relight',
+  'rotate360': 'relight',    // 360° uses same general editing engines
+  'faceswap': 'face-swap',
+  'tryon': 'try-on',
+  'bgswap': 'bg-swap',
+  'composite': 'bg-swap',    // composite uses same engines as bg-swap
+  'enhance': 'enhance',
+  'style': 'style-transfer',
+  'inpaint': 'inpaint',
+}
+
 // Convert a data URL or blob URL to a File object
 async function urlToFile(url: string, filename = 'character.png'): Promise<File> {
   const res = await fetch(url)
@@ -80,12 +94,36 @@ const routeEdit = async (
 ): Promise<string[]> => {
   const eng = ENGINE_METADATA.find(e => e.key === engineKey)
 
+  // Qwen Image 2 Pro (spatial reasoning, style & lighting edits)
+  if (engineKey === 'fal:qwen-edit') {
+    return editImageWithQwen(file, instruction, onProgress, abortSignal)
+  }
+
+  // FireRed v1.1 (portrait editing, try-on, makeup)
+  if (engineKey === 'fal:firered-edit') {
+    const refs = referenceImage ? [referenceImage] : []
+    return editImageWithFireRed(file, instruction, refs, onProgress, abortSignal)
+  }
+
+  // OneReward (mask-based inpainting — requires a mask image)
+  if (engineKey === 'fal:onereward') {
+    if (!referenceImage) {
+      throw new Error('OneReward requires a mask image. Use the Inpaint tool modal to paint a mask.')
+    }
+    return inpaintWithOneReward(file, referenceImage, instruction, onProgress, abortSignal)
+  }
+
+  // Seedream 5 Edit (intelligent editing, low hallucination)
+  if (engineKey === 'fal:seedream5-edit') {
+    return editImageWithSeedream5Lite(file, instruction, onProgress, abortSignal)
+  }
+
   // FLUX Kontext
   if (engineKey === 'fal:kontext-multi' || eng?.falModel === 'fal-ai/flux-pro/kontext/multi') {
     return editImageWithFluxKontext(file, instruction, onProgress, undefined, abortSignal)
   }
 
-  // Seedream 5.0 / 4.5
+  // Seedream 5.0 / 4.5 (creation models used for editing)
   if (engineKey.startsWith('fal:seedream')) {
     const refs = referenceImage ? [referenceImage] : []
     return editImageWithSeedream5(file, instruction, refs, onProgress, undefined, abortSignal)
@@ -151,6 +189,17 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
   const galleryItems = useGalleryStore(s => s.items)
   const characters = useCharacterStore(s => s.characters)
   const { pendingImage, pendingTarget, consume: consumeNav } = useNavigationStore()
+
+  // When the active tool changes, reset engine to the tool's default
+  useEffect(() => {
+    const featureKey = TOOL_TO_FEATURE[activeTool]
+    const featureDef = featureKey ? FEATURE_ENGINES[featureKey] : null
+    if (featureDef) {
+      setSelectedEngine(featureDef.default)
+    } else {
+      setSelectedEngine('auto')
+    }
+  }, [activeTool])
 
   // Consume pending navigation (e.g. from Gallery → Editor)
   useEffect(() => {
@@ -911,39 +960,53 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           <div className="overflow-y-auto p-3 pb-2 space-y-1 flex-1 min-h-0 joi-scroll">
             <div className="joi-label mb-2 px-1">Generation Engine</div>
 
-            <button onClick={() => { setSelectedEngine('auto'); setShowEngineModal(false) }}
-              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all"
-              style={{
-                background: selectedEngine === 'auto' ? 'rgba(255,107,157,.08)' : 'transparent',
-                border: `1px solid ${selectedEngine === 'auto' ? 'rgba(255,107,157,.2)' : 'transparent'}`,
-              }}>
-              <span className="text-base">{'\u2728'}</span>
-              <div className="flex-1 min-w-0">
-                <div className="text-[11px] font-medium" style={{ color: selectedEngine === 'auto' ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>Auto</div>
-                <div className="text-[9px]" style={{ color:'var(--joi-text-3)' }}>Best engine automatically</div>
-              </div>
-            </button>
+            {(() => {
+              const featureKey = TOOL_TO_FEATURE[activeTool]
+              const featureDef = featureKey ? FEATURE_ENGINES[featureKey] : null
+              const allowedKeys = featureDef ? featureDef.keys : null
+              const filteredEngines = allowedKeys
+                ? ENGINE_METADATA.filter(e => allowedKeys.includes(e.key))
+                : ENGINE_METADATA
 
-            <div className="joi-divider my-1" />
+              return <>
+                {!allowedKeys && (
+                  <>
+                    <button onClick={() => { setSelectedEngine('auto'); setShowEngineModal(false) }}
+                      className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all"
+                      style={{
+                        background: selectedEngine === 'auto' ? 'rgba(255,107,157,.08)' : 'transparent',
+                        border: `1px solid ${selectedEngine === 'auto' ? 'rgba(255,107,157,.2)' : 'transparent'}`,
+                      }}>
+                      <span className="text-base">{'\u2728'}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[11px] font-medium" style={{ color: selectedEngine === 'auto' ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>Auto</div>
+                        <div className="text-[9px]" style={{ color:'var(--joi-text-3)' }}>Best engine automatically</div>
+                      </div>
+                    </button>
+                    <div className="joi-divider my-1" />
+                  </>
+                )}
 
-            {ENGINE_METADATA.map(eng => (
-              <button key={eng.key} onClick={() => { setSelectedEngine(eng.key); setShowEngineModal(false) }}
-                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all"
-                style={{
-                  background: selectedEngine === eng.key ? 'rgba(255,107,157,.08)' : 'transparent',
-                  border: `1px solid ${selectedEngine === eng.key ? 'rgba(255,107,157,.2)' : 'transparent'}`,
-                }}>
-                <span className="text-sm" style={{ color:'var(--joi-text-3)' }}>{'\u2699'}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[11px] font-medium" style={{ color: selectedEngine === eng.key ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{eng.userFriendlyName}</div>
-                  <div className="text-[8px]" style={{ color:'var(--joi-text-3)' }}>{eng.description}</div>
-                </div>
-                <div className="shrink-0 text-right">
-                  <div className="text-[9px] font-mono" style={{ color:'var(--joi-pink)' }}>{eng.creditCost}cr</div>
-                  <div className="text-[8px] font-mono" style={{ color:'var(--joi-text-3)' }}>{eng.estimatedTime}</div>
-                </div>
-              </button>
-            ))}
+                {filteredEngines.map(eng => (
+                  <button key={eng.key} onClick={() => { setSelectedEngine(eng.key); setShowEngineModal(false) }}
+                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all"
+                    style={{
+                      background: selectedEngine === eng.key ? 'rgba(255,107,157,.08)' : 'transparent',
+                      border: `1px solid ${selectedEngine === eng.key ? 'rgba(255,107,157,.2)' : 'transparent'}`,
+                    }}>
+                    <span className="text-sm" style={{ color:'var(--joi-text-3)' }}>{'\u2699'}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[11px] font-medium" style={{ color: selectedEngine === eng.key ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{eng.userFriendlyName}</div>
+                      <div className="text-[8px]" style={{ color:'var(--joi-text-3)' }}>{eng.description}</div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div className="text-[9px] font-mono" style={{ color:'var(--joi-pink)' }}>{eng.creditCost}cr</div>
+                      <div className="text-[8px] font-mono" style={{ color:'var(--joi-text-3)' }}>{eng.estimatedTime}</div>
+                    </div>
+                  </button>
+                ))}
+              </>
+            })()}
           </div>
 
           <div className="shrink-0 px-3 pb-3 pt-2" style={{ borderTop:'1px solid rgba(255,255,255,.04)' }}>
