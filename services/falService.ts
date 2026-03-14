@@ -14,6 +14,11 @@ fal.config({
 // ─────────────────────────────────────────────
 
 /**
+ * Unwrap FAL SDK result — handles both { data: { images } } and { images } shapes.
+ */
+const unwrap = (result: any): any => result?.data ?? result ?? {};
+
+/**
  * Converts a File to a base64 data URI for passing to fal.ai.
  */
 const fileToDataUri = (file: File): Promise<string> => {
@@ -106,7 +111,8 @@ export const extractPoseSkeleton = async (file: File): Promise<File> => {
     },
   });
 
-  const skeletonUrl = result?.image?.url || result?.images?.[0]?.url;
+  const r = unwrap(result);
+  const skeletonUrl = r?.image?.url || r?.images?.[0]?.url;
   if (!skeletonUrl) {
     throw new Error('Could not generate the pose skeleton.');
   }
@@ -231,7 +237,8 @@ export const generateWithKontextMulti = async (
     },
   }) as any;
 
-  const images: Array<{ url: string }> = result?.images ?? [];
+  const r = unwrap(result);
+  const images: Array<{ url: string }> = r?.images ?? [];
   if (images.length === 0) {
     throw new Error('Kontext Multi did not return any images. Check your API key and parameters.');
   }
@@ -318,7 +325,8 @@ export const generateWithFluxKontextMulti = async (
       },
     }) as any;
 
-    const imageUrl: string = result?.images?.[0]?.url;
+    const r = unwrap(result);
+    const imageUrl: string = r?.images?.[0]?.url;
     if (imageUrl) {
       const resp = await fetch(imageUrl);
       if (!resp.ok) throw new Error(`Error downloading FLUX.2 Pro image (${resp.status}).`);
@@ -416,7 +424,8 @@ export const generateWithSeedream45 = async (
       },
     }) as any;
 
-    const imageUrl: string = result?.images?.[0]?.url;
+    const r = unwrap(result);
+    const imageUrl: string = r?.images?.[0]?.url;
     if (imageUrl) {
       const resp = await fetch(imageUrl);
       const blob = await resp.blob();
@@ -508,10 +517,11 @@ export const generateWithSeedream50 = async (
       },
     }) as any;
 
-    const imageUrl: string = result?.images?.[0]?.url;
+    const r = unwrap(result);
+    const imageUrl: string = r?.images?.[0]?.url;
     if (!imageUrl) {
       // If no image URL, check for NSFW concepts
-      if (result?.has_nsfw_concepts?.[0]) {
+      if (r?.has_nsfw_concepts?.[0]) {
         throw new Error('Seedream 5.0 filtered the content. Try a more neutral prompt.');
       }
       throw new Error('Seedream 5.0 did not return any images.');
@@ -586,7 +596,8 @@ export const poseTransferWithLeffa = async (
     },
   }) as any;
 
-  const imageUrl: string = result?.image?.url || result?.images?.[0]?.url;
+  const r = unwrap(result);
+  const imageUrl: string = r?.image?.url || r?.images?.[0]?.url;
   if (!imageUrl) throw new Error('Leffa did not return any images.');
 
   if (onProgress) onProgress(92);
@@ -646,11 +657,12 @@ export const poseEditWithFluxKontext = async (
     },
   }) as any;
 
-  if (result?.has_nsfw_concepts?.[0]) {
+  const r = unwrap(result);
+  if (r?.has_nsfw_concepts?.[0]) {
     throw new Error('FLUX Kontext filtered the content. Try a more neutral instruction or use Gemini AI Edit.');
   }
 
-  const imageUrl: string = result?.images?.[0]?.url;
+  const imageUrl: string = r?.images?.[0]?.url;
   if (!imageUrl) throw new Error('FLUX Kontext did not return any images.');
 
   if (onProgress) onProgress(90);
@@ -758,7 +770,8 @@ export const upscaleWithAuraSR = async (
     },
   }) as any;
 
-  const resultUrl: string = result?.image?.url;
+  const r = unwrap(result);
+  const resultUrl: string = r?.image?.url;
   if (!resultUrl) throw new Error('AuraSR did not return any images.');
 
   if (onProgress) onProgress(92);
@@ -817,11 +830,12 @@ export const editImageWithFluxKontext = async (
     },
   }) as any;
 
-  if (result?.has_nsfw_concepts?.[0]) {
+  const r = unwrap(result);
+  if (r?.has_nsfw_concepts?.[0]) {
     throw new Error('FLUX Kontext filtered the content. Try a more neutral instruction or use Gemini AI Edit.');
   }
 
-  const resultUrl: string = result?.images?.[0]?.url;
+  const resultUrl: string = r?.images?.[0]?.url;
   if (!resultUrl) throw new Error('FLUX Kontext did not return any images.');
 
   if (onProgress) onProgress(92);
@@ -874,7 +888,8 @@ export const removeBackground = async (
     },
   });
 
-  const outputUrl: string = result?.image?.url || result?.images?.[0]?.url;
+  const r = unwrap(result);
+  const outputUrl: string = r?.image?.url || r?.images?.[0]?.url;
   if (!outputUrl) throw new Error('Remove background: no output returned.');
 
   if (onProgress) onProgress(90);
@@ -928,11 +943,12 @@ export const inpaintImage = async (
     },
   });
 
-  if (result?.has_nsfw_concepts?.[0]) {
+  const r = unwrap(result);
+  if (r?.has_nsfw_concepts?.[0]) {
     throw new Error('FLUX Inpaint filtered the content. Try a more neutral instruction.');
   }
 
-  const outputUrl: string = result?.images?.[0]?.url || result?.image?.url;
+  const outputUrl: string = r?.images?.[0]?.url || r?.image?.url;
   if (!outputUrl) throw new Error('Inpaint: no output returned.');
 
   if (onProgress) onProgress(90);
@@ -990,7 +1006,8 @@ export const editImageWithSeedream5 = async (
     },
   }) as any;
 
-  const imageUrl: string = result?.images?.[0]?.url;
+  const r = unwrap(result);
+  const imageUrl: string = r?.images?.[0]?.url;
   if (!imageUrl) throw new Error('Seedream 5 Edit did not return any images.');
 
   if (onProgress) onProgress(92);
@@ -1046,7 +1063,8 @@ export const editImageWithFlux2Pro = async (
     },
   }) as any;
 
-  const imageUrl: string = result?.images?.[0]?.url;
+  const r = unwrap(result);
+  const imageUrl: string = r?.images?.[0]?.url;
   if (!imageUrl) throw new Error('FLUX.2 Pro Edit did not return any images.');
 
   if (onProgress) onProgress(92);
@@ -1137,7 +1155,8 @@ export const generateVideoWithKling = async (
     },
   }) as any;
 
-  const videoUrl: string = result?.video?.url || result?.url;
+  const r = unwrap(result);
+  const videoUrl: string = r?.video?.url || r?.url;
   if (!videoUrl) throw new Error(`${params.engine} did not return any video.`);
 
   if (onProgress) onProgress(100);
@@ -1179,7 +1198,8 @@ export const faceSwapWithFal = async (
   }) as any;
 
   // The output could be in image.url or directly in url
-  const finalImageUrl: string = result?.image?.url || result?.url;
+  const r = unwrap(result);
+  const finalImageUrl: string = r?.image?.url || r?.url;
   if (!finalImageUrl) throw new Error('Face Swap did not return an image.');
 
   if (onProgress) onProgress(100);
@@ -1220,7 +1240,8 @@ export const editImageWithGrokFal = async (
 
   if (onProgress) onProgress(90);
 
-  const images: any[] = result?.images ?? [];
+  const r = unwrap(result);
+  const images: any[] = r?.images ?? [];
   const urls: string[] = images.map((img: any) => img.url).filter(Boolean);
 
   if (urls.length === 0) throw new Error('Grok Imagine Edit: did not return any images. Check your FAL_KEY for fal.ai.');
@@ -1304,7 +1325,8 @@ export const generatePhotoSessionWithGrok = async (
       },
     }) as any;
 
-    const imgUrl = result?.images?.[0]?.url;
+    const r = unwrap(result);
+    const imgUrl = r?.images?.[0]?.url ?? r?.images?.[0]?.url ?? r?.image?.url;
     if (!imgUrl) throw new Error(`Shot ${i + 1}: Grok did not return an image.`);
 
     results.push({ url: await toDataUrl(imgUrl), poseIndex: i });
@@ -1377,7 +1399,8 @@ export const trainLoRAForCharacter = async (
 
   if (abortSignal?.aborted) throw new Error('Training cancelled.');
 
-  const loraFile = result?.diffusers_lora_file;
+  const r = unwrap(result);
+  const loraFile = r?.diffusers_lora_file;
   if (!loraFile?.url) throw new Error('Training completado pero no se obtuvo el archivo LoRA.');
 
   if (onProgress) onProgress(100);
@@ -1436,7 +1459,8 @@ export const generateWithZImageTurbo = async (
     },
   }) as any;
 
-  const images: Array<{ url: string }> = result?.images ?? [];
+  const r = unwrap(result);
+  const images: Array<{ url: string }> = r?.images ?? [];
   if (images.length === 0) throw new Error('Z-Image Turbo did not return any images.');
 
   const results: string[] = [];
@@ -1500,7 +1524,8 @@ export const inpaintWithZImageTurbo = async (
     },
   });
 
-  const outputUrl: string = result?.images?.[0]?.url || result?.image?.url;
+  const r = unwrap(result);
+  const outputUrl: string = r?.images?.[0]?.url || r?.image?.url;
   if (!outputUrl) throw new Error('Z-Image Inpaint: no output returned.');
 
   if (onProgress) onProgress(90);
