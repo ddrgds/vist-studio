@@ -36,7 +36,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
   // Selected vibes / presets (multi-select)
   const [selectedPresets, setSelectedPresets] = useState<Set<string>>(new Set(['selfies']))
   const [shotCount, setShotCount] = useState(4)
-  const [selectedEngine, setSelectedEngine] = useState<string>('auto')
+  const [selectedEngine, setSelectedEngine] = useState<string>('grok')
   const [selectedResolution, setSelectedResolution] = useState('1k')
   const [showEngineModal, setShowEngineModal] = useState(false)
 
@@ -181,7 +181,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
           refFile = uploadedSubject!.file
         }
 
-        const useGrok = selectedEngine === 'auto' || selectedEngine === 'grok' || selectedEngine.includes('grok')
+        const useGrok = selectedEngine !== 'gemini'
         const engineLabel = useGrok ? 'grok-session' : 'gemini-photo-session'
 
         let results: { url: string; poseIndex: number }[]
@@ -239,7 +239,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
         const fullPrompt = `${sessionPrompt}. ${mixedShots.length > 0 ? '' : PHOTO_SESSION_PRESETS.filter(p => selectedPresets.has(p.id)).map(p => p.description).join('. ') + '.'}`
 
         if (refFile) {
-          const useGrok = selectedEngine === 'auto' || selectedEngine === 'grok' || selectedEngine.includes('grok')
+          const useGrok = selectedEngine !== 'gemini'
           const engineLabel = useGrok ? 'grok-session' : 'gemini-photo-session'
 
           let results: { url: string; poseIndex: number }[]
@@ -764,36 +764,25 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
           <div className="overflow-y-auto p-3 pb-2 space-y-1 flex-1 min-h-0 joi-scroll">
             <div className="joi-label mb-2 px-1">Engine</div>
 
-            <button onClick={() => { setSelectedEngine('auto'); setShowEngineModal(false) }}
-              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all"
-              style={{
-                background: selectedEngine === 'auto' ? 'rgba(255,107,157,.08)' : 'transparent',
-                border: `1px solid ${selectedEngine === 'auto' ? 'rgba(255,107,157,.2)' : 'transparent'}`,
-              }}>
-              <span className="text-base">{'\u2728'}</span>
-              <div className="flex-1 min-w-0">
-                <div className="text-[11px] font-medium" style={{ color: selectedEngine === 'auto' ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>Auto</div>
-                <div className="text-[9px]" style={{ color:'var(--joi-text-3)' }}>Best engine automatically</div>
-              </div>
-            </button>
-
-            <div className="joi-divider my-1" />
-
-            {ENGINE_METADATA.map(eng => (
+            {/* Only show edit-capable engines for Photo Session */}
+            {[
+              { key: 'grok', label: 'Grok Imagine', desc: 'xAI creative edit — best for sessions', icon: '\u26A1', cost: '1cr', time: '~4s' },
+              { key: 'gemini', label: 'Gemini Edit', desc: 'Google AI image editing', icon: '\u2728', cost: '1cr', time: '~8s' },
+            ].map(eng => (
               <button key={eng.key} onClick={() => { setSelectedEngine(eng.key); setShowEngineModal(false) }}
                 className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all"
                 style={{
                   background: selectedEngine === eng.key ? 'rgba(255,107,157,.08)' : 'transparent',
                   border: `1px solid ${selectedEngine === eng.key ? 'rgba(255,107,157,.2)' : 'transparent'}`,
                 }}>
-                <span className="text-sm" style={{ color:'var(--joi-text-3)' }}>{'\u2699'}</span>
+                <span className="text-base">{eng.icon}</span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[11px] font-medium" style={{ color: selectedEngine === eng.key ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{eng.userFriendlyName}</div>
-                  <div className="text-[9px]" style={{ color:'var(--joi-text-3)' }}>{eng.description}</div>
+                  <div className="text-[11px] font-medium" style={{ color: selectedEngine === eng.key ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{eng.label}</div>
+                  <div className="text-[9px]" style={{ color:'var(--joi-text-3)' }}>{eng.desc}</div>
                 </div>
                 <div className="shrink-0 text-right">
-                  <div className="text-[9px] font-mono" style={{ color:'var(--joi-pink)' }}>{eng.creditCost}cr</div>
-                  <div className="text-[8px] font-mono" style={{ color:'var(--joi-text-3)' }}>{eng.estimatedTime}</div>
+                  <div className="text-[9px] font-mono" style={{ color:'var(--joi-pink)' }}>{eng.cost}</div>
+                  <div className="text-[8px] font-mono" style={{ color:'var(--joi-text-3)' }}>{eng.time}</div>
                 </div>
               </button>
             ))}
