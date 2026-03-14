@@ -27,6 +27,10 @@ export interface SavedCharacter {
   loraUrl?: string;
   loraTrainingStatus?: 'idle' | 'training' | 'ready' | 'failed';
   loraTrainedAt?: number;
+  // Pipeline redesign fields
+  renderStyle?: string           // 'photorealistic' | 'anime' | '3d-render' | 'illustration' | 'stylized' | 'pixel-art'
+  soulStyleId?: string           // UUID if Soul Style was chosen
+  personalityTraits?: string[]   // e.g. ['bold', 'mysterious', 'playful']
 }
 
 interface CharacterState {
