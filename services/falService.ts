@@ -106,7 +106,7 @@ export const extractPoseSkeleton = async (file: File): Promise<File> => {
     },
   });
 
-  const skeletonUrl = result.data?.image?.url || result.data?.images?.[0]?.url;
+  const skeletonUrl = result?.image?.url || result?.images?.[0]?.url;
   if (!skeletonUrl) {
     throw new Error('Could not generate the pose skeleton.');
   }
@@ -231,7 +231,7 @@ export const generateWithKontextMulti = async (
     },
   }) as any;
 
-  const images: Array<{ url: string }> = result.data?.images ?? [];
+  const images: Array<{ url: string }> = result?.images ?? [];
   if (images.length === 0) {
     throw new Error('Kontext Multi did not return any images. Check your API key and parameters.');
   }
@@ -318,7 +318,7 @@ export const generateWithFluxKontextMulti = async (
       },
     }) as any;
 
-    const imageUrl: string = result.data?.images?.[0]?.url;
+    const imageUrl: string = result?.images?.[0]?.url;
     if (imageUrl) {
       const resp = await fetch(imageUrl);
       if (!resp.ok) throw new Error(`Error downloading FLUX.2 Pro image (${resp.status}).`);
@@ -416,7 +416,7 @@ export const generateWithSeedream45 = async (
       },
     }) as any;
 
-    const imageUrl: string = result.data?.images?.[0]?.url;
+    const imageUrl: string = result?.images?.[0]?.url;
     if (imageUrl) {
       const resp = await fetch(imageUrl);
       const blob = await resp.blob();
@@ -508,10 +508,10 @@ export const generateWithSeedream50 = async (
       },
     }) as any;
 
-    const imageUrl: string = result.data?.images?.[0]?.url;
+    const imageUrl: string = result?.images?.[0]?.url;
     if (!imageUrl) {
       // If no image URL, check for NSFW concepts
-      if (result.data?.has_nsfw_concepts?.[0]) {
+      if (result?.has_nsfw_concepts?.[0]) {
         throw new Error('Seedream 5.0 filtered the content. Try a more neutral prompt.');
       }
       throw new Error('Seedream 5.0 did not return any images.');
@@ -586,7 +586,7 @@ export const poseTransferWithLeffa = async (
     },
   }) as any;
 
-  const imageUrl: string = result.data?.image?.url || result.data?.images?.[0]?.url;
+  const imageUrl: string = result?.image?.url || result?.images?.[0]?.url;
   if (!imageUrl) throw new Error('Leffa did not return any images.');
 
   if (onProgress) onProgress(92);
@@ -646,11 +646,11 @@ export const poseEditWithFluxKontext = async (
     },
   }) as any;
 
-  if (result.data?.has_nsfw_concepts?.[0]) {
+  if (result?.has_nsfw_concepts?.[0]) {
     throw new Error('FLUX Kontext filtered the content. Try a more neutral instruction or use Gemini AI Edit.');
   }
 
-  const imageUrl: string = result.data?.images?.[0]?.url;
+  const imageUrl: string = result?.images?.[0]?.url;
   if (!imageUrl) throw new Error('FLUX Kontext did not return any images.');
 
   if (onProgress) onProgress(90);
@@ -758,7 +758,7 @@ export const upscaleWithAuraSR = async (
     },
   }) as any;
 
-  const resultUrl: string = result.data?.image?.url;
+  const resultUrl: string = result?.image?.url;
   if (!resultUrl) throw new Error('AuraSR did not return any images.');
 
   if (onProgress) onProgress(92);
@@ -817,11 +817,11 @@ export const editImageWithFluxKontext = async (
     },
   }) as any;
 
-  if (result.data?.has_nsfw_concepts?.[0]) {
+  if (result?.has_nsfw_concepts?.[0]) {
     throw new Error('FLUX Kontext filtered the content. Try a more neutral instruction or use Gemini AI Edit.');
   }
 
-  const resultUrl: string = result.data?.images?.[0]?.url;
+  const resultUrl: string = result?.images?.[0]?.url;
   if (!resultUrl) throw new Error('FLUX Kontext did not return any images.');
 
   if (onProgress) onProgress(92);
@@ -874,7 +874,7 @@ export const removeBackground = async (
     },
   });
 
-  const outputUrl: string = result.data?.image?.url || result.data?.images?.[0]?.url;
+  const outputUrl: string = result?.image?.url || result?.images?.[0]?.url;
   if (!outputUrl) throw new Error('Remove background: no output returned.');
 
   if (onProgress) onProgress(90);
@@ -928,11 +928,11 @@ export const inpaintImage = async (
     },
   });
 
-  if (result.data?.has_nsfw_concepts?.[0]) {
+  if (result?.has_nsfw_concepts?.[0]) {
     throw new Error('FLUX Inpaint filtered the content. Try a more neutral instruction.');
   }
 
-  const outputUrl: string = result.data?.images?.[0]?.url || result.data?.image?.url;
+  const outputUrl: string = result?.images?.[0]?.url || result?.image?.url;
   if (!outputUrl) throw new Error('Inpaint: no output returned.');
 
   if (onProgress) onProgress(90);
@@ -990,7 +990,7 @@ export const editImageWithSeedream5 = async (
     },
   }) as any;
 
-  const imageUrl: string = result.data?.images?.[0]?.url;
+  const imageUrl: string = result?.images?.[0]?.url;
   if (!imageUrl) throw new Error('Seedream 5 Edit did not return any images.');
 
   if (onProgress) onProgress(92);
@@ -1046,7 +1046,7 @@ export const editImageWithFlux2Pro = async (
     },
   }) as any;
 
-  const imageUrl: string = result.data?.images?.[0]?.url;
+  const imageUrl: string = result?.images?.[0]?.url;
   if (!imageUrl) throw new Error('FLUX.2 Pro Edit did not return any images.');
 
   if (onProgress) onProgress(92);
@@ -1137,7 +1137,7 @@ export const generateVideoWithKling = async (
     },
   }) as any;
 
-  const videoUrl: string = result.data?.video?.url || result.data?.url;
+  const videoUrl: string = result?.video?.url || result?.url;
   if (!videoUrl) throw new Error(`${params.engine} did not return any video.`);
 
   if (onProgress) onProgress(100);
@@ -1179,7 +1179,7 @@ export const faceSwapWithFal = async (
   }) as any;
 
   // The output could be in image.url or directly in url
-  const finalImageUrl: string = result.data?.image?.url || result.data?.url;
+  const finalImageUrl: string = result?.image?.url || result?.url;
   if (!finalImageUrl) throw new Error('Face Swap did not return an image.');
 
   if (onProgress) onProgress(100);
@@ -1220,7 +1220,7 @@ export const editImageWithGrokFal = async (
 
   if (onProgress) onProgress(90);
 
-  const images: any[] = result.data?.images ?? [];
+  const images: any[] = result?.images ?? [];
   const urls: string[] = images.map((img: any) => img.url).filter(Boolean);
 
   if (urls.length === 0) throw new Error('Grok Imagine Edit: did not return any images. Check your FAL_KEY for fal.ai.');
@@ -1304,7 +1304,7 @@ export const generatePhotoSessionWithGrok = async (
       },
     }) as any;
 
-    const imgUrl = result.data?.images?.[0]?.url;
+    const imgUrl = result?.images?.[0]?.url;
     if (!imgUrl) throw new Error(`Shot ${i + 1}: Grok did not return an image.`);
 
     results.push({ url: await toDataUrl(imgUrl), poseIndex: i });
@@ -1377,7 +1377,7 @@ export const trainLoRAForCharacter = async (
 
   if (abortSignal?.aborted) throw new Error('Training cancelled.');
 
-  const loraFile = result?.data?.diffusers_lora_file ?? result?.diffusers_lora_file;
+  const loraFile = result?.diffusers_lora_file;
   if (!loraFile?.url) throw new Error('Training completado pero no se obtuvo el archivo LoRA.');
 
   if (onProgress) onProgress(100);
@@ -1436,7 +1436,7 @@ export const generateWithZImageTurbo = async (
     },
   }) as any;
 
-  const images: Array<{ url: string }> = result.data?.images ?? [];
+  const images: Array<{ url: string }> = result?.images ?? [];
   if (images.length === 0) throw new Error('Z-Image Turbo did not return any images.');
 
   const results: string[] = [];
@@ -1500,7 +1500,7 @@ export const inpaintWithZImageTurbo = async (
     },
   });
 
-  const outputUrl: string = result.data?.images?.[0]?.url || result.data?.image?.url;
+  const outputUrl: string = result?.images?.[0]?.url || result?.image?.url;
   if (!outputUrl) throw new Error('Z-Image Inpaint: no output returned.');
 
   if (onProgress) onProgress(90);
