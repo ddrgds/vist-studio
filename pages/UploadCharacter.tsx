@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useCharacterStore, type SavedCharacter } from '../stores/characterStore'
 import { useProfile } from '../contexts/ProfileContext'
 import { useToast } from '../contexts/ToastContext'
-import { generateInfluencerImage } from '../services/geminiService'
+import { generateInfluencerImage, enhancePrompt } from '../services/geminiService'
 import { ImageSize, AspectRatio, ENGINE_METADATA } from '../types'
 import type { InfluencerParams } from '../types'
 import { useNavigationStore } from '../stores/navigationStore'
@@ -97,6 +97,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     faceShape: [], bodyType: [], skinTexture: [],
   })
   const [promptText, setPromptText] = useState('')
+  const [enhancing, setEnhancing] = useState(false)
   const [referenceFiles, setReferenceFiles] = useState<File[]>([])
 
   // Step 2 — Style
@@ -721,8 +722,42 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                           background: 'var(--joi-bg-2)', borderColor: 'rgba(255,255,255,.04)',
                           color: 'var(--joi-text-1)', backdropFilter: 'blur(8px)',
                         }} />
-                      <div className="text-[10px] mt-2" style={{ color: 'var(--joi-text-3)' }}>
-                        Tip: Be specific about physical features, expression, and style for best results.
+                      <div className="flex items-center justify-between mt-3">
+                        <div className="text-[10px]" style={{ color: 'var(--joi-text-3)' }}>
+                          Tip: Be specific about physical features, expression, and style for best results.
+                        </div>
+                        <button
+                          disabled={enhancing || !promptText.trim()}
+                          onClick={async () => {
+                            if (!promptText.trim()) return
+                            const ok = await decrementCredits(2)
+                            if (!ok) { toast.error('Insufficient credits (2cr)'); return }
+                            setEnhancing(true)
+                            try {
+                              const enhanced = await enhancePrompt(promptText, renderStyles[selRenderStyle].id)
+                              if (enhanced && enhanced !== promptText) {
+                                setPromptText(enhanced)
+                                toast.success('Prompt enhanced!')
+                              } else {
+                                restoreCredits(2)
+                                toast.info('No enhancement needed')
+                              }
+                            } catch {
+                              restoreCredits(2)
+                              toast.error('Enhancement failed')
+                            } finally {
+                              setEnhancing(false)
+                            }
+                          }}
+                          className="px-3 py-1.5 rounded-lg text-[10px] font-medium transition-all shrink-0 ml-3"
+                          style={{
+                            background: enhancing ? 'var(--joi-bg-3)' : 'rgba(255,107,157,.08)',
+                            border: '1px solid rgba(255,107,157,.15)',
+                            color: 'var(--joi-pink)',
+                            opacity: (!promptText.trim() || enhancing) ? 0.4 : 1,
+                          }}>
+                          {enhancing ? '...' : '✨ Enhance (2cr)'}
+                        </button>
                       </div>
                     </div>
                   )}

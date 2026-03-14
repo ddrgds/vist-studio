@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useCharacterStore } from '../stores/characterStore'
 import { useGalleryStore, type GalleryItem } from '../stores/galleryStore'
-import { generateInfluencerImage } from '../services/geminiService'
+import { generateInfluencerImage, enhancePrompt } from '../services/geminiService'
 import { generateWithSoul } from '../services/higgsfieldService'
 import { generateWithReplicate } from '../services/replicateService'
 import { generateWithOpenAI } from '../services/openaiService'
@@ -166,6 +166,7 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
 
   // ── Scenario ──
   const [scenario, setScenario] = useState('')
+  const [enhancingScenario, setEnhancingScenario] = useState(false)
 
   // ── Outfit ──
   const [outfitDescription, setOutfitDescription] = useState('')
@@ -562,6 +563,41 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
                 value={scenario}
                 onChange={e => setScenario(e.target.value)}
               />
+              {scenario.trim() && (
+                <div className="flex justify-end mt-1">
+                  <button
+                    disabled={enhancingScenario}
+                    onClick={async () => {
+                      const ok = await decrementCredits(2)
+                      if (!ok) { toast.error('Insufficient credits (2cr)'); return }
+                      setEnhancingScenario(true)
+                      try {
+                        const enhanced = await enhancePrompt(scenario, 'scenario')
+                        if (enhanced && enhanced !== scenario) {
+                          setScenario(enhanced)
+                          toast.success('Scenario enhanced!')
+                        } else {
+                          restoreCredits(2)
+                          toast.info('No enhancement needed')
+                        }
+                      } catch {
+                        restoreCredits(2)
+                        toast.error('Enhancement failed')
+                      } finally {
+                        setEnhancingScenario(false)
+                      }
+                    }}
+                    className="px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all"
+                    style={{
+                      background: 'rgba(255,107,157,.08)',
+                      border: '1px solid rgba(255,107,157,.15)',
+                      color: 'var(--joi-pink)',
+                      opacity: enhancingScenario ? 0.4 : 1,
+                    }}>
+                    {enhancingScenario ? '...' : '✨ Enhance (2cr)'}
+                  </button>
+                </div>
+              )}
 
               <div>
                 <div className="text-[11px] font-medium mb-2" style={{ color: 'var(--joi-text-2)' }}>Inspirations</div>
