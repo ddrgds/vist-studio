@@ -900,9 +900,13 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
               {inputImage ? (
                 <img src={inputImage} className="w-full h-full object-cover rounded-xl" alt="Original" />
               ) : (
-                <div className="text-center">
-                  <span className="text-3xl block mb-2" style={{ color:'var(--joi-text-3)' }}>{'\u2191'}</span>
-                  <span className="text-[11px]" style={{ color:'var(--joi-text-3)' }}>Upload an image</span>
+                <div className="text-center px-6">
+                  <div className="w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center"
+                    style={{ background: 'rgba(255,107,157,.06)', border: '1px solid rgba(255,107,157,.1)' }}>
+                    <span className="text-xl" style={{ color:'var(--joi-pink)', opacity: 0.6 }}>{'\u2191'}</span>
+                  </div>
+                  <p className="text-[11px] font-medium mb-1" style={{ color:'var(--joi-text-2)' }}>Upload an image to start editing</p>
+                  <p className="text-[9px]" style={{ color:'var(--joi-text-3)' }}>Or select from your gallery or characters</p>
                 </div>
               )}
             </div>

@@ -244,11 +244,21 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
 
       {/* Empty state */}
       {items.length === 0 ? (
-        <div className="px-8 pb-8 flex items-center justify-center" style={{ minHeight: '40vh' }}>
-          <div className="joi-glass px-8 py-10 text-center rounded-2xl" style={{ maxWidth: '420px' }}>
-            <p className="text-sm" style={{ color:'var(--joi-text-2)' }}>
-              No creations yet. Use the AI Editor or Photo Session to get started.
+        <div className="px-8 pb-8 flex items-center justify-center" style={{ minHeight: '50vh' }}>
+          <div className="joi-glass px-10 py-12 text-center rounded-2xl" style={{ maxWidth: '460px', border: '1px solid rgba(255,255,255,.04)' }}>
+            <div className="text-3xl mb-4">✦</div>
+            <h2 className="joi-heading text-lg mb-2">Your gallery is empty</h2>
+            <p className="text-[12px] mb-6" style={{ color:'var(--joi-text-3)' }}>
+              Start creating! Direct a hero shot or edit an image with AI tools.
             </p>
+            <div className="flex gap-3 justify-center">
+              <button onClick={() => onNav?.('director')} className="joi-btn-solid px-5 py-2.5 text-[12px]">
+                ◎ Direct a Scene
+              </button>
+              <button onClick={() => onNav?.('editor')} className="joi-btn-ghost px-5 py-2.5 text-[12px]">
+                ✦ Open AI Editor
+              </button>
+            </div>
           </div>
         </div>
       ) : (

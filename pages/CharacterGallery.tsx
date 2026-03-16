@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useCharacterStore } from '../stores/characterStore'
 import { useGalleryStore } from '../stores/galleryStore'
 
@@ -13,6 +14,7 @@ function getGradientForIndex(i: number) { return gradients[i % gradients.length]
 const detailTabs = ['Overview','Photos','AI Edits','Universe','Settings']
 
 export function CharacterGallery() {
+  const navigate = useNavigate()
   const [selectedChar, setSelectedChar] = useState<number | null>(null)
   const [detailTab, setDetailTab] = useState('Overview')
 
@@ -61,16 +63,17 @@ export function CharacterGallery() {
 
   if (storeCharacters.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--joi-bg-0)' }}>
-        <div className="p-8 text-center max-w-md rounded-md" style={{ background: 'var(--joi-bg-2)', border: '1px solid rgba(255,255,255,.04)' }}>
-          <div className="text-4xl mb-4">✦</div>
-          <h2 className="text-lg font-bold mb-2" style={{ color:'var(--joi-text-1)' }}>
-            No characters yet
-          </h2>
-          <p className="text-sm mb-6" style={{ color:'var(--joi-text-2)' }}>
-            Create your first virtual influencer to get started.
+      <div className="min-h-screen joi-mesh flex items-center justify-center" style={{ background: 'var(--joi-bg-0)' }}>
+        <div className="joi-glass px-10 py-12 text-center max-w-md rounded-2xl" style={{ border: '1px solid rgba(255,255,255,.04)' }}>
+          <div className="text-3xl mb-4">✦</div>
+          <h2 className="joi-heading text-lg mb-2">No characters yet</h2>
+          <p className="text-[12px] mb-6" style={{ color:'var(--joi-text-3)' }}>
+            Characters are your virtual influencers. Create one to start generating content.
           </p>
-          <button className="btn-primary px-6 py-2.5 text-sm">⊕ Create Character</button>
+          <button onClick={() => navigate('/studio?tool=create')}
+            className="joi-btn-solid px-6 py-2.5 text-sm joi-breathe">
+            ⊕ Create Your First Character
+          </button>
         </div>
       </div>
     )

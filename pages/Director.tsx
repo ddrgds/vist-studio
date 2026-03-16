@@ -734,8 +734,8 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
                       style={{ background: 'rgba(255,107,157,.06)', border: '1px solid rgba(255,107,157,.1)' }}>
                       <span className="text-2xl" style={{ opacity: 0.6 }}>{'\u2726'}</span>
                     </div>
-                    <p className="joi-heading text-[13px]" style={{ color: 'var(--joi-text-2)' }}>Configure and generate</p>
-                    <p className="text-[11px] mt-1" style={{ color: 'var(--joi-text-3)' }}>your hero shot</p>
+                    <p className="joi-heading text-[13px]" style={{ color: 'var(--joi-text-2)' }}>Your hero shot will appear here</p>
+                    <p className="text-[11px] mt-1" style={{ color: 'var(--joi-text-3)' }}>Select a character and configure your scene to get started</p>
                   </div>
                 </div>
               </div>

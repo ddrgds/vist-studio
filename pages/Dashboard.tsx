@@ -67,6 +67,70 @@ export function Dashboard({ onNav }: Props) {
     : null
   const otherChars = characters.filter(c => c.id !== featuredChar?.id).slice(0, 4)
 
+  // ── Onboarding: shown when user has zero content ──
+  const isNewUser = characters.length === 0 && galleryItems.length === 0
+
+  if (isNewUser) {
+    return (
+      <div className="min-h-screen joi-mesh flex items-center justify-center" style={{ background: 'var(--joi-bg-0)' }}>
+        <div className="joi-orb" style={{ width: 400, height: 400, background: 'rgba(255,107,157,0.04)', top: '-5%', right: '10%' }} />
+        <div className="joi-orb" style={{ width: 300, height: 300, background: 'rgba(208,72,176,0.035)', bottom: '10%', left: '5%' }} />
+
+        <div className="relative max-w-lg w-full text-center px-6">
+          <p className="font-jet text-[10px] tracking-[0.18em] mb-3" style={{ color: 'var(--joi-text-3)' }}>
+            WELCOME TO VIST STUDIO
+          </p>
+          <h1 style={{ fontSize: '2.2rem', lineHeight: 1.15 }}>
+            <span className="joi-heading" style={{ fontWeight: 400 }}>Create your first </span>
+            <span className="joi-heading joi-glow joi-text-gradient" style={{ fontWeight: 700 }}>
+              virtual influencer
+            </span>
+          </h1>
+          <p className="text-sm mt-3 mb-8" style={{ color: 'var(--joi-text-2)' }}>
+            Design a character, direct a scene, and edit with AI — all in one place.
+          </p>
+
+          {/* Pipeline steps */}
+          <div className="flex items-center justify-center gap-3 mb-8">
+            {[
+              { n: '1', l: 'Create Character', icon: '⊕' },
+              { n: '2', l: 'Direct a Scene', icon: '◎' },
+              { n: '3', l: 'Edit with AI', icon: '✦' },
+              { n: '4', l: 'Photo Session', icon: '◎' },
+            ].map((step, i) => (
+              <div key={step.n} className="flex items-center gap-3">
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm"
+                    style={{
+                      background: i === 0 ? 'rgba(255,107,157,.12)' : 'rgba(255,255,255,.03)',
+                      border: `1px solid ${i === 0 ? 'rgba(255,107,157,.25)' : 'rgba(255,255,255,.06)'}`,
+                      color: i === 0 ? 'var(--joi-pink)' : 'var(--joi-text-3)',
+                    }}>
+                    {step.icon}
+                  </div>
+                  <span className="text-[10px] font-medium" style={{ color: i === 0 ? 'var(--joi-text-1)' : 'var(--joi-text-3)' }}>
+                    {step.l}
+                  </span>
+                </div>
+                {i < 3 && <div className="w-6 h-px mt-[-18px]" style={{ background: 'rgba(255,255,255,.08)' }} />}
+              </div>
+            ))}
+          </div>
+
+          <button onClick={() => onNav('upload')}
+            className="joi-btn-solid px-8 py-3.5 text-sm font-medium joi-breathe"
+            style={{ boxShadow: '0 4px 30px rgba(255,107,157,.25), 0 0 50px rgba(208,72,176,.1)' }}>
+            ⊕ Create Your First Character
+          </button>
+
+          <p className="text-[11px] mt-4" style={{ color: 'var(--joi-text-3)' }}>
+            {credits} credits available · {plan} plan
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen joi-mesh" style={{ background: 'var(--joi-bg-0)' }}>
 
