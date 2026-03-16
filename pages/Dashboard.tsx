@@ -59,7 +59,7 @@ export function Dashboard({ onNav }: Props) {
         : item.type === 'session' ? 'Session'
         : item.type === 'create' ? 'Creation'
         : item.type === 'video' ? 'Video' : 'Other'
-      return { label, char: char?.name || 'Unlinked', time: getTimeAgo(item.timestamp), color: typeColor(item.type) }
+      return { label, char: char?.name || 'No character', time: getTimeAgo(item.timestamp), color: typeColor(item.type) }
     })
 
   const featuredChar = characters.length > 0
@@ -207,9 +207,9 @@ export function Dashboard({ onNav }: Props) {
                         <p className="font-jet text-[10px] mt-1.5" style={{ color: 'var(--joi-text-2)' }}>
                           {featuredChar.usageCount || 0} uses · {photosCount} photos
                         </p>
-                        {(featuredChar.characteristics || featuredChar.outfitDescription) && (
+                        {(featuredChar.renderStyle || featuredChar.personalityTraits?.length) && (
                           <p className="text-[11px] mt-1 truncate" style={{ color: 'var(--joi-text-3)', maxWidth: '300px' }}>
-                            {featuredChar.characteristics || featuredChar.outfitDescription}
+                            {[featuredChar.renderStyle, ...(featuredChar.personalityTraits || []).slice(0, 3)].filter(Boolean).join(' · ')}
                           </p>
                         )}
                       </div>
