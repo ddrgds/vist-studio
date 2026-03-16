@@ -878,8 +878,15 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
       {/* Canvas */}
       <div className="flex-1 flex flex-col joi-mesh">
         <div className="h-11 flex items-center px-4 gap-1.5 shrink-0" style={{ borderBottom:'1px solid rgba(255,255,255,.04)', background:'var(--joi-bg-glass)' }}>
-          {['\u21BA','\u21BB','Before/After','Zoom In','Zoom Out','Export'].map(t=>(
-            <button key={t} className="px-2.5 py-1 rounded-lg text-[11px] hover:bg-white/5 transition-colors" style={{ color:'var(--joi-text-2)' }}>{t}</button>
+          {[
+            { label:'\u21BA', tip:'Undo' },
+            { label:'\u21BB', tip:'Redo' },
+            { label:'Before/After', tip:'Compare before and after' },
+            { label:'Zoom In', tip:'Zoom In' },
+            { label:'Zoom Out', tip:'Zoom Out' },
+            { label:'Export', tip:'Export image' },
+          ].map(t=>(
+            <button key={t.label} title={t.tip} className="px-2.5 py-1 rounded-lg text-[11px] hover:bg-white/5 transition-colors" style={{ color:'var(--joi-text-2)' }}>{t.label}</button>
           ))}
           <div className="flex-1" />
           <span className="text-[10px] font-mono" style={{ color:'var(--joi-text-3)' }}>Zoom: 100%</span>

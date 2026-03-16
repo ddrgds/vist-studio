@@ -114,10 +114,20 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
     }
   }
 
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+
   const handleDelete = (e: React.MouseEvent, item: GalleryItem) => {
     e.stopPropagation()
-    removeItem(item.id)
-    addToast('Image deleted', 'info')
+    setDeleteConfirm(item.id)
+  }
+
+  const confirmDelete = () => {
+    if (deleteConfirm) {
+      removeItem(deleteConfirm)
+      addToast('Image deleted', 'info')
+      setDeleteConfirm(null)
+      if (lightboxIndex !== null) setLightboxIndex(null)
+    }
   }
 
   const handleSaveFilter = async (item: GalleryItem) => {
@@ -458,6 +468,29 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
           </div>
         )
       })()}
+
+      {/* Delete confirmation modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center"
+          style={{ background: 'rgba(8,7,12,0.8)', backdropFilter: 'blur(8px)' }}
+          onClick={() => setDeleteConfirm(null)}>
+          <div className="joi-glass p-6 rounded-2xl max-w-xs text-center" onClick={e => e.stopPropagation()}
+            style={{ border: '1px solid rgba(255,60,60,.15)' }}>
+            <div className="text-2xl mb-3">🗑</div>
+            <h3 className="text-sm font-semibold mb-1" style={{ color: 'var(--joi-text-1)' }}>Delete this creation?</h3>
+            <p className="text-[11px] mb-5" style={{ color: 'var(--joi-text-3)' }}>This action cannot be undone.</p>
+            <div className="flex gap-2">
+              <button onClick={() => setDeleteConfirm(null)}
+                className="joi-btn-ghost flex-1 py-2 text-[11px]">Cancel</button>
+              <button onClick={confirmDelete}
+                className="flex-1 py-2 rounded-xl text-[11px] font-medium transition-all"
+                style={{ background: 'rgba(255,60,60,.15)', color: '#e05050', border: '1px solid rgba(255,60,60,.2)' }}>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
