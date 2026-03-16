@@ -905,22 +905,42 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         </div>
 
         <div className="flex-1 flex items-center justify-center p-6 gap-6">
+          {!inputImage ? (
+            /* ── Empty canvas: tool showcase ── */
+            <div className="max-w-[640px] w-full text-center">
+              <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+                style={{ background: 'rgba(255,107,157,.06)', border: '1px solid rgba(255,107,157,.1)' }}>
+                <span className="text-2xl" style={{ color:'var(--joi-pink)', opacity: 0.6 }}>{'\u2191'}</span>
+              </div>
+              <p className="text-sm font-medium mb-1" style={{ color:'var(--joi-text-1)' }}>Upload an image to start editing</p>
+              <p className="text-[11px] mb-6" style={{ color:'var(--joi-text-3)' }}>Or select from your gallery or characters</p>
+
+              <div className="joi-label mb-3" style={{ textAlign: 'left' }}>What you can do</div>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { tool: 'relight', icon: '\uD83D\uDCA1', label: 'Relight', desc: 'Change lighting direction, color, and mood' },
+                  { tool: 'faceswap', icon: '\uD83C\uDFAD', label: 'Face Swap', desc: 'Swap faces between two images' },
+                  { tool: 'bgswap', icon: '\uD83D\uDDBC\uFE0F', label: 'Background', desc: 'Replace or generate new backgrounds' },
+                  { tool: 'freeai', icon: '\u2728', label: 'Free AI Edit', desc: 'Describe any edit in natural language' },
+                ].map(ex => (
+                  <button key={ex.tool} onClick={() => setActiveTool(ex.tool)}
+                    className="p-4 rounded-xl text-left transition-all hover:scale-[1.02] joi-glass joi-border-glow"
+                    style={{ border: '1px solid rgba(255,255,255,.04)' }}>
+                    <span className="text-lg block mb-1.5">{ex.icon}</span>
+                    <div className="text-[12px] font-medium mb-0.5" style={{ color: 'var(--joi-text-1)' }}>{ex.label}</div>
+                    <div className="text-[10px]" style={{ color: 'var(--joi-text-3)' }}>{ex.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+          /* ── Normal before/after canvas ── */
+          <>
           <div className="text-center">
             <div className="joi-label mb-2">Original</div>
             <div className="w-[340px] h-[420px] rounded-xl flex items-center justify-center overflow-hidden joi-glass"
               style={{ border:'1px solid rgba(255,255,255,.04)' }}>
-              {inputImage ? (
-                <img src={inputImage} className="w-full h-full object-cover rounded-xl" alt="Original" />
-              ) : (
-                <div className="text-center px-6">
-                  <div className="w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center"
-                    style={{ background: 'rgba(255,107,157,.06)', border: '1px solid rgba(255,107,157,.1)' }}>
-                    <span className="text-xl" style={{ color:'var(--joi-pink)', opacity: 0.6 }}>{'\u2191'}</span>
-                  </div>
-                  <p className="text-[11px] font-medium mb-1" style={{ color:'var(--joi-text-2)' }}>Upload an image to start editing</p>
-                  <p className="text-[9px]" style={{ color:'var(--joi-text-3)' }}>Or select from your gallery or characters</p>
-                </div>
-              )}
+              <img src={inputImage} className="w-full h-full object-cover rounded-xl" alt="Original" />
             </div>
           </div>
 
@@ -940,30 +960,25 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
               )}
             </div>
           </div>
+          </>
+          )}
         </div>
 
-        <div className="h-20 flex items-center px-5 gap-2 shrink-0" style={{ borderTop:'1px solid rgba(255,255,255,.04)', background:'var(--joi-bg-glass)' }}>
+        {(editHistory.length > 0 || resultImage) && <div className="h-20 flex items-center px-5 gap-2 shrink-0" style={{ borderTop:'1px solid rgba(255,255,255,.04)', background:'var(--joi-bg-glass)' }}>
           <span className="text-[9px] font-mono shrink-0 mr-1" style={{ color:'var(--joi-text-3)' }}>HISTORY</span>
-          {editHistory.length > 0 ? (
-            editHistory.slice(0, 10).map((url, i) => (
-              <div key={i} onClick={() => { setResultImage(url) }}
-                className="w-12 h-12 rounded-lg shrink-0 cursor-pointer hover:scale-105 transition-transform overflow-hidden"
-                style={{ border:'1px solid rgba(255,255,255,.04)' }}>
-                <img src={url} className="w-full h-full object-cover" alt="" />
-              </div>
-            ))
-          ) : (
-            [1,2,3,4,5,6,7,8,9,10].map(i => (
-              <div key={i} className="w-12 h-12 rounded-lg shrink-0 cursor-pointer hover:scale-105 transition-transform shimmer"
-                style={{ border:'1px solid rgba(255,255,255,.04)' }} />
-            ))
-          )}
+          {editHistory.slice(0, 10).map((url, i) => (
+            <div key={i} onClick={() => { setResultImage(url) }}
+              className="w-12 h-12 rounded-lg shrink-0 cursor-pointer hover:scale-105 transition-transform overflow-hidden"
+              style={{ border:'1px solid rgba(255,255,255,.04)' }}>
+              <img src={url} className="w-full h-full object-cover" alt="" />
+            </div>
+          ))}
           {resultImage && onNav && (
             <div className="ml-auto shrink-0 w-56">
               <PipelineCTA label="Start Photo Session" targetPage="session" onNav={onNav} icon="📸" />
             </div>
           )}
-        </div>
+        </div>}
       </div>
 
       {/* Modals */}

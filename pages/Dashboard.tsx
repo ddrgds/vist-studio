@@ -115,16 +115,18 @@ export function Dashboard({ onNav }: Props) {
   }
 
   // ── Computed data for active users ──
+  // Only show activity entries that are linked to a character
   const recentActivity = [...galleryItems]
+    .filter(item => item.characterId && characters.some(c => c.id === item.characterId))
     .sort((a, b) => b.timestamp - a.timestamp)
     .slice(0, 6)
     .map(item => {
-      const char = characters.find(c => c.id === item.characterId)
+      const char = characters.find(c => c.id === item.characterId)!
       const label = item.type === 'edit' ? 'AI Edit'
         : item.type === 'session' ? 'Session'
         : item.type === 'create' ? 'Creation'
         : item.type === 'video' ? 'Video' : 'Other'
-      return { label, char: char?.name || 'No character', time: getTimeAgo(item.timestamp), color: typeColor(item.type) }
+      return { label, char: char.name, time: getTimeAgo(item.timestamp), color: typeColor(item.type) }
     })
 
   const featuredChar = characters.length > 0
@@ -167,31 +169,70 @@ export function Dashboard({ onNav }: Props) {
               <span className="font-jet text-[10px]" style={{ color: 'var(--joi-text-3)' }}>credits</span>
             </div>
             <div className="joi-glass flex items-center px-3 py-2" style={{ borderRadius: '10px' }}>
-              <span className="font-jet text-[10px] uppercase tracking-wider" style={{ color: 'var(--joi-text-3)' }}>{plan}</span>
+              <span className="font-jet text-[10px] uppercase tracking-wider" style={{ color: 'var(--joi-text-3)' }}>
+                {plan === 'starter' ? 'Starter' : plan === 'pro' ? 'Pro' : plan === 'studio' ? 'Studio' : plan === 'brand' ? 'Brand' : plan}
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ═══ Stats Row ═══ */}
-      <div className="px-8 pb-6 grid grid-cols-4 gap-4 stagger-children">
-        {statsData.map(s => (
-          <div key={s.l} className="joi-glass joi-border-glow" style={{ padding: '1.25rem 1.5rem', borderRadius: '14px' }}>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="joi-label" style={{ marginBottom: '6px' }}>{s.l}</div>
-                <div className="font-jet font-bold" style={{ fontSize: '1.8rem', color: s.color, lineHeight: 1 }}>
-                  {s.v.toLocaleString()}
+      {/* ═══ Stats Row or Onboarding Banner ═══ */}
+      {(() => {
+        const hasHeroShots = galleryItems.some(i => i.type === 'create' || i.type === 'session')
+        const hasEdits = galleryItems.some(i => i.type === 'edit')
+        const pipelineComplete = characters.length > 0 && hasHeroShots && hasEdits
+
+        if (pipelineComplete) {
+          return (
+            <div className="px-8 pb-6 grid grid-cols-4 gap-4 stagger-children">
+              {statsData.map(s => (
+                <div key={s.l} className="joi-glass joi-border-glow" style={{ padding: '1.25rem 1.5rem', borderRadius: '14px' }}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="joi-label" style={{ marginBottom: '6px' }}>{s.l}</div>
+                      <div className="font-jet font-bold" style={{ fontSize: '1.8rem', color: s.color, lineHeight: 1 }}>
+                        {s.v.toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center"
+                      style={{ background: `color-mix(in srgb, ${s.color} 8%, transparent)` }}>
+                      <div className="w-2 h-2 rounded-full" style={{ background: s.color, boxShadow: `0 0 8px ${s.color}` }} />
+                    </div>
+                  </div>
                 </div>
+              ))}
+            </div>
+          )
+        }
+
+        // Onboarding banner — show next pipeline step
+        const nextStep = characters.length === 0
+          ? { n: '①', label: 'Create your first character', page: 'upload' as Page, cta: 'Create Character' }
+          : !hasHeroShots
+          ? { n: '②', label: `Create a hero shot for ${featuredChar?.name || 'your character'}`, page: 'director' as Page, cta: 'Go to Director' }
+          : !hasEdits
+          ? { n: '③', label: 'Edit an image with AI tools', page: 'editor' as Page, cta: 'Open AI Editor' }
+          : { n: '④', label: 'Run a themed photo session', page: 'session' as Page, cta: 'Start Photo Session' }
+
+        return (
+          <div className="px-8 pb-6">
+            <div className="joi-glass joi-border-glow flex items-center gap-4 px-6 py-4" style={{ borderRadius: '14px', border: '1px solid rgba(255,107,157,.1)' }}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: 'rgba(255,107,157,.08)', border: '1px solid rgba(255,107,157,.15)' }}>
+                <span className="text-sm" style={{ color: 'var(--joi-pink)' }}>{nextStep.n}</span>
               </div>
-              <div className="w-10 h-10 rounded-full flex items-center justify-center"
-                style={{ background: `color-mix(in srgb, ${s.color} 8%, transparent)` }}>
-                <div className="w-2 h-2 rounded-full" style={{ background: s.color, boxShadow: `0 0 8px ${s.color}` }} />
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] font-mono uppercase tracking-wider mb-0.5" style={{ color: 'var(--joi-text-3)' }}>Next step</div>
+                <div className="text-[13px] font-medium" style={{ color: 'var(--joi-text-1)' }}>{nextStep.label}</div>
               </div>
+              <button onClick={() => onNav(nextStep.page)} className="joi-btn-solid px-5 py-2 text-[11px] shrink-0">
+                {nextStep.cta} →
+              </button>
             </div>
           </div>
-        ))}
-      </div>
+        )
+      })()}
 
       {/* ═══ Holographic Divider ═══ */}
       <div className="joi-divider mx-8" />
@@ -326,8 +367,12 @@ export function Dashboard({ onNav }: Props) {
           <div className="joi-glass p-4" style={{ borderRadius: '14px' }}>
             {recentActivity.length === 0 ? (
               <div className="py-6 text-center">
-                <p className="text-[11px]" style={{ color: 'var(--joi-text-3)' }}>No activity yet</p>
-                <p className="text-[10px] mt-1" style={{ color: 'var(--joi-text-3)', opacity: 0.6 }}>Start creating to see your history</p>
+                <div className="text-xl mb-2">◎</div>
+                <p className="text-[11px] mb-3" style={{ color: 'var(--joi-text-3)' }}>No activity yet</p>
+                <button onClick={() => onNav('director')}
+                  className="joi-btn-solid px-4 py-2 text-[10px]">
+                  Start your first hero shoot →
+                </button>
               </div>
             ) : (
               <div className="space-y-3">
