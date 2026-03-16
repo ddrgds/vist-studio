@@ -185,6 +185,9 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
   const [selectedResult, setSelectedResult] = useState(0)
   const [numberOfImages, setNumberOfImages] = useState(1)
   const abortRef = useRef<AbortController | null>(null)
+  const [advancedMode, setAdvancedMode] = useState(() => {
+    try { return localStorage.getItem('vist-director-advanced') === 'true' } catch { return false }
+  })
 
   const { decrementCredits, restoreCredits } = useProfile()
   const toast = useToast()
@@ -375,6 +378,26 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
           </button>
         </div>
 
+        {/* Simple/Advanced toggle */}
+        <div className="px-5 py-2 flex items-center gap-2" style={{ borderBottom: '1px solid rgba(255,255,255,.03)' }}>
+          <span className="text-[10px] font-mono uppercase tracking-wider" style={{ color: 'var(--joi-text-3)' }}>Mode:</span>
+          {(['Simple', 'Advanced'] as const).map(m => (
+            <button key={m} onClick={() => {
+              const isAdv = m === 'Advanced'
+              setAdvancedMode(isAdv)
+              try { localStorage.setItem('vist-director-advanced', String(isAdv)) } catch {}
+            }}
+              className="px-3 py-1 rounded-lg text-[10px] font-medium transition-all"
+              style={{
+                background: (m === 'Advanced' ? advancedMode : !advancedMode) ? 'rgba(255,107,157,.08)' : 'transparent',
+                color: (m === 'Advanced' ? advancedMode : !advancedMode) ? 'var(--joi-pink)' : 'var(--joi-text-3)',
+                border: `1px solid ${(m === 'Advanced' ? advancedMode : !advancedMode) ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.06)'}`,
+              }}>
+              {m}
+            </button>
+          ))}
+        </div>
+
         {/* Scrollable accordion */}
         <div className="flex-1 overflow-y-auto joi-scroll">
 
@@ -520,8 +543,8 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
             </div>
           </AccordionSection>
 
-          {/* ── CAMERA ── */}
-          <AccordionSection title="Camera" icon="📷" isOpen={!!openSections.camera} onToggle={() => toggleSection('camera')}>
+          {/* ── CAMERA ── (Advanced) */}
+          {advancedMode && <AccordionSection title="Camera" icon="📷" isOpen={!!openSections.camera} onToggle={() => toggleSection('camera')}>
             <div className="space-y-3">
               <div className="flex gap-2 flex-wrap">
                 {CAMERA_OPTIONS.map(c => (
@@ -534,10 +557,10 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
                 value={customCamera}
                 onChange={e => setCustomCamera(e.target.value)} />
             </div>
-          </AccordionSection>
+          </AccordionSection>}
 
-          {/* ── LIGHTING ── */}
-          <AccordionSection title="Lighting" icon="💡" isOpen={!!openSections.lighting} onToggle={() => toggleSection('lighting')}>
+          {/* ── LIGHTING ── (Advanced) */}
+          {advancedMode && <AccordionSection title="Lighting" icon="💡" isOpen={!!openSections.lighting} onToggle={() => toggleSection('lighting')}>
             <div className="space-y-3">
               <div className="flex gap-2 flex-wrap">
                 {LIGHTING_OPTIONS.map(l => (
@@ -550,7 +573,7 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
                 value={customLighting}
                 onChange={e => setCustomLighting(e.target.value)} />
             </div>
-          </AccordionSection>
+          </AccordionSection>}
 
           {/* ── SCENARIO ── */}
           <AccordionSection title="Scenario" icon="🎬" isOpen={!!openSections.scenario} onToggle={() => toggleSection('scenario')}>
@@ -631,8 +654,8 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
             </div>
           </AccordionSection>
 
-          {/* ── ENHANCERS ── */}
-          <AccordionSection title="Enhancers" icon="✨" badge={selectedEnhancers.size > 0 ? `${selectedEnhancers.size}` : undefined} isOpen={!!openSections.enhancers} onToggle={() => toggleSection('enhancers')}>
+          {/* ── ENHANCERS ── (Advanced) */}
+          {advancedMode && <AccordionSection title="Enhancers" icon="✨" badge={selectedEnhancers.size > 0 ? `${selectedEnhancers.size}` : undefined} isOpen={!!openSections.enhancers} onToggle={() => toggleSection('enhancers')}>
             <div className="space-y-3">
               <div className="flex gap-2 flex-wrap">
                 {ENHANCERS.map(e => (
@@ -645,7 +668,7 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
                 value={customEnhancer}
                 onChange={e => setCustomEnhancer(e.target.value)} />
             </div>
-          </AccordionSection>
+          </AccordionSection>}
         </div>
 
         {/* ── Bottom: images + generate ── */}

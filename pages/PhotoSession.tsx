@@ -696,28 +696,40 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                 </div>
               </>
             ) : (
-              <div className="grid grid-cols-2 gap-2">
-                {PHOTO_SESSION_PRESETS.map(p => {
-                  const active = selectedPresets.has(p.id)
-                  return (
-                    <button key={p.id} onClick={() => togglePreset(p.id)}
-                      className="p-3 rounded-lg text-left transition-all group"
-                      style={{
-                        background: active ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)',
-                        border: `1px solid ${active ? 'rgba(255,107,157,.25)' : 'var(--joi-border)'}`,
-                      }}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-base">{p.icon}</span>
-                        {active && (
-                          <span className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] ml-auto"
-                            style={{ background:'var(--joi-pink)', color:'#fff' }}>{'\u2713'}</span>
-                        )}
-                      </div>
-                      <div className="text-[11px] font-medium" style={{ color: active ? 'var(--joi-pink)' : 'var(--joi-text-2)' }}>{p.label}</div>
-                      <div className="text-[8px] mt-0.5 line-clamp-1" style={{ color:'var(--joi-text-3)' }}>{p.description}</div>
-                    </button>
-                  )
-                })}
+              <div className="space-y-3">
+                {[
+                  { cat: 'Social', ids: ['selfies', 'grwm', 'stories', 'fotodump'] },
+                  { cat: 'Fashion', ids: ['editorial', 'portrait', 'street'] },
+                  { cat: 'Lifestyle', ids: ['creator', 'lifestyle', 'cozyhome'] },
+                  { cat: 'Night / Outdoor', ids: ['nightout', 'datenight', 'pool', 'fitness'] },
+                ].map(group => (
+                  <div key={group.cat}>
+                    <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5 px-1" style={{ color: 'var(--joi-text-3)' }}>{group.cat}</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {PHOTO_SESSION_PRESETS.filter(p => group.ids.includes(p.id)).map(p => {
+                        const active = selectedPresets.has(p.id)
+                        return (
+                          <button key={p.id} onClick={() => togglePreset(p.id)}
+                            className="p-3 rounded-lg text-left transition-all group"
+                            style={{
+                              background: active ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)',
+                              border: `1px solid ${active ? 'rgba(255,107,157,.25)' : 'var(--joi-border)'}`,
+                            }}>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-base">{p.icon}</span>
+                              {active && (
+                                <span className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] ml-auto"
+                                  style={{ background:'var(--joi-pink)', color:'#fff' }}>{'\u2713'}</span>
+                              )}
+                            </div>
+                            <div className="text-[11px] font-medium" style={{ color: active ? 'var(--joi-pink)' : 'var(--joi-text-2)' }}>{p.label}</div>
+                            <div className="text-[8px] mt-0.5 line-clamp-1" style={{ color:'var(--joi-text-3)' }}>{p.description}</div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
