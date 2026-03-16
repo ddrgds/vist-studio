@@ -436,7 +436,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           <h2 className="text-sm font-bold" style={{ color:'var(--joi-text-1)' }}>
             {tools.find(t=>t.id===activeTool)?.icon} {tools.find(t=>t.id===activeTool)?.label}
           </h2>
-          <div className="ml-auto">
+          <div className="ml-auto relative">
             <button onClick={() => setShowEngineModal(v => !v)}
               className="w-8 h-8 rounded-xl flex items-center justify-center text-sm transition-all hover:scale-105 relative"
               style={{
@@ -449,6 +449,68 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                 <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full" style={{ background:'var(--joi-pink)' }} />
               )}
             </button>
+            {showEngineModal && (
+              <div className="absolute top-full right-0 mt-2 z-50 w-[300px] max-h-[60vh] flex flex-col rounded-xl"
+                style={{
+                  background: 'rgba(14,12,22,.96)',
+                  backdropFilter: 'blur(24px)',
+                  border: '1px solid rgba(255,255,255,.06)',
+                  boxShadow: '0 20px 60px rgba(0,0,0,.6), 0 0 40px rgba(255,107,157,.05)',
+                  overflow: 'hidden',
+                }}>
+                <div className="overflow-y-auto p-3 pb-2 space-y-1 flex-1 min-h-0 joi-scroll">
+                  <div className="joi-label mb-2 px-1">Engine</div>
+                  {(() => {
+                    const featureKey = TOOL_TO_FEATURE[activeTool]
+                    const featureDef = featureKey ? FEATURE_ENGINES[featureKey] : null
+                    const allowedKeys = featureDef ? featureDef.keys : null
+                    const filteredEngines = allowedKeys ? ENGINE_METADATA.filter(e => allowedKeys.includes(e.key)) : ENGINE_METADATA
+                    return <>
+                      {!allowedKeys && <>
+                        <button onClick={() => { setSelectedEngine('auto'); setShowEngineModal(false) }}
+                          className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all"
+                          style={{ background: selectedEngine === 'auto' ? 'rgba(255,107,157,.08)' : 'transparent', border: `1px solid ${selectedEngine === 'auto' ? 'rgba(255,107,157,.2)' : 'transparent'}` }}>
+                          <span className="text-base">{'\u2728'}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[11px] font-medium" style={{ color: selectedEngine === 'auto' ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>Auto</div>
+                            <div className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>Best engine automatically</div>
+                          </div>
+                        </button>
+                        <div className="joi-divider my-1" />
+                      </>}
+                      {filteredEngines.map(eng => (
+                        <button key={eng.key} onClick={() => { setSelectedEngine(eng.key); setShowEngineModal(false) }}
+                          className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all"
+                          style={{ background: selectedEngine === eng.key ? 'rgba(255,107,157,.08)' : 'transparent', border: `1px solid ${selectedEngine === eng.key ? 'rgba(255,107,157,.2)' : 'transparent'}` }}>
+                          <span className="text-sm" style={{ color: 'var(--joi-text-3)' }}>{'\u2699'}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[11px] font-medium" style={{ color: selectedEngine === eng.key ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{eng.userFriendlyName}</div>
+                            <div className="text-[8px]" style={{ color: 'var(--joi-text-3)' }}>{eng.description}</div>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <div className="text-[9px] font-mono" style={{ color: 'var(--joi-pink)' }}>{eng.creditCost}cr</div>
+                            <div className="text-[8px] font-mono" style={{ color: 'var(--joi-text-3)' }}>{eng.estimatedTime}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </>
+                  })()}
+                </div>
+                <div className="shrink-0 px-3 pb-3 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,.04)' }}>
+                  <div className="joi-label mb-2 px-1">Resolution</div>
+                  <div className="flex gap-2">
+                    {[{ id: '1k', label: '1K', desc: '1024px' }, { id: '2k', label: '2K', desc: '2048px' }, { id: '4k', label: '4K', desc: '4096px' }].map(r => (
+                      <button key={r.id} onClick={() => setSelectedResolution(r.id)}
+                        className="flex-1 px-3 py-2 rounded-lg text-center transition-all"
+                        style={{ background: selectedResolution === r.id ? 'rgba(255,107,157,.08)' : 'rgba(255,255,255,.02)', border: `1px solid ${selectedResolution === r.id ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}` }}>
+                        <div className="text-[11px] font-mono font-bold" style={{ color: selectedResolution === r.id ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{r.label}</div>
+                        <div className="text-[8px] font-mono" style={{ color: 'var(--joi-text-3)' }}>{r.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1023,8 +1085,11 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         )}
       </Suspense>
 
-      {/* Engine selector modal */}
-      {showEngineModal && createPortal(<>
+      {/* Click-outside handler for engine dropdown */}
+      {showEngineModal && <div className="fixed inset-0 z-30" onClick={() => setShowEngineModal(false)} />}
+
+      {/* OLD ENGINE MODAL REMOVED */}
+      {false && createPortal(<>
         <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setShowEngineModal(false)} />
         <div className="fixed z-50 w-[340px] max-h-[90vh] rounded-xl joi-glass"
           style={{ display:'flex', flexDirection:'column', top:'50%', left:'50%', transform:'translate(-50%,-50%)', background:'var(--joi-bg-glass)', backdropFilter:'blur(24px)', border:'1px solid rgba(255,255,255,.04)', boxShadow:'0 20px 60px rgba(0,0,0,.6), 0 0 40px rgba(255,107,157,.05)', overflow:'hidden' }}>

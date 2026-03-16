@@ -366,15 +366,86 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
           <h1 className="joi-heading joi-glow--subtle" style={{ fontSize: '1.5rem' }}>
             <span className="joi-text-gradient">Director</span>
           </h1>
-          <button onClick={() => setShowEngineModal(!showEngineModal)}
-            className="px-3 py-1.5 rounded-xl text-[11px] font-mono flex items-center gap-1.5 transition-all"
-            style={{
-              background: selectedEngine !== 'auto' ? 'rgba(255,107,157,.08)' : 'rgba(255,255,255,.03)',
-              border: `1px solid ${selectedEngine !== 'auto' ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.06)'}`,
-              color: selectedEngine !== 'auto' ? 'var(--joi-pink)' : 'var(--joi-text-3)',
-            }}>
-            <span className="text-xs">{'\u2699'}</span> {activeEngineLabel}
-          </button>
+          <div className="relative">
+            <button onClick={() => setShowEngineModal(!showEngineModal)}
+              className="px-3 py-1.5 rounded-xl text-[11px] font-mono flex items-center gap-1.5 transition-all"
+              style={{
+                background: selectedEngine !== 'auto' ? 'rgba(255,107,157,.08)' : 'rgba(255,255,255,.03)',
+                border: `1px solid ${selectedEngine !== 'auto' ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.06)'}`,
+                color: selectedEngine !== 'auto' ? 'var(--joi-pink)' : 'var(--joi-text-3)',
+              }}>
+              <span className="text-xs">{'\u2699'}</span> {activeEngineLabel}
+            </button>
+            {showEngineModal && (
+              <div className="absolute top-full right-0 mt-2 z-50 w-[340px] max-h-[70vh] flex flex-col rounded-2xl"
+                style={{
+                  background: 'rgba(14,12,22,.96)',
+                  backdropFilter: 'blur(24px)',
+                  border: '1px solid rgba(255,255,255,.06)',
+                  boxShadow: '0 20px 80px rgba(0,0,0,.6), 0 0 40px rgba(255,107,157,.05)',
+                  overflow: 'hidden',
+                }}>
+                <div className="overflow-y-auto p-4 pb-2 space-y-1 flex-1 min-h-0 joi-scroll">
+                  <div className="joi-label mb-2 px-1">Engine</div>
+
+                  <button onClick={() => { setSelectedEngine('auto'); setShowEngineModal(false) }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-all"
+                    style={{
+                      background: selectedEngine === 'auto' ? 'rgba(255,107,157,.08)' : 'transparent',
+                      border: `1px solid ${selectedEngine === 'auto' ? 'rgba(255,107,157,.2)' : 'transparent'}`,
+                    }}>
+                    <span className="text-base">{'\u2728'}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[11px] font-medium" style={{ color: selectedEngine === 'auto' ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>Auto</div>
+                      <div className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>Best engine automatically</div>
+                    </div>
+                  </button>
+
+                  <div className="joi-divider my-1" />
+
+                  {ENGINE_METADATA.filter(eng => FEATURE_ENGINES['director'].keys.includes(eng.key)).map(eng => (
+                    <button key={eng.key} onClick={() => { setSelectedEngine(eng.key); setShowEngineModal(false) }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-all"
+                      style={{
+                        background: selectedEngine === eng.key ? 'rgba(255,107,157,.08)' : 'transparent',
+                        border: `1px solid ${selectedEngine === eng.key ? 'rgba(255,107,157,.2)' : 'transparent'}`,
+                      }}>
+                      <span className="text-base">{'\u2699'}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[11px] font-medium" style={{ color: selectedEngine === eng.key ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{eng.userFriendlyName}</div>
+                        <div className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>{eng.description}</div>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <div className="text-[9px] font-mono" style={{ color: 'var(--joi-pink)' }}>{eng.creditCost}cr</div>
+                        <div className="text-[8px] font-mono" style={{ color: 'var(--joi-text-3)' }}>{eng.estimatedTime}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="p-3" style={{ borderTop: '1px solid rgba(255,255,255,.04)' }}>
+                  <div className="joi-label mb-2 px-1">Resolution</div>
+                  <div className="flex gap-2">
+                    {[
+                      { id: '1k', label: '1K', desc: '1024px' },
+                      { id: '2k', label: '2K', desc: '2048px' },
+                      { id: '4k', label: '4K', desc: '4096px' },
+                    ].map(r => (
+                      <button key={r.id} onClick={() => setSelectedResolution(r.id)}
+                        className="flex-1 px-3 py-2 rounded-xl text-center transition-all"
+                        style={{
+                          background: selectedResolution === r.id ? 'rgba(255,107,157,.08)' : 'rgba(255,255,255,.02)',
+                          border: `1px solid ${selectedResolution === r.id ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}`,
+                        }}>
+                        <div className="text-[11px] font-mono font-bold" style={{ color: selectedResolution === r.id ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{r.label}</div>
+                        <div className="text-[8px] font-mono" style={{ color: 'var(--joi-text-3)' }}>{r.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Scrollable accordion */}
@@ -793,78 +864,9 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
         </div>
       </div>
 
-      {/* ── Engine selector modal (holographic) ── */}
-      {showEngineModal && createPortal(<>
-        <div className="fixed inset-0 z-40" style={{ background: 'rgba(8,7,13,.6)', backdropFilter: 'blur(4px)' }}
-          onClick={() => setShowEngineModal(false)} />
-        <div className="fixed z-50 w-[340px] max-h-[90vh] flex flex-col rounded-2xl joi-glass"
-          style={{
-            top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
-            background: 'rgba(14,12,22,.92)',
-            boxShadow: '0 20px 80px rgba(255,107,157,.08), 0 0 120px rgba(208,72,176,.04)',
-            overflow: 'hidden',
-          }}>
-          <div className="overflow-y-auto p-4 pb-2 space-y-1 flex-1 min-h-0">
-            <div className="joi-label mb-2 px-1">Engine</div>
-
-            <button onClick={() => { setSelectedEngine('auto'); setShowEngineModal(false) }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-all"
-              style={{
-                background: selectedEngine === 'auto' ? 'rgba(255,107,157,.08)' : 'transparent',
-                border: `1px solid ${selectedEngine === 'auto' ? 'rgba(255,107,157,.15)' : 'transparent'}`,
-              }}>
-              <span className="text-base">{'\u2728'}</span>
-              <div className="flex-1 min-w-0">
-                <div className="text-[11px] font-medium" style={{ color: selectedEngine === 'auto' ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>Auto</div>
-                <div className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>Best engine automatically</div>
-              </div>
-            </button>
-
-            <div className="joi-divider my-1" />
-
-            {ENGINE_METADATA.filter(eng => FEATURE_ENGINES['director'].keys.includes(eng.key)).map(eng => (
-              <button key={eng.key} onClick={() => { setSelectedEngine(eng.key); setShowEngineModal(false) }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-all"
-                style={{
-                  background: selectedEngine === eng.key ? 'rgba(255,107,157,.08)' : 'transparent',
-                  border: `1px solid ${selectedEngine === eng.key ? 'rgba(255,107,157,.15)' : 'transparent'}`,
-                }}>
-                <span className="text-sm" style={{ color: 'var(--joi-text-3)' }}>{'\u2699'}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[11px] font-medium" style={{ color: selectedEngine === eng.key ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{eng.userFriendlyName}</div>
-                  <div className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>{eng.description}</div>
-                </div>
-                <div className="shrink-0 text-right">
-                  <div className="text-[9px] font-mono" style={{ color: 'var(--joi-pink)' }}>{eng.creditCost}cr</div>
-                  <div className="text-[8px] font-mono" style={{ color: 'var(--joi-text-3)' }}>{eng.estimatedTime}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-
-          <div className="shrink-0 px-4 pb-4 pt-2 joi-divider" style={{ borderBottom: 'none' }}>
-            <div className="joi-label mb-2 px-1">Resolution</div>
-            <div className="flex gap-2">
-              {[
-                { id: '1k', label: '1K', desc: '1024px' },
-                { id: '2k', label: '2K', desc: '2048px' },
-                { id: '4k', label: '4K', desc: '4096px' },
-              ].map(r => (
-                <button key={r.id}
-                  onClick={() => setSelectedResolution(r.id)}
-                  className="flex-1 px-3 py-2.5 rounded-xl text-center transition-all"
-                  style={{
-                    background: selectedResolution === r.id ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-2)',
-                    border: `1px solid ${selectedResolution === r.id ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}`,
-                  }}>
-                  <div className="text-[11px] font-mono font-bold" style={{ color: selectedResolution === r.id ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{r.label}</div>
-                  <div className="text-[8px] font-mono" style={{ color: 'var(--joi-text-3)' }}>{r.desc}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </>, document.body)}
+      {/* ── Click-outside handler for engine dropdown ── */}
+      {/* Click-outside handler for engine dropdown */}
+      {showEngineModal && <div className="fixed inset-0 z-30" onClick={() => setShowEngineModal(false)} />}
     </div>
   )
 }
