@@ -89,11 +89,12 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
   }
 
   const stats = [
-    { l:'Total Creations', v: filtered.length.toString(), c:'var(--joi-pink)' },
-    { l:'Face Swaps', v: items.filter(i => getItemCategory(i) === 'Face Swap').length.toString(), c:'var(--joi-coral)' },
-    { l:'Relights', v: items.filter(i => getItemCategory(i) === 'Relight').length.toString(), c:'var(--joi-magenta)' },
-    { l:'Try-Ons', v: items.filter(i => getItemCategory(i) === 'Try-On').length.toString(), c:'var(--joi-cyan-warm)' },
-  ]
+    { l:'Total', v: filtered.length, c:'var(--joi-pink)' },
+    { l:'Face Swaps', v: items.filter(i => getItemCategory(i) === 'Face Swap').length, c:'var(--joi-coral)' },
+    { l:'Relights', v: items.filter(i => getItemCategory(i) === 'Relight').length, c:'var(--joi-magenta)' },
+    { l:'Try-Ons', v: items.filter(i => getItemCategory(i) === 'Try-On').length, c:'var(--joi-cyan-warm)' },
+    { l:'Sessions', v: items.filter(i => getItemCategory(i) === 'Session').length, c:'var(--joi-lavender)' },
+  ].filter(s => s.l === 'Total' || s.v > 0)
 
   // --- Handlers ---
 
@@ -226,7 +227,7 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
           <div key={s.l} className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full joi-breathe" style={{ background:s.c }} />
             <span className="text-[10px]" style={{ color:'var(--joi-text-3)' }}>{s.l}:</span>
-            <span className="text-[11px] font-mono font-bold" style={{ color:s.c }}>{s.v}</span>
+            <span className="text-[11px] font-mono font-bold" style={{ color:s.c }}>{String(s.v)}</span>
           </div>
         ))}
       </div>
