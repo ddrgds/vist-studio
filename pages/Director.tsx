@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useCharacterStore } from '../stores/characterStore'
 import { useGalleryStore, type GalleryItem } from '../stores/galleryStore'
 import { generateInfluencerImage, enhancePrompt } from '../services/geminiService'
@@ -793,7 +794,7 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
       </div>
 
       {/* ── Engine selector modal (holographic) ── */}
-      {showEngineModal && <>
+      {showEngineModal && createPortal(<>
         <div className="fixed inset-0 z-40" style={{ background: 'rgba(8,7,13,.6)', backdropFilter: 'blur(4px)' }}
           onClick={() => setShowEngineModal(false)} />
         <div className="fixed z-50 w-[340px] max-h-[90vh] flex flex-col rounded-2xl joi-glass"
@@ -863,7 +864,7 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
             </div>
           </div>
         </div>
-      </>}
+      </>, document.body)}
     </div>
   )
 }

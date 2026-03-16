@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo, lazy, Suspense } from 'react'
+import { createPortal } from 'react-dom'
 import { useGalleryStore } from '../stores/galleryStore'
 import { useCharacterStore } from '../stores/characterStore'
 import { useProfile } from '../contexts/ProfileContext'
@@ -1023,7 +1024,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
       </Suspense>
 
       {/* Engine selector modal */}
-      {showEngineModal && <>
+      {showEngineModal && createPortal(<>
         <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setShowEngineModal(false)} />
         <div className="fixed z-50 w-[340px] max-h-[90vh] rounded-xl joi-glass"
           style={{ display:'flex', flexDirection:'column', top:'50%', left:'calc(50% + 110px)', transform:'translate(-50%,-50%)', background:'var(--joi-bg-glass)', backdropFilter:'blur(24px)', border:'1px solid rgba(255,255,255,.04)', boxShadow:'0 20px 60px rgba(0,0,0,.6), 0 0 40px rgba(255,107,157,.05)', overflow:'hidden' }}>
@@ -1101,7 +1102,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
             </div>
           </div>
         </div>
-      </>}
+      </>, document.body)}
     </div>
   )
 }
