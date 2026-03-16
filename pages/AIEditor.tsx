@@ -1027,7 +1027,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
       {showEngineModal && createPortal(<>
         <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setShowEngineModal(false)} />
         <div className="fixed z-50 w-[340px] max-h-[90vh] rounded-xl joi-glass"
-          style={{ display:'flex', flexDirection:'column', top:'50%', left:'calc(50% + 110px)', transform:'translate(-50%,-50%)', background:'var(--joi-bg-glass)', backdropFilter:'blur(24px)', border:'1px solid rgba(255,255,255,.04)', boxShadow:'0 20px 60px rgba(0,0,0,.6), 0 0 40px rgba(255,107,157,.05)', overflow:'hidden' }}>
+          style={{ display:'flex', flexDirection:'column', top:'50%', left:'50%', transform:'translate(-50%,-50%)', background:'var(--joi-bg-glass)', backdropFilter:'blur(24px)', border:'1px solid rgba(255,255,255,.04)', boxShadow:'0 20px 60px rgba(0,0,0,.6), 0 0 40px rgba(255,107,157,.05)', overflow:'hidden' }}>
           <div className="overflow-y-auto p-3 pb-2 space-y-1 flex-1 min-h-0 joi-scroll">
             <div className="joi-label mb-2 px-1">Generation Engine</div>
 

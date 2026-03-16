@@ -799,7 +799,7 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
           onClick={() => setShowEngineModal(false)} />
         <div className="fixed z-50 w-[340px] max-h-[90vh] flex flex-col rounded-2xl joi-glass"
           style={{
-            top: '50%', left: 'calc(50% + 110px)', transform: 'translate(-50%,-50%)',
+            top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
             background: 'rgba(14,12,22,.92)',
             boxShadow: '0 20px 80px rgba(255,107,157,.08), 0 0 120px rgba(208,72,176,.04)',
             overflow: 'hidden',
