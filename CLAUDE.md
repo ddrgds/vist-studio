@@ -1,4 +1,4 @@
-# VERTEX STUDIO — Guía de Integración para Claude Code
+# VIST STUDIO — Guía de Integración para Claude Code
 
 ## Qué es este proyecto
 
@@ -365,10 +365,10 @@ Crear los siguientes archivos en `.claude/agents/` del proyecto:
 <!-- .claude/agents/ui-designer.md -->
 ---
 name: ui-designer
-description: Reviews and implements UI components following the Vertex Plasma Shift design system
+description: Reviews and implements UI components following the VIST Plasma Shift design system
 tools: Read, Write, Edit, Glob, Grep
 ---
-You are a frontend UI specialist for Vertex Studio.
+You are a frontend UI specialist for VIST Studio.
 
 Design system rules you MUST follow:
 - Palette: --accent (#f06848), --magenta (#d048b0), --blue (#4858e0)
@@ -389,7 +389,7 @@ name: api-connector
 description: Connects mock UI pages to real API endpoints while preserving data structure
 tools: Read, Write, Edit, Bash, Glob, Grep
 ---
-You are a backend integration specialist for Vertex Studio.
+You are a backend integration specialist for VIST Studio.
 
 Rules:
 - Each page has hardcoded mock data. Replace with API calls.
@@ -409,7 +409,7 @@ name: test-agent
 description: Writes and runs tests, checks for regressions, validates UI behavior
 tools: Read, Bash, Glob, Grep
 ---
-You are a QA specialist for Vertex Studio.
+You are a QA specialist for VIST Studio.
 
 Focus areas:
 - Component rendering tests with Vitest + React Testing Library
@@ -428,7 +428,7 @@ name: code-reviewer
 description: Reviews code changes for quality, consistency with design system, and potential issues
 tools: Read, Grep, Glob
 ---
-You are a senior code reviewer for Vertex Studio.
+You are a senior code reviewer for VIST Studio.
 
 Review checklist:
 - Uses CSS variables, not hardcoded colors
@@ -476,7 +476,7 @@ Requiere Opus 4.6 y habilitar el flag experimental:
 #### Ejemplo: Conectar toda la app al backend
 
 ```markdown
-Create a team to connect Vertex Studio frontend to the real backend API:
+Create a team to connect VIST Studio frontend to the real backend API:
 
 **Team Lead**: Coordinates the integration, manages shared state store (Zustand), handles routing.
 
@@ -503,7 +503,7 @@ Rules for all teammates:
 #### Ejemplo: Agregar feature nueva (ej: Marketplace)
 
 ```markdown
-Create a team to add a Marketplace section to Vertex Studio:
+Create a team to add a Marketplace section to VIST Studio:
 
 **Team Lead**: Designs the data model and page architecture. Updates Sidebar with new nav item.
 
@@ -529,3 +529,41 @@ runs rendering tests, validates responsive behavior.
 | Refactor grande del design system | Agent Team (lead + 2 teammates) |
 | Bug fix simple | Directo (sin subagent) |
 | Cambio de copy/texto | Directo (sin subagent) |
+
+## Active Workstream:  UX Roadmap
+
+The full roadmap is in `VIST_UX_ROADMAP.md` at the project root. READ IT at the start of every session.
+
+### Execution Rules
+1. Work one phase at a time, one sub-point at a time. Do not skip ahead.
+2. Before editing any component, read the current implementation first.
+3. Commit after each sub-point with format: `fix(ux): X.Y — description`
+4. Branch per phase: `ux/roadmap-fase-N`
+5. New UX components go in `src/components/ux/`
+6. Do not refactor existing features — only add/modify what the roadmap specifies.
+7. If a change requires data model updates, flag it and confirm before proceeding.
+8. Test that existing functionality is not broken after each change.
+
+### Phase Priority (do NOT reorder)
+- **Phase 0**: Quick wins — branding, credits visibility, clean up jargon, tooltips
+- **Phase 1**: Empty states & onboarding — the #1 activation problem
+- **Phase 2**: Reduce friction — defaults, hide complexity, organize options
+- **Phase 3**: Navigation & pipeline — make the 1→2→3→4 flow obvious
+- **Phase 4**: Gallery polish & data integrity fixes
+
+### Current Progress
+- [ ] Phase 0 — Quick Wins
+- [ ] Phase 1 — Empty States & Onboarding
+- [ ] Phase 2 — Reduce Friction
+- [ ] Phase 3 — Navigation & Pipeline
+- [ ] Phase 4 — Gallery & Polish
+
+Update the checkboxes as phases are completed.
+
+### Key Design Tokens (from existing design system)
+- Background: rgb(8, 7, 12)
+- Accent pink: rgb(232, 121, 168)
+- Secondary text: rgb(168, 152, 184)
+- Purple CTA: rgb(139, 92, 246)
+- Fonts: Playfair Display (headings), DM Sans (body)
+- Effects: glassmorphism panels

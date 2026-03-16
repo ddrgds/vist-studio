@@ -106,7 +106,7 @@ const Sidebar: React.FC = () => {
           {!collapsed && (
             <div className="flex flex-col">
               <span className="text-sm font-bold tracking-[0.04em] text-[var(--text-1)]">
-                VERTEX
+                VIST
               </span>
               <span className="font-jet text-[8px] text-[var(--text-3)] tracking-[0.2em] uppercase">
                 ai studio

@@ -96,7 +96,7 @@ function AppLayout() {
   return <AuthenticatedApp />;
 }
 
-/** Main app shell — matches vertex-studio-source/src/App.tsx */
+/** Main app shell — VIST Studio */
 function AuthenticatedApp() {
   const [page, setPage] = useState<Page>('dashboard');
   const [collapsed, setCollapsed] = useState(false);
@@ -140,7 +140,7 @@ function AuthenticatedApp() {
         className="flex-1 overflow-y-auto overflow-x-hidden relative"
         style={{
           opacity: transitioning ? 0 : 1,
-          transform: transitioning ? 'translateY(6px)' : 'translateY(0)',
+          transform: transitioning ? 'translateY(6px)' : 'none',
           transition: 'opacity .15s ease, transform .15s ease',
         }}
       >

@@ -104,7 +104,7 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
       const blob = await res.blob()
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
-      a.download = `vertex-${id.slice(0,8)}.png`
+      a.download = `vist-${id.slice(0,8)}.png`
       a.click()
       URL.revokeObjectURL(a.href)
       addToast('Image downloaded', 'success')

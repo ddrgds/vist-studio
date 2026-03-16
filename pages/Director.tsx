@@ -192,7 +192,7 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
   // ── Accordion state ──
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
     try {
-      const s = localStorage.getItem('vertex-director-sections')
+      const s = localStorage.getItem('vist-director-sections')
       return s ? JSON.parse(s) : { identity: true, outfit: false, pose: false, camera: false, lighting: false, scenario: true, enhancers: false }
     } catch { return { identity: true, scenario: true } }
   })
@@ -200,7 +200,7 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
   const toggleSection = (key: string) => {
     setOpenSections(prev => {
       const next = { ...prev, [key]: !prev[key] }
-      try { localStorage.setItem('vertex-director-sections', JSON.stringify(next)) } catch {}
+      try { localStorage.setItem('vist-director-sections', JSON.stringify(next)) } catch {}
       return next
     })
   }
