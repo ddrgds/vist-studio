@@ -49,7 +49,8 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
 
   const displayName = profile?.displayName || user?.email?.split('@')[0] || 'User'
   const initial = displayName[0]?.toUpperCase() || 'U'
-  const planLabel = profile?.subscriptionPlan === 'pro' ? 'Pro Plan' : profile?.subscriptionPlan === 'premium' ? 'Premium' : 'Free Plan'
+  const planLabels: Record<string, string> = { starter: 'Starter', pro: 'Pro', studio: 'Studio', brand: 'Brand' }
+  const planLabel = planLabels[profile?.subscriptionPlan || 'starter'] || 'Starter'
   const credits = profile?.creditsRemaining ?? 0
 
   // Pipeline progress hint

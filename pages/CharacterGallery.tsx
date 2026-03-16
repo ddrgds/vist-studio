@@ -12,6 +12,16 @@ function getGradientForIndex(i: number) { return gradients[i % gradients.length]
 
 const detailTabs = ['Overview','Photos','AI Edits','Universe','Settings']
 
+/** Generate a human-readable bio from character attributes (NOT the raw AI prompt) */
+function buildReadableBio(c: { name: string; renderStyle?: string; personalityTraits?: string[]; outfitDescription?: string }): string {
+  const parts: string[] = []
+  if (c.renderStyle) parts.push(`${c.renderStyle} style`)
+  if (c.personalityTraits?.length) parts.push(c.personalityTraits.slice(0, 4).join(', '))
+  if (c.outfitDescription) parts.push(c.outfitDescription)
+  if (parts.length === 0) return `${c.name} — a virtual influencer created in VIST Studio.`
+  return `${c.name} — ${parts.join('. ')}.`
+}
+
 export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) {
   const [selectedChar, setSelectedChar] = useState<number | null>(null)
   const [detailTab, setDetailTab] = useState('Overview')
@@ -26,8 +36,9 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
       id: c.id,
       name: c.name,
       handle: `@${c.name.toLowerCase().replace(/\s+/g, '')}`,
-      style: c.characteristics || c.outfitDescription || 'No description',
-      bio: c.characteristics || 'No description available',
+      style: [c.renderStyle, ...(c.personalityTraits || []).slice(0, 2)].filter(Boolean).join(' · ') || 'No description',
+      bio: buildReadableBio(c),
+      rawPrompt: c.characteristics || '',
       usageCount: c.usageCount || 0,
       photos: charItems.length,
       edits: editCount,
@@ -341,6 +352,17 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                           style={{ background:'var(--joi-bg-3)', borderColor:'rgba(255,255,255,.04)', color:'var(--joi-text-1)' }} />
                       </div>
                     ))}
+                    {characters[selectedChar].rawPrompt && (
+                      <details className="group">
+                        <summary className="text-[10px] font-mono uppercase cursor-pointer flex items-center gap-1.5 py-1" style={{ color:'var(--joi-text-3)' }}>
+                          <span className="text-[9px] transition-transform group-open:rotate-90">▶</span>
+                          Technical prompt
+                        </summary>
+                        <textarea readOnly rows={4} value={characters[selectedChar].rawPrompt}
+                          className="w-full mt-2 px-3 py-2 rounded-lg text-[10px] border outline-none resize-none font-mono"
+                          style={{ background:'var(--joi-bg-3)', borderColor:'rgba(255,255,255,.04)', color:'var(--joi-text-3)' }} />
+                      </details>
+                    )}
                     <div className="flex gap-2 pt-2">
                       <button className="btn-primary flex-1 py-2 text-sm">Save</button>
                       <button className="btn-ghost px-4 py-2 text-sm" style={{ color:'var(--rose)' }}>Archive</button>

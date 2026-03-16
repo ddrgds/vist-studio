@@ -227,6 +227,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
 
   // Auto-load hero shot from pipeline
   const pipelineHeroUrl = usePipelineStore(s => s.heroShotUrl)
+  const pipelineCharId = usePipelineStore(s => s.characterId)
   const pipelineSetEditedHero = usePipelineStore(s => s.setEditedHero)
 
   useEffect(() => {
@@ -339,6 +340,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           timestamp: Date.now(),
           type: 'edit',
           tags: [activeTool],
+          characterId: pipelineCharId || undefined,
         }])
         toast.success('Edit applied')
       }
@@ -364,6 +366,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
       timestamp: Date.now(),
       type: 'edit',
       tags: [toolTag],
+      characterId: pipelineCharId || undefined,
     }])
     setActiveModal(null)
   }

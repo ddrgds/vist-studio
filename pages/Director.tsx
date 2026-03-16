@@ -464,17 +464,21 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
                 </div>
               </div>
 
-              <div>
-                <div className="text-[11px] font-medium mb-1.5" style={{ color: 'var(--joi-text-2)' }}>Characteristics</div>
+              <details className="group">
+                <summary className="text-[11px] font-medium cursor-pointer flex items-center gap-1.5 py-1" style={{ color: 'var(--joi-text-3)' }}>
+                  <span className="text-[9px] transition-transform group-open:rotate-90">▶</span>
+                  Advanced: Edit prompt
+                  {characteristics && <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--joi-pink)' }} />}
+                </summary>
                 <textarea
-                  rows={2}
-                  placeholder="e.g. Freckles, green eyes, wavy auburn hair..."
-                  className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none resize-none transition-colors"
+                  rows={3}
+                  placeholder="Technical prompt for the AI model. Auto-filled from character data."
+                  className="w-full mt-2 px-3.5 py-2.5 rounded-xl text-[12px] border outline-none resize-none transition-colors"
                   style={joiInputStyle(!!characteristics)}
                   value={characteristics}
                   onChange={e => setCharacteristics(e.target.value)}
                 />
-              </div>
+              </details>
             </div>
           </AccordionSection>
 

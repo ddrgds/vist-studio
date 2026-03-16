@@ -282,6 +282,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
           model: engineLabel,
           timestamp: Date.now(),
           type: 'session' as const,
+          characterId: selectedGalleryItem?.characterId || undefined,
           tags: ['photo-session', ...selectedPresetLabels.map(l => l.toLowerCase())],
         }))
 
