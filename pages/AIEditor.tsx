@@ -19,12 +19,14 @@ const InpaintingModal = lazy(() => import('../components/InpaintingModal'))
 const SkinEnhancerModal = lazy(() => import('../components/SkinEnhancerModal'))
 
 const tools = [
+  // Primary tools (visible by default)
   { id:'freeai', label:'Free AI', icon:'\u2728', desc:'Edit with AI using any instruction' },
   { id:'relight', label:'Relight', icon:'\uD83D\uDCA1', desc:'Change lighting on any photo' },
-  { id:'rotate360', label:'360\u00b0 Angles', icon:'\uD83D\uDD04', desc:'Generate views from all angles' },
   { id:'faceswap', label:'Face Swap', icon:'\uD83C\uDFAD', desc:'Swap faces between images' },
   { id:'tryon', label:'Try-On Virtual', icon:'\uD83D\uDC57', desc:'Try on clothes and accessories' },
   { id:'bgswap', label:'Background', icon:'\uD83D\uDDBC\uFE0F', desc:'Change or generate backgrounds' },
+  // Secondary tools (behind "More" toggle)
+  { id:'rotate360', label:'360\u00b0 Angles', icon:'\uD83D\uDD04', desc:'Generate views from all angles' },
   { id:'composite', label:'Scene', icon:'\uD83C\uDFAC', desc:'Place character in any scene' },
   { id:'enhance', label:'Enhance', icon:'\u2728', desc:'Improve quality and details' },
   { id:'style', label:'Style Transfer', icon:'\uD83C\uDFA8', desc:'Apply artistic styles' },

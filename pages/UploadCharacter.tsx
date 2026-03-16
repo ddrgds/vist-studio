@@ -527,8 +527,8 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               onDragLeave={() => setDragOver(false)}
               onDrop={handleFileDrop}>
               <div className="text-4xl mb-3" style={{ color: 'var(--joi-pink)' }}>{'\u2191'}</div>
-              <div className="text-sm font-semibold mb-1" style={{ color: 'var(--joi-text-1)' }}>Drag images of your character</div>
-              <div className="text-[11px]" style={{ color: 'var(--joi-text-3)' }}>PNG, JPG, WEBP · Up to 20 images · Max 10MB each</div>
+              <div className="text-sm font-semibold mb-1" style={{ color: 'var(--joi-text-1)' }}>Upload 1-5 clear photos of a face</div>
+              <div className="text-[11px]" style={{ color: 'var(--joi-text-3)' }}>JPG, PNG, WEBP · Min resolution: 512×512px · Max 10MB each</div>
               <div className="text-[11px] mt-2 px-3 py-1.5 rounded-xl inline-block"
                 style={{ background: 'rgba(255,107,157,.1)', color: 'var(--joi-pink)' }}>
                 or click to select files
@@ -752,12 +752,28 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                         value={promptText}
                         onChange={e => setPromptText(e.target.value)}
                         rows={8}
-                        placeholder="Describe your character... Ex: Athletic woman, short red hair, heterochromatic eyes (green + blue), freckles, confident look"
+                        placeholder={"Describe your character's appearance in detail.\n\nExample: A 25-year-old woman with wavy auburn hair, green eyes, light freckles, and a warm smile. Athletic build, wearing a casual linen shirt."}
                         className="w-full px-4 py-3 rounded-xl text-sm border outline-none transition-colors resize-none"
                         style={{
                           background: 'var(--joi-bg-2)', borderColor: 'rgba(255,255,255,.04)',
                           color: 'var(--joi-text-1)', backdropFilter: 'blur(8px)',
                         }} />
+                      {/* Quick examples */}
+                      {!promptText && (
+                        <div className="flex gap-2 mt-2 flex-wrap">
+                          {[
+                            { label: 'Cyberpunk girl', text: 'A 22-year-old woman with short neon blue hair, cybernetic eye implants glowing cyan, sharp jawline, pale skin with holographic tattoos, wearing a cropped tech jacket.' },
+                            { label: 'Classic gentleman', text: 'A 30-year-old man with slicked-back dark hair, strong brow, clean-shaven, warm brown eyes, athletic build, wearing a tailored navy suit with an open collar.' },
+                            { label: 'Fantasy elf', text: 'An ethereal elven woman with long silver hair, pointed ears, violet eyes with slit pupils, luminous pale skin, delicate features, wearing flowing white robes with gold accents.' },
+                          ].map(ex => (
+                            <button key={ex.label} onClick={() => setPromptText(ex.text)}
+                              className="px-3 py-1.5 rounded-lg text-[10px] transition-all hover:scale-[1.02]"
+                              style={{ background: 'rgba(255,107,157,.06)', color: 'var(--joi-pink)', border: '1px solid rgba(255,107,157,.12)' }}>
+                              {ex.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                       <div className="flex items-center justify-between mt-3">
                         <div className="text-[10px]" style={{ color: 'var(--joi-text-3)' }}>
                           Tip: Be specific about physical features, expression, and style for best results.
@@ -892,8 +908,12 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                   </div>
 
                   <div>
-                    <label className="joi-label block mb-2">Accessories</label>
-                    <ChipSelector options={ACCESSORIES} selected={selAccessories}
+                    <label className="joi-label block mb-2">Accessories <span style={{ color: 'var(--joi-text-3)', fontWeight: 400 }}>(max 6)</span></label>
+                    <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5 mt-3" style={{ color: 'var(--joi-text-3)' }}>Everyday</div>
+                    <ChipSelector options={ACCESSORIES.filter(a => ['sunglasses','piercings','tattoos','jewelry','hat','scarf','watch','choker'].includes(a.id))} selected={selAccessories}
+                      onSelect={setSelAccessories} maxSelect={6} color="var(--joi-blue)" />
+                    <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5 mt-3" style={{ color: 'var(--joi-text-3)' }}>Fantasy</div>
+                    <ChipSelector options={ACCESSORIES.filter(a => ['crown','mask','wings','horns','elf-ears','tail'].includes(a.id))} selected={selAccessories}
                       onSelect={setSelAccessories} maxSelect={6} color="var(--joi-blue)" />
                   </div>
                 </div>

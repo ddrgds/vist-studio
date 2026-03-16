@@ -619,8 +619,8 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
             <div className="joi-label mb-1">
               Scene Override
             </div>
-            <div className="text-[8px] mb-2" style={{ color:'var(--joi-text-3)', opacity: 0.6 }}>
-              Optional — base photo already has a scene
+            <div className="text-[9px] mb-2" style={{ color:'var(--joi-text-3)' }}>
+              Replaces the default background of your selected vibe
             </div>
             <div className="flex gap-1.5 overflow-x-auto pb-1.5" style={{ scrollbarWidth:'none' }}>
               {scenes.map(s => (
@@ -657,6 +657,11 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                 </div>
               )}
             </div>
+            {selectedPresets.size > 1 && selectedEngine !== 'higgsfield:soul' && (
+              <div className="text-[9px] mb-2 px-2 py-1 rounded-lg" style={{ background: 'rgba(255,107,157,.04)', color: 'var(--joi-text-3)', border: '1px solid rgba(255,107,157,.08)' }}>
+                Each vibe generates its own set of photos — shots are mixed across vibes
+              </div>
+            )}
 
             {selectedEngine === 'higgsfield:soul' ? (
               <>

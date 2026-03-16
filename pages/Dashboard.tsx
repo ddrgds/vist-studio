@@ -324,8 +324,8 @@ export function Dashboard({ onNav }: Props) {
                       </div>
                     </div>
                     <div className="px-5 py-3 flex gap-3">
-                      <button onClick={() => onNav('director')} className="joi-btn-ghost flex-1 text-[11px] py-2">Direct Scene</button>
-                      <button onClick={() => onNav('session')} className="joi-btn-ghost flex-1 text-[11px] py-2">Photo Session</button>
+                      <button onClick={() => onNav('director')} className="joi-btn-solid flex-1 text-[11px] py-2">Direct Scene</button>
+                      <button onClick={() => onNav('session')} className="joi-btn-ghost flex-1 text-[11px] py-2" style={{ borderColor: 'rgba(255,107,157,.3)', color: 'var(--joi-pink)' }}>Photo Session</button>
                     </div>
                   </div>
                 )
