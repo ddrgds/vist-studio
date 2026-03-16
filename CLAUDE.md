@@ -552,11 +552,11 @@ The full roadmap is in `VIST_UX_ROADMAP.md` at the project root. READ IT at the 
 - **Phase 4**: Gallery polish & data integrity fixes
 
 ### Current Progress
-- [ ] Phase 0 — Quick Wins
-- [ ] Phase 1 — Empty States & Onboarding
-- [ ] Phase 2 — Reduce Friction
-- [ ] Phase 3 — Navigation & Pipeline
-- [ ] Phase 4 — Gallery & Polish
+- [x] Phase 0 — Quick Wins (branding, credits, jargon, tooltips, delete confirmation)
+- [x] Phase 1 — Empty States & Onboarding (dashboard, gallery, characters, director, editor)
+- [x] Phase 2 — Reduce Friction (smart defaults, simple/advanced director, collapsible tools, vibe categories)
+- [x] Phase 3 — Navigation & Pipeline (numbered pipeline, progress hints, ordered quick actions)
+- [x] Phase 4 — Gallery & Polish (info bar, delete confirmation, dynamic stats)
 
 Update the checkboxes as phases are completed.
 

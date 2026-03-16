@@ -335,6 +335,14 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
                   </div>
                 </div>
 
+                {/* Info bar */}
+                <div className="px-2 py-1.5" style={{ background: 'var(--joi-bg-2)' }}>
+                  <div className="text-[9px] font-medium truncate" style={{ color: 'var(--joi-text-2)' }}>
+                    {charName} · {category}
+                  </div>
+                  <div className="text-[8px]" style={{ color: 'var(--joi-text-3)' }}>{dateStr}</div>
+                </div>
+
                 {/* Select indicator */}
                 {selected.includes(img.id) && (
                   <div className="absolute top-2 right-2 w-5 h-5 rounded-lg flex items-center justify-center text-[10px] text-white"
