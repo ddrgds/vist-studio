@@ -44,10 +44,10 @@ export function Dashboard({ onNav }: Props) {
   ]
 
   const quickActions = [
-    { l: 'Create Character', Icon: Upload, p: 'upload' as Page, desc: 'Design from scratch or import', gradient: 'linear-gradient(135deg, rgba(255,107,157,0.12), rgba(208,72,176,0.06))' },
-    { l: 'Direct Scene', Icon: Camera, p: 'director' as Page, desc: 'Full control hero shots', gradient: 'linear-gradient(135deg, rgba(208,72,176,0.12), rgba(104,120,240,0.06))' },
-    { l: 'Photo Session', Icon: Wand2, p: 'session' as Page, desc: 'Automated preset shoots', gradient: 'linear-gradient(135deg, rgba(184,160,232,0.12), rgba(255,107,157,0.06))' },
-    { l: 'AI Editor', Icon: Repeat, p: 'editor' as Page, desc: 'Relight, swap, enhance', gradient: 'linear-gradient(135deg, rgba(104,120,240,0.12), rgba(184,160,232,0.06))' },
+    { n: '①', l: 'Create Character', Icon: Upload, p: 'upload' as Page, desc: 'Design your virtual influencer', gradient: 'linear-gradient(135deg, rgba(255,107,157,0.12), rgba(208,72,176,0.06))' },
+    { n: '②', l: 'Direct Scene', Icon: Camera, p: 'director' as Page, desc: 'Create a hero shot', gradient: 'linear-gradient(135deg, rgba(208,72,176,0.12), rgba(104,120,240,0.06))' },
+    { n: '③', l: 'AI Editor', Icon: Repeat, p: 'editor' as Page, desc: 'Edit and enhance images', gradient: 'linear-gradient(135deg, rgba(104,120,240,0.12), rgba(184,160,232,0.06))' },
+    { n: '④', l: 'Photo Session', Icon: Wand2, p: 'session' as Page, desc: 'Generate themed photo sets', gradient: 'linear-gradient(135deg, rgba(184,160,232,0.12), rgba(255,107,157,0.06))' },
   ]
 
   const recentActivity = [...galleryItems]
@@ -214,7 +214,10 @@ export function Dashboard({ onNav }: Props) {
                 style={{ background: a.gradient, transition: 'all 0.3s' }}>
                 <a.Icon size={20} className="group-hover:scale-110 transition-transform" style={{ color: 'var(--joi-pink)' }} />
               </div>
-              <div className="joi-heading text-[0.85rem] mb-1">{a.l}</div>
+              <div className="joi-heading text-[0.85rem] mb-1">
+                <span className="text-[10px] mr-1" style={{ color: 'var(--joi-pink)', opacity: 0.6 }}>{a.n}</span>
+                {a.l}
+              </div>
               <div className="text-[11px] leading-relaxed" style={{ color: 'var(--joi-text-3)' }}>{a.desc}</div>
               <div className="flex items-center gap-1 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
                 <span className="font-jet text-[9px] uppercase tracking-wider" style={{ color: 'var(--joi-pink)' }}>Open</span>

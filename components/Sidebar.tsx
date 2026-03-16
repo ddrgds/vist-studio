@@ -1,6 +1,8 @@
 import { type Page } from '../App'
 import { useAuth } from '../contexts/AuthContext'
 import { useProfile } from '../contexts/ProfileContext'
+import { useCharacterStore } from '../stores/characterStore'
+import { useGalleryStore } from '../stores/galleryStore'
 import {
   LayoutDashboard, Clapperboard, Upload, Camera, Wand2,
   Globe, Images, Users, CalendarDays, BarChart3,
@@ -35,13 +37,28 @@ interface Props {
   onToggle: () => void
 }
 
+const PIPELINE_NUMBERS: Record<string, string> = {
+  upload: '①', director: '②', editor: '③', session: '④',
+}
+
 export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
   const { user } = useAuth()
   const { profile } = useProfile()
+  const characters = useCharacterStore(s => s.characters)
+  const galleryItems = useGalleryStore(s => s.items)
 
   const displayName = profile?.displayName || user?.email?.split('@')[0] || 'User'
   const initial = displayName[0]?.toUpperCase() || 'U'
   const planLabel = profile?.subscriptionPlan === 'pro' ? 'Pro Plan' : profile?.subscriptionPlan === 'premium' ? 'Premium' : 'Free Plan'
+  const credits = profile?.creditsRemaining ?? 0
+
+  // Pipeline progress hint
+  const pipelineHint = (id: string): string | null => {
+    if (collapsed) return null
+    if (characters.length === 0 && id === 'upload') return 'Start here'
+    if (characters.length > 0 && galleryItems.length === 0 && id === 'director') return 'Next step'
+    return null
+  }
 
   return (
     <aside
@@ -122,10 +139,23 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
                       <n.Icon size={16} />
                     </span>
                     {!collapsed && (
-                      <div className="text-left min-w-0">
-                        <div className="text-[12px] font-medium leading-tight truncate"
-                          style={{ color: active ? 'var(--joi-text-1)' : 'var(--joi-text-2)' }}>{n.label}</div>
-                        <div className="text-[9px] truncate" style={{ color: 'var(--joi-text-3)' }}>{n.sub}</div>
+                      <div className="text-left min-w-0 flex-1">
+                        <div className="text-[12px] font-medium leading-tight truncate flex items-center gap-1.5"
+                          style={{ color: active ? 'var(--joi-text-1)' : 'var(--joi-text-2)' }}>
+                          {PIPELINE_NUMBERS[n.id] && (
+                            <span className="text-[10px]" style={{ color: 'var(--joi-pink)', opacity: 0.6 }}>{PIPELINE_NUMBERS[n.id]}</span>
+                          )}
+                          {n.label}
+                        </div>
+                        <div className="text-[9px] truncate flex items-center gap-1.5" style={{ color: 'var(--joi-text-3)' }}>
+                          {n.sub}
+                          {pipelineHint(n.id) && (
+                            <span className="text-[8px] font-mono px-1.5 py-0.5 rounded"
+                              style={{ background: 'rgba(255,107,157,.08)', color: 'var(--joi-pink)', border: '1px solid rgba(255,107,157,.12)' }}>
+                              {pipelineHint(n.id)}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     )}
                   </button>
@@ -165,7 +195,9 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
         {!collapsed && (
           <div className="min-w-0 text-left">
             <div className="text-xs font-medium truncate" style={{ color: 'var(--joi-text-1)' }}>{displayName}</div>
-            <div className="text-[10px]" style={{ color: 'var(--joi-text-3)' }}>{planLabel}</div>
+            <div className="text-[10px] flex items-center gap-1" style={{ color: 'var(--joi-text-3)' }}>
+              {planLabel} <span style={{ color: 'var(--joi-pink)' }}>·</span> <span style={{ color: 'var(--joi-text-2)' }}>{credits.toLocaleString()}cr</span>
+            </div>
           </div>
         )}
       </button>
