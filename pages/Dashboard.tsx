@@ -50,23 +50,6 @@ export function Dashboard({ onNav }: Props) {
     { n: '④', l: 'Photo Session', Icon: Wand2, p: 'session' as Page, desc: 'Generate themed photo sets', gradient: 'linear-gradient(135deg, rgba(184,160,232,0.12), rgba(255,107,157,0.06))' },
   ]
 
-  const recentActivity = [...galleryItems]
-    .sort((a, b) => b.timestamp - a.timestamp)
-    .slice(0, 6)
-    .map(item => {
-      const char = characters.find(c => c.id === item.characterId)
-      const label = item.type === 'edit' ? 'AI Edit'
-        : item.type === 'session' ? 'Session'
-        : item.type === 'create' ? 'Creation'
-        : item.type === 'video' ? 'Video' : 'Other'
-      return { label, char: char?.name || 'No character', time: getTimeAgo(item.timestamp), color: typeColor(item.type) }
-    })
-
-  const featuredChar = characters.length > 0
-    ? [...characters].sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0))[0]
-    : null
-  const otherChars = characters.filter(c => c.id !== featuredChar?.id).slice(0, 4)
-
   // ── Onboarding: shown when user has zero content ──
   const isNewUser = characters.length === 0 && galleryItems.length === 0
 
@@ -130,6 +113,24 @@ export function Dashboard({ onNav }: Props) {
       </div>
     )
   }
+
+  // ── Computed data for active users ──
+  const recentActivity = [...galleryItems]
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, 6)
+    .map(item => {
+      const char = characters.find(c => c.id === item.characterId)
+      const label = item.type === 'edit' ? 'AI Edit'
+        : item.type === 'session' ? 'Session'
+        : item.type === 'create' ? 'Creation'
+        : item.type === 'video' ? 'Video' : 'Other'
+      return { label, char: char?.name || 'No character', time: getTimeAgo(item.timestamp), color: typeColor(item.type) }
+    })
+
+  const featuredChar = characters.length > 0
+    ? [...characters].sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0))[0]
+    : null
+  const otherChars = characters.filter(c => c.id !== featuredChar?.id).slice(0, 4)
 
   return (
     <div className="min-h-screen joi-mesh" style={{ background: 'var(--joi-bg-0)' }}>

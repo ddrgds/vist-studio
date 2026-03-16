@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useMemo } from 'react'
 import { useCharacterStore } from '../stores/characterStore'
 import { useGalleryStore } from '../stores/galleryStore'
 
@@ -13,47 +12,42 @@ function getGradientForIndex(i: number) { return gradients[i % gradients.length]
 
 const detailTabs = ['Overview','Photos','AI Edits','Universe','Settings']
 
-export function CharacterGallery() {
-  const navigate = useNavigate()
+export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) {
   const [selectedChar, setSelectedChar] = useState<number | null>(null)
   const [detailTab, setDetailTab] = useState('Overview')
 
   const storeCharacters = useCharacterStore(s => s.characters)
   const galleryItems = useGalleryStore(s => s.items)
 
-  const characters = storeCharacters.map((c, idx) => {
+  const characters = useMemo(() => storeCharacters.map((c, idx) => {
     const charItems = galleryItems.filter(i => i.characterId === c.id)
     const editCount = charItems.filter(i => i.type === 'edit').length
-    const status = c.loraTrainingStatus === 'ready' ? 'active' as const
-      : c.loraTrainingStatus === 'training' ? 'training' as const
-      : 'draft' as const
     return {
       id: c.id,
       name: c.name,
       handle: `@${c.name.toLowerCase().replace(/\s+/g, '')}`,
       style: c.characteristics || c.outfitDescription || 'No description',
       bio: c.characteristics || 'No description available',
-      uses: `${c.usageCount || 0} uses`,
+      usageCount: c.usageCount || 0,
       photos: charItems.length,
       edits: editCount,
       gradient: getGradientForIndex(idx),
       avatar: c.thumbnail ? null : c.name[0],
       thumbnailUrl: c.thumbnail || null,
-      status,
       created: new Date(c.createdAt).toLocaleDateString('en', { month:'short', year:'numeric' }),
     }
-  })
+  }), [storeCharacters, galleryItems])
 
   // Bounds check when characters change
   useEffect(() => {
-    if (selectedChar !== null && selectedChar >= characters.length) {
+    if (selectedChar !== null && selectedChar >= storeCharacters.length) {
       setSelectedChar(null)
     }
-  }, [characters.length])
+  }, [storeCharacters, selectedChar])
 
   const totalPhotos = characters.reduce((sum, c) => sum + c.photos, 0)
   const totalEdits = characters.reduce((sum, c) => sum + c.edits, 0)
-  const totalUses = characters.reduce((sum, c) => sum + (parseInt(c.uses) || 0), 0)
+  const totalUses = characters.reduce((sum, c) => sum + c.usageCount, 0)
 
   // Gallery items for the selected character
   const selectedCharId = selectedChar !== null ? characters[selectedChar]?.id : null
@@ -70,7 +64,7 @@ export function CharacterGallery() {
           <p className="text-[12px] mb-6" style={{ color:'var(--joi-text-3)' }}>
             Characters are your virtual influencers. Create one to start generating content.
           </p>
-          <button onClick={() => navigate('/studio?tool=create')}
+          <button onClick={() => onNav?.('upload')}
             className="joi-btn-solid px-6 py-2.5 text-sm joi-breathe">
             ⊕ Create Your First Character
           </button>
@@ -145,7 +139,7 @@ export function CharacterGallery() {
                   {selectedChar === null && (
                     <div className="flex gap-4 mt-3 pt-3" style={{ borderTop:'1px solid rgba(255,255,255,.04)' }}>
                       {[
-                        { l:'Uses', v:c.uses },
+                        { l:'Uses', v:c.usageCount },
                         { l:'Photos', v:c.photos },
                         { l:'AI Edits', v:c.edits },
                         { l:'Created', v:c.created },
@@ -210,7 +204,7 @@ export function CharacterGallery() {
                     </div>
                     <div className="grid grid-cols-4 gap-3">
                       {[
-                        { l:'Uses', v:characters[selectedChar].uses, c:'var(--accent)' },
+                        { l:'Uses', v:characters[selectedChar].usageCount, c:'var(--accent)' },
                         { l:'Photos', v:characters[selectedChar].photos, c:'var(--magenta)' },
                         { l:'AI Edits', v:characters[selectedChar].edits, c:'var(--rose)' },
                         { l:'Created', v:characters[selectedChar].created, c:'var(--blue)' },

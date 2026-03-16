@@ -115,6 +115,7 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
             <div className="space-y-0.5">
               {section.items.map(n => {
                 const active = page === n.id
+                const hint = pipelineHint(n.id)
                 return (
                   <button
                     key={n.id}
@@ -149,10 +150,10 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
                         </div>
                         <div className="text-[9px] truncate flex items-center gap-1.5" style={{ color: 'var(--joi-text-3)' }}>
                           {n.sub}
-                          {pipelineHint(n.id) && (
+                          {hint && (
                             <span className="text-[8px] font-mono px-1.5 py-0.5 rounded"
                               style={{ background: 'rgba(255,107,157,.08)', color: 'var(--joi-pink)', border: '1px solid rgba(255,107,157,.12)' }}>
-                              {pipelineHint(n.id)}
+                              {hint}
                             </span>
                           )}
                         </div>

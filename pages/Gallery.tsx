@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useGalleryStore, type GalleryItem } from '../stores/galleryStore'
 import { useCharacterStore } from '../stores/characterStore'
 import { useToast } from '../contexts/ToastContext'
@@ -88,12 +88,21 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
     setSelected(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id])
   }
 
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const i of items) {
+      const cat = getItemCategory(i)
+      counts[cat] = (counts[cat] ?? 0) + 1
+    }
+    return counts
+  }, [items])
+
   const stats = [
     { l:'Total', v: filtered.length, c:'var(--joi-pink)' },
-    { l:'Face Swaps', v: items.filter(i => getItemCategory(i) === 'Face Swap').length, c:'var(--joi-coral)' },
-    { l:'Relights', v: items.filter(i => getItemCategory(i) === 'Relight').length, c:'var(--joi-magenta)' },
-    { l:'Try-Ons', v: items.filter(i => getItemCategory(i) === 'Try-On').length, c:'var(--joi-cyan-warm)' },
-    { l:'Sessions', v: items.filter(i => getItemCategory(i) === 'Session').length, c:'var(--joi-lavender)' },
+    { l:'Face Swaps', v: categoryCounts['Face Swap'] ?? 0, c:'var(--joi-coral)' },
+    { l:'Relights', v: categoryCounts['Relight'] ?? 0, c:'var(--joi-magenta)' },
+    { l:'Try-Ons', v: categoryCounts['Try-On'] ?? 0, c:'var(--joi-cyan-warm)' },
+    { l:'Sessions', v: categoryCounts['Session'] ?? 0, c:'var(--joi-lavender)' },
   ].filter(s => s.l === 'Total' || s.v > 0)
 
   // --- Handlers ---

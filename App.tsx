@@ -121,7 +121,7 @@ function AuthenticatedApp() {
     session: <PhotoSession onNav={handleNav} />,
     editor: <AIEditor onNav={handleNav} />,
     gallery: <Gallery onNav={handleNav} />,
-    characters: <CharacterGallery />,
+    characters: <CharacterGallery onNav={handleNav} />,
     universe: <UniverseBuilder />,
     content: <ContentCalendar />,
     analytics: <Analytics />,

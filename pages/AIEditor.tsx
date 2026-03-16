@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, lazy, Suspense } from 'react'
+import { useState, useRef, useEffect, useMemo, lazy, Suspense } from 'react'
 import { useGalleryStore } from '../stores/galleryStore'
 import { useCharacterStore } from '../stores/characterStore'
 import { useProfile } from '../contexts/ProfileContext'
@@ -190,12 +190,12 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
 
   const { decrementCredits, restoreCredits } = useProfile()
 
-  // Visible cost for the Apply button
-  const displayCost = (() => {
+  // Visible cost for the Apply button (shared with handleApply logic)
+  const displayCost = useMemo(() => {
     const eng = selectedEngine !== 'auto' ? ENGINE_METADATA.find(e => e.key === selectedEngine) : null
     if (eng) return eng.creditCost
     return activeTool === 'rotate360' || activeTool === 'composite' ? 10 : 8
-  })()
+  }, [selectedEngine, activeTool])
   const toast = useToast()
   const addItems = useGalleryStore(s => s.addItems)
   const galleryItems = useGalleryStore(s => s.items)
