@@ -184,6 +184,9 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
   const [activeModal, setActiveModal] = useState<string | null>(null)
   const [editHistory, setEditHistory] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [showAllTools, setShowAllTools] = useState(() => {
+    try { return localStorage.getItem('vist-editor-all-tools') === 'true' } catch { return false }
+  })
 
   const { decrementCredits, restoreCredits } = useProfile()
 
@@ -396,7 +399,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
 
       {/* Tool sidebar */}
       <div className="w-[70px] shrink-0 flex flex-col items-center py-4 gap-1" style={{ background:'var(--joi-bg-1)', borderRight:'1px solid rgba(255,255,255,.04)' }}>
-        {tools.map(t => (
+        {(showAllTools ? tools : tools.slice(0, 5)).map(t => (
           <button key={t.id} onClick={()=>setActiveTool(t.id)}
             className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center transition-all group relative joi-border-glow`}
             style={{
@@ -413,6 +416,12 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
             </div>
           </button>
         ))}
+        <button onClick={() => { setShowAllTools(v => { const next = !v; try { localStorage.setItem('vist-editor-all-tools', String(next)) } catch {} return next }) }}
+          className="w-12 h-8 rounded-xl flex items-center justify-center transition-all mt-1"
+          style={{ background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)', color: 'var(--joi-text-3)' }}
+          title={showAllTools ? 'Show less tools' : 'Show more tools'}>
+          <span className="text-[9px] font-medium">{showAllTools ? '▲ Less' : '▼ More'}</span>
+        </button>
       </div>
 
       {/* Tool Panel */}

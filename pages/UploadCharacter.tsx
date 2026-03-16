@@ -474,9 +474,14 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
   // Can advance to next step?
   const canAdvance = (s: number) => {
-    if (s === 0) return name.trim().length > 0
+    if (s === 0) return name.trim().length > 0 && selGender !== null && selAge !== null
     return true
   }
+
+  // Missing fields hint for Step 0
+  const missingFields = step === 0
+    ? [!name.trim() && 'Name', !selGender && 'Gender', !selAge && 'Age'].filter(Boolean)
+    : []
 
   // ─── Render ───────────────────────────────────────────────────────
   return (
@@ -659,20 +664,20 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                 </div>
 
                 <div>
-                  <label className="joi-label block mb-1.5">Name</label>
+                  <label className="joi-label block mb-1.5">Name <span style={{ color: 'var(--joi-pink)' }}>*</span></label>
                   <input value={name} onChange={e => setName(e.target.value)} placeholder="E.g.: Luna Vex"
                     className="w-full px-4 py-3 rounded-xl text-sm border outline-none focus:border-[rgba(255,107,157,.4)] transition-colors"
                     style={{ background: 'var(--joi-bg-2)', borderColor: 'rgba(255,255,255,.04)', color: 'var(--joi-text-1)', backdropFilter: 'blur(8px)' }} />
                 </div>
 
                 <div>
-                  <label className="joi-label block mb-2">Gender</label>
+                  <label className="joi-label block mb-2">Gender <span style={{ color: 'var(--joi-pink)' }}>*</span></label>
                   <ChipSelector options={GENDERS} selected={selGender ? [selGender] : []}
                     onSelect={ids => setSelGender(ids[0] || null)} />
                 </div>
 
                 <div>
-                  <label className="joi-label block mb-2">Age</label>
+                  <label className="joi-label block mb-2">Age <span style={{ color: 'var(--joi-pink)' }}>*</span></label>
                   <ChipSelector options={AGE_RANGES} selected={selAge ? [selAge] : []}
                     onSelect={ids => setSelAge(ids[0] || null)} color="var(--joi-magenta)" />
                 </div>
@@ -980,11 +985,18 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                 {'\u2190'} Back
               </button>
               {step < 2 ? (
-                <button onClick={() => setStep(step + 1)}
-                  className="joi-btn-solid px-6 py-2.5 text-sm"
-                  disabled={!canAdvance(step)}>
-                  Next {'\u2192'}
-                </button>
+                <div className="flex items-center gap-3">
+                  {missingFields.length > 0 && (
+                    <span className="text-[10px]" style={{ color: 'var(--joi-text-3)' }}>
+                      Fill: {missingFields.join(', ')}
+                    </span>
+                  )}
+                  <button onClick={() => setStep(step + 1)}
+                    className="joi-btn-solid px-6 py-2.5 text-sm"
+                    disabled={!canAdvance(step)}>
+                    Next {'\u2192'}
+                  </button>
+                </div>
               ) : (
                 generationPhase === 'idle' && (
                   <button onClick={handleGenerate}
