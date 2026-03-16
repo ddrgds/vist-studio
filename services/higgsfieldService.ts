@@ -220,7 +220,7 @@ export const editWithSoulReference = async (
   if (styleId) input.style_id = styleId;
 
   const urls = await submitAndPoll(
-    'higgsfield-ai/soul/image-to-image',
+    'higgsfield-ai/soul/reference',
     input,
     onProgress,
     abortSignal,
