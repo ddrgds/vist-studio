@@ -153,8 +153,10 @@ const Sidebar: React.FC = () => {
             <div className="text-sm text-[var(--text-1)] truncate">
               {profile?.displayName || 'Creator'}
             </div>
-            <div className="text-[10px] text-[var(--accent)] font-jet">
+            <div className="text-[10px] text-[var(--accent)] font-jet flex items-center gap-1.5">
               {planLabel}
+              <span className="text-[var(--text-3)]">·</span>
+              <span className="text-[var(--text-2)]">{profile?.creditsRemaining?.toLocaleString() ?? 0}cr</span>
             </div>
           </div>
         )}

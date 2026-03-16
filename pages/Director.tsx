@@ -688,7 +688,7 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
                 <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                 Generating... {Math.round(progress)}%
               </span>
-            ) : (selectedChar || faceRefs.length > 0) ? '\u2726 Generate Hero Shot' : '\u2726 Generate Image'}
+            ) : (selectedChar || faceRefs.length > 0) ? `\u2726 Generate Hero Shot (${costPerShot * numberOfImages}cr)` : '\u2726 Generate Image'}
           </button>
         </div>
       </div>

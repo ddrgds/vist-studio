@@ -186,6 +186,13 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { decrementCredits, restoreCredits } = useProfile()
+
+  // Visible cost for the Apply button
+  const displayCost = (() => {
+    const eng = selectedEngine !== 'auto' ? ENGINE_METADATA.find(e => e.key === selectedEngine) : null
+    if (eng) return eng.creditCost
+    return activeTool === 'rotate360' || activeTool === 'composite' ? 10 : 8
+  })()
   const toast = useToast()
   const addItems = useGalleryStore(s => s.addItems)
   const galleryItems = useGalleryStore(s => s.items)
@@ -863,7 +870,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           <button onClick={handleApply} disabled={processing || !inputImage}
             className={`joi-btn-solid w-full py-2.5 text-sm ${!processing && inputImage ? 'joi-breathe' : ''}`}
             style={{ opacity: (!inputImage || processing) ? 0.5 : 1 }}>
-            {processing ? `\u27F3 Processing... ${Math.round(progress)}%` : `\u2726 Apply ${tools.find(t=>t.id===activeTool)?.label}`}
+            {processing ? `\u27F3 Processing... ${Math.round(progress)}%` : `\u2726 Apply ${tools.find(t=>t.id===activeTool)?.label} (${displayCost}cr)`}
           </button>
         </div>
       </div>
