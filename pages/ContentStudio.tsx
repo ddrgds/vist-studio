@@ -16,6 +16,7 @@ import { ImageSize, AspectRatio, GeminiImageModel } from '../types'
 import type { InfluencerParams, CharacterParams } from '../types'
 
 // Lazy load sub-modes
+const Director = lazy(() => import('./Director'))
 const VideoStudio = lazy(() => import('./VideoStudio'))
 const PhotoSession = lazy(() => import('./PhotoSession'))
 
@@ -907,32 +908,37 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
           </div>
         }>
           {mode === 'photo' && (
+            phase === 'create' ? (
+              /* PHASE 1: Director — full screen, all its features */
+              <Director
+                onNav={onNav}
+                onEditImage={(url: string) => {
+                  // Capture the generated image and transition to edit phase
+                  setCurrentImageUrl(url)
+                  setFilmstrip([{ url, label: 'Original', tool: 'generate' }])
+                  setFilmstripIndex(0)
+                  setPhase('edit')
+                }}
+                onExportImage={onExportImage}
+              />
+            ) : (
+            /* PHASE 2: Edit tools + image viewer */
             <div className="flex flex-col h-full">
               <div className="flex flex-1 overflow-hidden">
-                {/* LEFT PANEL */}
+                {/* LEFT PANEL — Edit Tools */}
                 <div className="shrink-0 w-[320px] flex flex-col overflow-hidden" style={panelStyle}>
-                  {phase === 'create' ? (
-                    <CreatePanel
-                      characters={characters}
-                      selectedCharId={selectedCharId}
-                      onSelectChar={handleSelectChar}
-                      onGenerate={handleGenerate}
-                      generating={generating}
-                    />
-                  ) : (
-                    <EditPanel
-                      activeTool={activeTool}
-                      onSelectTool={setActiveTool}
-                      onApply={handleApplyTool}
-                      generating={generating}
-                    />
-                  )}
+                  <EditPanel
+                    activeTool={activeTool}
+                    onSelectTool={setActiveTool}
+                    onApply={handleApplyTool}
+                    generating={generating}
+                  />
                 </div>
 
                 {/* RIGHT PANEL — Image Viewer */}
                 <div className="flex-1 flex flex-col overflow-hidden" style={{ background: 'var(--joi-bg-0)' }}>
                   <div className="flex-1 flex items-center justify-center p-6 relative overflow-hidden">
-                    {currentImageUrl ? (
+                    {currentImageUrl && (
                       <div className="relative max-w-full max-h-full flex items-center justify-center">
                         <img
                           src={currentImageUrl}
@@ -952,34 +958,11 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
                           </div>
                         )}
                       </div>
-                    ) : (
-                      <div className="flex flex-col items-center gap-4 text-center">
-                        {generating ? (
-                          <>
-                            <span className="inline-block w-10 h-10 border-2 border-white/15 border-t-[var(--joi-pink)] rounded-full animate-spin" />
-                            <span className="text-sm font-medium" style={{ color: 'var(--joi-text-2)' }}>Generating your scene...</span>
-                            <span className="text-[11px]" style={{ color: 'var(--joi-text-3)' }}>This may take 15-30 seconds</span>
-                          </>
-                        ) : (
-                          <>
-                            <div className="w-20 h-20 rounded-2xl flex items-center justify-center"
-                              style={{ background: 'rgba(255,107,157,.05)', border: '1px solid rgba(255,107,157,.1)' }}>
-                              <Camera size={28} style={{ color: 'var(--joi-pink)', opacity: 0.5 }} />
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium" style={{ color: 'var(--joi-text-2)' }}>No image yet</p>
-                              <p className="text-[11px] mt-1" style={{ color: 'var(--joi-text-3)' }}>
-                                Select a character and configure your scene, then hit Generate.
-                              </p>
-                            </div>
-                          </>
-                        )}
-                      </div>
                     )}
                   </div>
 
-                  {/* Action Bar (phase 2) */}
-                  {phase === 'edit' && currentImageUrl && !generating && (
+                  {/* Action Bar */}
+                  {currentImageUrl && !generating && (
                     <div className="shrink-0 flex items-center justify-center gap-3 px-5 py-3"
                       style={{ borderTop: '1px solid rgba(255,255,255,.04)', background: 'rgba(14,12,20,.5)' }}>
                       <button onClick={handleSaveToGallery}
@@ -1014,6 +997,7 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
                 </div>
               </div>
             </div>
+            )
           )}
           {mode === 'session' && <PhotoSession onNav={onNav} />}
           {mode === 'video' && <VideoStudio onNav={onNav} />}
