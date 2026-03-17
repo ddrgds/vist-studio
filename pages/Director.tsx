@@ -124,7 +124,7 @@ const joiInputStyle = (hasValue: boolean) => ({
   backdropFilter: 'blur(8px)',
 })
 
-export function Director({ onNav }: { onNav?: (page: string) => void }) {
+export function Director({ onNav, onEditImage, onExportImage }: { onNav?: (page: string) => void; onEditImage?: (url: string) => void; onExportImage?: (url: string) => void }) {
   // ── Character ──
   const characters = useCharacterStore(s => s.characters)
   const [selectedCharId, setSelectedCharId] = useState<string | null>(null)
@@ -179,6 +179,7 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
   // ── Engine & generation ──
   const [selectedEngine, setSelectedEngine] = useState<string>('auto')
   const [selectedResolution, setSelectedResolution] = useState('2k')
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState<AspectRatio>(AspectRatio.Portrait)
   const [showEngineModal, setShowEngineModal] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -268,7 +269,7 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
       lighting: lightingValue,
       camera: cameraValue,
       imageSize,
-      aspectRatio: AspectRatio.Portrait,
+      aspectRatio: selectedAspectRatio,
       numberOfImages,
       model,
     }
@@ -414,6 +415,7 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
                       <div className="flex-1 min-w-0">
                         <div className="text-[11px] font-medium" style={{ color: selectedEngine === eng.key ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{eng.userFriendlyName}</div>
                         <div className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>{eng.description}</div>
+                        {eng.bestFor && <div className="text-[8px] mt-0.5" style={{ color: 'var(--joi-pink)', opacity: 0.7 }}>Good for: {eng.bestFor}</div>}
                       </div>
                       <div className="shrink-0 text-right">
                         <div className="text-[9px] font-mono" style={{ color: 'var(--joi-pink)' }}>{eng.creditCost}cr</div>
@@ -421,6 +423,30 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
                       </div>
                     </button>
                   ))}
+                </div>
+
+                <div className="p-3" style={{ borderTop: '1px solid rgba(255,255,255,.04)' }}>
+                  <div className="joi-label mb-2 px-1">Format</div>
+                  <div className="flex gap-1.5">
+                    {[
+                      { id: AspectRatio.Portrait, label: '3:4', icon: '▯', desc: 'Portrait' },
+                      { id: AspectRatio.Square, label: '1:1', icon: '⬜', desc: 'Square' },
+                      { id: AspectRatio.Landscape, label: '4:3', icon: '▭', desc: 'Landscape' },
+                      { id: AspectRatio.Tall, label: '9:16', icon: '📱', desc: 'Story/Reel' },
+                      { id: AspectRatio.Wide, label: '16:9', icon: '🖥️', desc: 'Widescreen' },
+                    ].map(a => (
+                      <button key={a.id} onClick={() => setSelectedAspectRatio(a.id)}
+                        className="flex-1 px-2 py-2 rounded-xl text-center transition-all"
+                        style={{
+                          background: selectedAspectRatio === a.id ? 'rgba(255,107,157,.08)' : 'rgba(255,255,255,.02)',
+                          border: `1px solid ${selectedAspectRatio === a.id ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}`,
+                        }}>
+                        <div className="text-sm mb-0.5">{a.icon}</div>
+                        <div className="text-[10px] font-mono font-bold" style={{ color: selectedAspectRatio === a.id ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{a.label}</div>
+                        <div className="text-[7px]" style={{ color: 'var(--joi-text-3)' }}>{a.desc}</div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="p-3" style={{ borderTop: '1px solid rgba(255,255,255,.04)' }}>
@@ -462,7 +488,7 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
                       color: 'var(--joi-text-3)',
                       background: 'rgba(255,255,255,.02)',
                       border: '1px dashed rgba(255,255,255,.06)',
-                    }}>No characters yet — <span style={{ color: 'var(--joi-pink)', cursor: 'pointer' }} onClick={() => onNav?.('upload')}>create one</span></div>
+                    }}>No characters yet — <span style={{ color: 'var(--joi-pink)', cursor: 'pointer' }} onClick={() => onNav?.('create')}>create one</span></div>
                   ) : (
                     characters.slice(0, 6).map(c => (
                       <button key={c.id} onClick={() => setSelectedCharId(c.id)}
@@ -801,7 +827,51 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
             }}>
 
             {generatedImages.length > 0 ? (
-              <img src={generatedImages[selectedResult]} className="w-full h-full object-cover" alt="Generated hero shot" />
+              <>
+                <img src={generatedImages[selectedResult]} className="w-full h-full object-cover" alt="Generated hero shot" />
+                {/* Floating action bar */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-2 rounded-full z-10"
+                  style={{
+                    background: 'rgba(8,7,12,.65)',
+                    backdropFilter: 'blur(16px)',
+                    border: '1px solid rgba(255,107,157,.15)',
+                    boxShadow: '0 4px 24px rgba(0,0,0,.4)',
+                  }}>
+                  {onEditImage && (
+                    <button onClick={() => onEditImage(generatedImages[selectedResult])}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all hover:scale-[1.04]"
+                      style={{
+                        background: 'rgba(255,107,157,.12)',
+                        color: 'var(--joi-pink)',
+                        border: '1px solid rgba(255,107,157,.18)',
+                      }}>
+                      <span>✨</span> Edit
+                    </button>
+                  )}
+                  {onNav && (
+                    <button onClick={() => onNav('studio')}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all hover:scale-[1.04]"
+                      style={{
+                        background: 'rgba(208,72,176,.10)',
+                        color: 'rgb(208,140,220)',
+                        border: '1px solid rgba(208,72,176,.18)',
+                      }}>
+                      <span>🎬</span> Make Reel
+                    </button>
+                  )}
+                  {onExportImage && (
+                    <button onClick={() => onExportImage(generatedImages[selectedResult])}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all hover:scale-[1.04]"
+                      style={{
+                        background: 'rgba(72,88,224,.10)',
+                        color: 'rgb(140,160,240)',
+                        border: '1px solid rgba(72,88,224,.18)',
+                      }}>
+                      <span>📥</span> Export
+                    </button>
+                  )}
+                </div>
+              </>
             ) : (
               <div className="absolute inset-0" style={{
                 background: 'linear-gradient(135deg, rgba(255,107,157,.04) 0%, var(--joi-bg-1) 50%, rgba(208,72,176,.03) 100%)'
@@ -856,7 +926,33 @@ export function Director({ onNav }: { onNav?: (page: string) => void }) {
                 }} />
             ))
           )}
-          {generatedImages.length > 0 && onNav && (
+          {generatedImages.length > 0 && (onEditImage || onExportImage || onNav) && (
+            <div className="ml-auto shrink-0 flex items-center gap-2">
+              {onEditImage && (
+                <button onClick={() => onEditImage(generatedImages[selectedResult])}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all hover:scale-[1.02]"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(255,107,157,.12), rgba(208,72,176,.08))',
+                    border: '1px solid rgba(255,107,157,.18)',
+                    color: 'var(--joi-pink)',
+                  }}>
+                  <span>✨</span> Edit
+                </button>
+              )}
+              {onExportImage && (
+                <button onClick={() => onExportImage(generatedImages[selectedResult])}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all hover:scale-[1.02]"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(72,88,224,.10), rgba(72,88,224,.06))',
+                    border: '1px solid rgba(72,88,224,.18)',
+                    color: 'rgb(140,160,240)',
+                  }}>
+                  <span>📥</span> Export
+                </button>
+              )}
+            </div>
+          )}
+          {generatedImages.length > 0 && onNav && !onEditImage && !onExportImage && (
             <div className="ml-auto shrink-0 w-56">
               <PipelineCTA label="Perfect it in Editor" targetPage="editor" onNav={onNav} icon="🪄" />
             </div>

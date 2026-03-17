@@ -486,6 +486,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                           <div className="flex-1 min-w-0">
                             <div className="text-[11px] font-medium" style={{ color: selectedEngine === eng.key ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{eng.userFriendlyName}</div>
                             <div className="text-[8px]" style={{ color: 'var(--joi-text-3)' }}>{eng.description}</div>
+                            {eng.bestFor && <div className="text-[7px] mt-0.5" style={{ color: 'var(--joi-pink)', opacity: 0.7 }}>Good for: {eng.bestFor}</div>}
                           </div>
                           <div className="shrink-0 text-right">
                             <div className="text-[9px] font-mono" style={{ color: 'var(--joi-pink)' }}>{eng.creditCost}cr</div>

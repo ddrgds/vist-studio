@@ -1,517 +1,469 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { GradientDots } from '../components/ui/gradient-dots';
+import { HeroCarousel } from '../components/ui/feature-carousel';
 
 interface LandingProps {
   onAuth: () => void;
 }
 
 /* ── Reveal wrapper ───────────────────────────────────────── */
-const Reveal = ({
-  children,
-  delay = 0,
-  y = 30,
-}: {
-  children: React.ReactNode;
-  delay?: number;
-  y?: number;
-}) => (
+const Reveal = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => (
   <motion.div
-    initial={{ opacity: 0, y }}
+    initial={{ opacity: 0, y: 30 }}
     whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true, margin: '-80px' }}
+    viewport={{ once: true, margin: '-60px' }}
     transition={{ delay, duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
   >
     {children}
   </motion.div>
 );
 
-/* ── Data ─────────────────────────────────────────────────── */
-const capabilities = [
-  { icon: '◎', title: 'Director Studio', desc: 'Full scene control — pose, lighting, camera angle, outfit. You direct, AI renders.' },
-  { icon: '✦', title: 'AI Editor', desc: '8 tools in one canvas: relight, face swap, try-on, background, enhance, style transfer, inpaint, 360°.' },
-  { icon: '▦', title: 'Gallery', desc: 'Every creation saved, organized, and exportable. Your visual library grows with you.' },
-  { icon: '◈', title: 'Photo Session', desc: 'Automated multi-shot sessions with preset vibes. One click, dozens of results.' },
-];
+/* ── Colors ────────────────────────────────────────────────── */
+const C = {
+  bg: '#08070C',
+  n900: '#151214',
+  n800: '#1F1A1E',
+  n700: '#342C31',
+  n400: '#A09299',
+  pink: '#FF6B9D',
+  text1: '#f1f5f9',
+  text2: '#cbd5e1',
+  text3: '#94a3b8',
+};
 
-const testimonials = [
-  {
-    quote: "VIST Studio hasn't just built an AI tool — they've sculpted a creative partner. Our virtual talent feels more present than most human creators.",
-    name: 'ELARA VOX',
-    role: 'Creative Lead, Neural Talent Co.',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBjA20cAT9HD6GjAPlHowkz8LdS4a013VHAKLLiNyYFhE1mkCWgt9I5PIfPUYoIiFDfHK_Gtx4JFVucdxylZiKFkm3jUqr6FlWaPUrTTi8RBshN-9u9GxZxQPs1sP4TPj2HbBi0C9JFtQvSHNYCWYmHlIBpyfrNpp4HYTUvLmpJ_VLJpHYop0ZhPl_6Ojz5B452uW46GHZEopbAkBfG86MTAQV0MarSZLaobg7OqQ4uNFfBGY_EbUleK9HEgoWKF7BCO8tMlmfMQBoV',
-  },
-  {
-    quote: "The integration into our marketing workflow reduced production costs by 80% while increasing engagement tenfold. This is the future.",
-    name: 'MARCUS KANE',
-    role: 'Founder, Void Agency',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCirRYegSbbcxO5pwuyz8JKWwgI3hY29LYMjZf2AkY0Y59EK0VV59h2Wec6fQO1DKEGwEOt3VTBI2j_A-AOSbGQejfSxLtbkT-tWgeGSb4PWaKvzw7ep_C2dqUy7rpaoIqkhR2rRbWj3P29uxs569oPsSYyhBCITfNJNjyFY0XZVL7tZwoS5cgmsEZ68-RY-qtK1YjA7CR1TMfY-8tEa15mfnPWei36_EQcqcOfIehl97sGbvKfXknHzowSnhTVXlYEdF-4sktlqJG6',
-  },
-  {
-    quote: "Transcending the uncanny valley was the goal. VIST Studio didn't just cross it — they built a palace on the other side.",
-    name: 'SAYA-01',
-    role: 'Virtual Entity, Global Connect',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAQwT-E3Ui2Hpa8kpwynVwPbRp4dhJ12pImKkuP2JrMK0lZETw7w8Oz9ZWdU6w2UKfp3ZNHE0kn9xW1n4N7lCOmKNEB4XTyAS1gPi6LVvsN20PblDUm7rZ3KCfajh3xUbCZqOdLiAD3j7QnwbJnKlyhVbTXcXWomWRJekP5U97UNveRD-QzJn-_HoTC4KZwFgBngQG1ZxvbNxMsBXQMS1CnubeVwSz60vgfEvcg3VP-myVNMdIjKnIvPrPseCniwoY_ugGv2p5n_-B6',
-  },
-];
+/* ── Phone carousel images ─────────────────────────────────── */
+const phoneImages = ['/phone/1.png', '/phone/2.png', '/phone/3.png', '/phone/4.png', '/phone/5.png'];
 
-const environments = [
-  {
-    title: 'Neo-Tokyo',
-    sub: 'Environment Simulation 01',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCi8byWsN_25zllahuauGqHkHvaT2uQNeRGAUXQMfDTp9OQ5o8EauArqSKFUOzQ7vBpdkgmbaixd4zcJtlyROnkJ06uoJSRQwaOmYIspzOsVlaVGlGhAomeyyIoYvVJhGG3UojQJDhJH6S1oluuvkXW4q2cpzgsVUBOLWl_Bif5AgtBJavreDNSrEP-a-tZQRUL0a4C1r_GPetsPRrXDFBirlY9vwaF1k7qqoKXASpCf-nYf3oqWwk1IB7FMvfcpceAfO2sk_NwJ9Pb',
-  },
-  {
-    title: 'Cyber-Apartment',
-    sub: 'Environment Simulation 02',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBvvF0lM6mAyc1NTB02hhxiPB7c52QzYHTAcHEVUb5MS1qn5v98oiMVvySqG--TJ4DzYkjsImxMmH7Y_RKA65WvA75gMKQOseuBGatFb8ZW-i5DoQ5NQzcXF9A2v28rQHgnjvwKW0H55oxXdHbUFuZ9-m42-vlIZajH7PZibU7eG8DtjzbEGQwhHP6WSjv8kpgMsa-IMLhpJe1T-SHKdFj_Kqbavd_DtY1cGFep7QpCu6meC6mghoZ7NPr2YviIObGboh-NXZPhr-kJ',
-  },
+/* ── Showcase images (reuse from phone + more) ─────────────── */
+const showcaseImages = [
+  { src: '/phone/1.png', name: '@luna_virtual', time: '15s' },
+  { src: '/phone/4.png', name: '@vex.ai', time: '12s' },
+  { src: '/phone/3.png', name: '@nova.x', time: '18s' },
 ];
 
 /* ════════════════════════════════════════════════════════════
-   Landing — Joi Holographic / Narrative Style
+   Landing — V2 Design (Stitch reference)
    ════════════════════════════════════════════════════════════ */
 export default function Landing({ onAuth }: LandingProps) {
+  // phoneIdx for the IG mockup section (hero carousel manages its own state)
+  const [phoneIdx, setPhoneIdx] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setPhoneIdx(i => (i + 1) % phoneImages.length), 3000);
+    return () => clearInterval(t);
+  }, []);
+
   return (
-    <div style={{ background: 'var(--joi-bg-0)', color: 'var(--joi-text-1)', minHeight: '100vh', overflowX: 'hidden' }}>
+    <div style={{ background: C.bg, color: C.text1, minHeight: '100vh', fontFamily: "'DM Sans', sans-serif" }}>
 
-      {/* ── Fixed Nav ─────────────────────────────────────────── */}
-      <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
+      {/* ── Header ─────────────────────────────────────────── */}
+      <header style={{
+        position: 'sticky', top: 0, zIndex: 50,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 40px', height: '60px',
-        background: 'rgba(10,8,16,0.85)', backdropFilter: 'blur(16px)',
-        borderBottom: '1px solid rgba(255,107,157,0.08)',
+        padding: '0 80px', height: '64px',
+        background: 'rgba(8,7,12,0.8)', backdropFilter: 'blur(12px)',
+        borderBottom: `1px solid ${C.n700}`,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            width: '10px', height: '10px', borderRadius: '3px',
-            background: 'var(--joi-pink)',
-            boxShadow: '0 0 12px rgba(255,107,157,0.5)',
-          }} />
-          <span style={{
-            fontFamily: "'Instrument Serif', serif", fontWeight: 700,
-            fontSize: '20px', letterSpacing: '0.08em', color: 'var(--joi-pink)',
-            fontStyle: 'italic',
-          }}>
-            VIST
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ width: '24px', height: '24px', color: C.pink }}>
+            <svg fill="currentColor" viewBox="0 0 48 48"><path d="M24 45.8096C19.6865 45.8096 15.4698 44.5305 11.8832 42.134C8.29667 39.7376 5.50128 36.3314 3.85056 32.3462C2.19985 28.361 1.76794 23.9758 2.60947 19.7452C3.451 15.5145 5.52816 11.6284 8.57829 8.5783C11.6284 5.52817 15.5145 3.45101 19.7452 2.60948C23.9758 1.76795 28.361 2.19986 32.3462 3.85057C36.3314 5.50129 39.7376 8.29668 42.134 11.8833C44.5305 15.4698 45.8096 19.6865 45.8096 24L24 24L24 45.8096Z" /></svg>
+          </div>
+          <span style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.02em' }}>VIST Studio</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-          <a href="#capabilities" style={{ fontSize: '12px', fontFamily: "'DM Sans', sans-serif", fontWeight: 500, color: 'var(--joi-text-3)', textDecoration: 'none', letterSpacing: '0.06em', transition: 'color 150ms' }}>STUDIO</a>
-          <a href="#worlds" style={{ fontSize: '12px', fontFamily: "'DM Sans', sans-serif", fontWeight: 500, color: 'var(--joi-text-3)', textDecoration: 'none', letterSpacing: '0.06em', transition: 'color 150ms' }}>WORLDS</a>
-          <a href="#voices" style={{ fontSize: '12px', fontFamily: "'DM Sans', sans-serif", fontWeight: 500, color: 'var(--joi-text-3)', textDecoration: 'none', letterSpacing: '0.06em', transition: 'color 150ms' }}>VOICES</a>
-          <button
-            onClick={onAuth}
-            style={{
-              background: 'var(--joi-pink)', color: '#fff',
-              border: 'none', borderRadius: '999px',
-              padding: '8px 24px', fontSize: '11px', fontWeight: 800,
-              letterSpacing: '0.2em', cursor: 'pointer',
-              boxShadow: '0 0 20px rgba(255,107,157,0.3)',
-              transition: 'transform 150ms, box-shadow 150ms',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 0 30px rgba(255,107,157,0.5)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(255,107,157,0.3)'; }}
-          >
-            ENTER STUDIO
-          </button>
-        </div>
-      </nav>
-
-      {/* ── Hero ──────────────────────────────────────────────── */}
-      <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-        {/* Background image — 2048px upscaled via AuraSR */}
-        <div style={{
-          position: 'absolute', inset: 0, zIndex: 0,
-          backgroundImage: "url('/hero-2048.png')",
-          backgroundSize: 'cover', backgroundPosition: 'center',
-          opacity: 0.5,
-        }} />
-
-        {/* Gradient dots — subtle tech texture */}
-        <GradientDots
-          duration={25}
-          colorCycleDuration={8}
-          dotSize={1}
-          spacing={18}
-          style={{ zIndex: 1, opacity: 0.45 }}
-        />
-
-        {/* Gradient overlays */}
-        <div style={{ position: 'absolute', inset: 0, zIndex: 2, background: 'linear-gradient(to top, var(--joi-bg-0), transparent 50%, rgba(10,8,16,0.5))' }} />
-        <div style={{ position: 'absolute', inset: 0, zIndex: 2, background: 'radial-gradient(ellipse at 30% 50%, rgba(255,107,157,0.08), transparent 60%)' }} />
-
-        {/* Content */}
-        <div style={{ position: 'relative', zIndex: 3, textAlign: 'center', padding: '0 24px', maxWidth: '900px' }}>
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: '8px',
-              marginBottom: '32px', padding: '6px 18px',
-              borderRadius: '999px',
-              background: 'rgba(255,107,157,0.08)',
-              border: '1px solid rgba(255,107,157,0.2)',
-            }}
-          >
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--joi-pink)', boxShadow: '0 0 8px var(--joi-pink)' }} />
-            <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.25em', color: 'var(--joi-pink)' }}>
-              MIRROR PROTOCOL ACTIVE
-            </span>
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.35 }}
-            style={{
-              fontSize: 'clamp(3rem, 7vw, 5.5rem)',
-              fontFamily: "'Instrument Serif', serif",
-              fontWeight: 900, lineHeight: 0.95,
-              letterSpacing: '-0.02em',
-              marginBottom: '28px',
-              textShadow: '2px 0 rgba(255,107,157,0.3), -2px 0 rgba(184,160,232,0.2)',
-            }}
-          >
-            YOUR DIGITAL<br />
-            <span style={{ color: 'var(--joi-pink)', fontStyle: 'italic' }}>ALTER EGO</span> AWAITS
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.55 }}
-            style={{
-              fontSize: 'clamp(1rem, 1.8vw, 1.15rem)',
-              color: 'var(--joi-text-2)', lineHeight: 1.7,
-              maxWidth: '600px', margin: '0 auto 40px',
-              fontFamily: "'DM Sans', sans-serif",
-            }}
-          >
-            Where human intuition meets holographic perfection. Your digital alter ego
-            is ready to transcend the physical realm.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.7 }}
-            style={{ display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap' }}
-          >
-            <button
-              onClick={onAuth}
-              style={{
-                background: 'var(--joi-pink)', color: '#fff', border: 'none',
-                borderRadius: '12px', padding: '16px 40px',
-                fontSize: '14px', fontWeight: 800, letterSpacing: '0.15em',
-                cursor: 'pointer',
-                boxShadow: '0 4px 30px rgba(255,107,157,0.3)',
-                transition: 'transform 150ms, box-shadow 150ms',
+        <div style={{ display: 'flex', alignItems: 'center', gap: '36px' }}>
+          <nav style={{ display: 'flex', gap: '36px' }}>
+            {['Features', 'How it Works', 'Showcase'].map(l => (
+              <a key={l} href={`#${l.toLowerCase().replace(/\s/g, '-')}`} style={{
+                fontSize: '14px', fontWeight: 500, color: C.text3,
+                textDecoration: 'none', transition: 'color 150ms',
               }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.04)'; e.currentTarget.style.boxShadow = '0 4px 40px rgba(255,107,157,0.5)'; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 4px 30px rgba(255,107,157,0.3)'; }}
-            >
-              REACH OUT
-            </button>
-            <button
-              onClick={() => document.getElementById('capabilities')?.scrollIntoView({ behavior: 'smooth' })}
-              style={{
-                background: 'transparent', color: 'var(--joi-text-2)',
-                border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px',
-                padding: '16px 40px', fontSize: '14px', fontWeight: 700,
-                letterSpacing: '0.15em', cursor: 'pointer',
-                backdropFilter: 'blur(8px)',
-                transition: 'border-color 150ms, color 150ms',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,107,157,0.3)'; e.currentTarget.style.color = 'var(--joi-text-1)'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'var(--joi-text-2)'; }}
-            >
-              EXPLORE
-            </button>
-          </motion.div>
+                onMouseEnter={e => (e.currentTarget.style.color = C.pink)}
+                onMouseLeave={e => (e.currentTarget.style.color = C.text3)}
+              >{l}</a>
+            ))}
+          </nav>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button onClick={onAuth} style={{
+              background: C.n800, color: C.text1, border: 'none',
+              borderRadius: '999px', padding: '0 24px', height: '40px',
+              fontSize: '14px', fontWeight: 700, cursor: 'pointer',
+              transition: 'background 150ms',
+            }}
+              onMouseEnter={e => (e.currentTarget.style.background = C.n700)}
+              onMouseLeave={e => (e.currentTarget.style.background = C.n800)}
+            >Log In</button>
+            <button onClick={onAuth} style={{
+              background: C.pink, color: C.bg, border: 'none',
+              borderRadius: '999px', padding: '0 24px', height: '40px',
+              fontSize: '14px', fontWeight: 700, cursor: 'pointer',
+              boxShadow: '0 0 15px rgba(255,107,157,0.4)',
+              transition: 'box-shadow 150ms',
+            }}
+              onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 0 25px rgba(255,107,157,0.6)')}
+              onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 0 15px rgba(255,107,157,0.4)')}
+            >Get Started</button>
+          </div>
         </div>
+      </header>
 
-        {/* Bottom fade */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '150px', background: 'linear-gradient(transparent, var(--joi-bg-0))', zIndex: 3, pointerEvents: 'none' }} />
-      </section>
+      {/* ── Hero — 3D Carousel ────────────────────────────── */}
+      <HeroCarousel
+        title={
+          <>
+            CREATE CONTENT THAT<br />
+            <span style={{
+              backgroundImage: 'linear-gradient(90deg, #FF6B9D, #A78BFA)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            }}>STOPS THE SCROLL</span>
+          </>
+        }
+        subtitle="VIST Studio: The ultimate AI social media content platform for virtual influencers. Generate hyper-realistic posts, reels, and stories in seconds."
+        images={phoneImages.map((src, i) => ({ src, alt: `AI influencer ${i + 1}` }))}
+        onCtaClick={onAuth}
+        ctaLabel="Start Creating Now"
+        style={{ minHeight: 'auto', paddingTop: '100px', paddingBottom: '40px' }}
+      />
 
-      {/* ── Capabilities ──────────────────────────────────────── */}
-      <section id="capabilities" style={{ padding: '120px 24px', maxWidth: '1200px', margin: '0 auto' }}>
+      {/* ── Features ──────────────────────────────────────── */}
+      <section id="features" style={{ padding: '100px 80px', maxWidth: '1200px', margin: '0 auto' }}>
         <Reveal>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
-            <div style={{ height: '1px', width: '48px', background: 'var(--joi-pink)' }} />
-            <span style={{ color: 'var(--joi-pink)', fontSize: '12px', fontWeight: 700, letterSpacing: '0.2em' }}>
-              CAPABILITIES
-            </span>
+          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+            <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: '12px' }}>
+              Why VIST Studio?
+            </h2>
+            <p style={{ color: C.n400, fontSize: '18px', maxWidth: '600px', margin: '0 auto' }}>
+              Unlock the power of AI-driven content creation tailored specifically for virtual influencer personas.
+            </p>
           </div>
         </Reveal>
 
-        <Reveal delay={0.05}>
-          <h2 style={{
-            fontFamily: "'Instrument Serif', serif", fontStyle: 'italic',
-            fontSize: 'clamp(2rem, 4vw, 2.8rem)', fontWeight: 700,
-            marginBottom: '60px', lineHeight: 1.15,
-          }}>
-            Everything you need.{' '}
-            <span style={{ color: 'var(--joi-text-3)' }}>Nothing you don't.</span>
-          </h2>
-        </Reveal>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
-          {capabilities.map((c, i) => (
-            <div key={c.title}>
-            <Reveal delay={i * 0.08}>
-              <div
-                className="joi-glass joi-border-glow"
-                style={{ padding: '32px 28px', borderRadius: '16px', height: '100%' }}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+          {[
+            { icon: '💡', title: 'Endless Creativity', desc: 'Generate unlimited concepts, aesthetics, and campaign ideas that perfectly match your virtual influencer\'s unique persona.' },
+            { icon: '📸', title: 'Hyper-Realistic Gen', desc: 'Our cutting-edge AI models generate hyper-realistic photos and short-form videos that look indistinguishable from real life.' },
+            { icon: '🚀', title: 'Seamless Posting', desc: 'Schedule, caption, and post directly to Instagram, TikTok, and X with one click from our integrated social media dashboard.' },
+          ].map((f, i) => (
+            <Reveal key={f.title} delay={i * 0.1}>
+              <div style={{
+                position: 'relative', overflow: 'hidden',
+                padding: '32px', borderRadius: '16px',
+                background: 'rgba(31,26,30,0.4)', backdropFilter: 'blur(12px)',
+                border: `1px solid ${C.n700}`,
+                transition: 'border-color 300ms, box-shadow 300ms',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,107,157,0.3)'; e.currentTarget.style.boxShadow = '0 0 30px rgba(255,107,157,0.1)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = C.n700; e.currentTarget.style.boxShadow = 'none'; }}
               >
                 <div style={{
-                  fontSize: '28px', color: 'var(--joi-pink)',
-                  marginBottom: '16px', lineHeight: 1,
-                  textShadow: '0 0 20px rgba(255,107,157,0.3)',
-                }}>
-                  {c.icon}
-                </div>
-                <h3 style={{
-                  fontSize: '14px', fontWeight: 800,
-                  letterSpacing: '0.08em', marginBottom: '10px',
-                  color: 'var(--joi-text-1)',
-                }}>
-                  {c.title}
-                </h3>
-                <p style={{ fontSize: '13px', color: 'var(--joi-text-2)', lineHeight: 1.6 }}>
-                  {c.desc}
-                </p>
+                  position: 'absolute', top: '-32px', right: '-32px', width: '128px', height: '128px',
+                  background: 'rgba(255,107,157,0.1)', borderRadius: '50%', filter: 'blur(24px)',
+                }} />
+                <div style={{
+                  width: '56px', height: '56px', borderRadius: '12px',
+                  background: 'rgba(255,107,157,0.1)', color: C.pink,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '28px', marginBottom: '16px', position: 'relative', zIndex: 1,
+                }}>{f.icon}</div>
+                <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '8px', position: 'relative', zIndex: 1 }}>{f.title}</h3>
+                <p style={{ color: C.n400, fontSize: '15px', lineHeight: 1.6, position: 'relative', zIndex: 1 }}>{f.desc}</p>
               </div>
             </Reveal>
-            </div>
           ))}
         </div>
       </section>
 
-      {/* ── Worlds / Environments ─────────────────────────────── */}
-      <section id="worlds" style={{ padding: '80px 24px 120px', maxWidth: '1200px', margin: '0 auto' }}>
+      {/* ── Split Section — Character + Value Props ─────────── */}
+      <section style={{
+        padding: '80px 80px', maxWidth: '1200px', margin: '0 auto',
+        display: 'flex', alignItems: 'center', gap: '60px',
+      }}>
+        {/* Left — Character Image */}
         <Reveal>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
-            <div style={{ height: '1px', width: '48px', background: 'var(--joi-magenta)' }} />
-            <span style={{ color: 'var(--joi-magenta)', fontSize: '12px', fontWeight: 700, letterSpacing: '0.2em' }}>
-              WORLD BUILDING
-            </span>
+          <div style={{
+            width: '400px', flexShrink: 0, borderRadius: '24px', overflow: 'hidden',
+            boxShadow: '0 30px 80px rgba(0,0,0,0.4), 0 0 60px rgba(255,107,157,0.08)',
+            border: '1px solid rgba(255,255,255,0.04)',
+          }}>
+            <img src="/phone/hero-split.png" alt="AI influencer" style={{
+              width: '100%', display: 'block',
+            }} />
           </div>
         </Reveal>
 
-        <Reveal delay={0.05}>
-          <h2 style={{
-            fontFamily: "'Instrument Serif', serif", fontStyle: 'italic',
-            fontSize: 'clamp(2rem, 4vw, 2.8rem)', fontWeight: 700,
-            marginBottom: '48px', lineHeight: 1.15,
-          }}>
-            Your characters live{' '}
-            <span style={{ color: 'var(--joi-text-3)' }}>somewhere.</span>
-          </h2>
-        </Reveal>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px' }}>
-          {environments.map((env, i) => (
-            <div key={env.title}>
-            <Reveal delay={i * 0.1}>
-              <div style={{
-                position: 'relative', borderRadius: '16px', overflow: 'hidden',
-                aspectRatio: '16/9', cursor: 'pointer',
-                border: '1px solid rgba(255,255,255,0.04)',
-                transition: 'transform 300ms, box-shadow 300ms',
-              }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 8px 40px rgba(255,107,157,0.15)'; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
-              >
-                <img
-                  src={env.img}
-                  alt={env.title}
-                  style={{
-                    width: '100%', height: '100%', objectFit: 'cover',
-                    filter: 'grayscale(30%)',
-                    transition: 'filter 500ms, transform 500ms',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.filter = 'grayscale(0%)'; e.currentTarget.style.transform = 'scale(1.05)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.filter = 'grayscale(30%)'; e.currentTarget.style.transform = 'scale(1)'; }}
-                />
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(transparent 40%, rgba(10,8,16,0.85))' }} />
-                <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,107,157,0.08)', mixBlendMode: 'overlay' }} />
-                <div style={{ position: 'absolute', bottom: '24px', left: '24px' }}>
-                  <h3 style={{ fontSize: '22px', fontWeight: 700 }}>{env.title}</h3>
-                  <p style={{ fontSize: '12px', color: 'var(--joi-text-3)', fontStyle: 'italic' }}>{env.sub}</p>
-                </div>
-              </div>
-            </Reveal>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Testimonials ──────────────────────────────────────── */}
-      <section
-        id="voices"
-        style={{
-          padding: '120px 24px',
-          background: 'linear-gradient(180deg, transparent 0%, rgba(255,107,157,0.03) 100%)',
-        }}
-      >
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <Reveal>
+        {/* Right — Value props */}
+        <div style={{ flex: 1 }}>
+          <Reveal delay={0.1}>
             <h2 style={{
-              textAlign: 'center',
-              fontFamily: "'Instrument Serif', serif", fontStyle: 'italic',
-              fontSize: 'clamp(2rem, 4vw, 2.8rem)', fontWeight: 700,
-              marginBottom: '64px', letterSpacing: '-0.01em',
+              fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 900,
+              letterSpacing: '-0.02em', lineHeight: 1.1, marginBottom: '20px',
             }}>
-              VOICES FROM THE VOID
+              She's not real.<br />
+              <span style={{ color: C.pink }}>Her engagement is.</span>
             </h2>
+            <p style={{ color: C.n400, fontSize: '17px', lineHeight: 1.7, marginBottom: '32px', maxWidth: '440px' }}>
+              Create AI characters that post like real influencers. Same aesthetics, same engagement — zero production costs.
+            </p>
           </Reveal>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '28px', alignItems: 'start' }}>
-            {testimonials.map((t, i) => (
-              <div key={t.name}>
-              <Reveal delay={i * 0.1}>
-                <div
-                  style={{
-                    background: 'rgba(255,107,157,0.03)',
-                    backdropFilter: 'blur(12px)',
-                    border: '1px solid rgba(255,107,157,0.1)',
-                    borderRadius: '20px',
-                    padding: '40px 32px',
-                    position: 'relative',
-                    marginTop: i === 1 ? '40px' : '0',
-                    transition: 'border-color 300ms, box-shadow 300ms',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,107,157,0.25)'; e.currentTarget.style.boxShadow = '0 8px 40px rgba(255,107,157,0.08)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,107,157,0.1)'; e.currentTarget.style.boxShadow = 'none'; }}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {[
+              { icon: '📸', stat: '50K+', label: 'Photos generated by creators' },
+              { icon: '🎬', stat: '4K+', label: 'Videos & reels produced' },
+              { icon: '⚡', stat: '<15s', label: 'Average generation time' },
+            ].map((item, i) => (
+              <Reveal key={item.label} delay={0.15 + i * 0.08}>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '16px',
+                  padding: '16px 20px', borderRadius: '14px',
+                  background: 'rgba(31,26,30,0.4)',
+                  border: `1px solid ${C.n700}`,
+                  transition: 'border-color 200ms',
+                }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,107,157,0.2)')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = C.n700)}
                 >
-                  {/* Avatar */}
-                  <div style={{
-                    position: 'absolute', top: '-24px', left: '32px',
-                    width: '48px', height: '48px', borderRadius: '50%', overflow: 'hidden',
-                    border: '2px solid var(--joi-pink)',
-                    boxShadow: '0 0 15px rgba(255,107,157,0.4)',
-                  }}>
-                    <img src={t.avatar} alt={t.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
-
-                  <p style={{
-                    fontSize: '14px', color: 'var(--joi-text-2)', fontStyle: 'italic',
-                    lineHeight: 1.7, marginBottom: '24px',
-                  }}>
-                    "{t.quote}"
-                  </p>
+                  <span style={{ fontSize: '24px' }}>{item.icon}</span>
                   <div>
-                    <h4 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--joi-pink)', letterSpacing: '0.05em' }}>
-                      {t.name}
-                    </h4>
-                    <p style={{ fontSize: '10px', letterSpacing: '0.12em', color: 'var(--joi-text-3)', marginTop: '2px' }}>
-                      {t.role}
-                    </p>
+                    <span style={{
+                      fontSize: '20px', fontWeight: 800, color: C.pink,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}>{item.stat}</span>
+                    <span style={{ fontSize: '14px', color: C.n400, marginLeft: '10px' }}>{item.label}</span>
                   </div>
                 </div>
               </Reveal>
-              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Final CTA ─────────────────────────────────────────── */}
-      <section style={{ padding: '120px 24px', textAlign: 'center', position: 'relative' }}>
-        {/* Ambient glow */}
+      {/* ── Instagram Phone Mockup ────────────────────────── */}
+      <section style={{ padding: '80px 80px', maxWidth: '1200px', margin: '0 auto' }}>
+        <Reveal>
+          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+            <h2 style={{ fontSize: 'clamp(1.8rem, 3.5vw, 2.5rem)', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: '12px' }}>
+              Content that looks <span style={{ color: C.pink }}>real</span>
+            </h2>
+            <p style={{ color: C.n400, fontSize: '16px', maxWidth: '500px', margin: '0 auto' }}>
+              Every post is indistinguishable from a real influencer's feed.
+            </p>
+          </div>
+        </Reveal>
+
+        <Reveal delay={0.15}>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            {/* Phone frame */}
+            <div style={{
+              width: '340px', borderRadius: '40px',
+              border: '4px solid rgba(255,255,255,0.08)',
+              background: '#111', padding: '14px',
+              boxShadow: '0 30px 80px rgba(0,0,0,0.5), 0 0 100px rgba(255,107,157,0.12)',
+            }}>
+              {/* Notch */}
+              <div style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '2px 10px 10px', fontSize: '11px', color: 'rgba(255,255,255,0.4)',
+              }}>
+                <span>9:41</span>
+                <div style={{ width: '80px', height: '24px', borderRadius: '12px', background: '#000' }} />
+                <span style={{ fontSize: '10px' }}>●●●</span>
+              </div>
+
+              {/* IG Header */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '8px 10px 12px', borderBottom: '1px solid rgba(255,255,255,0.06)',
+              }}>
+                <div style={{
+                  width: '36px', height: '36px', borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #FF6B9D, #A78BFA)',
+                  padding: '2px',
+                }}>
+                  <img src="/phone/2.png" alt="" style={{
+                    width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover',
+                    border: '2px solid #111',
+                  }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: C.text1 }}>vist_character</div>
+                  <div style={{ fontSize: '10px', color: C.n400 }}>Miami, Florida</div>
+                </div>
+                <span style={{ color: C.n400, fontSize: '16px', letterSpacing: '2px' }}>•••</span>
+              </div>
+
+              {/* Post Image — carousel */}
+              <div style={{ position: 'relative', aspectRatio: '4/5', overflow: 'hidden', background: C.n800 }}>
+                {phoneImages.map((src, i) => (
+                  <img key={i} src={src} alt="" style={{
+                    position: 'absolute', inset: 0, width: '100%', height: '100%',
+                    objectFit: 'cover',
+                    opacity: i === phoneIdx ? 1 : 0,
+                    transition: 'opacity 0.6s ease',
+                  }} />
+                ))}
+                {/* Carousel dots */}
+                <div style={{
+                  position: 'absolute', bottom: '10px', left: '50%', transform: 'translateX(-50%)',
+                  display: 'flex', gap: '5px',
+                }}>
+                  {phoneImages.map((_, i) => (
+                    <div key={i} style={{
+                      width: i === phoneIdx ? '18px' : '5px', height: '5px', borderRadius: '3px',
+                      background: i === phoneIdx ? C.pink : 'rgba(255,255,255,0.3)',
+                      transition: 'all 0.3s ease',
+                    }} />
+                  ))}
+                </div>
+              </div>
+
+              {/* IG Actions */}
+              <div style={{ padding: '12px 10px' }}>
+                <div style={{ display: 'flex', gap: '14px', marginBottom: '8px', fontSize: '20px' }}>
+                  <span>♡</span><span>💬</span><span>↗</span>
+                  <span style={{ marginLeft: 'auto' }}>☆</span>
+                </div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: C.text1, marginBottom: '4px' }}>24,847 likes</div>
+                <div style={{ fontSize: '12px', color: C.text2, lineHeight: 1.5 }}>
+                  <span style={{ fontWeight: 700, color: C.text1 }}>vist_character</span>{' '}
+                  Golden hour hits different ✨ New collection dropping soon 🔥
+                </div>
+                <div style={{ fontSize: '10px', color: C.n400, marginTop: '6px' }}>View all 342 comments</div>
+                <div style={{ fontSize: '10px', color: C.n400, marginTop: '2px' }}>2 HOURS AGO</div>
+              </div>
+            </div>
+          </div>
+        </Reveal>
+      </section>
+
+      {/* ── How it Works ──────────────────────────────────── */}
+      <section id="how-it-works" style={{ padding: '80px 80px', maxWidth: '800px', margin: '0 auto' }}>
+        <Reveal>
+          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+            <h2 style={{ fontSize: 'clamp(1.8rem, 3.5vw, 2.5rem)', fontWeight: 700, marginBottom: '8px' }}>How it Works</h2>
+            <p style={{ color: C.n400, fontSize: '16px' }}>Three simple steps to viral content.</p>
+          </div>
+        </Reveal>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+          {[
+            { num: '1', title: 'Create', desc: "Define your influencer's style, location, and prompt. Upload reference images or use our preset aesthetics.", icon: '✏️' },
+            { num: '2', title: 'Generate', desc: 'Let our advanced AI work its magic. Review multiple variations, upscale, and fine-tune details until it\'s perfect.', icon: '✨' },
+            { num: '3', title: 'Post', desc: 'Generate engaging captions automatically and schedule your content directly to your connected social channels.', icon: '📤' },
+          ].map((s, i) => (
+            <Reveal key={s.num} delay={i * 0.1}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '24px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0' }}>
+                  <div style={{
+                    width: '48px', height: '48px', borderRadius: '50%',
+                    background: C.n800, border: `2px solid ${C.pink}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: C.pink, fontSize: '20px', flexShrink: 0,
+                  }}>{s.icon}</div>
+                  {i < 2 && (
+                    <div style={{
+                      width: '2px', height: '64px',
+                      background: `linear-gradient(to bottom, ${C.pink}, ${C.n700})`,
+                    }} />
+                  )}
+                </div>
+                <div style={{ paddingTop: '8px', paddingBottom: i < 2 ? '24px' : '0' }}>
+                  <h3 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px' }}>{s.num}. {s.title}</h3>
+                  <p style={{ color: C.n400, fontSize: '17px', lineHeight: 1.6 }}>{s.desc}</p>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Showcase ──────────────────────────────────────── */}
+      <section id="showcase" style={{ padding: '80px 80px', maxWidth: '1200px', margin: '0 auto' }}>
+        <Reveal>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '32px' }}>
+            <div>
+              <h2 style={{ fontSize: 'clamp(1.8rem, 3.5vw, 2.5rem)', fontWeight: 700, marginBottom: '8px' }}>Showcase</h2>
+              <p style={{ color: C.n400 }}>AI Influencers built with VIST</p>
+            </div>
+            <button onClick={onAuth} style={{
+              background: 'transparent', border: 'none', color: C.pink,
+              fontSize: '14px', fontWeight: 600, cursor: 'pointer',
+            }}>View Gallery →</button>
+          </div>
+        </Reveal>
+
+        <div style={{ columnCount: 3, columnGap: '20px' }}>
+          {showcaseImages.map((img, i) => (
+            <Reveal key={i} delay={i * 0.1}>
+              <div style={{
+                breakInside: 'avoid', borderRadius: '16px', overflow: 'hidden',
+                position: 'relative', marginBottom: '20px', cursor: 'pointer',
+              }}
+                onClick={onAuth}
+              >
+                <img src={img.src} alt="" style={{
+                  width: '100%', display: 'block',
+                  aspectRatio: i === 1 ? '1/1' : i === 0 ? '3/4' : '4/5',
+                  objectFit: 'cover',
+                }} />
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  background: 'linear-gradient(to top, rgba(8,7,12,0.9), transparent 50%, transparent)',
+                  opacity: 0, transition: 'opacity 300ms',
+                  display: 'flex', alignItems: 'flex-end', padding: '24px',
+                }}
+                  onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                  onMouseLeave={e => (e.currentTarget.style.opacity = '0')}
+                >
+                  <div>
+                    <p style={{ fontWeight: 700, fontSize: '18px' }}>{img.name}</p>
+                    <p style={{ fontSize: '13px', color: C.text3 }}>Generated in {img.time}</p>
+                  </div>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Final CTA ─────────────────────────────────────── */}
+      <section style={{ padding: '120px 80px', textAlign: 'center', position: 'relative' }}>
         <div style={{
           position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-          width: '60%', height: '60%',
-          background: 'radial-gradient(ellipse, rgba(255,107,157,0.06), transparent 70%)',
-          pointerEvents: 'none',
+          width: '50%', height: '100%', borderRadius: '50%',
+          background: 'rgba(255,107,157,0.05)', filter: 'blur(120px)', pointerEvents: 'none',
         }} />
-
-        <div style={{ position: 'relative', maxWidth: '700px', margin: '0 auto' }}>
-          <Reveal>
-            <h1 style={{
-              fontSize: 'clamp(4rem, 10vw, 8rem)',
-              fontFamily: "'Instrument Serif', serif", fontWeight: 900,
-              fontStyle: 'italic', letterSpacing: '-0.03em',
-              opacity: 0.06, lineHeight: 0.9, marginBottom: '48px',
-              userSelect: 'none',
-            }}>
-              VIST STUDIO
-            </h1>
-          </Reveal>
-
-          <Reveal delay={0.1}>
-            <button
-              onClick={onAuth}
-              style={{
-                position: 'relative',
-                background: 'var(--joi-pink)', color: '#fff', border: 'none',
-                borderRadius: '14px', padding: '20px 52px',
-                fontSize: '16px', fontWeight: 900, letterSpacing: '0.3em',
-                cursor: 'pointer',
-                boxShadow: '0 0 40px rgba(255,107,157,0.35)',
-                transition: 'transform 150ms, box-shadow 150ms',
-                overflow: 'hidden',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 0 60px rgba(255,107,157,0.5)'; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 0 40px rgba(255,107,157,0.35)'; }}
+        <Reveal>
+          <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', fontWeight: 900, marginBottom: '20px', position: 'relative', zIndex: 1 }}>
+            Ready to build your empire?
+          </h2>
+          <p style={{ fontSize: '20px', color: C.n400, marginBottom: '40px', maxWidth: '640px', margin: '0 auto 40px', position: 'relative', zIndex: 1 }}>
+            Join thousands of creators building the next generation of social media influencers with VIST Studio.
+          </p>
+          <div style={{ position: 'relative', zIndex: 1, display: 'inline-block' }}>
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: C.pink, filter: 'blur(20px)', opacity: 0.4, borderRadius: '999px',
+            }} />
+            <button onClick={onAuth} style={{
+              position: 'relative', background: C.pink, color: C.bg, border: 'none',
+              borderRadius: '999px', padding: '0 48px', height: '64px',
+              fontSize: '20px', fontWeight: 700, cursor: 'pointer',
+              transition: 'transform 300ms',
+            }}
+              onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')}
+              onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
             >
-              ENTER THE VOID
+              Get Started for Free
             </button>
-          </Reveal>
-        </div>
+          </div>
+        </Reveal>
       </section>
 
-      {/* ── Footer ────────────────────────────────────────────── */}
+      {/* ── Footer ────────────────────────────────────────── */}
       <footer style={{
-        borderTop: '1px solid rgba(255,107,157,0.08)',
-        padding: '40px 24px',
-        maxWidth: '1200px', margin: '0 auto',
+        borderTop: `1px solid ${C.n800}`, padding: '40px 0', marginTop: '40px',
+        textAlign: 'center', color: C.n400, fontSize: '14px',
       }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          flexWrap: 'wrap', gap: '16px',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{
-              width: '8px', height: '8px', borderRadius: '2px',
-              background: 'var(--joi-pink)',
-              boxShadow: '0 0 8px rgba(255,107,157,0.4)',
-            }} />
-            <span style={{
-              fontFamily: "'Instrument Serif', serif", fontWeight: 700,
-              fontSize: '14px', letterSpacing: '0.06em',
-              color: 'var(--joi-pink)', fontStyle: 'italic',
-            }}>
-              VIST
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', gap: '24px' }}>
-            {['Pricing', 'Docs', 'Community', 'Twitter'].map(link => (
-              <a
-                key={link}
-                href="#"
-                style={{
-                  fontSize: '11px', color: 'var(--joi-text-3)',
-                  textDecoration: 'none', letterSpacing: '0.1em',
-                  fontWeight: 500, transition: 'color 150ms',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.color = 'var(--joi-pink)')}
-                onMouseLeave={e => (e.currentTarget.style.color = 'var(--joi-text-3)')}
-              >
-                {link}
-              </a>
-            ))}
-          </div>
-
-          <span style={{ fontSize: '10px', color: 'var(--joi-text-3)', letterSpacing: '0.1em' }}>
-            © 2026 VIST STUDIO
-          </span>
-        </div>
+        © 2026 VIST Studio. All rights reserved.
       </footer>
     </div>
   );

@@ -12,9 +12,9 @@
   --color-bg-3: #1e1a28;
   --color-bg-4: #262034;
 
-  --color-accent: #f06848;
-  --color-accent-dim: #c85438;
-  --color-accent-hot: #ff8870;
+  --color-accent: #FF6B9D;
+  --color-accent-dim: rgba(255,107,157,0.35);
+  --color-accent-hot: #FF85B1;
   --color-magenta: #d048b0;
   --color-magenta-dim: #a83890;
   --color-blue: #4858e0;
@@ -32,9 +32,9 @@
   --font-display: "Instrument Serif", serif;
   --font-body: "DM Sans", sans-serif;
   --font-jet: "JetBrains Mono", monospace;
-  --font-heading: "Rajdhani", "DM Sans", sans-serif;
+  --font-heading: "DM Sans", sans-serif;
 
-  --background-image-plasma-gradient: linear-gradient(135deg, #f06848, #d048b0, #4858e0, #d048b0, #f06848);
+  --background-image-plasma-gradient: linear-gradient(135deg, #FF6B9D, #d048b0, #4858e0, #d048b0, #FF6B9D);
 }
 
 /* ── CSS Variables ─────────────────────────────────────────── */
@@ -44,9 +44,9 @@
   --bg-2: #15121c;
   --bg-3: #1e1a28;
   --bg-4: #262034;
-  --accent: #f06848;
-  --accent-dim: #c85438;
-  --accent-hot: #ff8870;
+  --accent: #FF6B9D;
+  --accent-dim: rgba(255,107,157,0.35);
+  --accent-hot: #FF85B1;
   --magenta: #d048b0;
   --magenta-dim: #a83890;
   --blue: #4858e0;
@@ -109,7 +109,7 @@ body::after {
 }
 
 /* ── Selection ────────────────────────────────────────────── */
-::selection { background: rgba(139,92,246,0.30); color: #fff; }
+::selection { background: rgba(167,139,250,0.30); color: #fff; }
 
 /* ── Scrollbar (plasma gradient) ──────────────────────────── */
 * { scrollbar-width: thin; scrollbar-color: var(--bg-3) transparent; }
@@ -181,8 +181,8 @@ body::after {
 }
 
 @keyframes plasma-glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(139,92,246,0.15), 0 0 60px rgba(139,92,246,0.05); }
-  33% { box-shadow: 0 0 20px rgba(232,121,168,0.15), 0 0 60px rgba(232,121,168,0.05); }
+  0%, 100% { box-shadow: 0 0 20px rgba(167,139,250,0.15), 0 0 60px rgba(167,139,250,0.05); }
+  33% { box-shadow: 0 0 20px rgba(255,107,157,0.15), 0 0 60px rgba(255,107,157,0.05); }
   66% { box-shadow: 0 0 20px rgba(104,120,240,0.15), 0 0 60px rgba(104,120,240,0.05); }
 }
 
@@ -448,7 +448,7 @@ input[type="range"]::-moz-range-thumb { background: var(--accent) !important; bo
 input[type="range"]::-webkit-slider-runnable-track { background: var(--bg-3) !important; }
 
 /* ── Checkbox accent ──────────────────────────────────────── */
-.accent-purple-500 { accent-color: #f06848 !important; }
+.accent-purple-500 { accent-color: #FF6B9D !important; }
 
 /* ── Progress bar ─────────────────────────────────────────── */
 progress::-webkit-progress-value { background: var(--accent) !important; }
@@ -1214,21 +1214,21 @@ progress::-moz-progress-bar { background: var(--accent) !important; }
 
 :root {
   /* Joi palette — deep violet holographic */
-  --joi-pink: #e879a8;
-  --joi-pink-soft: rgba(232,121,168,0.12);
-  --joi-pink-glow: rgba(232,121,168,0.25);
+  --joi-pink: #FF6B9D;
+  --joi-pink-soft: rgba(255,107,157,0.12);
+  --joi-pink-glow: rgba(255,107,157,0.25);
   --joi-magenta: #d048b0;
   --joi-magenta-soft: rgba(208,72,176,0.10);
-  --joi-coral: #f06848;
+  --joi-coral: #FF6B9D;
   --joi-lavender: #c4b5f0;
   --joi-blue: #6878f0;
   --joi-cyan-warm: #60d0d0;
 
   /* NEW — violet primaries */
-  --joi-violet: #8b5cf6;
-  --joi-violet-deep: #6d28d9;
-  --joi-violet-soft: rgba(139,92,246,0.12);
-  --joi-violet-glow: rgba(139,92,246,0.35);
+  --joi-violet: #A78BFA;
+  --joi-violet-deep: #8B6FC0;
+  --joi-violet-soft: rgba(167,139,250,0.12);
+  --joi-violet-glow: rgba(167,139,250,0.35);
 
   /* NEW — warm accent (human warmth) */
   --joi-warm: #d4a574;
@@ -1241,9 +1241,9 @@ progress::-moz-progress-bar { background: var(--accent) !important; }
   --joi-bg-glass: rgba(16,12,28,0.60);
 
   /* Borders — violet tint */
-  --joi-border: rgba(139,92,246,0.06);
-  --joi-border-h: rgba(139,92,246,0.18);
-  --joi-border-glass: rgba(139,92,246,0.04);
+  --joi-border: rgba(167,139,250,0.06);
+  --joi-border-h: rgba(167,139,250,0.18);
+  --joi-border-glass: rgba(167,139,250,0.04);
 
   /* Text */
   --joi-text-1: #f0eaf4;
@@ -1273,12 +1273,12 @@ progress::-moz-progress-bar { background: var(--accent) !important; }
       0deg,
       transparent,
       transparent 2px,
-      rgba(139,92,246,0.015) 2px,
-      rgba(139,92,246,0.015) 4px
+      rgba(167,139,250,0.015) 2px,
+      rgba(167,139,250,0.015) 4px
     ),
     linear-gradient(
       135deg,
-      rgba(139,92,246,0.03) 0%,
+      rgba(167,139,250,0.03) 0%,
       transparent 40%,
       rgba(208,72,176,0.02) 70%,
       transparent 100%
@@ -1290,8 +1290,8 @@ progress::-moz-progress-bar { background: var(--accent) !important; }
 .joi-glass:hover {
   border-color: var(--joi-border-h);
   box-shadow:
-    0 8px 40px rgba(139,92,246,0.10),
-    0 0 80px rgba(139,92,246,0.05),
+    0 8px 40px rgba(167,139,250,0.10),
+    0 0 80px rgba(167,139,250,0.05),
     inset 0 1px rgba(255,255,255,0.04);
 }
 
@@ -1299,8 +1299,8 @@ progress::-moz-progress-bar { background: var(--accent) !important; }
 .joi-mesh {
   position: relative;
   background:
-    radial-gradient(ellipse 40% 40% at 50% 40%, rgba(139,92,246,0.10) 0%, transparent 70%),
-    radial-gradient(ellipse at 20% 30%, rgba(232,121,168,0.06) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 40% at 50% 40%, rgba(167,139,250,0.10) 0%, transparent 70%),
+    radial-gradient(ellipse at 20% 30%, rgba(255,107,157,0.06) 0%, transparent 55%),
     radial-gradient(ellipse at 75% 60%, rgba(208,72,176,0.05) 0%, transparent 50%),
     radial-gradient(ellipse at 50% 85%, rgba(104,120,240,0.04) 0%, transparent 45%),
     radial-gradient(ellipse at 90% 15%, rgba(196,181,240,0.04) 0%, transparent 35%);
@@ -1309,30 +1309,30 @@ progress::-moz-progress-bar { background: var(--accent) !important; }
 /* ── Holographic Glow (text) ──────────────────────────────── */
 .joi-glow {
   text-shadow:
-    0 0 10px rgba(139,92,246,0.35),
-    0 0 30px rgba(139,92,246,0.15),
-    0 0 60px rgba(139,92,246,0.08);
+    0 0 10px rgba(167,139,250,0.35),
+    0 0 30px rgba(167,139,250,0.15),
+    0 0 60px rgba(167,139,250,0.08);
 }
 
 .joi-glow--subtle {
   text-shadow:
-    0 0 8px rgba(139,92,246,0.2),
-    0 0 20px rgba(139,92,246,0.08);
+    0 0 8px rgba(167,139,250,0.2),
+    0 0 20px rgba(167,139,250,0.08);
 }
 
 /* ── Holographic Shimmer (chromatic aberration on hover) ──── */
 @keyframes joi-hologram {
   0%, 100% {
     text-shadow:
-      0 0 10px rgba(139,92,246,0.3),
+      0 0 10px rgba(167,139,250,0.3),
       -1px 0 rgba(104,120,240,0.15),
-      1px 0 rgba(232,121,168,0.15);
+      1px 0 rgba(255,107,157,0.15);
   }
   50% {
     text-shadow:
-      0 0 15px rgba(139,92,246,0.4),
+      0 0 15px rgba(167,139,250,0.4),
       -2px 0 rgba(104,120,240,0.2),
-      2px 0 rgba(232,121,168,0.2);
+      2px 0 rgba(255,107,157,0.2);
   }
 }
 
@@ -1344,13 +1344,13 @@ progress::-moz-progress-bar { background: var(--accent) !important; }
 @keyframes joi-aura {
   0%, 100% {
     box-shadow:
-      0 4px 30px rgba(139,92,246,0.06),
-      0 0 60px rgba(139,92,246,0.03);
+      0 4px 30px rgba(167,139,250,0.06),
+      0 0 60px rgba(167,139,250,0.03);
   }
   50% {
     box-shadow:
-      0 4px 40px rgba(139,92,246,0.12),
-      0 0 80px rgba(139,92,246,0.06);
+      0 4px 40px rgba(167,139,250,0.12),
+      0 0 80px rgba(167,139,250,0.06);
   }
 }
 
@@ -1369,8 +1369,8 @@ progress::-moz-progress-bar { background: var(--accent) !important; }
   border-radius: inherit;
   background: linear-gradient(
     135deg,
-    rgba(139,92,246,0.15),
-    rgba(232,121,168,0.10),
+    rgba(167,139,250,0.15),
+    rgba(255,107,157,0.10),
     rgba(104,120,240,0.08),
     rgba(196,181,240,0.06)
   );
@@ -1394,8 +1394,8 @@ progress::-moz-progress-bar { background: var(--accent) !important; }
 
 /* ── Holographic Button ───────────────────────────────────── */
 .joi-btn {
-  background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(208,72,176,0.10));
-  border: 1px solid rgba(139,92,246,0.15);
+  background: linear-gradient(135deg, rgba(167,139,250,0.15), rgba(208,72,176,0.10));
+  border: 1px solid rgba(167,139,250,0.15);
   color: var(--joi-text-1);
   font-family: var(--font-heading);
   font-weight: 600;
@@ -1421,17 +1421,17 @@ progress::-moz-progress-bar { background: var(--accent) !important; }
 }
 
 .joi-btn:hover {
-  background: linear-gradient(135deg, rgba(139,92,246,0.22), rgba(208,72,176,0.15));
-  border-color: rgba(139,92,246,0.3);
+  background: linear-gradient(135deg, rgba(167,139,250,0.22), rgba(208,72,176,0.15));
+  border-color: rgba(167,139,250,0.3);
   box-shadow:
-    0 4px 24px rgba(139,92,246,0.18),
-    0 0 40px rgba(139,92,246,0.08);
+    0 4px 24px rgba(167,139,250,0.18),
+    0 0 40px rgba(167,139,250,0.08);
   transform: translateY(-1px) scale(1.01);
 }
 
 .joi-btn:active {
   transform: translateY(0) scale(0.98);
-  box-shadow: 0 2px 8px rgba(139,92,246,0.12);
+  box-shadow: 0 2px 8px rgba(167,139,250,0.12);
   transition-duration: 0.1s;
 }
 
@@ -1457,7 +1457,7 @@ progress::-moz-progress-bar { background: var(--accent) !important; }
   transform: translateY(-2px) scale(1.02);
   box-shadow:
     0 8px 32px var(--joi-violet-glow),
-    0 0 50px rgba(139,92,246,0.12);
+    0 0 50px rgba(167,139,250,0.12);
 }
 
 .joi-btn-solid:active {
@@ -1467,8 +1467,8 @@ progress::-moz-progress-bar { background: var(--accent) !important; }
 }
 
 @keyframes pulse-ring-violet {
-  0% { box-shadow: 0 0 0 0 rgba(139,92,246,0.4); }
-  100% { box-shadow: 0 0 0 20px rgba(139,92,246,0); }
+  0% { box-shadow: 0 0 0 0 rgba(167,139,250,0.4); }
+  100% { box-shadow: 0 0 0 20px rgba(167,139,250,0); }
 }
 
 .joi-btn-ghost {
@@ -1487,13 +1487,13 @@ progress::-moz-progress-bar { background: var(--accent) !important; }
 }
 
 .joi-btn-ghost:hover {
-  border-color: rgba(139,92,246,0.25);
+  border-color: rgba(167,139,250,0.25);
   color: var(--joi-lavender);
-  background: rgba(139,92,246,0.06);
+  background: rgba(167,139,250,0.06);
 }
 
 .joi-btn-ghost:active {
-  background: rgba(139,92,246,0.12);
+  background: rgba(167,139,250,0.12);
   transition-duration: 0.1s;
 }
 
@@ -1528,13 +1528,13 @@ progress::-moz-progress-bar { background: var(--accent) !important; }
 @keyframes joi-breathe {
   0%, 100% {
     box-shadow:
-      0 0 20px rgba(139,92,246,0.08),
-      0 0 60px rgba(139,92,246,0.04);
+      0 0 20px rgba(167,139,250,0.08),
+      0 0 60px rgba(167,139,250,0.04);
   }
   50% {
     box-shadow:
-      0 0 30px rgba(139,92,246,0.16),
-      0 0 80px rgba(139,92,246,0.08);
+      0 0 30px rgba(167,139,250,0.16),
+      0 0 80px rgba(167,139,250,0.08);
   }
 }
 
@@ -1545,7 +1545,7 @@ progress::-moz-progress-bar { background: var(--accent) !important; }
 /* ── Holographic Divider ──────────────────────────────────── */
 .joi-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(139,92,246,0.15), rgba(232,121,168,0.10), rgba(104,120,240,0.08), transparent);
+  background: linear-gradient(90deg, transparent, rgba(167,139,250,0.15), rgba(255,107,157,0.10), rgba(104,120,240,0.08), transparent);
 }
 
 /* ── Holographic Status ───────────────────────────────────── */

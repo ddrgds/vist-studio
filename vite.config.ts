@@ -96,11 +96,35 @@ export default defineConfig(({ mode }) => {
               });
             },
           },
+          '/higgsfield-api': {
+            target: 'https://platform.higgsfield.ai',
+            changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/higgsfield-api/, ''),
+            secure: true,
+            configure: (proxy) => {
+              proxy.on('proxyReq', (proxyReq) => {
+                proxyReq.setHeader('Authorization', `Key ${env.HIGGSFIELD_API_KEY}:${env.HIGGSFIELD_API_SECRET}`);
+                proxyReq.removeHeader('origin');
+              });
+            },
+          },
           '/modelslab-api': {
             target: 'https://modelslab.com/api',
             changeOrigin: true,
             rewrite: (path) => path.replace(/^\/modelslab-api/, ''),
             secure: true,
+          },
+          '/elevenlabs-api': {
+            target: 'https://api.elevenlabs.io',
+            changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/elevenlabs-api/, ''),
+            secure: true,
+            configure: (proxy) => {
+              proxy.on('proxyReq', (proxyReq) => {
+                proxyReq.setHeader('xi-api-key', env.ELEVENLABS_API_KEY);
+                proxyReq.removeHeader('origin');
+              });
+            },
           },
         },
       },

@@ -688,10 +688,7 @@ export const generateInfluencerVideo = async (
   if (abortSignal?.aborted) throw new Error("Cancelled by user.");
   if (onProgress) onProgress(5);
 
-  let promptText = params.prompt;
-  if (params.dialogue) {
-    promptText += ` The character is speaking passionately, saying: "${params.dialogue}". Make sure the facial expressions match the dialogue.`;
-  }
+  const promptText = params.prompt;
 
   const imagePart = await fileToPart(params.baseImage);
 
@@ -706,8 +703,7 @@ export const generateInfluencerVideo = async (
         },
         config: {
           numberOfVideos: 1,
-          resolution: params.resolution,
-          aspectRatio: params.aspectRatio === '9:16' ? '9:16' : '16:9',
+          aspectRatio: '16:9',
         },
       })
     );

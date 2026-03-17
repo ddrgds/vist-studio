@@ -17,7 +17,7 @@ import {
   FACE_SHAPES, BODY_TYPES, SKIN_TEXTURES, GENDERS, AGE_RANGES,
   PERSONALITY_TRAITS, FASHION_STYLES, ACCESSORIES, buildPromptFromChips,
 } from '../data/characterChips'
-import { SOUL_STYLES, SOUL_STYLE_CATEGORIES, type SoulStyleCategory } from '../data/soulStyles'
+import { SOUL_STYLES, SOUL_STYLES_CURATED, SOUL_STYLE_CATEGORIES, type SoulStyleCategory } from '../data/soulStyles'
 
 // ─── Render styles ───────────────────────────────────────────────────
 const renderStyles = [
@@ -110,6 +110,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   const [selPersonality, setSelPersonality] = useState<string[]>([])
   const [selectedSoulStyle, setSelectedSoulStyle] = useState<string | null>(null)
   const [soulStyleCategory, setSoulStyleCategory] = useState<SoulStyleCategory | 'all'>('all')
+  const [showAllStyles, setShowAllStyles] = useState(false)
   const [selAccessories, setSelAccessories] = useState<string[]>([])
 
   // Generation
@@ -241,65 +242,51 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     const results: string[] = []
     let failCount = 0
 
-    // Generate 3 variants
-    for (let i = 0; i < 3; i++) {
-      const ok = await decrementCredits(cost)
-      if (!ok) {
-        toast.error('Insufficient credits')
-        if (results.length === 0) {
-          setGenerating(false)
-          setGenerationPhase('idle')
-          return
-        }
-        break
-      }
-
-      try {
-        const params: InfluencerParams = {
-          characters: [{
-            id: crypto.randomUUID(),
-            characteristics: fullPrompt,
-            outfitDescription: selFashion.map(id => FASHION_STYLES.find(f => f.id === id)?.promptText || '').filter(Boolean).join(', '),
-            pose: 'Standing casual, facing camera, portrait shot',
-            accessory: selAccessories.map(id => ACCESSORIES.find(a => a.id === id)?.label || '').filter(Boolean).join(', '),
-          }],
-          scenario: style.scenario,
-          lighting: style.id === 'anime' ? 'Flat anime lighting, cel-shaded' : style.id === 'pixel-art' ? 'Flat pixel art lighting' : 'Soft studio lighting',
-          imageSize: ImageSize.Size2K,
-          aspectRatio: AspectRatio.Portrait,
-          numberOfImages: 1,
-        }
-
-        const genResults = await routeGeneration(params)
-        if (genResults.length > 0) {
-          results.push(genResults[0])
-          setVariants([...results])
-        } else {
-          failCount++
-          restoreCredits(cost)
-        }
-      } catch {
-        failCount++
-        restoreCredits(cost)
-      }
-    }
-
-    if (results.length > 0) {
-      setVariants(results)
-      setGenerationPhase('picking')
-    } else {
-      toast.error('All generation attempts failed')
+    // Generate 1 preview image
+    const ok = await decrementCredits(cost)
+    if (!ok) {
+      toast.error('Insufficient credits')
+      setGenerating(false)
       setGenerationPhase('idle')
+      return
     }
 
-    if (failCount > 0 && results.length > 0) {
-      toast.info(`${failCount} variant(s) failed — credits restored`)
+    try {
+      const params: InfluencerParams = {
+        characters: [{
+          id: crypto.randomUUID(),
+          characteristics: fullPrompt,
+          outfitDescription: selFashion.map(id => FASHION_STYLES.find(f => f.id === id)?.promptText || '').filter(Boolean).join(', '),
+          pose: 'Standing casual, facing camera, portrait shot',
+          accessory: selAccessories.map(id => ACCESSORIES.find(a => a.id === id)?.label || '').filter(Boolean).join(', '),
+        }],
+        scenario: style.scenario,
+        lighting: style.id === 'anime' ? 'Flat anime lighting, cel-shaded' : style.id === 'pixel-art' ? 'Flat pixel art lighting' : 'Soft studio lighting',
+        imageSize: ImageSize.Size2K,
+        aspectRatio: AspectRatio.Portrait,
+        numberOfImages: 1,
+      }
+
+      const genResults = await routeGeneration(params)
+      if (genResults.length > 0) {
+        setVariants([genResults[0]])
+        setSelectedVariant(0)
+        setGenerationPhase('picking')
+      } else {
+        restoreCredits(cost)
+        toast.error('Generation failed — try again')
+        setGenerationPhase('idle')
+      }
+    } catch {
+      restoreCredits(cost)
+      toast.error('Generation failed — try again')
+      setGenerationPhase('idle')
     }
 
     setGenerating(false)
   }
 
-  // ─── Generate consistency variants ───────────────────────────────
+  // ─── Generate consistency variants using the approved face ──────
   const handleConsistency = async () => {
     if (selectedVariant === null) return
     const cost = costPerVariant
@@ -309,6 +296,21 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     const style = renderStyles[selRenderStyle]
     const basePrompt = buildFullPrompt()
     const consistencyResults: string[] = []
+
+    // Fetch the approved image as a File to use as face reference
+    let approvedFaceFile: File | null = null
+    try {
+      const res = await fetch(variants[selectedVariant])
+      const blob = await res.blob()
+      approvedFaceFile = new File([blob], 'approved-face.png', { type: 'image/png' })
+    } catch {
+      // Continue without face ref if fetch fails
+    }
+
+    const variationPoses = [
+      'Slight three-quarter turn to the left, soft smile, natural expression',
+      'Looking over shoulder, candid pose, gentle expression',
+    ]
 
     for (let i = 0; i < 2; i++) {
       const ok = await decrementCredits(cost)
@@ -320,10 +322,11 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
         const params: InfluencerParams = {
           characters: [{
             id: crypto.randomUUID(),
-            characteristics: `${basePrompt}, Same character, different angle and expression`,
+            characteristics: `${basePrompt}. IMPORTANT: This must be the EXACT SAME person as the reference image — same face, same features, same identity. Only the pose and expression change.`,
             outfitDescription: selFashion.map(id => FASHION_STYLES.find(f => f.id === id)?.promptText || '').filter(Boolean).join(', '),
-            pose: i === 0 ? 'Slight three-quarter turn, natural expression' : 'Looking over shoulder, candid pose',
+            pose: variationPoses[i],
             accessory: selAccessories.map(id => ACCESSORIES.find(a => a.id === id)?.label || '').filter(Boolean).join(', '),
+            ...(approvedFaceFile ? { modelImages: [approvedFaceFile] } : {}),
           }],
           scenario: style.scenario,
           lighting: style.id === 'anime' ? 'Flat anime lighting, cel-shaded' : style.id === 'pixel-art' ? 'Flat pixel art lighting' : 'Soft studio lighting',
@@ -376,7 +379,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
         updatedAt: Date.now(),
         usageCount: 0,
         renderStyle: renderStyles[selRenderStyle].id,
-        soulStyleId: selectedSoulStyle || undefined,
+        soulStyleId: undefined,
         personalityTraits: selPersonality,
       }
 
@@ -864,40 +867,6 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                         onSelect={setSelFashion} maxSelect={2} color="var(--joi-magenta)" />
                     </div>
                   </div>
-
-                  {/* Soul Style — shown only when Soul engine is selected */}
-                  {engineMeta?.provider === AIProvider.Higgsfield && (
-                    <div>
-                      <label className="joi-label block mb-2">Soul Style</label>
-                      <div className="flex gap-1.5 mb-2 overflow-x-auto pb-1">
-                        {[{ id: 'all' as const, label: 'All' }, ...SOUL_STYLE_CATEGORIES].map(cat => (
-                          <button key={cat.id} onClick={() => setSoulStyleCategory(cat.id)}
-                            className="px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all shrink-0"
-                            style={{
-                              background: soulStyleCategory === cat.id ? 'rgba(255,107,157,.1)' : 'transparent',
-                              border: `1px solid ${soulStyleCategory === cat.id ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}`,
-                              color: soulStyleCategory === cat.id ? 'var(--joi-pink)' : 'var(--joi-text-3)',
-                            }}>
-                            {cat.label}
-                          </button>
-                        ))}
-                      </div>
-                      <div className="grid grid-cols-3 gap-2 max-h-[200px] overflow-y-auto joi-scroll">
-                        {SOUL_STYLES.filter(s => soulStyleCategory === 'all' || s.category === soulStyleCategory).map(style => (
-                          <button key={style.id} onClick={() => setSelectedSoulStyle(selectedSoulStyle === style.id ? null : style.id)}
-                            className="px-2.5 py-2 rounded-xl text-[10px] font-medium transition-all text-left flex items-center gap-1.5"
-                            style={{
-                              background: selectedSoulStyle === style.id ? 'rgba(255,107,157,.1)' : 'var(--joi-bg-3)',
-                              border: `1px solid ${selectedSoulStyle === style.id ? 'rgba(255,107,157,.25)' : 'rgba(255,255,255,.04)'}`,
-                              color: selectedSoulStyle === style.id ? 'var(--joi-pink)' : 'var(--joi-text-2)',
-                            }}>
-                            <span className="text-sm">{style.icon}</span>
-                            <span className="truncate">{style.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
 
                   <div>
                     <label className="joi-label block mb-1">Personality <span style={{ color: 'var(--joi-text-3)', fontWeight: 400 }}>(max 3)</span></label>

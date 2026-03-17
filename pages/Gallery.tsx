@@ -47,7 +47,7 @@ function computeFilterCSS(v: { brightness: number, contrast: number, saturation:
 
 const DEFAULT_FILTERS = { brightness: 0, contrast: 0, saturation: 0, temperature: 0 }
 
-export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
+export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: string) => void; onEditImage?: (url: string) => void; onExportImage?: (url: string) => void }) {
   const items = useGalleryStore(s => s.items)
   const characters = useCharacterStore(s => s.characters)
   const toggleFavorite = useGalleryStore(s => s.toggleFavorite)
@@ -261,10 +261,10 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
               Start creating! Direct a hero shot or edit an image with AI tools.
             </p>
             <div className="flex gap-3 justify-center">
-              <button onClick={() => onNav?.('director')} className="joi-btn-solid px-5 py-2.5 text-[12px]">
+              <button onClick={() => onNav?.('studio')} className="joi-btn-solid px-5 py-2.5 text-[12px]">
                 ◎ Direct a Scene
               </button>
-              <button onClick={() => onNav?.('editor')} className="joi-btn-ghost px-5 py-2.5 text-[12px]">
+              <button onClick={() => onNav?.('studio')} className="joi-btn-ghost px-5 py-2.5 text-[12px]">
                 ✦ Open AI Editor
               </button>
             </div>
@@ -320,7 +320,7 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
                         <div className="text-[8px] font-mono text-white/60">{category} · {dateStr}</div>
                       </div>
                       <div className="flex gap-1">
-                        <button onClick={(e) => { e.stopPropagation(); navigateToEditor(img.url); onNav?.('editor') }}
+                        <button onClick={(e) => { e.stopPropagation(); onEditImage ? onEditImage(img.url) : (navigateToEditor(img.url), onNav?.('studio')) }}
                           className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] transition-all hover:scale-110"
                           style={{ background: 'rgba(255,107,157,.2)', color: 'var(--joi-pink)' }}
                           title="Edit in AI Editor">{'\u2726'}</button>
@@ -404,17 +404,17 @@ export function Gallery({ onNav }: { onNav?: (page: string) => void }) {
                 {/* Navigation actions */}
                 <div className="joi-label" style={{ color: 'var(--joi-text-3)' }}>Actions</div>
                 <div className="flex flex-col gap-1.5">
-                  <button onClick={() => { setLightboxIndex(null); navigateToEditor(item.url); onNav?.('editor') }}
+                  <button onClick={() => { setLightboxIndex(null); onEditImage ? onEditImage(item.url) : (navigateToEditor(item.url), onNav?.('studio')) }}
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
                     style={{ background: 'rgba(255,107,157,.08)', border: '1px solid rgba(255,107,157,.15)', color: 'var(--joi-pink)' }}>
                     {'\u2726'} Edit in AI Editor
                   </button>
-                  <button onClick={() => { setLightboxIndex(null); navigateToSession(item.url); onNav?.('session') }}
+                  <button onClick={() => { setLightboxIndex(null); navigateToSession(item.url); onNav?.('studio') }}
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
                     style={{ background: 'rgba(200,120,255,.08)', border: '1px solid rgba(200,120,255,.15)', color: 'var(--joi-magenta)' }}>
                     {'\u25ce'} New Photo Session
                   </button>
-                  <button onClick={() => { setLightboxIndex(null); navigateToUpload(item.url); onNav?.('upload') }}
+                  <button onClick={() => { setLightboxIndex(null); navigateToUpload(item.url); onNav?.('create') }}
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
                     style={{ background: 'rgba(180,170,255,.08)', border: '1px solid rgba(180,170,255,.15)', color: 'var(--joi-lavender)' }}>
                     {'\u2295'} Create Character

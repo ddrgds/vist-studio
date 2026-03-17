@@ -4,28 +4,24 @@ import { useProfile } from '../contexts/ProfileContext'
 import { useCharacterStore } from '../stores/characterStore'
 import { useGalleryStore } from '../stores/galleryStore'
 import {
-  LayoutDashboard, Clapperboard, Upload, Camera, Wand2,
-  Globe, Images, Users, CalendarDays, BarChart3,
+  Sparkles, Clapperboard, Images, Users,
   CreditCard, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react'
 import { type LucideIcon } from 'lucide-react'
 
 const navSections: { title?: string; items: { id: Page; label: string; Icon: LucideIcon; sub: string }[] }[] = [
   {
-    title: 'PIPELINE',
+    title: 'CREATE',
     items: [
-      { id: 'upload', label: 'Create Character', Icon: Upload, sub: 'Create / Import' },
-      { id: 'director', label: 'Director', Icon: Clapperboard, sub: 'Hero Shot' },
-      { id: 'editor', label: 'AI Editor', Icon: Wand2, sub: 'Relight · Swap · Enhance' },
-      { id: 'session', label: 'Photo Session', Icon: Camera, sub: 'Photo Shoot' },
+      { id: 'create', label: 'Create Persona', Icon: Sparkles, sub: 'Design AI Character' },
+      { id: 'studio', label: 'Content Studio', Icon: Clapperboard, sub: 'Photos · Videos · Reels' },
     ],
   },
   {
     title: 'MANAGE',
     items: [
-      { id: 'dashboard', label: 'Dashboard', Icon: LayoutDashboard, sub: 'Overview' },
-      { id: 'gallery', label: 'Gallery', Icon: Images, sub: 'Creations' },
-      { id: 'characters', label: 'Characters', Icon: Users, sub: 'Collection' },
+      { id: 'gallery', label: 'Gallery', Icon: Images, sub: 'All Content' },
+      { id: 'characters', label: 'Characters', Icon: Users, sub: 'Your Personas' },
     ],
   },
 ]
@@ -38,7 +34,7 @@ interface Props {
 }
 
 const PIPELINE_NUMBERS: Record<string, string> = {
-  upload: '①', director: '②', editor: '③', session: '④',
+  create: '①', studio: '②',
 }
 
 export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
@@ -56,8 +52,8 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
   // Pipeline progress hint
   const pipelineHint = (id: string): string | null => {
     if (collapsed) return null
-    if (characters.length === 0 && id === 'upload') return 'Start here'
-    if (characters.length > 0 && galleryItems.length === 0 && id === 'director') return 'Next step'
+    if (characters.length === 0 && id === 'create') return 'Start here'
+    if (characters.length > 0 && galleryItems.length === 0 && id === 'studio') return 'Next step'
     return null
   }
 

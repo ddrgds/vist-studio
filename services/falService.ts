@@ -1137,15 +1137,20 @@ export const generateVideoWithKling = async (
 
   if (onProgress) onProgress(40);
 
-  const endpoint = params.engine === VideoEngine.KlingPro
-    ? 'fal-ai/kling-video/v1.5/pro/image-to-video'
-    : 'fal-ai/kling-video/v1.5/standard/image-to-video';
+  // Route to the correct Kling endpoint based on engine
+  const engineEndpoints: Record<string, string> = {
+    [VideoEngine.Kling26Standard]: 'fal-ai/kling-video/v2.6/standard/image-to-video',
+    [VideoEngine.Kling26Pro]: 'fal-ai/kling-video/v2.6/pro/image-to-video',
+    [VideoEngine.Kling3Pro]: 'fal-ai/kling-video/v3/pro/image-to-video',
+  };
+  const endpoint = engineEndpoints[params.engine ?? VideoEngine.Kling26Pro]
+    ?? 'fal-ai/kling-video/v2.6/pro/image-to-video';
 
   const result = await fal.subscribe(endpoint, {
     input: {
       prompt: params.prompt,
-      image_url: imageUrl,
-      aspect_ratio: params.aspectRatio === '9:16' ? '9:16' : '16:9',
+      start_image_url: imageUrl,
+      duration: '5',
       ...(referenceVideoUrl && { reference_video_url: referenceVideoUrl })
     },
     onQueueUpdate: (update: any) => {
@@ -1224,9 +1229,13 @@ export const editImageWithGrokFal = async (
   const imageUrl = await uploadToFalStorage(baseImage);
   if (onProgress) onProgress(35);
 
+  // Grok needs explicit "lock" instructions to preserve unchanged areas
+  const lockPrefix = 'Keep face, pose, and background unchanged unless the edit specifically requires changing them. ';
+  const fullPrompt = lockPrefix + prompt;
+
   const result = await fal.subscribe('xai/grok-imagine-image/edit', {
     input: {
-      prompt,
+      prompt: fullPrompt,
       image_urls: [imageUrl],
       num_images: 1,
       output_format: 'jpeg',

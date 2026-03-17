@@ -45,7 +45,7 @@ export function Dashboard({ onNav }: Props) {
 
   const quickActions = [
     { n: '①', l: 'Create Character', Icon: Upload, p: 'upload' as Page, desc: 'Design your virtual influencer', gradient: 'linear-gradient(135deg, rgba(255,107,157,0.12), rgba(208,72,176,0.06))' },
-    { n: '②', l: 'Direct Scene', Icon: Camera, p: 'director' as Page, desc: 'Create a hero shot', gradient: 'linear-gradient(135deg, rgba(208,72,176,0.12), rgba(104,120,240,0.06))' },
+    { n: '②', l: 'Create Scene', Icon: Camera, p: 'director' as Page, desc: 'Create a scene', gradient: 'linear-gradient(135deg, rgba(208,72,176,0.12), rgba(104,120,240,0.06))' },
     { n: '③', l: 'AI Editor', Icon: Repeat, p: 'editor' as Page, desc: 'Edit and enhance images', gradient: 'linear-gradient(135deg, rgba(104,120,240,0.12), rgba(184,160,232,0.06))' },
     { n: '④', l: 'Photo Session', Icon: Wand2, p: 'session' as Page, desc: 'Generate themed photo sets', gradient: 'linear-gradient(135deg, rgba(184,160,232,0.12), rgba(255,107,157,0.06))' },
   ]
@@ -70,14 +70,14 @@ export function Dashboard({ onNav }: Props) {
             </span>
           </h1>
           <p className="text-sm mt-3 mb-8" style={{ color: 'var(--joi-text-2)' }}>
-            Design a character, direct a scene, and edit with AI — all in one place.
+            Design a character, create a scene, and edit with AI — all in one place.
           </p>
 
           {/* Pipeline steps */}
           <div className="flex items-center justify-center gap-3 mb-8">
             {[
               { n: '1', l: 'Create Character', icon: '⊕' },
-              { n: '2', l: 'Direct a Scene', icon: '◎' },
+              { n: '2', l: 'Create Scene', icon: '◎' },
               { n: '3', l: 'Edit with AI', icon: '✦' },
               { n: '4', l: 'Photo Session', icon: '◎' },
             ].map((step, i) => (
@@ -156,7 +156,7 @@ export function Dashboard({ onNav }: Props) {
               </span>
             </h1>
             <p className="text-[13px] mt-2" style={{ color: 'var(--joi-text-2)' }}>
-              Your digital universe is ready.
+              Your studio is ready.
             </p>
           </div>
 
@@ -179,9 +179,9 @@ export function Dashboard({ onNav }: Props) {
 
       {/* ═══ Stats Row or Onboarding Banner ═══ */}
       {(() => {
-        const hasHeroShots = galleryItems.some(i => i.type === 'create' || i.type === 'session')
+        const hasContent = galleryItems.some(i => i.type === 'create' || i.type === 'session')
         const hasEdits = galleryItems.some(i => i.type === 'edit')
-        const pipelineComplete = characters.length > 0 && hasHeroShots && hasEdits
+        const pipelineComplete = characters.length > 0 && hasContent && hasEdits
 
         if (pipelineComplete) {
           return (
@@ -209,8 +209,8 @@ export function Dashboard({ onNav }: Props) {
         // Onboarding banner — show next pipeline step
         const nextStep = characters.length === 0
           ? { n: '①', label: 'Create your first character', page: 'upload' as Page, cta: 'Create Character' }
-          : !hasHeroShots
-          ? { n: '②', label: `Create a hero shot for ${featuredChar?.name || 'your character'}`, page: 'director' as Page, cta: 'Go to Director' }
+          : !hasContent
+          ? { n: '②', label: `Create a scene for ${featuredChar?.name || 'your character'}`, page: 'director' as Page, cta: 'Go to Scene Studio' }
           : !hasEdits
           ? { n: '③', label: 'Edit an image with AI tools', page: 'editor' as Page, cta: 'Open AI Editor' }
           : { n: '④', label: 'Run a themed photo session', page: 'session' as Page, cta: 'Start Photo Session' }
@@ -291,9 +291,9 @@ export function Dashboard({ onNav }: Props) {
                 style={{ background: 'rgba(255,107,157,0.06)', border: '1px solid rgba(255,107,157,0.1)' }}>
                 <Upload size={24} style={{ color: 'var(--joi-pink)' }} />
               </div>
-              <p className="joi-heading" style={{ fontSize: '1.1rem' }}>Your universe awaits</p>
+              <p className="joi-heading" style={{ fontSize: '1.1rem' }}>Start creating content</p>
               <p className="text-[12px] mt-1.5 mb-5" style={{ color: 'var(--joi-text-3)' }}>
-                Create your first character to start generating
+                Create your first AI character to start posting
               </p>
               <button onClick={() => onNav('upload')} className="joi-btn-solid">Create Character</button>
             </div>
@@ -324,7 +324,7 @@ export function Dashboard({ onNav }: Props) {
                       </div>
                     </div>
                     <div className="px-5 py-3 flex gap-3">
-                      <button onClick={() => onNav('director')} className="joi-btn-solid flex-1 text-[11px] py-2">Direct Scene</button>
+                      <button onClick={() => onNav('director')} className="joi-btn-solid flex-1 text-[11px] py-2">Create Scene</button>
                       <button onClick={() => onNav('session')} className="joi-btn-ghost flex-1 text-[11px] py-2" style={{ borderColor: 'rgba(255,107,157,.3)', color: 'var(--joi-pink)' }}>Photo Session</button>
                     </div>
                   </div>
@@ -371,7 +371,7 @@ export function Dashboard({ onNav }: Props) {
                 <p className="text-[11px] mb-3" style={{ color: 'var(--joi-text-3)' }}>No activity yet</p>
                 <button onClick={() => onNav('director')}
                   className="joi-btn-solid px-4 py-2 text-[10px]">
-                  Start your first hero shoot →
+                  Create your first post →
                 </button>
               </div>
             ) : (
@@ -400,7 +400,7 @@ export function Dashboard({ onNav }: Props) {
       {galleryItems.length > 0 && (
         <div className="px-8 py-5 pb-10">
           <div className="flex justify-between items-center mb-4">
-            <div className="joi-label">Recent Renders</div>
+            <div className="joi-label">Recent Content</div>
             <button onClick={() => onNav('gallery')}
               className="font-jet text-[10px] flex items-center gap-1 group"
               style={{ color: 'var(--joi-pink)' }}>

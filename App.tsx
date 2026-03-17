@@ -12,27 +12,23 @@ import { Sidebar } from './components/Sidebar';
 // Layout
 import MobileNav from './layout/MobileNav';
 
-// Lazy-loaded pages (reference 9-page architecture)
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const Director = lazy(() => import('./pages/Director'));
-const UploadCharacter = lazy(() => import('./pages/UploadCharacter'));
-const PhotoSession = lazy(() => import('./pages/PhotoSession'));
-const AIEditor = lazy(() => import('./pages/AIEditor'));
+// ── Core pages (3-step flow: Create → Content → Gallery) ──
+const CreatePersona = lazy(() => import('./pages/UploadCharacter'));
+const ContentStudio = lazy(() => import('./pages/ContentStudio'));
 const Gallery = lazy(() => import('./pages/Gallery'));
 const CharacterGallery = lazy(() => import('./pages/CharacterGallery'));
-const UniverseBuilder = lazy(() => import('./pages/UniverseBuilder'));
-const ContentCalendar = lazy(() => import('./pages/ContentCalendar'));
-const Analytics = lazy(() => import('./pages/Analytics'));
 
-// Auth
+// ── Auth ──
 const AuthScreen = lazy(() => import('./components/AuthScreen'));
 const Landing = lazy(() => import('./pages/Landing'));
 
-// Extra pages
+// ── Extra ──
 const PricingPage = lazy(() => import('./components/PricingPage'));
 const ProfilePage = lazy(() => import('./components/ProfilePage'));
+const AIEditor = lazy(() => import('./pages/AIEditor'));
+const ExportModal = lazy(() => import('./features/export/ExportModal'));
 
-export type Page = 'dashboard' | 'director' | 'upload' | 'session' | 'editor' | 'gallery' | 'characters' | 'universe' | 'content' | 'analytics' | 'pricing' | 'profile';
+export type Page = 'create' | 'studio' | 'gallery' | 'characters' | 'pricing' | 'profile';
 
 function App() {
   return (
@@ -98,10 +94,23 @@ function AppLayout() {
 
 /** Main app shell — VIST Studio */
 function AuthenticatedApp() {
-  const [page, setPage] = useState<Page>('dashboard');
+  const [page, setPage] = useState<Page>('studio');
   const [collapsed, setCollapsed] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
+
+  // Global editor overlay — can be opened from ANY page
+  const [editorOpen, setEditorOpen] = useState(false);
+  const openEditor = useCallback((imageUrl: string) => {
+    usePipelineStore.getState().setHeroShot(imageUrl);
+    setEditorOpen(true);
+  }, []);
+  const closeEditor = useCallback(() => setEditorOpen(false), []);
+
+  // Global export modal — can be opened from ANY page
+  const [exportImageUrl, setExportImageUrl] = useState<string | null>(null);
+  const openExport = useCallback((url: string) => setExportImageUrl(url), []);
+  const closeExport = useCallback(() => setExportImageUrl(null), []);
 
   const handleNav = useCallback((p: Page) => {
     if (p === page) return;
@@ -115,16 +124,10 @@ function AuthenticatedApp() {
 
 
   const pages: Record<Page, JSX.Element> = {
-    dashboard: <Dashboard onNav={handleNav} />,
-    director: <Director onNav={handleNav} />,
-    upload: <UploadCharacter onNav={handleNav} />,
-    session: <PhotoSession onNav={handleNav} />,
-    editor: <AIEditor onNav={handleNav} />,
-    gallery: <Gallery onNav={handleNav} />,
+    create: <CreatePersona onNav={handleNav} />,
+    studio: <ContentStudio onNav={handleNav} onEditImage={openEditor} onExportImage={openExport} />,
+    gallery: <Gallery onNav={handleNav} onEditImage={openEditor} onExportImage={openExport} />,
     characters: <CharacterGallery onNav={handleNav} />,
-    universe: <UniverseBuilder />,
-    content: <ContentCalendar />,
-    analytics: <Analytics />,
     pricing: <PricingPage />,
     profile: <ProfilePage />,
   };
@@ -159,6 +162,35 @@ function AuthenticatedApp() {
       </main>
 
       <MobileNav />
+
+      {/* Global Export Modal — accessible from any page */}
+      {exportImageUrl && (
+        <Suspense fallback={null}>
+          <ExportModal imageUrl={exportImageUrl} onClose={closeExport} />
+        </Suspense>
+      )}
+
+      {/* Global AI Editor Overlay — accessible from any page */}
+      {editorOpen && (
+        <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'rgba(8,7,12,.95)', backdropFilter: 'blur(12px)' }}>
+          <div className="shrink-0 flex items-center justify-between px-5 py-2.5"
+            style={{ borderBottom: '1px solid rgba(255,255,255,.06)', background: 'var(--joi-bg-1)' }}>
+            <span className="text-xs font-semibold" style={{ color: 'var(--joi-text-2)' }}>AI Editor</span>
+            <button onClick={closeEditor}
+              className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+              style={{ color: 'var(--joi-text-3)' }}>
+              ✕
+            </button>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <Suspense fallback={
+              <div className="h-full flex items-center justify-center" style={{ color: 'var(--joi-text-3)' }}>Loading Editor...</div>
+            }>
+              <AIEditor onNav={handleNav} />
+            </Suspense>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -167,6 +199,7 @@ function AuthenticatedApp() {
 import { useAuth } from './contexts/AuthContext';
 import { useCharacterStore } from './stores/characterStore';
 import { useGalleryStore } from './stores/galleryStore';
+import { usePipelineStore } from './stores/pipelineStore';
 
 function StoreHydrator() {
   const { user } = useAuth();

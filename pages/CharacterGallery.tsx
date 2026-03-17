@@ -75,7 +75,7 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
           <p className="text-[12px] mb-6" style={{ color:'var(--joi-text-3)' }}>
             Characters are your virtual influencers. Create one to start generating content.
           </p>
-          <button onClick={() => onNav?.('upload')}
+          <button onClick={() => onNav?.('create')}
             className="joi-btn-solid px-6 py-2.5 text-sm joi-breathe">
             ⊕ Create Your First Character
           </button>

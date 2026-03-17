@@ -101,22 +101,47 @@ export interface PoseModificationParams {
   seed?: number;
 }
 
+// ─── Video Engines ──────────────────────────────────────────────────────────
 export enum VideoEngine {
-  KlingStandard = 'kling-standard',
-  KlingPro = 'kling-pro',
-  RunwayGen3 = 'runway-gen3',
-  LumaDreamMachine = 'luma-dream-machine',
+  // Image-to-Video
+  Kling26Standard = 'kling-2.6-standard',
+  Kling26Pro = 'kling-2.6-pro',
+  Kling3Pro = 'kling-3.0-pro',
+  // Motion Control
+  Kling26MotionStandard = 'kling-2.6-motion-standard',
+  Kling26MotionPro = 'kling-2.6-motion-pro',
+  Kling3MotionPro = 'kling-3.0-motion-pro',
+  // Wan Replace (preserves original scene)
+  WanReplace = 'wan-2.2-replace',
+  // Lip Sync / Avatar
+  KlingAvatarStandard = 'kling-avatar-v2-standard',
+  KlingAvatarPro = 'kling-avatar-v2-pro',
 }
 
+export type VideoMode = 'image-to-video' | 'motion-control' | 'lip-sync';
+
 export interface VideoParams {
+  mode: VideoMode;
   baseImage: File;
   prompt: string;
-  dialogue: string;
-  voiceFile?: File | null;
-  resolution: VideoResolution;
-  aspectRatio: AspectRatio;
-  engine?: VideoEngine;
-  referenceVideo?: File | null; // For Kling Motion Control
+  engine: VideoEngine;
+  // Image-to-Video
+  duration?: '5' | '10';
+  endImage?: File | null;
+  // Motion Control
+  referenceVideo?: File | null;
+  characterOrientation?: 'image' | 'video';
+  // Lip Sync
+  audioFile?: File | null;        // Pre-recorded audio or ElevenLabs output
+  ttsText?: string;               // Text for ElevenLabs TTS
+  ttsVoiceId?: string;            // ElevenLabs voice ID
+}
+
+export interface LipSyncParams {
+  characterImage: File;
+  audioFile: File;               // MP3/WAV from ElevenLabs or uploaded
+  prompt?: string;
+  engine: VideoEngine;           // KlingAvatarStandard or KlingAvatarPro
 }
 
 export interface AIEditParams {
@@ -147,6 +172,7 @@ export interface GeneratedContent {
   replicateModel?: ReplicateModel;
   openaiModel?: OpenAIModel;
   ideogramModel?: IdeogramModel;
+  higgsfieldModel?: HiggsfieldModel;
 }
 
 export interface AIStudioClient {
@@ -229,6 +255,7 @@ export enum AIProvider {
   OpenAI = 'openai',
   Ideogram = 'ideogram',
   ModelsLab = 'modelslab',
+  Higgsfield = 'higgsfield',
 }
 
 export const AI_PROVIDER_LABELS: Record<AIProvider, { name: string; icon: string; description: string }> = {
@@ -239,6 +266,7 @@ export const AI_PROVIDER_LABELS: Record<AIProvider, { name: string; icon: string
   [AIProvider.OpenAI]: { name: 'GPT Image', icon: '🤖', description: 'GPT Image 1.5 — multimodal with reference' },
   [AIProvider.Ideogram]: { name: 'Ideogram', icon: '💡', description: 'Ideogram V3 — advanced typography and style' },
   [AIProvider.ModelsLab]: { name: 'ModelsLab', icon: '🔞', description: 'Uncensored NSFW — Lustify SDXL + 10K models' },
+  [AIProvider.Higgsfield]: { name: 'Higgsfield', icon: '🌟', description: 'Soul 2.0 — fashion-grade, editorial realism' },
 };
 
 // Available models per provider
@@ -353,11 +381,28 @@ export const IDEOGRAM_MODEL_LABELS: Record<IdeogramModel, { name: string; descri
   [IdeogramModel.V2ATurbo]: { name: 'V2A Turbo', description: 'Fast and economical' },
 };
 
-export const VIDEO_ENGINE_LABELS: Record<VideoEngine, { name: string; icon: string; description: string }> = {
-  [VideoEngine.KlingStandard]: { name: 'Kling 1.5 Standard', icon: '🎥', description: 'Fast, 5s. Supports Motion Control.' },
-  [VideoEngine.KlingPro]: { name: 'Kling 1.5 Pro', icon: '🎬', description: 'High quality, 1080p. Supports Motion Control.' },
-  [VideoEngine.RunwayGen3]: { name: 'Runway Gen-3', icon: '🏃', description: 'Exceptional frame consistency' },
-  [VideoEngine.LumaDreamMachine]: { name: 'Luma', icon: '✨', description: 'Smooth and dynamic camera movements' },
+// ─── Higgsfield ──────────────────────────────────────────────────────────────
+export enum HiggsfieldModel {
+  SoulStandard = 'higgsfield-ai/soul/standard',  // Soul 2.0 — fashion-grade editorial realism
+}
+
+export const HIGGSFIELD_MODEL_LABELS: Record<HiggsfieldModel, { name: string; description: string }> = {
+  [HiggsfieldModel.SoulStandard]: { name: 'Soul 2.0', description: 'Fashion-grade realism, editorial aesthetics · 2026' },
+};
+
+export const VIDEO_ENGINE_LABELS: Record<VideoEngine, { name: string; icon: string; description: string; mode: VideoMode }> = {
+  // Image-to-Video
+  [VideoEngine.Kling26Standard]: { name: 'Kling 2.6', icon: '🎥', description: 'Fast, 5-10s clips', mode: 'image-to-video' },
+  [VideoEngine.Kling26Pro]: { name: 'Kling 2.6 Pro', icon: '🎬', description: 'High quality, 1080p, native audio', mode: 'image-to-video' },
+  [VideoEngine.Kling3Pro]: { name: 'Kling 3.0 Pro', icon: '✨', description: 'Best quality, cinematic, native audio', mode: 'image-to-video' },
+  // Motion Control
+  [VideoEngine.Kling26MotionStandard]: { name: 'Kling 2.6 Motion', icon: '🕺', description: 'Transfer movements, up to 30s', mode: 'motion-control' },
+  [VideoEngine.Kling26MotionPro]: { name: 'Kling 2.6 Motion Pro', icon: '💃', description: 'High quality motion transfer', mode: 'motion-control' },
+  [VideoEngine.Kling3MotionPro]: { name: 'Kling 3.0 Motion Pro', icon: '🌟', description: 'Best motion fidelity, 150+ frames', mode: 'motion-control' },
+  [VideoEngine.WanReplace]: { name: 'Wan Replace', icon: '🔄', description: 'Replace performer, keep original scene', mode: 'motion-control' },
+  // Lip Sync
+  [VideoEngine.KlingAvatarStandard]: { name: 'Kling Avatar', icon: '🗣️', description: 'Talking head, multilingual', mode: 'lip-sync' },
+  [VideoEngine.KlingAvatarPro]: { name: 'Kling Avatar Pro', icon: '🎙️', description: 'Best lip sync quality, 1080p', mode: 'lip-sync' },
 };
 
 // ─────────────────────────────────────────────
@@ -409,11 +454,20 @@ export const CREDIT_COSTS: Record<string, number> = {
   [ModelsLabModel.LustifySdxl]: 8,
   [ModelsLabModel.WaiNsfw]:     8,
   [ModelsLabModel.FluxNsfw]:    8,
-  // Video
-  [VideoEngine.KlingStandard]:   80,
-  [VideoEngine.KlingPro]:        100,
-  [VideoEngine.RunwayGen3]:      100,
-  [VideoEngine.LumaDreamMachine]: 80,
+  // Higgsfield
+  [HiggsfieldModel.SoulStandard]: 6,
+  // Video — Image-to-Video
+  [VideoEngine.Kling26Standard]:     60,
+  [VideoEngine.Kling26Pro]:          80,
+  [VideoEngine.Kling3Pro]:          100,
+  // Video — Motion Control
+  [VideoEngine.Kling26MotionStandard]: 80,
+  [VideoEngine.Kling26MotionPro]:     100,
+  [VideoEngine.Kling3MotionPro]:      120,
+  [VideoEngine.WanReplace]:            60,
+  // Video — Lip Sync / Avatar
+  [VideoEngine.KlingAvatarStandard]:   50,
+  [VideoEngine.KlingAvatarPro]:        80,
 };
 
 /** Credits for special operations (not covered by CREDIT_COSTS model map). */
@@ -441,6 +495,8 @@ export interface EngineMetadata {
   userFriendlyName: string;
   /** One-line benefit description */
   description: string;
+  /** Short "good for" hint shown in engine selector dropdown */
+  bestFor: string;
   /** Searchable/filterable tags */
   tags: EngineTag[];
   /** Whether this engine requires a face reference photo */
@@ -457,6 +513,7 @@ export interface EngineMetadata {
   openaiModel?: OpenAIModel;
   ideogramModel?: IdeogramModel;
   modelsLabModel?: ModelsLabModel;
+  higgsfieldModel?: HiggsfieldModel;
 }
 
 /**
@@ -470,6 +527,7 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     key: 'gemini:nb2',
     userFriendlyName: 'Nano Banana 2',
     description: 'Pro quality at Flash speed',
+    bestFor: 'Fast edits, lighting, backgrounds',
     tags: ['fast', 'quality', 'economical'],
     requiresFaceRef: false,
     estimatedTime: '~5s',
@@ -481,6 +539,7 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     key: 'gemini:pro',
     userFriendlyName: 'Nano Banana Pro',
     description: "Google's flagship generation",
+    bestFor: 'Complex scenes, highest detail',
     tags: ['quality'],
     requiresFaceRef: false,
     estimatedTime: '~15s',
@@ -492,6 +551,7 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     key: 'gemini:imagen4',
     userFriendlyName: 'Imagen 4',
     description: "Google's photorealistic diffusion",
+    bestFor: 'Photorealistic portraits, product shots',
     tags: ['quality', 'photorealism'],
     requiresFaceRef: false,
     estimatedTime: '~10s',
@@ -504,6 +564,7 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     key: 'fal:seedream50',
     userFriendlyName: 'Seedream 5.0',
     description: 'Intelligent visual reasoning',
+    bestFor: 'Smart scene composition, reasoning',
     tags: ['photorealism', 'quality'],
     requiresFaceRef: false,
     estimatedTime: '~12s',
@@ -515,6 +576,7 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     key: 'fal:seedream45',
     userFriendlyName: 'Seedream 4.5',
     description: 'ByteDance next-gen 4K',
+    bestFor: 'Ultra-high resolution, 4K output',
     tags: ['photorealism', 'quality'],
     requiresFaceRef: false,
     estimatedTime: '~10s',
@@ -527,6 +589,7 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     key: 'openai:gpt15',
     userFriendlyName: 'GPT Image 1.5',
     description: 'True-color precision rendering',
+    bestFor: 'Text in images, logos, typography',
     tags: ['text', 'quality'],
     requiresFaceRef: false,
     estimatedTime: '~15s',
@@ -539,6 +602,7 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     key: 'fal:kontext-multi',
     userFriendlyName: 'FLUX Kontext',
     description: 'Face-consistent identity',
+    bestFor: 'Face consistency across shots',
     tags: ['face', 'quality'],
     requiresFaceRef: true,
     estimatedTime: '~12s',
@@ -550,6 +614,7 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     key: 'fal:flux2pro',
     userFriendlyName: 'FLUX.2 Pro',
     description: 'Speed-optimized detail',
+    bestFor: 'Multi-reference edits, 2D→3D',
     tags: ['face', 'quality'],
     requiresFaceRef: true,
     estimatedTime: '~15s',
@@ -561,6 +626,7 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     key: 'fal:zimage-turbo',
     userFriendlyName: 'Z-Image',
     description: 'Instant lifelike portraits',
+    bestFor: 'Quick drafts, instant previews',
     tags: ['fast', 'photorealism'],
     requiresFaceRef: false,
     estimatedTime: '~3s',
@@ -573,6 +639,7 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     key: 'replicate:grok',
     userFriendlyName: 'Grok Imagine',
     description: 'xAI creative interpretation',
+    bestFor: 'Style transfers, artistic effects',
     tags: ['fast', 'artistic'],
     requiresFaceRef: false,
     estimatedTime: '~4s',
@@ -580,11 +647,25 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     provider: AIProvider.Replicate,
     replicateModel: ReplicateModel.GrokImagine,
   },
+  // ── Higgsfield ──
+  {
+    key: 'higgsfield:soul',
+    userFriendlyName: 'Soul 2.0',
+    description: 'Fashion-grade editorial realism',
+    bestFor: 'Fashion shoots, editorial looks',
+    tags: ['photorealism', 'quality'],
+    requiresFaceRef: false,
+    estimatedTime: '~15s',
+    creditCost: CREDIT_COSTS[HiggsfieldModel.SoulStandard],
+    provider: AIProvider.Higgsfield,
+    higgsfieldModel: HiggsfieldModel.SoulStandard,
+  },
   // ── OpenAI (additional) ──
   {
     key: 'openai:gpt-mini',
     userFriendlyName: 'GPT Image Mini',
     description: 'Ultra-fast drafts at lowest cost',
+    bestFor: 'Bulk drafts, quick iterations',
     tags: ['fast', 'economical'],
     requiresFaceRef: false,
     estimatedTime: '~3s',
@@ -597,6 +678,7 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     key: 'fal:qwen-edit',
     userFriendlyName: 'Qwen Image 2 Pro',
     description: 'Spatial reasoning, style & lighting edits',
+    bestFor: 'Precise edits, text in images',
     tags: ['quality'],
     requiresFaceRef: false,
     estimatedTime: '~15s',
@@ -608,6 +690,7 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     key: 'fal:firered-edit',
     userFriendlyName: 'FireRed v1.1',
     description: 'Portrait editing, try-on, makeup',
+    bestFor: 'Makeup, try-on, face retouching',
     tags: ['quality', 'face'],
     requiresFaceRef: false,
     estimatedTime: '~10s',
@@ -619,6 +702,7 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     key: 'fal:onereward',
     userFriendlyName: 'OneReward',
     description: 'Precise mask-based inpainting',
+    bestFor: 'Inpainting, removing objects',
     tags: ['quality'],
     requiresFaceRef: false,
     estimatedTime: '~8s',
@@ -630,6 +714,7 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     key: 'fal:seedream5-edit',
     userFriendlyName: 'Seedream 5 Edit',
     description: 'Intelligent editing, low hallucination',
+    bestFor: 'Faithful edits, minimal artifacts',
     tags: ['quality'],
     requiresFaceRef: false,
     estimatedTime: '~12s',
@@ -675,24 +760,24 @@ export const FEATURE_ENGINES: Record<string, { default: string; keys: string[] }
   // ── Creation ──
   'director': {
     default: 'gemini:nb2',
-    keys: ['gemini:nb2', 'gemini:pro', 'gemini:imagen4', 'openai:gpt15', 'openai:gpt-mini', 'fal:seedream50', 'fal:seedream45', 'replicate:grok', 'fal:kontext-multi', 'fal:kontext-max', 'fal:zimage-turbo'],
+    keys: ['gemini:nb2', 'gemini:pro', 'gemini:imagen4', 'openai:gpt15', 'openai:gpt-mini', 'fal:seedream50', 'fal:seedream45', 'replicate:grok', 'fal:kontext-multi', 'fal:kontext-max', 'fal:zimage-turbo', 'higgsfield:soul'],
   },
   // ── Editing ──
   'photo-session': {
     default: 'grok',
-    keys: ['grok', 'gemini', 'fal:seedream5-edit'],
+    keys: ['grok', 'gemini', 'fal:seedream5-edit', 'higgsfield:soul'],
   },
   'relight': {
     default: 'fal:qwen-edit',
-    keys: ['fal:qwen-edit', 'gemini', 'fal:flux-kontext'],
+    keys: ['fal:qwen-edit', 'gemini', 'fal:flux-kontext', 'gemini:nb2', 'replicate:grok'],
   },
   'style-transfer': {
     default: 'fal:qwen-edit',
-    keys: ['fal:qwen-edit', 'gemini', 'openai:gpt15'],
+    keys: ['fal:qwen-edit', 'gemini', 'openai:gpt15', 'gemini:nb2', 'replicate:grok'],
   },
   'bg-swap': {
     default: 'fal:flux-kontext',
-    keys: ['fal:flux-kontext', 'fal:qwen-edit', 'gemini'],
+    keys: ['fal:flux-kontext', 'fal:qwen-edit', 'gemini', 'gemini:nb2', 'replicate:grok'],
   },
   'face-swap': {
     default: 'fal:face-swap',
@@ -713,5 +798,18 @@ export const FEATURE_ENGINES: Record<string, { default: string; keys: string[] }
   'skin-enhancer': {
     default: 'fal:firered-edit',
     keys: ['fal:firered-edit', 'gemini'],
+  },
+  // ── Video ──
+  'video:image-to-video': {
+    default: VideoEngine.Kling26Pro,
+    keys: [VideoEngine.Kling26Standard, VideoEngine.Kling26Pro, VideoEngine.Kling3Pro],
+  },
+  'video:motion-control': {
+    default: VideoEngine.Kling26MotionPro,
+    keys: [VideoEngine.Kling26MotionStandard, VideoEngine.Kling26MotionPro, VideoEngine.Kling3MotionPro, VideoEngine.WanReplace],
+  },
+  'video:lip-sync': {
+    default: VideoEngine.KlingAvatarPro,
+    keys: [VideoEngine.KlingAvatarStandard, VideoEngine.KlingAvatarPro],
   },
 };

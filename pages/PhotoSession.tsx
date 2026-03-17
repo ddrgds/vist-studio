@@ -5,7 +5,7 @@ import { useNavigationStore } from '../stores/navigationStore'
 import { generatePhotoSession, generateInfluencerImage } from '../services/geminiService'
 import { generatePhotoSessionWithGrok, editImageWithSeedream5Lite } from '../services/falService'
 import { editWithSoulReference } from '../services/higgsfieldService'
-import { VIBE_TO_SOUL_STYLE, SOUL_STYLES, SOUL_STYLE_CATEGORIES, type SoulStyleCategory } from '../data/soulStyles'
+import { VIBE_TO_SOUL_STYLE, SOUL_STYLES, SOUL_STYLES_CURATED, SOUL_STYLE_CATEGORIES, type SoulStyleCategory } from '../data/soulStyles'
 import { useProfile } from '../contexts/ProfileContext'
 import { useToast } from '../contexts/ToastContext'
 import { ImageSize, AspectRatio, ENGINE_METADATA, OPERATION_CREDIT_COSTS } from '../types'
@@ -41,6 +41,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
   const [selectedPresets, setSelectedPresets] = useState<Set<string>>(new Set(['selfies']))
   const [selectedSoulStyle, setSelectedSoulStyle] = useState<string>(SOUL_STYLES[0].id)
   const [soulStyleCategory, setSoulStyleCategory] = useState<SoulStyleCategory | 'all'>('all')
+  const [showAllStyles, setShowAllStyles] = useState(false)
   const [shotCount, setShotCount] = useState(4)
   const [selectedEngine, setSelectedEngine] = useState<string>('grok')
   const [selectedResolution, setSelectedResolution] = useState('1k')
@@ -682,24 +683,30 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
 
                 {/* Soul Styles grid — single select */}
                 <div className="grid grid-cols-3 gap-1.5 max-h-[280px] overflow-y-auto pr-1" style={{ scrollbarWidth:'thin' }}>
-                  {SOUL_STYLES
+                  {(showAllStyles ? SOUL_STYLES : SOUL_STYLES_CURATED)
                     .filter(s => soulStyleCategory === 'all' || s.category === soulStyleCategory)
                     .map(s => {
                       const active = selectedSoulStyle === s.id
                       return (
                         <button key={s.id} onClick={() => setSelectedSoulStyle(s.id)}
-                          className="p-2 rounded-lg text-center transition-all"
+                          className="p-2 rounded-lg text-center transition-all relative"
                           style={{
                             background: active ? 'rgba(255,107,157,.1)' : 'var(--joi-bg-3)',
                             border: `1px solid ${active ? 'rgba(255,107,157,.3)' : 'var(--joi-border)'}`,
                             boxShadow: active ? '0 0 12px rgba(255,107,157,.08)' : 'none',
                           }}>
+                          {s.featured && <span className="absolute top-0.5 right-0.5 text-[7px]" title="Featured">⭐</span>}
                           <span className="text-lg block">{s.icon}</span>
                           <div className="text-[9px] font-medium mt-0.5 line-clamp-1" style={{ color: active ? 'var(--joi-pink)' : 'var(--joi-text-2)' }}>{s.name}</div>
                         </button>
                       )
                     })}
                 </div>
+                <button onClick={() => setShowAllStyles(!showAllStyles)}
+                  className="w-full mt-1.5 py-1 rounded-md text-[9px] font-medium transition-all"
+                  style={{ color: 'var(--joi-text-3)', background: 'rgba(255,255,255,.02)' }}>
+                  {showAllStyles ? 'Show curated' : `Show all ${SOUL_STYLES.length} styles`}
+                </button>
               </>
             ) : (
               <div className="space-y-3">
