@@ -14,6 +14,8 @@ import { generateWithOpenAI } from './openaiService';
 import { generateImageToVideo, generateMotionControl, generateLipSync } from './falVideoService';
 import { generateSpeech } from './elevenLabsService';
 import { generateConsistent, autoSelectEngine, type ConsistencyParams, type ConsistencyEngine } from './consistencyService';
+import * as tools from './toolEngines';
+import type { ToolId } from './toolEngines';
 import {
   AIProvider, ENGINE_METADATA,
   type InfluencerParams, type VideoParams, type LipSyncParams,
@@ -23,7 +25,7 @@ import {
 // ─── Request/Response types ──────────────────
 
 export interface AIRequest {
-  type: 'create-persona' | 'content' | 'consistent' | 'edit' | 'video' | 'lipsync' | 'tts';
+  type: 'create-persona' | 'content' | 'consistent' | 'edit' | 'tool' | 'video' | 'lipsync' | 'tts';
 
   // Common
   prompt: string;
@@ -49,6 +51,11 @@ export interface AIRequest {
   consistencyEngine?: ConsistencyEngine;
   idWeight?: number;                 // 0-1, face fidelity
   style?: string;                    // InstantID style preset
+
+  // For tool editing (relight, scene, outfit, etc.)
+  toolId?: ToolId;
+  imageUrl?: string;                 // base image to edit
+  secondImageUrl?: string;           // for face swap (source face)
 
   // Progress callback
   onProgress?: (percent: number) => void;
@@ -167,6 +174,50 @@ export async function aiGenerate(request: AIRequest): Promise<AIResponse> {
       };
     }
 
+    case 'tool': {
+      if (!request.imageUrl) throw new Error('imageUrl required for tool editing');
+      if (!request.toolId) throw new Error('toolId required');
+
+      let result: tools.ToolResult;
+
+      switch (request.toolId) {
+        case 'relight':
+          result = await tools.relight(request.imageUrl, request.prompt);
+          break;
+        case 'scene':
+          result = await tools.changeScene(request.imageUrl, request.prompt);
+          break;
+        case 'outfit':
+          result = await tools.changeOutfit(request.imageUrl, request.prompt);
+          break;
+        case 'face-swap':
+          if (!request.secondImageUrl) throw new Error('secondImageUrl required for face swap');
+          result = await tools.faceSwap(request.imageUrl, request.secondImageUrl);
+          break;
+        case 'realistic-skin':
+          result = await tools.realisticSkin(request.imageUrl);
+          break;
+        case 'style-transfer':
+          result = await tools.styleTransfer(request.imageUrl, request.prompt);
+          break;
+        case 'upscale':
+          result = await tools.upscale(request.imageUrl);
+          break;
+        case 'angles':
+          // Angles handled separately — requires Gemini + optional Grok
+          result = await tools.generateAngles(request.imageUrl, 'face');
+          break;
+        default:
+          throw new Error(`Unknown tool: ${request.toolId}`);
+      }
+
+      return {
+        urls: [result.url],
+        engine_used: `tool:${request.toolId}:${result.engine}`,
+        credits_used: request.toolId === 'upscale' ? 5 : 10,
+      };
+    }
+
     case 'edit': {
       // Edit operations stay as direct API calls for now
       // They'll be routed through adapters in Phase 2
@@ -214,6 +265,16 @@ export const ai = {
   /** Text to speech */
   tts: (text: string, voiceId: string) =>
     aiGenerate({ type: 'tts', prompt: '', ttsText: text, ttsVoiceId: voiceId }),
+
+  /** Edit image with a specific tool (relight, scene, outfit, etc.) */
+  tool: (toolId: ToolId, imageUrl: string, prompt: string, secondImageUrl?: string) =>
+    aiGenerate({
+      type: 'tool',
+      toolId,
+      imageUrl,
+      prompt,
+      secondImageUrl,
+    }),
 
   /** Generate with face consistency (PuLID/InstantID) */
   consistent: (opts: {
