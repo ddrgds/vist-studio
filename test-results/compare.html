@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>VIST Studio — Full Model Comparison</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #08070C; color: #F0EAF4; font-family: 'DM Sans', -apple-system, sans-serif; }
+  .header { text-align: center; padding: 40px 20px 10px; }
+  .header h1 { font-size: 28px; font-weight: 800; }
+  .header p { color: #685880; font-size: 13px; margin-top: 6px; }
+  .section { padding: 16px 30px 30px; }
+  .section-title { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .section-title .badge { font-size: 9px; font-weight: 600; letter-spacing: 0.1em; padding: 3px 10px; border-radius: 999px; background: rgba(255,107,157,0.1); color: #FF6B9D; border: 1px solid rgba(255,107,157,0.2); }
+  .section-sub { color: #685880; font-size: 11px; margin: 4px 0 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+  .card { border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.04); background: #0E0C16; transition: border-color 0.2s, transform 0.2s; }
+  .card:hover { border-color: rgba(255,107,157,0.2); transform: translateY(-2px); }
+  .card img { width: 100%; aspect-ratio: 3/4; object-fit: cover; display: block; cursor: pointer; }
+  .card-label { padding: 8px 10px; }
+  .card-label .name { font-size: 11px; font-weight: 600; }
+  .card-label .meta { font-size: 9px; color: #685880; display: block; margin-top: 2px; }
+  .original { border: 1px solid rgba(167,139,250,0.3) !important; }
+  .original .card-label { background: rgba(167,139,250,0.06); }
+  .divider { height: 1px; margin: 8px 30px; background: linear-gradient(90deg, transparent, rgba(255,107,157,0.15), transparent); }
+  .legend { text-align: center; padding: 12px; font-size: 10px; color: #685880; }
+  .na { opacity: 0.3; }
+  .na img { filter: grayscale(1); }
+  /* Lightbox */
+  .lightbox { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; cursor: zoom-out; }
+  .lightbox.open { display: flex; }
+  .lightbox img { max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 12px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Full Model Comparison — 8 Models × 3 Tools</h1>
+  <p>Same input image. Click any image to zoom. All generated from the mirror selfie reference.</p>
+</div>
+<div class="legend">Models: Qwen Edit · FLUX Kontext · Seedream 5 · FLUX 2 Pro · Z-Image Turbo · Grok · GPT Image · Gemini NB2</div>
+
+<!-- RELIGHT -->
+<div class="section">
+  <div class="section-title">💡 Relight <span class="badge">GOLDEN HOUR</span></div>
+  <div class="section-sub">Prompt: "warm golden hour sunset lighting, soft orange glow on skin, dramatic shadows"</div>
+  <div class="grid">
+    <div class="card original"><img src="../Downloads/influencer-1506fdd6-6c03-4fc0-980d-c4c2745e71f0.png" onclick="zoom(this)"><div class="card-label"><span class="name">Original</span><span class="meta">input</span></div></div>
+    <div class="card"><img src="cmp-relight-qwen.png" onclick="zoom(this)"><div class="card-label"><span class="name">Qwen Edit</span><span class="meta">21s · ~$0.03</span></div></div>
+    <div class="card"><img src="cmp-relight-kontext.jpg" onclick="zoom(this)"><div class="card-label"><span class="name">FLUX Kontext</span><span class="meta">11s · $0.04</span></div></div>
+    <div class="card"><img src="cmp-relight-seedream.png" onclick="zoom(this)"><div class="card-label"><span class="name">Seedream 5</span><span class="meta">41s · ~$0.02</span></div></div>
+    <div class="card"><img src="cmp-relight-flux2.jpg" onclick="zoom(this)"><div class="card-label"><span class="name">FLUX 2 Pro</span><span class="meta">37s · ~$0.03</span></div></div>
+    <div class="card"><img src="cmp-relight-zimage.png" onclick="zoom(this)"><div class="card-label"><span class="name">Z-Image Turbo</span><span class="meta">4s · $0.005</span></div></div>
+    <div class="card"><img src="cmp-relight-grok.jpg" onclick="zoom(this)"><div class="card-label"><span class="name">Grok Imagine</span><span class="meta">11s · ~$0.03</span></div></div>
+    <div class="card"><img src="cmp-relight-gpt.png" onclick="zoom(this)"><div class="card-label"><span class="name">GPT Image 1</span><span class="meta">36s · ~$0.04</span></div></div>
+    <div class="card"><img src="cmp-relight-gemini.png" onclick="zoom(this)"><div class="card-label"><span class="name">Gemini NB2</span><span class="meta">23s · free</span></div></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- BG SWAP -->
+<div class="section">
+  <div class="section-title">🌃 Background Swap <span class="badge">TOKYO NEON</span></div>
+  <div class="section-sub">Prompt: "same woman same pose, busy Tokyo street at night, neon signs, rain-wet pavement"</div>
+  <div class="grid">
+    <div class="card original"><img src="../Downloads/influencer-1506fdd6-6c03-4fc0-980d-c4c2745e71f0.png" onclick="zoom(this)"><div class="card-label"><span class="name">Original</span><span class="meta">input</span></div></div>
+    <div class="card"><img src="cmp-bgswap-qwen.png" onclick="zoom(this)"><div class="card-label"><span class="name">Qwen Edit</span><span class="meta">25s · ~$0.03</span></div></div>
+    <div class="card"><img src="cmp-bgswap-kontext.jpg" onclick="zoom(this)"><div class="card-label"><span class="name">FLUX Kontext</span><span class="meta">16s · $0.04</span></div></div>
+    <div class="card"><img src="cmp-bgswap-seedream.png" onclick="zoom(this)"><div class="card-label"><span class="name">Seedream 5</span><span class="meta">76s · ~$0.02</span></div></div>
+    <div class="card"><img src="cmp-bgswap-flux2.jpg" onclick="zoom(this)"><div class="card-label"><span class="name">FLUX 2 Pro</span><span class="meta">59s · ~$0.03</span></div></div>
+    <div class="card"><img src="cmp-bgswap-zimage.png" onclick="zoom(this)"><div class="card-label"><span class="name">Z-Image Turbo</span><span class="meta">4s · $0.005</span></div></div>
+    <div class="card"><img src="cmp-bgswap-grok.jpg" onclick="zoom(this)"><div class="card-label"><span class="name">Grok Imagine</span><span class="meta">10s · ~$0.03</span></div></div>
+    <div class="card na"><div style="aspect-ratio:3/4;background:#111;display:flex;align-items:center;justify-content:center;font-size:11px;color:#685880">Blocked by safety</div><div class="card-label"><span class="name">GPT Image 1</span><span class="meta">— blocked</span></div></div>
+    <div class="card"><img src="cmp-bgswap-gemini.png" onclick="zoom(this)"><div class="card-label"><span class="name">Gemini NB2</span><span class="meta">24s · free</span></div></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- OUTFIT -->
+<div class="section">
+  <div class="section-title">👗 Outfit Change <span class="badge">RED DRESS</span></div>
+  <div class="section-sub">Prompt: "same woman same face, elegant red satin evening dress instead of white top and jeans"</div>
+  <div class="grid">
+    <div class="card original"><img src="../Downloads/influencer-1506fdd6-6c03-4fc0-980d-c4c2745e71f0.png" onclick="zoom(this)"><div class="card-label"><span class="name">Original</span><span class="meta">input</span></div></div>
+    <div class="card"><img src="cmp-outfit-qwen.png" onclick="zoom(this)"><div class="card-label"><span class="name">Qwen Edit</span><span class="meta">23s · ~$0.03</span></div></div>
+    <div class="card"><img src="cmp-outfit-kontext.jpg" onclick="zoom(this)"><div class="card-label"><span class="name">FLUX Kontext</span><span class="meta">19s · $0.04</span></div></div>
+    <div class="card"><img src="cmp-outfit-seedream.png" onclick="zoom(this)"><div class="card-label"><span class="name">Seedream 5</span><span class="meta">34s · ~$0.02</span></div></div>
+    <div class="card"><img src="cmp-outfit-flux2.jpg" onclick="zoom(this)"><div class="card-label"><span class="name">FLUX 2 Pro</span><span class="meta">44s · ~$0.03</span></div></div>
+    <div class="card"><img src="cmp-outfit-zimage.png" onclick="zoom(this)"><div class="card-label"><span class="name">Z-Image Turbo</span><span class="meta">7s · $0.005</span></div></div>
+    <div class="card"><img src="cmp-outfit-grok.jpg" onclick="zoom(this)"><div class="card-label"><span class="name">Grok Imagine</span><span class="meta">10s · ~$0.03</span></div></div>
+    <div class="card"><img src="cmp-outfit-gpt.png" onclick="zoom(this)"><div class="card-label"><span class="name">GPT Image 1</span><span class="meta">33s · ~$0.04</span></div></div>
+    <div class="card"><img src="cmp-outfit-gemini.png" onclick="zoom(this)"><div class="card-label"><span class="name">Gemini NB2</span><span class="meta">20s · free</span></div></div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lb" onclick="this.classList.remove('open')">
+  <img id="lb-img" src="">
+</div>
+
+<script>
+function zoom(el) {
+  document.getElementById('lb-img').src = el.src;
+  document.getElementById('lb').classList.add('open');
+}
+</script>
+
+<div style="text-align:center;padding:30px;color:#685880;font-size:10px">
+  VIST Studio — 8 Model Comparison · March 2026
+</div>
+</body>
+</html>

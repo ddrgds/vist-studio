@@ -13,6 +13,7 @@ import { generateWithReplicate } from './replicateService';
 import { generateWithOpenAI } from './openaiService';
 import { generateImageToVideo, generateMotionControl, generateLipSync } from './falVideoService';
 import { generateSpeech } from './elevenLabsService';
+import { generateConsistent, autoSelectEngine, type ConsistencyParams, type ConsistencyEngine } from './consistencyService';
 import {
   AIProvider, ENGINE_METADATA,
   type InfluencerParams, type VideoParams, type LipSyncParams,
@@ -22,7 +23,7 @@ import {
 // ─── Request/Response types ──────────────────
 
 export interface AIRequest {
-  type: 'create-persona' | 'content' | 'edit' | 'video' | 'lipsync' | 'tts';
+  type: 'create-persona' | 'content' | 'consistent' | 'edit' | 'video' | 'lipsync' | 'tts';
 
   // Common
   prompt: string;
@@ -42,6 +43,12 @@ export interface AIRequest {
   // For TTS
   ttsText?: string;
   ttsVoiceId?: string;
+
+  // For consistent generation (face-locked)
+  referenceUrls?: string[];          // persona's face reference URLs
+  consistencyEngine?: ConsistencyEngine;
+  idWeight?: number;                 // 0-1, face fidelity
+  style?: string;                    // InstantID style preset
 
   // Progress callback
   onProgress?: (percent: number) => void;
@@ -92,6 +99,31 @@ export async function aiGenerate(request: AIRequest): Promise<AIResponse> {
         urls,
         engine_used: request.engine || 'gemini:auto',
         credits_used: engineMeta?.creditCost ?? 2,
+      };
+    }
+
+    case 'consistent': {
+      if (!request.referenceUrls?.length) throw new Error('referenceUrls required for consistent generation');
+
+      const cEngine = request.consistencyEngine || autoSelectEngine({
+        referenceCount: request.referenceUrls.length,
+        needsStyle: !!request.style,
+        style: request.style,
+      });
+
+      const result = await generateConsistent({
+        engine: cEngine,
+        referenceUrls: request.referenceUrls,
+        prompt: request.prompt,
+        format: request.format,
+        idWeight: request.idWeight,
+        style: request.style,
+      });
+
+      return {
+        urls: [result.imageUrl],
+        engine_used: `consistency:${result.engine}`,
+        credits_used: 10, // ~$0.03-0.04 per image
       };
     }
 
@@ -182,4 +214,22 @@ export const ai = {
   /** Text to speech */
   tts: (text: string, voiceId: string) =>
     aiGenerate({ type: 'tts', prompt: '', ttsText: text, ttsVoiceId: voiceId }),
+
+  /** Generate with face consistency (PuLID/InstantID) */
+  consistent: (opts: {
+    referenceUrls: string[];
+    prompt: string;
+    format?: AspectRatio;
+    engine?: ConsistencyEngine;
+    idWeight?: number;
+    style?: string;
+  }) => aiGenerate({
+    type: 'consistent',
+    prompt: opts.prompt,
+    referenceUrls: opts.referenceUrls,
+    format: opts.format,
+    consistencyEngine: opts.engine,
+    idWeight: opts.idWeight,
+    style: opts.style,
+  }),
 };

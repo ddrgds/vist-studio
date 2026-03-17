@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>VIST Studio — Remaining Tools Comparison</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #08070C; color: #F0EAF4; font-family: 'DM Sans', -apple-system, sans-serif; }
+  .header { text-align: center; padding: 40px 20px 10px; }
+  .header h1 { font-size: 26px; font-weight: 800; }
+  .header p { color: #685880; font-size: 13px; margin-top: 6px; }
+  .section { padding: 16px 30px 30px; }
+  .section-title { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .badge { font-size: 9px; font-weight: 600; letter-spacing: 0.1em; padding: 3px 10px; border-radius: 999px; background: rgba(255,107,157,0.1); color: #FF6B9D; border: 1px solid rgba(255,107,157,0.2); }
+  .section-sub { color: #685880; font-size: 11px; margin: 4px 0 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+  .card { border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.04); background: #0E0C16; transition: border-color 0.2s, transform 0.2s; }
+  .card:hover { border-color: rgba(255,107,157,0.2); transform: translateY(-2px); }
+  .card img { width: 100%; aspect-ratio: 3/4; object-fit: cover; display: block; cursor: pointer; }
+  .card-label { padding: 8px 10px; }
+  .card-label .name { font-size: 11px; font-weight: 600; }
+  .card-label .meta { font-size: 9px; color: #685880; display: block; margin-top: 2px; }
+  .original { border: 1px solid rgba(167,139,250,0.3) !important; }
+  .original .card-label { background: rgba(167,139,250,0.06); }
+  .divider { height: 1px; margin: 8px 30px; background: linear-gradient(90deg, transparent, rgba(255,107,157,0.15), transparent); }
+  .lightbox { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; cursor: zoom-out; }
+  .lightbox.open { display: flex; }
+  .lightbox img { max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 12px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Tool Comparison — Part 2</h1>
+  <p>Face Swap · Enhance · Style · Upscale · Skin · Angles. Click to zoom.</p>
+</div>
+
+<!-- FACE SWAP -->
+<div class="section">
+  <div class="section-title">🔄 Face Swap <span class="badge">SWAP FACE FROM ANOTHER PERSON</span></div>
+  <div class="section-sub">Swaps the face from a different photo onto this image</div>
+  <div class="grid">
+    <div class="card original"><img src="../Downloads/influencer-1506fdd6-6c03-4fc0-980d-c4c2745e71f0.png" onclick="zoom(this)"><div class="card-label"><span class="name">Original (base)</span><span class="meta">target image</span></div></div>
+    <div class="card original"><img src="../Downloads/IMAGENES APP/influencer-941303a8-c646-421a-98e7-56c076e5ba1d.png" onclick="zoom(this)"><div class="card-label"><span class="name">Face Source</span><span class="meta">face to swap in</span></div></div>
+    <div class="card"><img src="t2-faceswap.jpg" onclick="zoom(this)"><div class="card-label"><span class="name">fal.ai Face Swap</span><span class="meta">31s · only option</span></div></div>
+  </div>
+</div>
+<div class="divider"></div>
+
+<!-- FACE ENHANCE -->
+<div class="section">
+  <div class="section-title">✨ Face Enhance <span class="badge">SHARPNESS + DETAIL</span></div>
+  <div class="section-sub">Improves face clarity, sharpness, and detail</div>
+  <div class="grid">
+    <div class="card original"><img src="../Downloads/influencer-1506fdd6-6c03-4fc0-980d-c4c2745e71f0.png" onclick="zoom(this)"><div class="card-label"><span class="name">Original</span><span class="meta">input</span></div></div>
+    <div class="card"><img src="t2-faceenhance.jpg" onclick="zoom(this)"><div class="card-label"><span class="name">fal.ai Face Enhancement</span><span class="meta">15s</span></div></div>
+  </div>
+</div>
+<div class="divider"></div>
+
+<!-- STYLE TRANSFER -->
+<div class="section">
+  <div class="section-title">🎨 Style Transfer <span class="badge">OIL PAINTING</span></div>
+  <div class="section-sub">Prompt: "oil painting style, painterly brushstrokes, rich colors"</div>
+  <div class="grid">
+    <div class="card original"><img src="../Downloads/influencer-1506fdd6-6c03-4fc0-980d-c4c2745e71f0.png" onclick="zoom(this)"><div class="card-label"><span class="name">Original</span><span class="meta">input</span></div></div>
+    <div class="card"><img src="t2-style-qwen.png" onclick="zoom(this)"><div class="card-label"><span class="name">Qwen Edit</span><span class="meta">20s · ~$0.03</span></div></div>
+    <div class="card"><img src="t2-style-grok.jpg" onclick="zoom(this)"><div class="card-label"><span class="name">Grok Imagine</span><span class="meta">11s · ~$0.03</span></div></div>
+    <div class="card"><img src="t2-style-kontext.jpg" onclick="zoom(this)"><div class="card-label"><span class="name">FLUX Kontext</span><span class="meta">15s · $0.04</span></div></div>
+  </div>
+</div>
+<div class="divider"></div>
+
+<!-- UPSCALE -->
+<div class="section">
+  <div class="section-title">⬆️ Upscale 2x <span class="badge">SUPER RESOLUTION</span></div>
+  <div class="section-sub">Double the resolution. Creative Upscaler, CCSR, and Topaz failed — only AuraSR worked.</div>
+  <div class="grid">
+    <div class="card original"><img src="../Downloads/influencer-1506fdd6-6c03-4fc0-980d-c4c2745e71f0.png" onclick="zoom(this)"><div class="card-label"><span class="name">Original</span><span class="meta">input</span></div></div>
+    <div class="card"><img src="t2-upscale-aurasr.png" onclick="zoom(this)"><div class="card-label"><span class="name">AuraSR 2x</span><span class="meta">18s · only option that worked</span></div></div>
+  </div>
+</div>
+<div class="divider"></div>
+
+<!-- REALISTIC SKIN -->
+<div class="section">
+  <div class="section-title">🧴 Realistic Skin <span class="badge">PORES + TEXTURE</span></div>
+  <div class="section-sub">Adds natural skin detail — pores, texture, imperfections. Two strength levels tested.</div>
+  <div class="grid">
+    <div class="card original"><img src="../Downloads/influencer-1506fdd6-6c03-4fc0-980d-c4c2745e71f0.png" onclick="zoom(this)"><div class="card-label"><span class="name">Original</span><span class="meta">input</span></div></div>
+    <div class="card"><img src="t2-skin-06.png" onclick="zoom(this)"><div class="card-label"><span class="name">Realism (0.6)</span><span class="meta">21s · subtle</span></div></div>
+    <div class="card"><img src="t2-skin-09.png" onclick="zoom(this)"><div class="card-label"><span class="name">Realism (0.9)</span><span class="meta">21s · stronger</span></div></div>
+  </div>
+</div>
+<div class="divider"></div>
+
+<!-- ANGLES -->
+<div class="section">
+  <div class="section-title">🔄 Angles / 360° <span class="badge">DIFFERENT VIEWPOINTS</span></div>
+  <div class="section-sub">Generate the same person from different camera angles</div>
+
+  <div style="margin-bottom: 8px; font-size: 12px; font-weight: 600; color: #A898B8;">Side View (three-quarter)</div>
+  <div class="grid" style="margin-bottom: 16px;">
+    <div class="card original"><img src="../Downloads/influencer-1506fdd6-6c03-4fc0-980d-c4c2745e71f0.png" onclick="zoom(this)"><div class="card-label"><span class="name">Original (front)</span><span class="meta">input</span></div></div>
+    <div class="card"><img src="t2-angle-side-qwen.png" onclick="zoom(this)"><div class="card-label"><span class="name">Qwen Edit</span><span class="meta">21s</span></div></div>
+    <div class="card"><img src="t2-angle-side-grok.jpg" onclick="zoom(this)"><div class="card-label"><span class="name">Grok Imagine</span><span class="meta">10s</span></div></div>
+    <div class="card"><img src="t2-angle-side-kontext.jpg" onclick="zoom(this)"><div class="card-label"><span class="name">FLUX Kontext</span><span class="meta">18s</span></div></div>
+  </div>
+
+  <div style="margin-bottom: 8px; font-size: 12px; font-weight: 600; color: #A898B8;">Back View</div>
+  <div class="grid">
+    <div class="card original"><img src="../Downloads/influencer-1506fdd6-6c03-4fc0-980d-c4c2745e71f0.png" onclick="zoom(this)"><div class="card-label"><span class="name">Original (front)</span><span class="meta">input</span></div></div>
+    <div class="card"><img src="t2-angle-back-qwen.png" onclick="zoom(this)"><div class="card-label"><span class="name">Qwen Edit</span><span class="meta">20s</span></div></div>
+    <div class="card"><img src="t2-angle-back-grok.jpg" onclick="zoom(this)"><div class="card-label"><span class="name">Grok Imagine</span><span class="meta">9s</span></div></div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lb" onclick="this.classList.remove('open')"><img id="lb-img" src=""></div>
+<script>function zoom(el){document.getElementById('lb-img').src=el.src;document.getElementById('lb').classList.add('open');}</script>
+
+<div style="text-align:center;padding:30px;color:#685880;font-size:10px">VIST Studio — Tools Comparison Part 2 · March 2026</div>
+</body>
+</html>
