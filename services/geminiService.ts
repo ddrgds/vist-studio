@@ -4,6 +4,7 @@ import { InfluencerParams, PoseModificationParams, VideoParams, GeminiImageModel
 
 import { proxyUrl } from './apiAuth';
 import { FACE_LOCK_PROMPT, OUTFIT_PRESERVE_PROMPT, FACE_CHECK_PROMPT } from '../data/sessionPresets';
+import { compilePrompt } from './promptCompiler';
 
 // In dev, proxyUrl returns relative path — needs origin prefix.
 // In prod, proxyUrl returns full Worker URL — use as-is.
@@ -391,6 +392,21 @@ export const generateInfluencerImage = async (
     parts.push({ text: "[SCENARIO REFERENCE] Use ONLY for background environment: location, architecture, colors, atmosphere, lighting mood. ⚠️ COMPLETELY IGNORE any people, characters, or faces visible in this image — they are NOT character references and must NOT influence the characters generated." });
   }
 
+  // ── Prompt Compiler: optimize scenario/lighting for target model
+  const selectedModel = params.model ?? GeminiImageModel.Flash2;
+  const compiledScene = (params.scenario || params.lighting)
+    ? await compilePrompt({
+        subjectIntent: params.scenario || 'fashion editorial photograph',
+        poseLighting: [
+          ...(effectiveCharacters.map(c => c.pose).filter(Boolean)),
+          params.lighting,
+          params.camera,
+        ].filter(Boolean).join(', '),
+        targetModel: selectedModel,
+        isRealistic: !!params.realistic,
+      })
+    : undefined;
+
   // ── Gemini/NB2/NB Pro style directive (research-backed 2026):
   // Gemini is highly sensitive to detail order: motif first, then context and style.
   // 2026 trend: "emotional vibe-coding" — define emotional resonance, not just technical specs.
@@ -434,7 +450,7 @@ export const generateInfluencerImage = async (
 
   const sceneSpec = {
     style: styleDirective,
-    environment: params.scenario || (params.scenarioImage?.length ? "[SCENARIO REFERENCE] — match location, colors, atmosphere" : "clean neutral studio"),
+    environment: compiledScene || params.scenario || (params.scenarioImage?.length ? "[SCENARIO REFERENCE] — match location, colors, atmosphere" : "clean neutral studio"),
     lighting: {
       description: params.lighting || "soft directional studio light, slight rim highlight, warm skin tones, gentle diffusion",
       rule: "natural and flattering, no harsh shadows",
@@ -480,8 +496,6 @@ ${hasFaceRefs ? '- Outfit from [FACE/IDENTITY REFERENCE] images is IRRELEVANT �
       if (onProgress) onProgress(Math.min(90, currentProgress));
     }
   }, 1500);
-
-  const selectedModel = params.model ?? GeminiImageModel.Flash2;
 
   // Build tasks as deferred functions (do not execute yet)
   const tasks = Array.from({ length: count }, (_, i) =>
@@ -1003,13 +1017,20 @@ export const editImageWithAI = async (
     parts.push({ text: '[REFERENCE] Use this image as a visual guide for the style, shape, color, or material of the element to add or modify.' });
   }
 
-  // 3. Edit instruction prompt
+  // 3. Compile edit instruction through Flash Lite (EDIT_INPAINT rules: delta only)
+  const editModel = params.model ?? GeminiImageModel.Flash2;
+  const compiledInstruction = await compilePrompt({
+    subjectIntent: params.instruction,
+    targetModel: editModel,
+    isEdit: true,
+  });
+
   const promptText = `
 ⚠️ PRESERVATION RULE (highest priority): This is a MINIMAL TARGETED EDIT.
 Preserve ALL existing elements of the Base Image EXACTLY — the subject's face, body, pose, outfit, background, lighting, color grade, and overall composition must remain unchanged.
 ONLY add or modify what the instruction explicitly specifies.
 
-EDIT INSTRUCTION: ${params.instruction}
+EDIT INSTRUCTION: ${compiledInstruction}
 
 INTEGRATION RULES:
 - The added or modified elements must look seamlessly integrated and photorealistic
@@ -1078,6 +1099,18 @@ export const generatePhotoSession = async (
   if (onProgress) onProgress(5);
 
   const refPart = await fileToPart(referenceImage);
+  if (onProgress) onProgress(10);
+
+  // Compile scenario through Flash Lite for model-optimized description
+  const compiledSessionScene = (options.scenario || options.lighting)
+    ? await compilePrompt({
+        subjectIntent: options.scenario || 'photo session in same location',
+        poseLighting: options.lighting,
+        targetModel: GeminiImageModel.Flash2,
+        isRealistic: options.realistic !== false,
+      })
+    : undefined;
+
   if (onProgress) onProgress(15);
 
   const clampedCount = Math.max(2, Math.min(8, count));
@@ -1112,8 +1145,8 @@ The person should adopt the pose, expression, and body language described above 
 
 ${OUTFIT_PRESERVE_PROMPT}
 
-SCENE: ${options.scenario || 'Same type of location as the reference image.'}
-${options.lighting ? `LIGHTING: ${options.lighting}` : (isRealistic ? 'LIGHTING: Natural window light, no flash, no ring light.' : '')}
+SCENE: ${compiledSessionScene || options.scenario || 'Same type of location as the reference image.'}
+${options.lighting && !compiledSessionScene ? `LIGHTING: ${options.lighting}` : (isRealistic ? 'LIGHTING: Natural window light, no flash, no ring light.' : '')}
 
 BACKGROUND: ${envDesc || (isRealistic ? 'Real environment with natural clutter — beauty products, towels, flowers, real furniture. Must look different from other shots — different framing of the same space.' : 'Must look different from other shots — different framing of the same space.')}
 The camera has physically moved. Background MUST change — different walls, depth, objects visible.

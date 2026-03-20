@@ -1,5 +1,6 @@
 import { fal } from '@fal-ai/client';
 import { editImageWithAI } from './geminiService';
+import { compilePrompt } from './promptCompiler';
 
 // ─────────────────────────────────────────────
 // Tool Engine Service — Best model per editing tool
@@ -130,10 +131,16 @@ export function getPrompt(tool: ToolId, engine: EngineId, input: string): string
 
 /** Grok edit via fal.ai — image_urls array */
 export async function grokEdit(imageUrl: string, prompt: string): Promise<string> {
+  // Compile through Flash Lite (EDIT_INPAINT rules: delta only)
+  const compiled = await compilePrompt({
+    subjectIntent: prompt,
+    targetModel: 'xai/grok-imagine-image/edit',
+    isEdit: true,
+  });
   const result = await fal.subscribe('xai/grok-imagine-image/edit', {
     input: {
       image_urls: [imageUrl],
-      prompt,
+      prompt: compiled,
       num_images: 1,
       output_format: 'jpeg',
     },

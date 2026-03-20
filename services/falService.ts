@@ -2,6 +2,7 @@ import { fal } from '@fal-ai/client';
 import { InfluencerParams, FalModel, AspectRatio, PoseModificationParams } from '../types';
 import { proxyUrl } from './apiAuth';
 import { FACE_LOCK_PROMPT, OUTFIT_PRESERVE_PROMPT, FACE_CHECK_PROMPT } from '../data/sessionPresets';
+import { compilePrompt } from './promptCompiler';
 
 // ─────────────────────────────────────────────
 // Config — API key is injected server-side by the proxy.
@@ -199,13 +200,15 @@ export const generateWithKontextMulti = async (
     prompt += `The person is holding or wearing: ${character.accessory}. `;
   }
 
-  // Setting & lighting — place after subject to avoid bleed-through
-  if (params.scenario) {
-    prompt += `Setting: ${params.scenario}. `;
-  }
-
-  if (params.lighting) {
-    prompt += `Lighting: ${params.lighting}. `;
+  // Setting & lighting — compile through Flash Lite for FLUX-optimized language
+  if (params.scenario || params.lighting) {
+    const compiledScene = await compilePrompt({
+      subjectIntent: params.scenario || 'fashion editorial setting',
+      poseLighting: params.lighting,
+      targetModel: model as string,
+      isRealistic: !!params.realistic,
+    });
+    prompt += `${compiledScene} `;
   } else {
     prompt += `Lighting: soft directional studio light, slight rim highlight, natural skin tones. `;
   }
@@ -1286,9 +1289,15 @@ export const editImageWithGrokFal = async (
   }
   if (onProgress) onProgress(35);
 
+  // Compile edit prompt through Flash Lite (EDIT_INPAINT rules: delta only)
+  const compiledEdit = await compilePrompt({
+    subjectIntent: prompt,
+    targetModel: 'xai/grok-imagine-image/edit',
+    isEdit: true,
+  });
   // Grok needs explicit "lock" instructions to preserve unchanged areas
   const lockPrefix = 'Keep face, pose, and background unchanged unless the edit specifically requires changing them. ';
-  const fullPrompt = lockPrefix + prompt;
+  const fullPrompt = lockPrefix + compiledEdit;
 
   const result = await fal.subscribe('xai/grok-imagine-image/edit', {
     input: {
@@ -1356,6 +1365,17 @@ export const generatePhotoSessionWithGrok = async (
 
   // Upload once — reuse URL for all shots
   const imageUrl = await uploadToFalStorage(referenceImage);
+  if (onProgress) onProgress(10);
+
+  // Compile scenario through Flash Lite (RUNWAY_GROK rules)
+  const compiledSessionScene = options.scenario
+    ? await compilePrompt({
+        subjectIntent: options.scenario,
+        targetModel: 'xai/grok-imagine-image/edit',
+        isEdit: true,
+        isRealistic: options.realistic !== false,
+      })
+    : '';
   if (onProgress) onProgress(15);
 
   const clampedCount = Math.max(2, Math.min(8, count));
@@ -1379,7 +1399,7 @@ export const generatePhotoSessionWithGrok = async (
   for (let i = 0; i < clampedCount; i++) {
     if (abortSignal?.aborted) throw new Error('Cancelado');
     const angle = angles[i];
-    const scenePart = options.scenario ? ` Scene: ${options.scenario}.` : '';
+    const scenePart = compiledSessionScene ? ` Scene: ${compiledSessionScene}.` : (options.scenario ? ` Scene: ${options.scenario}.` : '');
     const boostPart = options.imageBoost ? ` ${options.imageBoost}.` : '';
     const negativePart = options.negativePrompt ? ` Avoid: ${options.negativePrompt}.` : '';
     const isRealistic = options.realistic !== false;
