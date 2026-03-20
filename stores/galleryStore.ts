@@ -97,6 +97,13 @@ interface GalleryState {
   /** User ID set during hydrate — used for cloud persistence */
   _userId: string | undefined;
 
+  // ─── Storyboard ──────────────────────────────
+  storyboardIds: string[];
+  addToStoryboard: (id: string) => void;
+  removeFromStoryboard: (id: string) => void;
+  reorderStoryboard: (ids: string[]) => void;
+  clearStoryboard: () => void;
+
   hydrate: (userId?: string) => Promise<void>;
   addItems: (items: GalleryItem[]) => void;
   removeItem: (id: string) => void;
@@ -113,6 +120,24 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
   previewImage: null,
   isLoading: false,
   _userId: undefined,
+  storyboardIds: [],
+
+  // ─── Storyboard ────────────────────────────
+  addToStoryboard: (id) => {
+    set((s) => {
+      if (s.storyboardIds.includes(id)) return s;
+      return { storyboardIds: [...s.storyboardIds, id] };
+    });
+  },
+  removeFromStoryboard: (id) => {
+    set((s) => ({ storyboardIds: s.storyboardIds.filter((sid) => sid !== id) }));
+  },
+  reorderStoryboard: (ids) => {
+    set({ storyboardIds: ids });
+  },
+  clearStoryboard: () => {
+    set({ storyboardIds: [] });
+  },
 
   // ─── Hydrate ────────────────────────────────
   hydrate: async (userId?: string) => {

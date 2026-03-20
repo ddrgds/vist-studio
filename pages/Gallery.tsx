@@ -4,8 +4,12 @@ import { useCharacterStore } from '../stores/characterStore'
 import { useToast } from '../contexts/ToastContext'
 import { useNavigationStore } from '../stores/navigationStore'
 import { removeBackground } from '../services/falService'
+import ABComparator from '../components/ABComparator'
+import CompareSliderModal from '../components/CompareSliderModal'
+import { StoryboardView } from '../components/StoryboardView'
 
 const ImageEditor = lazy(() => import('../components/ImageEditor'))
+const CaptionModal = lazy(() => import('../components/CaptionModal'))
 
 const BASE_FILTERS = ['All','Relight','Face Swap','Try-On','360°','Background','Enhanced','Style Transfer','Inpaint']
 const sortOpts = ['Recent','Oldest','Most Edited','Favorites']
@@ -57,9 +61,12 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
   const removeItem = useGalleryStore(s => s.removeItem)
   const addItems = useGalleryStore(s => s.addItems)
   const updateItem = useGalleryStore(s => s.updateItem)
+  const addToStoryboard = useGalleryStore(s => s.addToStoryboard)
+  const storyboardIds = useGalleryStore(s => s.storyboardIds)
   const { addToast } = useToast()
   const { navigateToEditor, navigateToSession, navigateToUpload } = useNavigationStore()
 
+  const [galleryTab, setGalleryTab] = useState<'gallery'|'storyboard'>('gallery')
   const [activeFilter, setActiveFilter] = useState('All')
   const [viewMode, setViewMode] = useState<'grid'|'masonry'>('grid')
   const [selected, setSelected] = useState<string[]>([])
@@ -73,6 +80,12 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
   const [activePreset, setActivePreset] = useState<string | null>(null)
   const [editorSrc, setEditorSrc] = useState<string | null>(null)
   const [removingBg, setRemovingBg] = useState(false)
+  const [captionImage, setCaptionImage] = useState<string | null>(null)
+
+  // Compare mode state
+  const [compareFirst, setCompareFirst] = useState<GalleryItem | null>(null)
+  const [compareItems, setCompareItems] = useState<[GalleryItem, GalleryItem] | null>(null)
+  const [compareMode, setCompareMode] = useState<'ab' | 'slider' | null>(null)
 
   // Build dynamic filters
   const filters = useMemo(() => {
@@ -213,28 +226,59 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
           <p className="joi-label mt-1" style={{ color: 'var(--joi-lavender)' }}>All your AI-edited images in one place</p>
         </div>
         <div className="flex items-center gap-2">
-          {selected.length > 0 && (
+          {/* Gallery / Storyboard tab toggle */}
+          <div className="flex p-0.5 rounded-lg" style={{ background:'var(--joi-bg-2)', backdropFilter:'blur(8px)' }}>
+            <button onClick={()=>setGalleryTab('gallery')}
+              className="px-3 py-1 rounded-lg text-[11px] font-medium transition-all"
+              style={{ background: galleryTab==='gallery' ? 'var(--joi-bg-3)' : 'transparent', color: galleryTab==='gallery' ? 'var(--joi-text-1)' : 'var(--joi-text-3)' }}>
+              Gallery
+            </button>
+            <button onClick={()=>setGalleryTab('storyboard')}
+              className="px-3 py-1 rounded-lg text-[11px] font-medium transition-all flex items-center gap-1.5"
+              style={{ background: galleryTab==='storyboard' ? 'var(--joi-bg-3)' : 'transparent', color: galleryTab==='storyboard' ? 'var(--joi-violet)' : 'var(--joi-text-3)' }}>
+              Storyboard
+              {storyboardIds.length > 0 && (
+                <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-md" style={{ background: 'rgba(167,139,250,.15)', color: 'var(--joi-violet)' }}>
+                  {storyboardIds.length}
+                </span>
+              )}
+            </button>
+          </div>
+          {galleryTab === 'gallery' && selected.length > 0 && (
             <span className="text-[11px] font-mono px-3 py-1.5 rounded-lg" style={{ background:'rgba(255,107,157,.08)', color:'var(--joi-pink)' }}>
               {selected.length} selected
             </span>
           )}
-          <div className="flex p-0.5 rounded-lg" style={{ background:'var(--joi-bg-2)', backdropFilter:'blur(8px)' }}>
-            {(['grid','masonry'] as const).map(m=>(
-              <button key={m} onClick={()=>setViewMode(m)}
-                className="px-2.5 py-1 rounded-lg text-[11px] transition-all"
-                style={{ background: viewMode===m ? 'var(--joi-bg-3)' : 'transparent', color: viewMode===m ? 'var(--joi-text-1)' : 'var(--joi-text-3)' }}>
-                {m==='grid' ? '\u229e' : '\u229f'}
-              </button>
-            ))}
-          </div>
-          <select value={sortBy} onChange={e=>setSortBy(e.target.value)}
-            className="px-3 py-1.5 rounded-xl text-[11px] outline-none"
-            style={{ background:'var(--joi-bg-2)', border:'1px solid rgba(255,255,255,.04)', color:'var(--joi-text-2)', backdropFilter:'blur(8px)' }}>
-            {sortOpts.map(s=><option key={s} value={s}>{s}</option>)}
-          </select>
+          {galleryTab === 'gallery' && (
+            <>
+              <div className="flex p-0.5 rounded-lg" style={{ background:'var(--joi-bg-2)', backdropFilter:'blur(8px)' }}>
+                {(['grid','masonry'] as const).map(m=>(
+                  <button key={m} onClick={()=>setViewMode(m)}
+                    className="px-2.5 py-1 rounded-lg text-[11px] transition-all"
+                    style={{ background: viewMode===m ? 'var(--joi-bg-3)' : 'transparent', color: viewMode===m ? 'var(--joi-text-1)' : 'var(--joi-text-3)' }}>
+                    {m==='grid' ? '\u229e' : '\u229f'}
+                  </button>
+                ))}
+              </div>
+              <select value={sortBy} onChange={e=>setSortBy(e.target.value)}
+                className="px-3 py-1.5 rounded-xl text-[11px] outline-none"
+                style={{ background:'var(--joi-bg-2)', border:'1px solid rgba(255,255,255,.04)', color:'var(--joi-text-2)', backdropFilter:'blur(8px)' }}>
+                {sortOpts.map(s=><option key={s} value={s}>{s}</option>)}
+              </select>
+            </>
+          )}
         </div>
       </div>
 
+      {/* Storyboard tab */}
+      {galleryTab === 'storyboard' && (
+        <div className="px-8 py-6 flex-1">
+          <StoryboardView />
+        </div>
+      )}
+
+      {/* Gallery tab content */}
+      {galleryTab === 'gallery' && <>
       {/* Filter chips */}
       <div className="px-8 py-3 flex gap-1.5 overflow-x-auto joi-scroll">
         {filters.map(f => (
@@ -344,6 +388,39 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                           title="Favorite">
                           {img.favorite ? '\u2605' : '\u2606'}
                         </button>
+                        <button onClick={(e) => {
+                            e.stopPropagation()
+                            if (!compareFirst) {
+                              setCompareFirst(img)
+                              addToast('Select a second image to compare', 'info')
+                            } else if (compareFirst.id !== img.id) {
+                              setCompareItems([compareFirst, img])
+                              setCompareMode('ab')
+                              setCompareFirst(null)
+                            }
+                          }}
+                          className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] transition-all hover:scale-110"
+                          style={{
+                            background: compareFirst?.id === img.id ? 'rgba(167,139,250,.35)' : 'rgba(167,139,250,.15)',
+                            color: '#A78BFA',
+                            boxShadow: compareFirst?.id === img.id ? '0 0 8px rgba(167,139,250,.3)' : 'none',
+                          }}
+                          title={compareFirst ? (compareFirst.id === img.id ? 'Selected for compare' : 'Compare with this') : 'Compare'}>{'\u2194'}</button>
+                        <button onClick={(e) => {
+                            e.stopPropagation()
+                            if (storyboardIds.includes(img.id)) {
+                              addToast('Already in storyboard', 'info')
+                            } else {
+                              addToStoryboard(img.id)
+                              addToast('Added to storyboard', 'success')
+                            }
+                          }}
+                          className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] transition-all hover:scale-110"
+                          style={{
+                            background: storyboardIds.includes(img.id) ? 'rgba(167,139,250,.3)' : 'rgba(167,139,250,.12)',
+                            color: 'var(--joi-violet)',
+                          }}
+                          title={storyboardIds.includes(img.id) ? 'In storyboard' : 'Add to Storyboard'}>{storyboardIds.includes(img.id) ? '\u2713' : '+'}</button>
                         <button onClick={(e) => handleDelete(e, img)}
                           className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] transition-all hover:scale-110"
                           style={{ background: 'rgba(255,60,60,.15)', color: '#e05050' }}
@@ -371,6 +448,9 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
           })}
         </div>
       )}
+
+      </>}
+      {/* End gallery tab content */}
 
       {/* --- Lightbox --- */}
       {lightboxIndex !== null && (() => {
@@ -464,6 +544,27 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
                     style={{ background: 'rgba(180,170,255,.08)', border: '1px solid rgba(180,170,255,.15)', color: 'var(--joi-lavender)' }}>
                     {'\u2295'} Create Character
+                  </button>
+                  <button onClick={() => setCaptionImage(item.url)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
+                    style={{ background: 'rgba(255,107,157,.06)', border: '1px solid rgba(255,107,157,.12)', color: 'var(--joi-pink)' }}>
+                    {'\u270D\uFE0F'} Generate Caption
+                  </button>
+                  <button onClick={() => {
+                      if (storyboardIds.includes(item.id)) {
+                        addToast('Already in storyboard', 'info')
+                      } else {
+                        addToStoryboard(item.id)
+                        addToast('Added to storyboard', 'success')
+                      }
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
+                    style={{
+                      background: storyboardIds.includes(item.id) ? 'rgba(167,139,250,.15)' : 'rgba(167,139,250,.06)',
+                      border: `1px solid ${storyboardIds.includes(item.id) ? 'rgba(167,139,250,.25)' : 'rgba(167,139,250,.12)'}`,
+                      color: 'var(--joi-violet)',
+                    }}>
+                    {storyboardIds.includes(item.id) ? '\u2713 In Storyboard' : '+ Add to Storyboard'}
                   </button>
                 </div>
 
@@ -577,6 +678,91 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
             onClose={() => setEditorSrc(null)}
           />
         </Suspense>
+      )}
+
+      {/* Caption Generator modal */}
+      {captionImage && (
+        <Suspense fallback={null}>
+          <CaptionModal
+            imageUrl={captionImage}
+            onClose={() => setCaptionImage(null)}
+          />
+        </Suspense>
+      )}
+
+      {/* Compare selection banner */}
+      {compareFirst && !compareItems && (
+        <div
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl"
+          style={{
+            background: 'rgba(14,12,20,0.95)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(167,139,250,0.25)',
+          }}
+        >
+          <img src={compareFirst.url} alt="" className="w-8 h-8 rounded-lg object-cover" style={{ border: '2px solid #A78BFA' }} />
+          <span className="text-[11px] text-white font-medium">Select a second image to compare</span>
+          <button
+            onClick={() => setCompareFirst(null)}
+            className="px-3 py-1 rounded-lg text-[10px] font-medium transition-all"
+            style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--joi-text-2)', border: '1px solid rgba(255,255,255,0.06)' }}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {/* A/B Comparator overlay */}
+      {compareItems && compareMode === 'ab' && (
+        <ABComparator
+          itemA={compareItems[0]}
+          itemB={compareItems[1]}
+          onClose={() => { setCompareItems(null); setCompareMode(null) }}
+        />
+      )}
+
+      {/* Compare Slider Modal overlay */}
+      {compareItems && compareMode === 'slider' && (
+        <CompareSliderModal
+          itemA={compareItems[0]}
+          itemB={compareItems[1]}
+          onClose={() => { setCompareItems(null); setCompareMode(null) }}
+        />
+      )}
+
+      {/* Compare mode switcher (shown when a comparison is active) */}
+      {compareItems && compareMode && (
+        <div
+          className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-1 p-1 rounded-xl shadow-2xl"
+          style={{
+            background: 'rgba(14,12,20,0.95)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(167,139,250,0.2)',
+          }}
+        >
+          <button
+            onClick={() => setCompareMode('ab')}
+            className="px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all"
+            style={{
+              background: compareMode === 'ab' ? 'rgba(167,139,250,0.15)' : 'transparent',
+              color: compareMode === 'ab' ? '#A78BFA' : 'var(--joi-text-3)',
+              border: compareMode === 'ab' ? '1px solid rgba(167,139,250,0.2)' : '1px solid transparent',
+            }}
+          >
+            A/B Side
+          </button>
+          <button
+            onClick={() => setCompareMode('slider')}
+            className="px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all"
+            style={{
+              background: compareMode === 'slider' ? 'rgba(167,139,250,0.15)' : 'transparent',
+              color: compareMode === 'slider' ? '#A78BFA' : 'var(--joi-text-3)',
+              border: compareMode === 'slider' ? '1px solid rgba(167,139,250,0.2)' : '1px solid transparent',
+            }}
+          >
+            Slider
+          </button>
+        </div>
       )}
     </div>
   )
