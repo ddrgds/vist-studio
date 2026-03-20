@@ -767,7 +767,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
           {/* Tier Selector */}
           <div>
             <div className="joi-label mb-2">Quality Tier</div>
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-4 gap-1.5">
               {([
                 {
                   tier: 'basic' as SessionTier,
@@ -796,6 +796,15 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                   icon: '\uD83D\uDC51',
                   cost: SESSION_TIER_COSTS.premium,
                   accentColor: 'rgba(255,199,95',
+                },
+                {
+                  tier: 'soul' as SessionTier,
+                  label: 'Soul 2.0',
+                  engine: 'Higgsfield Soul',
+                  benefit: 'Fashion-grade realism',
+                  icon: '\u2726',
+                  cost: SESSION_TIER_COSTS.soul,
+                  accentColor: 'rgba(255,107,157',
                 },
               ]).map(t => {
                 const active = selectedTier === t.tier

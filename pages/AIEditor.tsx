@@ -7,7 +7,8 @@ import { useToast } from '../contexts/ToastContext'
 import { editImageWithAI, faceSwapWithGemini } from '../services/geminiService'
 import { editImageWithFluxKontext, editImageWithSeedream5, editImageWithFlux2Pro, editImageWithGrokFal, editImageWithQwen, editImageWithFireRed, inpaintWithOneReward, editImageWithSeedream5Lite, removeBackground } from '../services/falService'
 import { editImageWithGPT } from '../services/openaiService'
-import { ENGINE_METADATA, FEATURE_ENGINES, AIProvider } from '../types'
+import { editWithSoulReference } from '../services/higgsfieldService'
+import { ENGINE_METADATA, FEATURE_ENGINES, AIProvider, AspectRatio } from '../types'
 import { useNavigationStore } from '../stores/navigationStore'
 import { usePipelineStore } from '../stores/pipelineStore'
 import { PipelineCTA } from '../components/PipelineCTA'
@@ -22,6 +23,7 @@ const ImageEditor = lazy(() => import('../components/ImageEditor'))
 const tools = [
   // Primary tools (visible by default)
   { id:'freeai', label:'AI Edit', icon:'\u2728', desc:'Edit with any instruction in natural language' },
+  { id:'reimagine', label:'Reimagine', icon:'\u2726', desc:'Reimagine with Soul 2.0 \u2014 fashion-grade variations' },
   { id:'relight', label:'Relight', icon:'\uD83D\uDCA1', desc:'Change lighting on any photo' },
   { id:'faceswap', label:'Face Swap', icon:'\uD83C\uDFAD', desc:'Swap faces between images' },
   { id:'tryon', label:'Try-On Virtual', icon:'\uD83D\uDC57', desc:'Try on clothes and accessories' },
@@ -175,6 +177,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
   const [selBg, setSelBg] = useState(0)
   const [bgMode, setBgMode] = useState<'Preset'|'Upload'|'Prompt'>('Preset')
   const [freePrompt, setFreePrompt] = useState('')
+  const [reimaginePrompt, setReimaginePrompt] = useState('')
 
   // Composite / Scene tool state
   const [sceneImage, setSceneImage] = useState<string | null>(null)
@@ -222,6 +225,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
 
   // Visible cost for the Apply button (shared with handleApply logic)
   const displayCost = useMemo(() => {
+    if (activeTool === 'reimagine') return 14 // Soul 2.0 fixed cost
     const eng = selectedEngine !== 'auto' ? ENGINE_METADATA.find(e => e.key === selectedEngine) : null
     if (eng) return eng.creditCost
     return activeTool === 'rotate360' || activeTool === 'composite' ? 10 : 8
@@ -297,6 +301,12 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
       return
     }
 
+    // Reimagine needs a prompt
+    if (activeTool === 'reimagine' && !reimaginePrompt.trim()) {
+      toast.error('Describe how to reimagine this image')
+      return
+    }
+
     // Composite needs a scene reference or prompt
     if (activeTool === 'composite') {
       if (!sceneImage && !scenePrompt.trim()) {
@@ -317,8 +327,8 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
 
     // Resolve engine and cost — use engine's credit cost when a specific engine is selected
     const eng = selectedEngine !== 'auto' ? ENGINE_METADATA.find(e => e.key === selectedEngine) : null
-    const baseCost = activeTool === 'rotate360' ? 10 : activeTool === 'composite' ? 10 : 8
-    const cost = eng ? eng.creditCost : baseCost
+    const baseCost = activeTool === 'reimagine' ? 14 : activeTool === 'rotate360' ? 10 : activeTool === 'composite' ? 10 : 8
+    const cost = activeTool === 'reimagine' ? 14 : eng ? eng.creditCost : baseCost
     const ok = await decrementCredits(cost)
     if (!ok) { toast.error('Insufficient credits'); setProcessing(false); return }
 
@@ -389,6 +399,14 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
       } else if (activeTool === 'rembg') {
         const bgRemovedUrl = await removeBackground(inputImage, (p) => setProgress(p))
         resultUrls = [bgRemovedUrl]
+      } else if (activeTool === 'reimagine') {
+        const soulResults = await editWithSoulReference(
+          inputFile!,
+          reimaginePrompt.trim(),
+          AspectRatio.Square,
+          (p) => setProgress(p),
+        )
+        resultUrls = soulResults
       }
 
       if (resultUrls.length > 0) {
@@ -466,7 +484,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
 
       {/* Tool sidebar */}
       <div className="w-[70px] shrink-0 flex flex-col items-center py-4 gap-1" style={{ background:'var(--joi-bg-1)', borderRight:'1px solid rgba(255,255,255,.04)' }}>
-        {(showAllTools ? tools : tools.slice(0, 5)).map(t => (
+        {(showAllTools ? tools : tools.slice(0, 6)).map(t => (
           <button key={t.id} onClick={()=>setActiveTool(t.id)}
             className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center transition-all group relative joi-border-glow`}
             style={{
@@ -513,6 +531,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           </h2>
           <div className="ml-auto relative">
             {(() => {
+              if (activeTool === 'reimagine') return null // Soul 2.0 fixed engine
               const fk = TOOL_TO_FEATURE[activeTool]
               const fd = fk ? FEATURE_ENGINES[fk] : null
               const hasMultiple = fd ? fd.keys.length > 1 : true
@@ -660,6 +679,36 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                   className="px-2.5 py-1 rounded-lg text-[9px] transition-all"
                   style={{ background: freePrompt === q ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)', border: `1px solid ${freePrompt === q ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}`, color: freePrompt === q ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>{q}</button>
               ))}
+            </div>
+          </>}
+
+          {activeTool === 'reimagine' && <>
+            <div>
+              <div className="joi-label mb-2">Reimagine Direction</div>
+              <textarea
+                rows={3}
+                value={reimaginePrompt}
+                onChange={e => setReimaginePrompt(e.target.value)}
+                placeholder="Describe the reimagined version...&#10;&#10;E.g.: editorial magazine cover, golden hour beach, cyberpunk neon portrait"
+                className="w-full px-3 py-2.5 rounded-xl text-[11px] border outline-none resize-none"
+                style={{ background:'var(--joi-bg-2)', borderColor:'rgba(255,255,255,.04)', color:'var(--joi-text-1)', backdropFilter:'blur(8px)' }}
+              />
+            </div>
+            <div className="flex gap-1.5 flex-wrap">
+              {['Editorial magazine cover','Golden hour beach','Studio fashion portrait','Cyberpunk neon','Vintage film aesthetic','Luxury lifestyle'].map(q => (
+                <button key={q} onClick={() => setReimaginePrompt(q)}
+                  className="px-2.5 py-1 rounded-lg text-[9px] transition-all"
+                  style={{ background: reimaginePrompt === q ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)', border: `1px solid ${reimaginePrompt === q ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}`, color: reimaginePrompt === q ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>{q}</button>
+              ))}
+            </div>
+            <div className="rounded-xl p-3 mt-1" style={{ background: 'rgba(255,107,157,.04)', border: '1px solid rgba(255,107,157,.1)' }}>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-sm">{'\u2726'}</span>
+                <span className="text-[11px] font-semibold" style={{ color: 'var(--joi-pink)' }}>Soul 2.0</span>
+              </div>
+              <p className="text-[9px] leading-relaxed" style={{ color: 'var(--joi-text-3)' }}>
+                Fashion-grade AI reimagining. Maintains identity while transforming the style, setting, and mood of your image with editorial-quality results.
+              </p>
             </div>
           </>}
 

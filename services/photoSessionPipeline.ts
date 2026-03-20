@@ -18,6 +18,7 @@ import {
   extractPoseSkeleton,
   upscaleWithAuraSR,
 } from './falService';
+import { editWithSoulReference, generateWithSoul } from './higgsfieldService';
 import { realisticSkin } from './toolEngines';
 import { splitGrid } from './gridSplitter';
 
@@ -25,7 +26,7 @@ import { splitGrid } from './gridSplitter';
 // Types
 // ─────────────────────────────────────────────
 
-export type SessionTier = 'basic' | 'standard' | 'premium';
+export type SessionTier = 'basic' | 'standard' | 'premium' | 'soul';
 
 export interface SessionPipelineConfig {
   tier: SessionTier;
@@ -56,6 +57,7 @@ export const SESSION_TIER_COSTS = {
   basic: 6,      // Imagen 4 Fast default
   standard: 14,  // Kontext Pro
   premium: 9,    // Klein Edit+LoRA
+  soul: 14,      // Soul 2.0 — fashion-grade realism
   // LoRA training cost: use CREDIT_COSTS['lora-training'] (571) as single source of truth
 } as const;
 
@@ -75,6 +77,8 @@ export const runSessionPipeline = async (
       return runStandardTier(config);
     case 'premium':
       return runPremiumTier(config);
+    case 'soul':
+      return runSoulTier(config);
     default:
       throw new Error(`Unknown tier: ${tier}`);
   }
@@ -317,4 +321,73 @@ const runPremiumTier = async (config: SessionPipelineConfig): Promise<SessionPip
 
   onProgress?.('Listo', 100);
   return { images: finalImages, tier: 'premium', creditsUsed: SESSION_TIER_COSTS.premium * finalImages.length };
+};
+
+// ─────────────────────────────────────────────
+// Tier 4: Soul 2.0 (Higgsfield)
+// Fashion-grade editorial realism.
+// With base image → editWithSoulReference
+// Without base image → generateWithSoul (text-to-image)
+// ─────────────────────────────────────────────
+
+const runSoulTier = async (config: SessionPipelineConfig): Promise<SessionPipelineResult> => {
+  const { baseImage, poses, scenario, lighting, upscale, aspectRatio, onProgress, abortSignal } = config;
+
+  const images: string[] = [];
+  const ar = aspectRatio ?? AspectRatio.Portrait;
+
+  for (let i = 0; i < poses.length; i++) {
+    if (abortSignal?.aborted) throw new Error('Cancelado');
+    const pose = poses[i];
+    const poseProgress = (step: string, pct: number) => {
+      const overall = Math.round((i / poses.length + pct / 100 / poses.length) * 90) + 5;
+      onProgress?.(step, overall);
+    };
+
+    // Build prompt from pose + scene + lighting
+    const promptParts = [pose.text || 'natural editorial pose'];
+    if (scenario) promptParts.push(`Scene: ${scenario}`);
+    if (lighting) promptParts.push(`Lighting: ${lighting}`);
+    promptParts.push('Same person, same outfit. Fashion-grade realism.');
+    const prompt = promptParts.join('. ') + '.';
+
+    poseProgress('Soul 2.0 generating...', 20);
+
+    if (baseImage) {
+      // Image-to-image: editWithSoulReference
+      const urls = await editWithSoulReference(
+        baseImage,
+        prompt,
+        ar,
+        (p) => poseProgress('Soul 2.0 generating...', 20 + p * 0.6),
+        abortSignal,
+      );
+      if (urls.length > 0) images.push(urls[0]);
+    } else {
+      // Text-to-image fallback: generateWithSoul
+      const urls = await generateWithSoul(
+        {
+          characters: [{ characteristics: prompt }],
+          aspectRatio: ar,
+          scenario: scenario || undefined,
+          lighting: lighting || undefined,
+        } as any,
+        (p) => poseProgress('Soul 2.0 generating...', 20 + p * 0.6),
+        abortSignal,
+      );
+      if (urls.length > 0) images.push(urls[0]);
+    }
+  }
+
+  if (images.length === 0) throw new Error('No se generaron imágenes con Soul 2.0.');
+
+  // Optional upscale
+  let finalImages = images;
+  if (upscale) {
+    onProgress?.('Upscaling...', 92);
+    finalImages = await Promise.all(images.map(img => upscaleWithAuraSR(img)));
+  }
+
+  onProgress?.('Listo', 100);
+  return { images: finalImages, tier: 'soul', creditsUsed: SESSION_TIER_COSTS.soul * finalImages.length };
 };
