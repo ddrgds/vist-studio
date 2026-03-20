@@ -283,6 +283,9 @@ export enum FalModel {
   FireRedEdit = 'fal-ai/firered-image-edit-v1.1',        // FireRed — portrait editing, try-on, makeup
   OneReward = 'fal-ai/onereward',                         // OneReward — mask-based inpainting (FLUX Fill fine-tune)
   Seedream5Edit = 'fal-ai/bytedance/seedream/v5/lite/edit', // ByteDance — intelligent editing, low hallucination
+  // ── MVP new models ──
+  KontextPro = 'fal-ai/flux-kontext-pro',                // FLUX Kontext Pro — single-ref identity editing · 2026
+  KleinEditLoRA = 'fal-ai/flux-2/klein/9b/edit/lora',    // FLUX 2 Klein 9B Edit+LoRA — edit with custom LoRA · 2026
 }
 
 // Models displayed in the generation panel
@@ -308,6 +311,12 @@ export enum ReplicateModel {
   Gen4Image = 'runwayml/gen4-image',                  // Runway Gen-4 — char + location consistency · Jul 2025
   IDMVTON = 'cuuupid/idm-vton',                       // Virtual try-on ⚠️ licencia no-comercial (CC BY-NC-SA 4.0)
   GrokImagine = 'xai/grok-imagine-image',             // Grok Imagine — xAI SOTA, ~4s/img, 13 aspect ratios · 2026
+  // ── MVP new models ──
+  RecraftCrispUpscale = 'recraft-ai/recraft-crisp-upscale',  // Recraft Crisp Upscale — clarity-preserving · 2026
+  BriaExpand = 'bria/expand-image',                          // Bria Expand — outpaint/expand borders · 2026
+  Flux2Pro = 'black-forest-labs/flux-2-pro',                 // FLUX 2 Pro — generation (Replicate variant)
+  Flux2Klein4B = 'black-forest-labs/flux-2-klein-4b',        // FLUX 2 Klein 4B — fast, economical · 2026
+  PrunaImageEdit = 'prunaai/p-image-edit',                   // Pruna P-Image-Edit — fallback edit engine · 2026
 }
 
 export enum OpenAIModel {
@@ -417,33 +426,44 @@ export type SubscriptionStatus = 'free' | 'active' | 'cancelled';
 // ─────────────────────────────────────────────
 
 /** Credits deducted per image/video generation or edit operation. */
+// ─────────────────────────────────────────────
+// Unified Credit Costs — 65% gross margin target
+// All values = ceil(API_cost / (0.35 × $0.010))
+// ─────────────────────────────────────────────
 export const CREDIT_COSTS: Record<string, number> = {
-  // Gemini
-  [GeminiImageModel.Flash]:      2,
-  [GeminiImageModel.Flash2]:     2,
-  [GeminiImageModel.Pro]:        2,
-  [GeminiImageModel.Imagen4]:    2,
-  [GeminiImageModel.Imagen4Ultra]: 20,
-  [GeminiImageModel.Imagen4Fast]: 5,
-  // FAL
-  [FalModel.KontextMulti]:    10,
-  [FalModel.KontextMaxMulti]: 15,
-  [FalModel.Flux2Pro]:        10,
-  [FalModel.Seedream45]:      8,
-  [FalModel.Seedream50]:      8,
-  [FalModel.ZImageTurbo]:     8,
-  [FalModel.QwenEdit]:        12,
-  [FalModel.FireRedEdit]:     8,
-  [FalModel.OneReward]:       8,
-  [FalModel.Seedream5Edit]:   8,
+  // ── Generation — text-to-image (1K base, see RESOLUTION_CREDIT_MULTIPLIER for 2K/4K) ──
+  [GeminiImageModel.Imagen4Fast]: 6,
+  [GeminiImageModel.Imagen4]:     12,
+  [GeminiImageModel.Imagen4Ultra]: 17,
+  [GeminiImageModel.Flash2]:      19,   // NB2 at 1K
+  [GeminiImageModel.Pro]:         38,   // NB Pro at 2K
+  [GeminiImageModel.Flash]:       11,   // Gemini 2.5 Flash (legacy)
+  // FAL — generation + editing
+  [FalModel.KontextPro]:       14,
+  [FalModel.KleinEditLoRA]:    9,
+  [FalModel.KontextMulti]:     14,
+  [FalModel.KontextMaxMulti]:  15,
+  [FalModel.Flux2Pro]:         12,   // FAL variant (edit endpoint)
+  [FalModel.Seedream45]:       8,
+  [FalModel.Seedream50]:       8,
+  [FalModel.ZImageTurbo]:      8,
+  [FalModel.QwenEdit]:         12,
+  [FalModel.FireRedEdit]:      8,
+  [FalModel.OneReward]:        8,
+  [FalModel.Seedream5Edit]:    8,
   // Replicate
-  [ReplicateModel.Flux2Max]:    12,
-  [ReplicateModel.Gen4Image]:   15,
-  [ReplicateModel.IDMVTON]:     15,
-  [ReplicateModel.GrokImagine]: 10,
+  [ReplicateModel.Flux2Max]:           12,
+  [ReplicateModel.Gen4Image]:          15,
+  [ReplicateModel.IDMVTON]:            15,
+  [ReplicateModel.GrokImagine]:        10,
+  [ReplicateModel.Flux2Pro]:           12,   // Replicate variant (generation)
+  [ReplicateModel.Flux2Klein4B]:       4,
+  [ReplicateModel.PrunaImageEdit]:     9,
+  [ReplicateModel.RecraftCrispUpscale]: 9,
+  [ReplicateModel.BriaExpand]:         14,
   // OpenAI
-  [OpenAIModel.GptImage15]: 20,
-  [OpenAIModel.GptImage1]:  15,
+  [OpenAIModel.GptImage15]:   20,
+  [OpenAIModel.GptImage1]:    15,
   [OpenAIModel.GptImageMini]: 5,
   // Ideogram
   [IdeogramModel.V3]:       15,
@@ -455,32 +475,45 @@ export const CREDIT_COSTS: Record<string, number> = {
   [ModelsLabModel.WaiNsfw]:     8,
   [ModelsLabModel.FluxNsfw]:    8,
   // Higgsfield
-  [HiggsfieldModel.SoulStandard]: 6,
-  // Video — Image-to-Video
-  [VideoEngine.Kling26Standard]:     60,
-  [VideoEngine.Kling26Pro]:          80,
-  [VideoEngine.Kling3Pro]:          100,
+  [HiggsfieldModel.SoulStandard]: 14,
+  // ── Editing — tool-based (flat cost, resolution-independent) ──
+  'grok-edit':       6,
+  'pruna-edit':      9,
+  'relight':         6,
+  'scene':           6,
+  'outfit':          6,
+  'face-swap':       6,
+  'realistic-skin':  6,
+  'style-transfer':  6,
+  'inpaint':         6,
+  'bg-removal':      6,
+  'try-on':          14,
+  'angles-standard': 19,
+  'angles-ultra':    26,
+  'upscale-recraft': 9,
+  'upscale-aura':    3,
+  'expand':          14,
+  // ── Video — Image-to-Video ──
+  [VideoEngine.Kling26Standard]:       86,
+  [VideoEngine.Kling26Pro]:           143,
+  [VideoEngine.Kling3Pro]:            286,
   // Video — Motion Control
-  [VideoEngine.Kling26MotionStandard]: 80,
-  [VideoEngine.Kling26MotionPro]:     100,
-  [VideoEngine.Kling3MotionPro]:      120,
-  [VideoEngine.WanReplace]:            60,
+  [VideoEngine.Kling26MotionStandard]: 86,
+  [VideoEngine.Kling26MotionPro]:     143,
+  [VideoEngine.Kling3MotionPro]:      286,
+  [VideoEngine.WanReplace]:            57,
   // Video — Lip Sync / Avatar
-  [VideoEngine.KlingAvatarStandard]:   50,
-  [VideoEngine.KlingAvatarPro]:        80,
+  [VideoEngine.KlingAvatarStandard]:   71,
+  [VideoEngine.KlingAvatarPro]:       143,
+  // ── Special ──
+  'lora-training': 571,
 };
 
-/** Credits for special operations (not covered by CREDIT_COSTS model map). */
-export const OPERATION_CREDIT_COSTS = {
-  faceSwap:      15,
-  upscale:       8,
-  relight:       10,
-  virtualTryOn:  15,
-  lipsync:       50,
-  skinEnhancer:  8,
-  inpaint:       8,
-  photoSession:  10, // per shot
-} as const;
+// Resolution multipliers for Gemini models (base cost × multiplier)
+export const RESOLUTION_CREDIT_MULTIPLIER: Record<string, Record<string, number>> = {
+  [GeminiImageModel.Flash2]: { '1K': 1, '2K': 1.53, '4K': 2.26 },  // 19 → 29 → 43
+  [GeminiImageModel.Pro]:    { '2K': 1, '4K': 1.82 },               // 38 → 69
+};
 
 // ─────────────────────────────────────────────
 // Engine metadata — user-facing names, benefits, requirements
@@ -762,42 +795,46 @@ export const FEATURE_ENGINES: Record<string, { default: string; keys: string[] }
     default: 'gemini:nb2',
     keys: ['gemini:nb2', 'gemini:pro', 'gemini:imagen4', 'openai:gpt15', 'openai:gpt-mini', 'fal:seedream50', 'fal:seedream45', 'replicate:grok', 'fal:kontext-multi', 'fal:kontext-max', 'fal:zimage-turbo', 'higgsfield:soul'],
   },
-  // ── Editing ──
+  // ── Editing (aligned with benchmarking 2026-03-17) ──
   'photo-session': {
-    default: 'grok',
-    keys: ['grok', 'gemini', 'fal:seedream5-edit', 'higgsfield:soul'],
+    default: 'replicate:grok',
+    keys: ['replicate:grok', 'gemini:nb2', 'fal:seedream5-edit'],
   },
   'relight': {
-    default: 'fal:qwen-edit',
-    keys: ['fal:qwen-edit', 'gemini', 'fal:flux-kontext', 'gemini:nb2', 'replicate:grok'],
+    default: 'replicate:grok',
+    keys: ['replicate:grok', 'gemini:nb2', 'fal:flux2pro'],
   },
   'style-transfer': {
-    default: 'fal:qwen-edit',
-    keys: ['fal:qwen-edit', 'gemini', 'openai:gpt15', 'gemini:nb2', 'replicate:grok'],
+    default: 'replicate:grok',
+    keys: ['replicate:grok', 'fal:qwen-edit'],
   },
   'bg-swap': {
-    default: 'fal:flux-kontext',
-    keys: ['fal:flux-kontext', 'fal:qwen-edit', 'gemini', 'gemini:nb2', 'replicate:grok'],
+    default: 'replicate:grok',
+    keys: ['replicate:grok', 'fal:kontext-multi', 'fal:seedream5-edit'],
   },
   'face-swap': {
-    default: 'fal:face-swap',
-    keys: ['fal:face-swap', 'fal:firered-edit'],
+    default: 'gemini:nb2',
+    keys: ['gemini:nb2', 'replicate:grok'],
   },
   'try-on': {
-    default: 'fal:firered-edit',
-    keys: ['fal:firered-edit'],
+    default: 'replicate:grok',
+    keys: ['replicate:grok', 'gemini:nb2'],
   },
   'inpaint': {
     default: 'fal:onereward',
-    keys: ['fal:onereward', 'fal:flux-inpaint', 'fal:zimage-inpaint'],
+    keys: ['fal:onereward'],
   },
   'enhance': {
     default: 'fal:aura-sr',
     keys: ['fal:aura-sr'],
   },
   'skin-enhancer': {
-    default: 'fal:firered-edit',
-    keys: ['fal:firered-edit', 'gemini'],
+    default: 'gemini:nb2',
+    keys: ['gemini:nb2', 'replicate:grok', 'fal:firered-edit'],
+  },
+  'angles': {
+    default: 'gemini:nb2',
+    keys: ['gemini:nb2', 'replicate:grok'],
   },
   // ── Video ──
   'video:image-to-video': {

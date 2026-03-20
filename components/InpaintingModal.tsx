@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { inpaintImage, inpaintWithZImageTurbo } from '../services/falService';
 import { useToast } from '../contexts/ToastContext';
 import { useProfile } from '../contexts/ProfileContext';
-import { OPERATION_CREDIT_COSTS } from '../types';
+import { CREDIT_COSTS } from '../types';
 import ProgressBar from './ProgressBar';
 
 interface InpaintingModalProps {
@@ -140,7 +140,7 @@ const InpaintingModal: React.FC<InpaintingModalProps> = ({ item, onClose, onSave
   const handleGenerate = async () => {
     if (!prompt.trim()) { toast.error('Describe what you want to generate in the marked area'); return; }
 
-    const cost = OPERATION_CREDIT_COSTS.inpaint;
+    const cost = CREDIT_COSTS['inpaint'];
     const hasCredits = await decrementCredits(cost);
     if (!hasCredits) { toast.error('Insufficient credits. Please upgrade your plan.'); return; }
 

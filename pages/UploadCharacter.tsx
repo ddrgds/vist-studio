@@ -18,6 +18,15 @@ import {
   PERSONALITY_TRAITS, FASHION_STYLES, ACCESSORIES, buildPromptFromChips,
 } from '../data/characterChips'
 import { SOUL_STYLES, SOUL_STYLES_CURATED, SOUL_STYLE_CATEGORIES, type SoulStyleCategory } from '../data/soulStyles'
+import { generateCharacterSheet, enhanceSheetWithGrok, type SheetType } from '../services/toolEngines'
+
+// ─── Character creation engine presets (Soul 2.0 prominent) ──────────
+const CHARACTER_ENGINES = [
+  { id: 'higgsfield:soul', label: 'Soul 2.0', desc: 'Fashion-grade realism', badge: 'Recommended' },
+  { id: 'gemini:nb2', label: 'Nano Banana 2', desc: 'Fast & reliable', badge: null },
+  { id: 'gemini:imagen4', label: 'Imagen 4', desc: 'Photorealistic, economical', badge: null },
+  { id: 'gemini:pro', label: 'NB Pro', desc: 'Maximum quality', badge: null },
+] as const;
 
 // ─── Render styles ───────────────────────────────────────────────────
 const renderStyles = [
@@ -116,8 +125,12 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   // Generation
   const [variants, setVariants] = useState<string[]>([])
   const [selectedVariant, setSelectedVariant] = useState<number | null>(null)
-  const [consistencyPhotos, setConsistencyPhotos] = useState<string[]>([])
-  const [generationPhase, setGenerationPhase] = useState<'idle' | 'generating' | 'picking' | 'consistency' | 'done'>('idle')
+  const [sheetResults, setSheetResults] = useState<{
+    face: string | null; body: string | null; expressions: string | null;
+    faceUltra: string | null; expressionsUltra: string | null;
+  }>({ face: null, body: null, expressions: null, faceUltra: null, expressionsUltra: null })
+  const [sheetGenerating, setSheetGenerating] = useState<string | null>(null)
+  const [generationPhase, setGenerationPhase] = useState<'idle' | 'generating' | 'picking' | 'sheet' | 'done'>('idle')
   const [generating, setGenerating] = useState(false)
   const [characterSaved, setCharacterSaved] = useState(false)
 
@@ -233,7 +246,8 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     setGenerationPhase('generating')
     setVariants([])
     setSelectedVariant(null)
-    setConsistencyPhotos([])
+    setSheetResults({ face: null, body: null, expressions: null, faceUltra: null, expressionsUltra: null })
+    setSheetGenerating(null)
     setCharacterSaved(false)
 
     const style = renderStyles[selRenderStyle]
@@ -286,74 +300,58 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     setGenerating(false)
   }
 
-  // ─── Generate consistency variants using the approved face ──────
-  const handleConsistency = async () => {
+  // ─── Character Sheet Pipeline (progressive) ────────────────────
+  const SHEET_CREDIT_COST = 2
+  const ULTRA_CREDIT_COST = 2
+
+  const handleGenerateSheet = async (type: SheetType) => {
     if (selectedVariant === null) return
-    const cost = costPerVariant
-    setGenerating(true)
-    setGenerationPhase('consistency')
+    const ok = await decrementCredits(SHEET_CREDIT_COST)
+    if (!ok) { toast.error('Insufficient credits'); return }
 
-    const style = renderStyles[selRenderStyle]
-    const basePrompt = buildFullPrompt()
-    const consistencyResults: string[] = []
+    setSheetGenerating(type)
+    setGenerationPhase('sheet')
 
-    // Fetch the approved image as a File to use as face reference
-    let approvedFaceFile: File | null = null
     try {
-      const res = await fetch(variants[selectedVariant])
-      const blob = await res.blob()
-      approvedFaceFile = new File([blob], 'approved-face.png', { type: 'image/png' })
+      const url = await generateCharacterSheet(variants[selectedVariant], type)
+      setSheetResults(prev => ({ ...prev, [type]: url }))
     } catch {
-      // Continue without face ref if fetch fails
+      restoreCredits(SHEET_CREDIT_COST)
+      toast.error(`Failed to generate ${type} sheet`)
     }
 
-    const variationPoses = [
-      'Slight three-quarter turn to the left, soft smile, natural expression',
-      'Looking over shoulder, candid pose, gentle expression',
-    ]
+    setSheetGenerating(null)
+  }
 
-    for (let i = 0; i < 2; i++) {
-      const ok = await decrementCredits(cost)
-      if (!ok) {
-        toast.error('Insufficient credits')
-        break
-      }
-      try {
-        const params: InfluencerParams = {
-          characters: [{
-            id: crypto.randomUUID(),
-            characteristics: `${basePrompt}. IMPORTANT: This must be the EXACT SAME person as the reference image — same face, same features, same identity. Only the pose and expression change.`,
-            outfitDescription: selFashion.map(id => FASHION_STYLES.find(f => f.id === id)?.promptText || '').filter(Boolean).join(', '),
-            pose: variationPoses[i],
-            accessory: selAccessories.map(id => ACCESSORIES.find(a => a.id === id)?.label || '').filter(Boolean).join(', '),
-            ...(approvedFaceFile ? { modelImages: [approvedFaceFile] } : {}),
-          }],
-          scenario: style.scenario,
-          lighting: style.id === 'anime' ? 'Flat anime lighting, cel-shaded' : style.id === 'pixel-art' ? 'Flat pixel art lighting' : 'Soft studio lighting',
-          imageSize: ImageSize.Size2K,
-          aspectRatio: AspectRatio.Portrait,
-          numberOfImages: 1,
-        }
-        const genResults = await routeGeneration(params)
-        if (genResults.length > 0) {
-          consistencyResults.push(genResults[0])
-          setConsistencyPhotos([...consistencyResults])
-        } else {
-          restoreCredits(cost)
-        }
-      } catch {
-        restoreCredits(cost)
-      }
+  const handleUltraEnhance = async (type: 'face' | 'expressions') => {
+    const sourceUrl = sheetResults[type]
+    if (!sourceUrl) return
+    const ok = await decrementCredits(ULTRA_CREDIT_COST)
+    if (!ok) { toast.error('Insufficient credits'); return }
+
+    const ultraKey = `${type}Ultra` as const
+    setSheetGenerating(ultraKey)
+
+    try {
+      const url = await enhanceSheetWithGrok(sourceUrl, type)
+      setSheetResults(prev => ({ ...prev, [ultraKey]: url }))
+    } catch {
+      restoreCredits(ULTRA_CREDIT_COST)
+      toast.error(`Failed to enhance ${type} sheet`)
     }
 
-    setGenerationPhase(consistencyResults.length > 0 ? 'done' : 'picking')
-    setGenerating(false)
+    setSheetGenerating(null)
   }
 
   // ─── Save character ──────────────────────────────────────────────
   const handleSave = async () => {
     if (selectedVariant === null) return
-    const allPhotoUrls = [variants[selectedVariant], ...consistencyPhotos]
+    const sheetUrls = [
+      sheetResults.faceUltra || sheetResults.face,
+      sheetResults.body,
+      sheetResults.expressionsUltra || sheetResults.expressions,
+    ].filter(Boolean) as string[]
+    const allPhotoUrls = [variants[selectedVariant], ...sheetUrls]
     try {
       const blobs = await Promise.all(allPhotoUrls.map(async url => {
         const res = await fetch(url)
@@ -912,45 +910,167 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                       </div>
                     )}
 
-                    {/* Consistency photos */}
-                    {consistencyPhotos.length > 0 && (
-                      <div>
-                        <div className="text-[10px] font-mono uppercase tracking-wider mb-2" style={{ color: 'var(--joi-text-3)' }}>
-                          Consistency Variants
+                    {/* ─── Character Sheet Builder (progressive) ─── */}
+                    {(generationPhase === 'picking' || generationPhase === 'sheet') && selectedVariant !== null && !characterSaved && (
+                      <div className="space-y-3">
+                        <div className="text-[10px] font-mono uppercase tracking-wider" style={{ color: 'var(--joi-text-3)' }}>
+                          Character Sheet (optional)
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          {consistencyPhotos.map((url, i) => (
-                            <div key={i} className="aspect-[3/4] rounded-xl overflow-hidden"
-                              style={{ border: '1px solid rgba(255,255,255,.04)' }}>
-                              <img src={url} className="w-full h-full object-cover" alt={`Consistency ${i + 1}`} />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
 
-                    {/* Action buttons */}
-                    {generationPhase === 'picking' && selectedVariant !== null && !characterSaved && (
-                      <div className="space-y-2">
-                        {consistencyPhotos.length === 0 && (
-                          <button onClick={handleConsistency} disabled={generating}
-                            className="joi-btn-ghost w-full py-2.5 text-[12px]"
-                            style={{ color: 'var(--joi-magenta)' }}>
-                            {generating ? '\u21BB Generating...' : `\u{1F504} Generate consistency variants? (${costPerVariant}cr each)`}
+                        {/* Step 1: Face Angles */}
+                        {!sheetResults.face ? (
+                          <button
+                            onClick={() => handleGenerateSheet('face')}
+                            disabled={sheetGenerating !== null}
+                            className="w-full p-3 rounded-xl text-left transition-all hover:scale-[1.01]"
+                            style={{
+                              background: 'rgba(255,107,157,.04)',
+                              border: '1px solid rgba(255,107,157,.10)',
+                            }}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="text-[12px] font-medium" style={{ color: 'var(--joi-text-1)' }}>
+                                  {sheetGenerating === 'face' ? '\u21BB Generating...' : '\u{1F9D1} Face Angles (4 views)'}
+                                </div>
+                                <div className="text-[10px]" style={{ color: 'var(--joi-text-3)' }}>
+                                  Front · Right profile · Left profile · Three-quarter
+                                </div>
+                              </div>
+                              <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg"
+                                style={{ background: 'rgba(255,107,157,.08)', color: 'var(--joi-pink)' }}>
+                                {SHEET_CREDIT_COST}cr
+                              </span>
+                            </div>
+                            {sheetGenerating === 'face' && (
+                              <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: 'var(--joi-bg-3)' }}>
+                                <div className="h-full rounded-full shimmer" style={{ width: '60%', background: 'linear-gradient(90deg, var(--joi-pink), var(--joi-magenta))' }} />
+                              </div>
+                            )}
+                          </button>
+                        ) : (
+                          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,107,157,.10)' }}>
+                            <img src={sheetResults.faceUltra || sheetResults.face} className="w-full object-contain" alt="Face angles" />
+                            <div className="flex items-center justify-between px-3 py-2" style={{ background: 'rgba(255,107,157,.04)' }}>
+                              <span className="text-[10px] font-mono" style={{ color: 'var(--joi-text-3)' }}>
+                                {sheetResults.faceUltra ? '\u2728 Ultra Enhanced' : 'Face Angles'}
+                              </span>
+                              {!sheetResults.faceUltra && (
+                                <button
+                                  onClick={() => handleUltraEnhance('face')}
+                                  disabled={sheetGenerating !== null}
+                                  className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg transition-colors hover:opacity-80"
+                                  style={{ background: 'rgba(167,139,250,.12)', color: 'var(--joi-violet)', border: '1px solid rgba(167,139,250,.15)' }}
+                                >
+                                  {sheetGenerating === 'faceUltra' ? '\u21BB...' : `\u2728 Ultra +${ULTRA_CREDIT_COST}cr`}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Step 2: Body Angles (unlocked after face) */}
+                        {sheetResults.face && !sheetResults.body && (
+                          <button
+                            onClick={() => handleGenerateSheet('body')}
+                            disabled={sheetGenerating !== null}
+                            className="w-full p-3 rounded-xl text-left transition-all hover:scale-[1.01]"
+                            style={{
+                              background: 'rgba(167,139,250,.04)',
+                              border: '1px solid rgba(167,139,250,.10)',
+                            }}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="text-[12px] font-medium" style={{ color: 'var(--joi-text-1)' }}>
+                                  {sheetGenerating === 'body' ? '\u21BB Generating...' : '\u{1F9CD} Body Angles (4 views)'}
+                                </div>
+                                <div className="text-[10px]" style={{ color: 'var(--joi-text-3)' }}>
+                                  Front · Half turn · Side profile · Back
+                                </div>
+                              </div>
+                              <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg"
+                                style={{ background: 'rgba(167,139,250,.08)', color: 'var(--joi-violet)' }}>
+                                {SHEET_CREDIT_COST}cr
+                              </span>
+                            </div>
+                            {sheetGenerating === 'body' && (
+                              <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: 'var(--joi-bg-3)' }}>
+                                <div className="h-full rounded-full shimmer" style={{ width: '60%', background: 'linear-gradient(90deg, var(--joi-violet), var(--joi-pink))' }} />
+                              </div>
+                            )}
                           </button>
                         )}
-                        <button onClick={handleSave}
-                          className="joi-btn-solid w-full py-3 text-sm joi-breathe">
-                          {'\u2726'} Save Character
-                        </button>
-                      </div>
-                    )}
+                        {sheetResults.body && (
+                          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(167,139,250,.10)' }}>
+                            <img src={sheetResults.body} className="w-full object-contain" alt="Body angles" />
+                            <div className="px-3 py-2" style={{ background: 'rgba(167,139,250,.04)' }}>
+                              <span className="text-[10px] font-mono" style={{ color: 'var(--joi-text-3)' }}>Body Angles</span>
+                            </div>
+                          </div>
+                        )}
 
-                    {(generationPhase === 'done' || generationPhase === 'consistency') && selectedVariant !== null && !characterSaved && !generating && (
-                      <button onClick={handleSave}
-                        className="joi-btn-solid w-full py-3 text-sm joi-breathe">
-                        {'\u2726'} Save Character
-                      </button>
+                        {/* Step 3: Expressions (unlocked after body) */}
+                        {sheetResults.body && !sheetResults.expressions && (
+                          <button
+                            onClick={() => handleGenerateSheet('expressions')}
+                            disabled={sheetGenerating !== null}
+                            className="w-full p-3 rounded-xl text-left transition-all hover:scale-[1.01]"
+                            style={{
+                              background: 'rgba(255,107,157,.04)',
+                              border: '1px solid rgba(255,107,157,.10)',
+                            }}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="text-[12px] font-medium" style={{ color: 'var(--joi-text-1)' }}>
+                                  {sheetGenerating === 'expressions' ? '\u21BB Generating...' : '\u{1F3AD} Expressions (9 faces)'}
+                                </div>
+                                <div className="text-[10px]" style={{ color: 'var(--joi-text-3)' }}>
+                                  Happy · Sad · Surprised · Angry · Laughing · Serious · Flirty · Disgusted · Peaceful
+                                </div>
+                              </div>
+                              <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg"
+                                style={{ background: 'rgba(255,107,157,.08)', color: 'var(--joi-pink)' }}>
+                                {SHEET_CREDIT_COST}cr
+                              </span>
+                            </div>
+                            {sheetGenerating === 'expressions' && (
+                              <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: 'var(--joi-bg-3)' }}>
+                                <div className="h-full rounded-full shimmer" style={{ width: '60%', background: 'linear-gradient(90deg, var(--joi-pink), var(--joi-magenta))' }} />
+                              </div>
+                            )}
+                          </button>
+                        )}
+                        {sheetResults.expressions && (
+                          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,107,157,.10)' }}>
+                            <img src={sheetResults.expressionsUltra || sheetResults.expressions} className="w-full object-contain" alt="Expressions" />
+                            <div className="flex items-center justify-between px-3 py-2" style={{ background: 'rgba(255,107,157,.04)' }}>
+                              <span className="text-[10px] font-mono" style={{ color: 'var(--joi-text-3)' }}>
+                                {sheetResults.expressionsUltra ? '\u2728 Ultra Enhanced' : 'Expressions'}
+                              </span>
+                              {!sheetResults.expressionsUltra && (
+                                <button
+                                  onClick={() => handleUltraEnhance('expressions')}
+                                  disabled={sheetGenerating !== null}
+                                  className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg transition-colors hover:opacity-80"
+                                  style={{ background: 'rgba(167,139,250,.12)', color: 'var(--joi-violet)', border: '1px solid rgba(167,139,250,.15)' }}
+                                >
+                                  {sheetGenerating === 'expressionsUltra' ? '\u21BB...' : `\u2728 Ultra +${ULTRA_CREDIT_COST}cr`}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Save — always available */}
+                        {sheetGenerating === null && (
+                          <button onClick={handleSave}
+                            className="joi-btn-solid w-full py-3 text-sm joi-breathe">
+                            {'\u2726'} Save Character
+                          </button>
+                        )}
+                      </div>
                     )}
 
                     {characterSaved && onNav && (
@@ -1067,7 +1187,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               {generating && (
                 <div className="mt-3 text-center">
                   <div className="text-[11px] font-medium" style={{ color: 'var(--joi-pink)' }}>
-                    {'\u21BB'} Generating{generationPhase === 'consistency' ? ' consistency variants' : ' variants'}...
+                    {'\u21BB'} Generating{generationPhase === 'sheet' ? ' character sheet' : ' variants'}...
                   </div>
                   <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: 'var(--joi-bg-3)' }}>
                     <div className="h-full rounded-full shimmer" style={{ width: '60%', background: 'linear-gradient(90deg, var(--joi-pink), var(--joi-magenta))' }} />
@@ -1111,7 +1231,47 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
               <div className="h-px my-1 joi-divider" />
 
-              {ENGINE_METADATA.map(engine => (
+              {/* Recommended engines for character creation */}
+              <div className="joi-label mb-1 mt-2 px-1 text-[9px]" style={{ color: 'var(--joi-text-3)' }}>Best for Characters</div>
+              {CHARACTER_ENGINES.map(ce => {
+                const meta = ENGINE_METADATA.find(e => e.key === ce.id);
+                return (
+                  <button key={ce.id}
+                    onClick={() => { setSelectedEngine(ce.id); setShowEngineModal(false) }}
+                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-left transition-all"
+                    style={{
+                      background: selectedEngine === ce.id ? 'rgba(255,107,157,.10)' : 'rgba(255,255,255,.02)',
+                      border: `1px solid ${selectedEngine === ce.id ? 'rgba(255,107,157,.25)' : 'rgba(255,255,255,.04)'}`,
+                    }}>
+                    <span className="text-sm" style={{ color: ce.badge ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>
+                      {ce.badge ? '\u2B50' : '\u2699'}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[11px] font-medium" style={{ color: selectedEngine === ce.id ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{ce.label}</span>
+                        {ce.badge && (
+                          <span className="text-[7px] font-bold px-1.5 py-0.5 rounded-full" style={{
+                            background: 'rgba(255,107,157,.15)',
+                            color: 'var(--joi-pink)',
+                            border: '1px solid rgba(255,107,157,.2)',
+                          }}>{ce.badge}</span>
+                        )}
+                      </div>
+                      <div className="text-[8px]" style={{ color: 'var(--joi-text-3)' }}>{ce.desc}</div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div className="text-[9px] font-mono" style={{ color: 'var(--joi-pink)' }}>{meta?.creditCost ?? '?'}cr</div>
+                      <div className="text-[8px] font-mono" style={{ color: 'var(--joi-text-3)' }}>{meta?.estimatedTime ?? ''}</div>
+                    </div>
+                  </button>
+                );
+              })}
+
+              <div className="h-px my-1 joi-divider" />
+
+              {/* All engines */}
+              <div className="joi-label mb-1 mt-2 px-1 text-[9px]" style={{ color: 'var(--joi-text-3)' }}>All Engines</div>
+              {ENGINE_METADATA.filter(e => !CHARACTER_ENGINES.some(ce => ce.id === e.key)).map(engine => (
                 <button key={engine.key}
                   onClick={() => { setSelectedEngine(engine.key); setShowEngineModal(false) }}
                   className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-left transition-all"

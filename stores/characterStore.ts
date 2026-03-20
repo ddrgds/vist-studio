@@ -45,6 +45,7 @@ interface CharacterState {
   updateCharacter: (id: string, updates: Partial<SavedCharacter>) => void;
   incrementUsage: (id: string) => void;
   setLoading: (v: boolean) => void;
+  trainLoRA: (characterId: string) => Promise<void>;
 }
 
 export const useCharacterStore = create<CharacterState>((set, get) => ({
@@ -125,4 +126,48 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
   })),
 
   setLoading: (v) => set({ isLoading: v }),
+
+  trainLoRA: async (characterId: string) => {
+    const char = get().characters.find(c => c.id === characterId);
+    if (!char) return;
+
+    // Update status to training
+    set(s => ({
+      characters: s.characters.map(c =>
+        c.id === characterId ? { ...c, loraTrainingStatus: 'training' as const } : c
+      ),
+    }));
+
+    try {
+      const { trainLoRAForCharacter } = await import('../services/falService');
+      const images = char.modelImageBlobs || [];
+      if (images.length < 5) throw new Error('Need at least 5 reference images');
+
+      const result = await trainLoRAForCharacter(images, char.name || 'subject');
+
+      // Persist to Supabase so status survives page refresh
+      const userId = get()._userId;
+      if (userId) {
+        updateCharacterInCloud(
+          { ...char, loraUrl: result.loraUrl, loraTrainingStatus: 'ready' as const },
+          userId,
+        ).catch(() => {});
+      }
+
+      set(s => ({
+        characters: s.characters.map(c =>
+          c.id === characterId
+            ? { ...c, loraUrl: result.loraUrl, loraTrainingStatus: 'ready' as const, loraTrainedAt: Date.now() }
+            : c
+        ),
+      }));
+    } catch (err) {
+      set(s => ({
+        characters: s.characters.map(c =>
+          c.id === characterId ? { ...c, loraTrainingStatus: 'failed' as const } : c
+        ),
+      }));
+      throw err;
+    }
+  },
 }));

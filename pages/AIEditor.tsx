@@ -4,8 +4,8 @@ import { useGalleryStore } from '../stores/galleryStore'
 import { useCharacterStore } from '../stores/characterStore'
 import { useProfile } from '../contexts/ProfileContext'
 import { useToast } from '../contexts/ToastContext'
-import { editImageWithAI } from '../services/geminiService'
-import { editImageWithFluxKontext, editImageWithSeedream5, editImageWithFlux2Pro, editImageWithGrokFal, editImageWithQwen, editImageWithFireRed, inpaintWithOneReward, editImageWithSeedream5Lite } from '../services/falService'
+import { editImageWithAI, faceSwapWithGemini } from '../services/geminiService'
+import { editImageWithFluxKontext, editImageWithSeedream5, editImageWithFlux2Pro, editImageWithGrokFal, editImageWithQwen, editImageWithFireRed, inpaintWithOneReward, editImageWithSeedream5Lite, removeBackground } from '../services/falService'
 import { editImageWithGPT } from '../services/openaiService'
 import { ENGINE_METADATA, FEATURE_ENGINES, AIProvider } from '../types'
 import { useNavigationStore } from '../stores/navigationStore'
@@ -14,10 +14,10 @@ import { PipelineCTA } from '../components/PipelineCTA'
 
 // Lazy load modals (they're heavy)
 const RelightModal = lazy(() => import('../components/RelightModal'))
-const FaceSwapModal = lazy(() => import('../components/FaceSwapModal'))
-const TryOnModal = lazy(() => import('../components/TryOnModal'))
+// FaceSwap and TryOn now work inline — modals removed
 const InpaintingModal = lazy(() => import('../components/InpaintingModal'))
 const SkinEnhancerModal = lazy(() => import('../components/SkinEnhancerModal'))
+const ImageEditor = lazy(() => import('../components/ImageEditor'))
 
 const tools = [
   // Primary tools (visible by default)
@@ -26,12 +26,15 @@ const tools = [
   { id:'faceswap', label:'Face Swap', icon:'\uD83C\uDFAD', desc:'Swap faces between images' },
   { id:'tryon', label:'Try-On Virtual', icon:'\uD83D\uDC57', desc:'Try on clothes and accessories' },
   { id:'bgswap', label:'Background', icon:'\uD83D\uDDBC\uFE0F', desc:'Change or generate backgrounds' },
+  { id:'realskin', label:'Realistic Skin', icon:'\uD83E\uDDF4', desc:'Add natural pores, texture & imperfections' },
   // Secondary tools (behind "More" toggle)
   { id:'rotate360', label:'360\u00b0 Angles', icon:'\uD83D\uDD04', desc:'Generate views from all angles' },
   { id:'composite', label:'Scene', icon:'\uD83C\uDFAC', desc:'Place character in any scene' },
   { id:'enhance', label:'Enhance', icon:'\u2728', desc:'Improve quality and details' },
   { id:'style', label:'Style Transfer', icon:'\uD83C\uDFA8', desc:'Apply artistic styles' },
   { id:'inpaint', label:'Inpaint', icon:'\uD83D\uDD8C\uFE0F', desc:'Edit specific areas' },
+  { id:'rembg', label:'Remove BG', icon:'\u2702\uFE0F', desc:'Remove background instantly' },
+  { id:'expand', label:'Expand', icon:'\u2194\uFE0F', desc:'Expand image beyond borders' },
 ]
 
 // Relight presets — each has a light position on the sphere (azimuth/elevation in degrees) + color
@@ -68,14 +71,16 @@ const bgPresets = ['Studio','Nature','City','Interior','Abstract','Custom']
 const TOOL_TO_FEATURE: Record<string, string> = {
   'freeai': 'relight',       // freeai uses same engines as relight (general editing)
   'relight': 'relight',
-  'rotate360': 'relight',    // 360° uses same general editing engines
+  'rotate360': 'angles',     // 360° character sheets — NB2 or Grok
   'faceswap': 'face-swap',
   'tryon': 'try-on',
   'bgswap': 'bg-swap',
   'composite': 'bg-swap',    // composite uses same engines as bg-swap
   'enhance': 'enhance',
   'style': 'style-transfer',
+  'realskin': 'skin-enhancer',
   'inpaint': 'inpaint',
+  'expand': 'expand',
 }
 
 // Convert a data URL or blob URL to a File object
@@ -142,7 +147,8 @@ const routeEdit = async (
 
   // Grok Imagine (edit mode)
   if (engineKey === 'replicate:grok') {
-    return editImageWithGrokFal(file, instruction, onProgress, abortSignal)
+    const refs = referenceImage ? [referenceImage] : []
+    return editImageWithGrokFal(file, instruction, onProgress, abortSignal, refs)
   }
 
   // GPT Image
@@ -160,6 +166,10 @@ const routeEdit = async (
 export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
   const [activeTool, setActiveTool] = useState('freeai')
   const [selPreset, setSelPreset] = useState(0)
+  const [relightAz, setRelightAz] = useState(relightPresets[0].az)
+  const [relightEl, setRelightEl] = useState(relightPresets[0].el)
+  const relightSphereRef = useRef<HTMLDivElement>(null)
+  const relightDragRef = useRef(false)
   const [sel360, setSel360] = useState(0)
   const [selStyle, setSelStyle] = useState(0)
   const [selBg, setSelBg] = useState(0)
@@ -186,10 +196,27 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
   const [progress, setProgress] = useState(0)
   const [activeModal, setActiveModal] = useState<string | null>(null)
   const [editHistory, setEditHistory] = useState<string[]>([])
+  const [canvasZoom, setCanvasZoom] = useState(1)
+  const [canvasPan, setCanvasPan] = useState({ x: 0, y: 0 })
+  const [isPanning, setIsPanning] = useState(false)
+  const panStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 })
+  const [compareMode, setCompareMode] = useState(false)
+  // Face swap inline state
+  const [faceSwapFile, setFaceSwapFile] = useState<File | null>(null)
+  const [faceSwapPreview, setFaceSwapPreview] = useState<string | null>(null)
+  const faceSwapInputRef = useRef<HTMLInputElement>(null)
+  // Try-on inline state
+  const [garmentFile, setGarmentFile] = useState<File | null>(null)
+  const [garmentPreview, setGarmentPreview] = useState<string | null>(null)
+  const garmentInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showAllTools, setShowAllTools] = useState(() => {
     try { return localStorage.getItem('vist-editor-all-tools') === 'true' } catch { return false }
   })
+  const [showBasicEditor, setShowBasicEditor] = useState(false)
+  // Expand tool state
+  const [expandDirection, setExpandDirection] = useState<string>('all')
+  const [expandPixels, setExpandPixels] = useState(256)
 
   const { decrementCredits, restoreCredits } = useProfile()
 
@@ -246,9 +273,21 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
   const handleApply = async () => {
     if (!inputImage) { toast.error('Upload an image first'); return }
 
-    // For tools with modals, open the modal instead (these use URL, not File)
-    if (['faceswap', 'tryon', 'inpaint', 'enhance'].includes(activeTool)) {
+    // For tools with modals, open the modal instead
+    if (['inpaint', 'enhance'].includes(activeTool)) {
       setActiveModal(activeTool)
+      return
+    }
+
+    // Face swap needs a source face
+    if (activeTool === 'faceswap' && !faceSwapFile) {
+      toast.error('Upload a source face photo first')
+      return
+    }
+
+    // Try-on needs an outfit reference
+    if (activeTool === 'tryon' && !garmentFile) {
+      toast.error('Upload an outfit reference first')
       return
     }
 
@@ -266,8 +305,8 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
       }
     }
 
-    // Non-modal tools need a File object for the API
-    if (!inputFile) {
+    // Non-modal tools need a File object for the API (except rembg which works on URLs)
+    if (!inputFile && activeTool !== 'rembg') {
       toast.error('Upload an image first')
       return
     }
@@ -293,7 +332,8 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         resultUrls = await routeEdit(selectedEngine, inputFile, freePrompt.trim(), (p) => setProgress(p))
       } else if (activeTool === 'relight') {
         const preset = relightPresets[selPreset]
-        const instruction = `Change the lighting to: ${preset.prompt}. Only modify lighting, shadows, and color temperature.`
+        const dirHint = `Light source at azimuth ${relightAz}° (${relightAz < -45 ? 'left' : relightAz > 45 ? 'right' : 'front'}), elevation ${relightEl}° (${relightEl > 50 ? 'above' : relightEl < -10 ? 'below' : 'eye-level'}).`
+        const instruction = `Change the lighting to: ${preset.prompt}. ${dirHint} Only modify lighting, shadows, and color temperature.`
         resultUrls = await routeEdit(selectedEngine, inputFile, instruction, (p) => setProgress(p))
       } else if (activeTool === 'rotate360') {
         const view = angleViews[sel360]
@@ -328,6 +368,27 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         const style = styleTransfers[selStyle]
         const instruction = `STYLE TRANSFER (overrides preservation rule): Transform the entire image into ${style.name} style. ${style.prompt}. The person's face must remain recognizable (same identity, pose, expression) but the visual rendering of EVERYTHING should change to match this aesthetic. Apply strongly and consistently.`
         resultUrls = await routeEdit(selectedEngine, inputFile, instruction, (p) => setProgress(p))
+      } else if (activeTool === 'realskin') {
+        const instruction = 'Add realistic skin detail: visible pores, micro-imperfections, natural skin shine, and subtle subsurface scattering. Do not alter the face shape, features, expression, hair, outfit, pose, or background. The goal is photorealistic skin texture, not beauty retouching.'
+        resultUrls = await routeEdit(selectedEngine, inputFile, instruction, (p) => setProgress(p))
+      } else if (activeTool === 'faceswap' && faceSwapFile) {
+        if (selectedEngine === 'gemini:nb2' || selectedEngine === 'auto') {
+          const dataUrl = await faceSwapWithGemini(inputFile, faceSwapFile, (p) => setProgress(p))
+          resultUrls = [dataUrl]
+        } else {
+          const instruction = `Swap the face: replace the face of the person in the first image with the face from the second image. Keep the original person's hair, body, pose, clothing, and background exactly the same. Only change the facial features to match the reference face.`
+          resultUrls = await routeEdit(selectedEngine, inputFile, instruction, (p) => setProgress(p), undefined, faceSwapFile)
+        }
+      } else if (activeTool === 'tryon' && garmentFile) {
+        const instruction = `Dress this person in the EXACT outfit shown in the reference image. Reproduce every detail of the clothing: fabric, pattern, color, fit, accessories. Keep the person's face, hairstyle, body proportions, pose, and background completely unchanged. Only replace their clothing with what is shown in the reference.`
+        resultUrls = await routeEdit(selectedEngine, inputFile, instruction, (p) => setProgress(p), undefined, garmentFile)
+      } else if (activeTool === 'expand') {
+        const { expandWithBria } = await import('../services/replicateService')
+        const expandedUrl = await expandWithBria(inputImage, expandDirection as 'up' | 'down' | 'left' | 'right' | 'all', expandPixels, (p: number) => setProgress(p))
+        resultUrls = [expandedUrl]
+      } else if (activeTool === 'rembg') {
+        const bgRemovedUrl = await removeBackground(inputImage, (p) => setProgress(p))
+        resultUrls = [bgRemovedUrl]
       }
 
       if (resultUrls.length > 0) {
@@ -375,7 +436,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
   }
 
   return (
-    <div className="h-screen flex" style={{ background: 'var(--joi-bg-0)' }}>
+    <div className="h-full flex" style={{ background: 'var(--joi-bg-0)' }}>
       {/* Hidden file inputs */}
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
         onChange={(e) => {
@@ -428,6 +489,20 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           title={showAllTools ? 'Show less tools' : 'Show more tools'}>
           <span className="text-[9px] font-medium">{showAllTools ? '▲ Less' : '▼ More'}</span>
         </button>
+        <div className="w-10 h-px my-1" style={{ background: 'rgba(255,255,255,.06)' }} />
+        <button onClick={() => inputImage && setShowBasicEditor(true)}
+          className="w-12 h-12 rounded-xl flex flex-col items-center justify-center transition-all group relative"
+          style={{
+            background: showBasicEditor ? 'rgba(167,139,250,.08)' : 'transparent',
+            border: `1px solid ${showBasicEditor ? 'rgba(167,139,250,.2)' : 'transparent'}`,
+            opacity: inputImage ? 1 : 0.3,
+          }}
+          title="Basic Editor — crop, filters, adjustments (no AI)">
+          <span className="text-base">{'\u270F\uFE0F'}</span>
+          <span className="text-[7px] mt-0.5 font-medium" style={{ color: showBasicEditor ? 'var(--joi-violet)' : 'var(--joi-text-3)' }}>
+            Basic
+          </span>
+        </button>
       </div>
 
       {/* Tool Panel */}
@@ -437,7 +512,12 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
             {tools.find(t=>t.id===activeTool)?.icon} {tools.find(t=>t.id===activeTool)?.label}
           </h2>
           <div className="ml-auto relative">
-            <button onClick={() => setShowEngineModal(v => !v)}
+            {(() => {
+              const fk = TOOL_TO_FEATURE[activeTool]
+              const fd = fk ? FEATURE_ENGINES[fk] : null
+              const hasMultiple = fd ? fd.keys.length > 1 : true
+              if (!hasMultiple) return null
+              return <button onClick={() => setShowEngineModal(v => !v)}
               className="w-8 h-8 rounded-xl flex items-center justify-center text-sm transition-all hover:scale-105 relative"
               style={{
                 background: selectedEngine !== 'auto' ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)',
@@ -449,6 +529,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                 <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full" style={{ background:'var(--joi-pink)' }} />
               )}
             </button>
+            })()}
             {showEngineModal && (
               <div className="absolute top-full right-0 mt-2 z-50 w-[300px] max-h-[60vh] flex flex-col rounded-xl"
                 style={{
@@ -583,42 +664,74 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           </>}
 
           {activeTool === 'relight' && <>
-            {/* Light sphere visualization */}
+            {/* Light sphere visualization — draggable */}
             <div>
-              <div className="joi-label mb-3">Light Position</div>
-              <div className="relative w-44 h-44 mx-auto mb-3">
+              <div className="joi-label mb-3">Light Position <span className="text-[9px] font-normal" style={{ color: 'var(--joi-text-3)' }}>drag to move</span></div>
+              <div
+                ref={relightSphereRef}
+                className="relative w-44 h-44 mx-auto mb-3 cursor-crosshair touch-none select-none"
+                onPointerDown={(e) => {
+                  relightDragRef.current = true
+                  ;(e.target as HTMLElement).setPointerCapture?.(e.pointerId)
+                  const rect = relightSphereRef.current?.getBoundingClientRect()
+                  if (!rect) return
+                  const nx = ((e.clientX - rect.left) / rect.width - 0.5) / 0.38
+                  const ny = (0.5 - (e.clientY - rect.top) / rect.height) / 0.38
+                  const clamp = (v: number) => Math.max(-1, Math.min(1, v))
+                  setRelightAz(Math.round(Math.asin(clamp(nx)) * 180 / Math.PI))
+                  setRelightEl(Math.round(Math.asin(clamp(ny)) * 180 / Math.PI))
+                }}
+                onPointerMove={(e) => {
+                  if (!relightDragRef.current) return
+                  const rect = relightSphereRef.current?.getBoundingClientRect()
+                  if (!rect) return
+                  const nx = ((e.clientX - rect.left) / rect.width - 0.5) / 0.38
+                  const ny = (0.5 - (e.clientY - rect.top) / rect.height) / 0.38
+                  const clamp = (v: number) => Math.max(-1, Math.min(1, v))
+                  setRelightAz(Math.round(Math.asin(clamp(nx)) * 180 / Math.PI))
+                  setRelightEl(Math.round(Math.asin(clamp(ny)) * 180 / Math.PI))
+                }}
+                onPointerUp={() => { relightDragRef.current = false }}
+                onPointerLeave={() => { relightDragRef.current = false }}
+              >
                 {/* Sphere background */}
-                <div className="absolute inset-0 rounded-full" style={{
+                <div className="absolute inset-0 rounded-full pointer-events-none" style={{
                   background: 'radial-gradient(circle at 40% 35%, var(--joi-bg-3) 0%, var(--joi-bg-2) 70%, var(--joi-bg-1) 100%)',
                   border: '1px solid rgba(255,255,255,.04)',
                 }} />
                 {/* Cross guides */}
-                <div className="absolute left-1/2 top-2 bottom-2 w-px" style={{ background:'rgba(255,255,255,.04)' }} />
-                <div className="absolute top-1/2 left-2 right-2 h-px" style={{ background:'rgba(255,255,255,.04)' }} />
+                <div className="absolute left-1/2 top-2 bottom-2 w-px pointer-events-none" style={{ background:'rgba(255,255,255,.04)' }} />
+                <div className="absolute top-1/2 left-2 right-2 h-px pointer-events-none" style={{ background:'rgba(255,255,255,.04)' }} />
                 {/* Ellipse equator */}
-                <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 h-[60%] rounded-[50%]" style={{ border:'1px solid rgba(255,255,255,.04)' }} />
+                <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 h-[60%] rounded-[50%] pointer-events-none" style={{ border:'1px solid rgba(255,255,255,.04)' }} />
 
-                {/* Light position dot */}
+                {/* Light position dot — from custom az/el */}
                 {(() => {
                   const p = relightPresets[selPreset]
-                  const azRad = (p.az * Math.PI) / 180
-                  const elRad = (p.el * Math.PI) / 180
+                  const azRad = (relightAz * Math.PI) / 180
+                  const elRad = (relightEl * Math.PI) / 180
                   const x = 50 + Math.sin(azRad) * Math.cos(elRad) * 38
                   const y = 50 - Math.sin(elRad) * 38
                   return (
-                    <div className="absolute w-5 h-5 rounded-full transition-all duration-500"
+                    <div className="absolute w-5 h-5 rounded-full pointer-events-none"
                       style={{
                         left: `${x}%`, top: `${y}%`, transform: 'translate(-50%,-50%)',
                         background: p.c,
                         boxShadow: `0 0 20px ${p.c}80, 0 0 40px ${p.c}30`,
+                        transition: relightDragRef.current ? 'none' : 'all 0.5s',
                       }} />
                   )
                 })()}
 
                 {/* Center face icon */}
-                <div className="absolute inset-0 flex items-center justify-center">
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <span className="text-lg opacity-30">{'\uD83D\uDDE3\uFE0F'}</span>
                 </div>
+              </div>
+              {/* Readout */}
+              <div className="flex justify-center gap-4 text-[9px] font-mono" style={{ color: 'var(--joi-text-3)' }}>
+                <span>AZ <span style={{ color: 'var(--joi-text-2)' }}>{relightAz > 0 ? '+' : ''}{relightAz}°</span></span>
+                <span>EL <span style={{ color: 'var(--joi-text-2)' }}>{relightEl}°</span></span>
               </div>
             </div>
 
@@ -627,7 +740,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
               <div className="joi-label mb-2">Presets</div>
               <div className="grid grid-cols-2 gap-1.5">
                 {relightPresets.map((p, i) => (
-                  <button key={p.n} onClick={() => setSelPreset(i)}
+                  <button key={p.n} onClick={() => { setSelPreset(i); setRelightAz(p.az); setRelightEl(p.el) }}
                     className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-all"
                     style={{
                       background: selPreset === i ? `${p.c}12` : 'var(--joi-bg-3)',
@@ -691,57 +804,77 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
 
           {activeTool === 'faceswap' && <>
             <div>
-              <div className="joi-label mb-2">Target Face</div>
-              <div className="aspect-[4/3] rounded-xl cursor-pointer"
-                style={{ background:'var(--joi-bg-3)', border:'1px dashed rgba(255,255,255,.04)' }}>
-                <div className="w-full h-full flex flex-col items-center justify-center">
-                  <span className="text-xl mb-1">{'\uD83C\uDFAD'}</span>
-                  <span className="text-[10px]" style={{ color:'var(--joi-text-2)' }}>Upload target face</span>
-                </div>
+              <div className="joi-label mb-2">Source Face</div>
+              <div className="aspect-square rounded-xl cursor-pointer overflow-hidden transition-all"
+                onClick={() => faceSwapInputRef.current?.click()}
+                onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; if (f?.type.startsWith('image/')) { setFaceSwapFile(f); setFaceSwapPreview(URL.createObjectURL(f)) } }}
+                onDragOver={(e) => e.preventDefault()}
+                style={{ background:'var(--joi-bg-3)', border: faceSwapPreview ? '1px solid rgba(255,107,157,.3)' : '1px dashed rgba(255,255,255,.08)' }}>
+                {faceSwapPreview ? (
+                  <div className="relative w-full h-full group">
+                    <img src={faceSwapPreview} alt="Source face" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="text-[11px] font-medium" style={{ color:'var(--joi-text-1)' }}>Change Photo</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-2 p-4">
+                    <span className="text-2xl">{'\uD83C\uDFAD'}</span>
+                    <span className="text-[11px] font-medium" style={{ color:'var(--joi-text-1)' }}>Upload Source Face</span>
+                    <span className="text-[9px]" style={{ color:'var(--joi-text-3)' }}>Drop or click — clear frontal photo</span>
+                  </div>
+                )}
               </div>
+              <input ref={faceSwapInputRef} type="file" accept="image/*" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) { setFaceSwapFile(f); setFaceSwapPreview(URL.createObjectURL(f)) } e.target.value = '' }} />
             </div>
-            <div className="joi-label">Or select character</div>
-            <div className="flex gap-2">
-              {['Luna \uD83C\uDF19','Kai \u2744\uFE0F','Zara \uD83D\uDD25'].map(c=>(
-                <button key={c} className="flex-1 py-2 rounded-lg text-[10px] transition-all"
-                  style={{ background:'var(--joi-bg-3)', border:'1px solid rgba(255,255,255,.04)', color:'var(--joi-text-2)' }}>{c}</button>
-              ))}
-            </div>
-            <div className="space-y-3 mt-2">
-              {['Blending','Skin Match','Expression Match','Lighting Match'].map(s=>(
-                <div key={s} className="flex items-center gap-2">
-                  <span className="text-[10px] w-28 shrink-0" style={{ color:'var(--joi-text-2)' }}>{s}</span>
-                  <input type="range" min={0} max={100} defaultValue={70} className="flex-1 slider-t" />
-                </div>
-              ))}
+            {faceSwapPreview && (
+              <button onClick={() => { setFaceSwapFile(null); if (faceSwapPreview) URL.revokeObjectURL(faceSwapPreview); setFaceSwapPreview(null) }}
+                className="text-[10px] py-1.5 px-3 rounded-lg transition-all hover:bg-white/10"
+                style={{ color:'var(--joi-text-3)', border:'1px solid rgba(255,255,255,.06)' }}>
+                Clear source face
+              </button>
+            )}
+            <div className="text-[9px] mt-1" style={{ color:'var(--joi-text-3)' }}>
+              Upload a face photo, then hit Apply. The source face will be swapped onto the base image.
             </div>
           </>}
 
           {activeTool === 'tryon' && <>
             <div>
-              <div className="joi-label mb-2">Garment / Accessory</div>
-              <div className="aspect-[4/3] rounded-xl cursor-pointer"
-                style={{ background:'var(--joi-bg-3)', border:'1px dashed rgba(255,255,255,.04)' }}>
-                <div className="w-full h-full flex flex-col items-center justify-center">
-                  <span className="text-xl mb-1">{'\uD83D\uDC57'}</span>
-                  <span className="text-[10px]" style={{ color:'var(--joi-text-2)' }}>Upload garment photo</span>
-                </div>
+              <div className="joi-label mb-2">Outfit Reference</div>
+              <div className="aspect-square rounded-xl cursor-pointer overflow-hidden transition-all"
+                onClick={() => garmentInputRef.current?.click()}
+                onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; if (f?.type.startsWith('image/')) { setGarmentFile(f); setGarmentPreview(URL.createObjectURL(f)) } }}
+                onDragOver={(e) => e.preventDefault()}
+                style={{ background:'var(--joi-bg-3)', border: garmentPreview ? '1px solid rgba(167,139,250,.3)' : '1px dashed rgba(255,255,255,.08)' }}>
+                {garmentPreview ? (
+                  <div className="relative w-full h-full group">
+                    <img src={garmentPreview} alt="Outfit" className="w-full h-full object-contain p-1" />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="text-[11px] font-medium" style={{ color:'var(--joi-text-1)' }}>Change Photo</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-2 p-4">
+                    <span className="text-2xl">{'\uD83D\uDC57'}</span>
+                    <span className="text-[11px] font-medium" style={{ color:'var(--joi-text-1)' }}>Upload Outfit</span>
+                    <span className="text-[9px] text-center" style={{ color:'var(--joi-text-3)' }}>Persona con outfit o solo la prenda</span>
+                  </div>
+                )}
               </div>
+              <input ref={garmentInputRef} type="file" accept="image/*" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) { setGarmentFile(f); setGarmentPreview(URL.createObjectURL(f)) } e.target.value = '' }} />
             </div>
-            <div className="joi-label">Category</div>
-            <div className="grid grid-cols-3 gap-1.5">
-              {['Top','Bottom','Dress','Jacket','Shoes','Accessory'].map(c=>(
-                <button key={c} className="py-2 rounded-lg text-[10px] transition-all"
-                  style={{ background:'var(--joi-bg-3)', border:'1px solid rgba(255,255,255,.04)', color:'var(--joi-text-2)' }}>{c}</button>
-              ))}
-            </div>
-            <div className="space-y-3 mt-2">
-              {['Fit','Draping','Color Match','Texture'].map(s=>(
-                <div key={s} className="flex items-center gap-2">
-                  <span className="text-[10px] w-24 shrink-0" style={{ color:'var(--joi-text-2)' }}>{s}</span>
-                  <input type="range" min={0} max={100} defaultValue={50} className="flex-1 slider-t" />
-                </div>
-              ))}
+            {garmentPreview && (
+              <button onClick={() => { setGarmentFile(null); if (garmentPreview) URL.revokeObjectURL(garmentPreview); setGarmentPreview(null) }}
+                className="text-[10px] py-1.5 px-3 rounded-lg transition-all hover:bg-white/10"
+                style={{ color:'var(--joi-text-3)', border:'1px solid rgba(255,255,255,.06)' }}>
+                Clear outfit
+              </button>
+            )}
+            <div className="text-[9px] mt-1" style={{ color:'var(--joi-text-3)' }}>
+              Sube una foto de referencia del outfit y presiona Apply. La IA vestirá a tu personaje con esa ropa.
             </div>
           </>}
 
@@ -885,6 +1018,22 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
             )}
           </>}
 
+          {activeTool === 'realskin' && <>
+            <div className="joi-label mb-2">Realistic Skin</div>
+            <p className="text-[10px] mb-3" style={{ color:'var(--joi-text-3)', lineHeight: 1.5 }}>
+              Adds photorealistic skin texture — visible pores, micro-imperfections, natural shine.
+              Does not alter face shape, features, or expression.
+            </p>
+            <div className="text-[10px] space-y-2 mb-3" style={{ color:'var(--joi-text-2)' }}>
+              <div className="flex items-center gap-2"><span>Pores</span><div className="flex-1 h-1 rounded-full" style={{ background: 'linear-gradient(90deg, rgba(255,107,157,.1), rgba(255,107,157,.5))' }} /></div>
+              <div className="flex items-center gap-2"><span>Imperfections</span><div className="flex-1 h-1 rounded-full" style={{ background: 'linear-gradient(90deg, rgba(167,139,250,.1), rgba(167,139,250,.5))' }} /></div>
+              <div className="flex items-center gap-2"><span>Subsurface</span><div className="flex-1 h-1 rounded-full" style={{ background: 'linear-gradient(90deg, rgba(255,255,255,.05), rgba(255,255,255,.2))' }} /></div>
+            </div>
+            <p className="text-[9px]" style={{ color:'var(--joi-text-3)' }}>
+              One-click — hit Apply to process
+            </p>
+          </>}
+
           {activeTool === 'enhance' && <>
             <div className="space-y-3">
               <div className="joi-label">Enhancements</div>
@@ -942,9 +1091,58 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                 style={{ background:'var(--joi-bg-2)', borderColor:'rgba(255,255,255,.04)', color:'var(--joi-text-1)', backdropFilter:'blur(8px)' }} />
             </div>
           </>}
+
+          {activeTool === 'expand' && <>
+            <div className="space-y-4">
+              <div>
+                <div className="joi-label mb-2">Direction</div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {['up', 'down', 'left', 'right', 'all'].map(dir => (
+                    <button
+                      key={dir}
+                      onClick={() => setExpandDirection(dir)}
+                      className="px-3 py-2.5 rounded-lg text-[11px] font-medium capitalize transition-all text-center"
+                      style={{
+                        background: expandDirection === dir ? 'rgba(167,139,250,0.15)' : 'var(--joi-bg-3)',
+                        border: `1px solid ${expandDirection === dir ? 'rgba(167,139,250,0.3)' : 'rgba(255,255,255,.04)'}`,
+                        color: expandDirection === dir ? '#A78BFA' : 'var(--joi-text-2)',
+                        boxShadow: expandDirection === dir ? '0 0 12px rgba(167,139,250,.1)' : 'none',
+                      }}
+                    >
+                      {dir}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="joi-label mb-2">
+                  Pixels: <span className="font-mono" style={{ color: '#A78BFA' }}>{expandPixels}px</span>
+                </div>
+                <input
+                  type="range"
+                  min={128}
+                  max={512}
+                  step={64}
+                  value={expandPixels}
+                  onChange={(e) => setExpandPixels(Number(e.target.value))}
+                  className="w-full slider-t"
+                />
+                <div className="flex justify-between mt-1">
+                  <span className="text-[9px] font-mono" style={{ color: 'var(--joi-text-3)' }}>128px</span>
+                  <span className="text-[9px] font-mono" style={{ color: 'var(--joi-text-3)' }}>512px</span>
+                </div>
+              </div>
+
+              <p className="text-[10px] leading-relaxed" style={{ color: 'var(--joi-text-3)' }}>
+                Expands the image canvas beyond its borders using AI outpainting.
+                The new area is generated to match the existing content seamlessly.
+              </p>
+            </div>
+          </>}
         </div>
 
-        <div className="px-4 py-3 shrink-0" style={{ borderTop:'1px solid rgba(255,255,255,.04)' }}>
+        <div className="px-4 py-3 pb-20 lg:pb-3 shrink-0" style={{ borderTop:'1px solid rgba(255,255,255,.04)' }}>
           <button onClick={handleApply} disabled={processing || !inputImage}
             className={`joi-btn-solid w-full py-2.5 text-sm ${!processing && inputImage ? 'joi-breathe' : ''}`}
             style={{ opacity: (!inputImage || processing) ? 0.5 : 1 }}>
@@ -956,21 +1154,29 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
       {/* Canvas */}
       <div className="flex-1 flex flex-col joi-mesh">
         <div className="h-11 flex items-center px-4 gap-1.5 shrink-0" style={{ borderBottom:'1px solid rgba(255,255,255,.04)', background:'var(--joi-bg-glass)' }}>
-          {[
-            { label:'\u21BA', tip:'Undo' },
-            { label:'\u21BB', tip:'Redo' },
-            { label:'Before/After', tip:'Compare before and after' },
-            { label:'Zoom In', tip:'Zoom In' },
-            { label:'Zoom Out', tip:'Zoom Out' },
-            { label:'Export', tip:'Export image' },
-          ].map(t=>(
-            <button key={t.label} title={t.tip} className="px-2.5 py-1 rounded-lg text-[11px] hover:bg-white/5 transition-colors" style={{ color:'var(--joi-text-2)' }}>{t.label}</button>
-          ))}
+          <button title="Undo" className="px-2.5 py-1 rounded-lg text-[11px] hover:bg-white/5 transition-colors" style={{ color:'var(--joi-text-2)' }}>{'\u21BA'}</button>
+          <button title="Redo" className="px-2.5 py-1 rounded-lg text-[11px] hover:bg-white/5 transition-colors" style={{ color:'var(--joi-text-2)' }}>{'\u21BB'}</button>
+          <button title="Compare before and after" onClick={() => { setCompareMode(!compareMode); setCanvasZoom(1); setCanvasPan({ x: 0, y: 0 }) }}
+            className="px-2.5 py-1 rounded-lg text-[11px] transition-colors"
+            style={{ color: compareMode ? 'var(--joi-pink)' : 'var(--joi-text-2)', background: compareMode ? 'rgba(255,107,157,.1)' : 'transparent' }}>Before/After</button>
+          <button title="Zoom In" onClick={() => { setCanvasZoom(z => Math.min(z + 0.25, 5)); setCanvasPan({ x: 0, y: 0 }) }}
+            className="px-2.5 py-1 rounded-lg text-[11px] hover:bg-white/5 transition-colors" style={{ color:'var(--joi-text-2)' }}>Zoom In</button>
+          <button title="Zoom Out" onClick={() => { const nz = Math.max(canvasZoom - 0.25, 0.5); setCanvasZoom(nz); if (nz <= 1) setCanvasPan({ x: 0, y: 0 }) }}
+            className="px-2.5 py-1 rounded-lg text-[11px] hover:bg-white/5 transition-colors" style={{ color:'var(--joi-text-2)' }}>Zoom Out</button>
+          {canvasZoom !== 1 && <button title="Reset zoom" onClick={() => { setCanvasZoom(1); setCanvasPan({ x: 0, y: 0 }) }}
+            className="px-2.5 py-1 rounded-lg text-[11px] hover:bg-white/5 transition-colors" style={{ color:'var(--joi-pink)' }}>Reset</button>}
+          <button title="Export image" className="px-2.5 py-1 rounded-lg text-[11px] hover:bg-white/5 transition-colors" style={{ color:'var(--joi-text-2)' }}>Export</button>
           <div className="flex-1" />
-          <span className="text-[10px] font-mono" style={{ color:'var(--joi-text-3)' }}>Zoom: 100%</span>
+          <span className="text-[10px] font-mono" style={{ color:'var(--joi-text-3)' }}>Zoom: {Math.round(canvasZoom * 100)}%</span>
         </div>
 
-        <div className="flex-1 flex items-center justify-center p-6 gap-6">
+        <div className="flex-1 flex items-center justify-center p-6 gap-6"
+          onWheel={(e) => { if (!inputImage) return; e.preventDefault(); const delta = e.deltaY > 0 ? -0.15 : 0.15; setCanvasZoom(z => { const nz = Math.max(0.5, Math.min(5, z + delta)); if (nz <= 1) setCanvasPan({ x: 0, y: 0 }); return nz }) }}
+          onPointerDown={(e) => { if (canvasZoom <= 1 || !inputImage) return; setIsPanning(true); panStart.current = { x: e.clientX, y: e.clientY, panX: canvasPan.x, panY: canvasPan.y }; (e.target as HTMLElement).setPointerCapture?.(e.pointerId) }}
+          onPointerMove={(e) => { if (!isPanning) return; setCanvasPan({ x: panStart.current.panX + (e.clientX - panStart.current.x), y: panStart.current.panY + (e.clientY - panStart.current.y) }) }}
+          onPointerUp={() => setIsPanning(false)}
+          style={{ cursor: canvasZoom > 1 ? (isPanning ? 'grabbing' : 'grab') : 'default' }}
+        >
           {!inputImage ? (
             /* ── Empty canvas: tool showcase ── */
             <div className="max-w-[640px] w-full text-center">
@@ -1001,23 +1207,37 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
             </div>
           ) : (
           /* ── Normal before/after canvas ── */
+          compareMode && resultImage ? (
+          /* ── Side-by-side compare mode ── */
+          <div className="flex gap-1 rounded-xl overflow-hidden" style={{ border:'1px solid rgba(255,255,255,.06)' }}>
+            <div className="relative" style={{ transform: `scale(${canvasZoom}) translate(${canvasPan.x / canvasZoom}px, ${canvasPan.y / canvasZoom}px)`, transition: isPanning ? 'none' : 'transform 0.15s ease' }}>
+              <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[9px] font-mono z-10" style={{ background:'rgba(0,0,0,.6)', color:'var(--joi-text-2)' }}>BEFORE</div>
+              <img src={inputImage} className="max-h-[70vh] object-contain select-none" draggable={false} alt="Before" />
+            </div>
+            <div className="w-px shrink-0" style={{ background:'var(--joi-pink)' }} />
+            <div className="relative" style={{ transform: `scale(${canvasZoom}) translate(${canvasPan.x / canvasZoom}px, ${canvasPan.y / canvasZoom}px)`, transition: isPanning ? 'none' : 'transform 0.15s ease' }}>
+              <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[9px] font-mono z-10" style={{ background:'rgba(255,107,157,.3)', color:'white' }}>AFTER</div>
+              <img src={resultImage} className="max-h-[70vh] object-contain select-none" draggable={false} alt="After" />
+            </div>
+          </div>
+          ) : (
           <>
-          <div className="text-center">
+          <div className="text-center" style={{ transform: `scale(${canvasZoom}) translate(${canvasPan.x / canvasZoom}px, ${canvasPan.y / canvasZoom}px)`, transition: isPanning ? 'none' : 'transform 0.15s ease' }}>
             <div className="joi-label mb-2">Original</div>
             <div className="w-[340px] h-[420px] rounded-xl flex items-center justify-center overflow-hidden joi-glass"
               style={{ border:'1px solid rgba(255,255,255,.04)' }}>
-              <img src={inputImage} className="w-full h-full object-cover rounded-xl" alt="Original" />
+              <img src={inputImage} className="w-full h-full object-cover rounded-xl select-none" draggable={false} alt="Original" />
             </div>
           </div>
 
           <div className="text-2xl" style={{ color:'var(--joi-pink)' }}>{'\u2192'}</div>
 
-          <div className="text-center">
+          <div className="text-center" style={{ transform: `scale(${canvasZoom}) translate(${canvasPan.x / canvasZoom}px, ${canvasPan.y / canvasZoom}px)`, transition: isPanning ? 'none' : 'transform 0.15s ease' }}>
             <div className="joi-label mb-2" style={{ color:'var(--joi-pink)' }}>AI Result</div>
             <div className="w-[340px] h-[420px] rounded-xl flex items-center justify-center overflow-hidden joi-glass joi-border-glow"
               style={{ border:'1px solid rgba(255,255,255,.04)', boxShadow:'0 0 30px rgba(255,107,157,.06)' }}>
               {resultImage ? (
-                <img src={resultImage} className="w-full h-full object-cover rounded-xl" alt="Result" />
+                <img src={resultImage} className="w-full h-full object-cover rounded-xl select-none" draggable={false} alt="Result" />
               ) : (
                 <div className="text-center">
                   <span className="text-2xl block mb-2 joi-breathe">{'\u2726'}</span>
@@ -1027,6 +1247,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
             </div>
           </div>
           </>
+          )
           )}
         </div>
 
@@ -1056,20 +1277,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
             onSave={handleModalSave('relight', 'relight')}
           />
         )}
-        {activeModal === 'faceswap' && inputImage && (
-          <FaceSwapModal
-            targetItem={{ id: 'editor-input', url: inputImage, type: 'edit' }}
-            onClose={() => setActiveModal(null)}
-            onSave={handleModalSave('faceswap', 'face swap')}
-          />
-        )}
-        {activeModal === 'tryon' && inputImage && (
-          <TryOnModal
-            targetItem={{ id: 'editor-input', url: inputImage }}
-            onClose={() => setActiveModal(null)}
-            onSave={handleModalSave('tryon', 'try-on')}
-          />
-        )}
+        {/* Face swap and try-on now work inline — no modals needed */}
         {activeModal === 'inpaint' && inputImage && (
           <InpaintingModal
             item={{ id: 'editor-input', url: inputImage }}
@@ -1088,6 +1296,23 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
 
       {/* Click-outside handler for engine dropdown */}
       {showEngineModal && <div className="fixed inset-0 z-30" onClick={() => setShowEngineModal(false)} />}
+
+      {/* Basic Image Editor overlay */}
+      {showBasicEditor && inputImage && (
+        <Suspense fallback={null}>
+          <ImageEditor
+            src={inputImage}
+            onSave={(blob) => {
+              const url = URL.createObjectURL(blob)
+              setResultImage(url)
+              setEditHistory(prev => [...prev, url])
+              addItems([{ url, type: 'edit', model: 'basic-editor', tags: ['edited'] }])
+              toast.addToast('Imagen editada guardada', 'success')
+            }}
+            onClose={() => setShowBasicEditor(false)}
+          />
+        </Suspense>
+      )}
 
     </div>
   )

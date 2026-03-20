@@ -3,16 +3,17 @@ import { useCharacterStore } from '../stores/characterStore'
 import { useGalleryStore, type GalleryItem } from '../stores/galleryStore'
 import { useNavigationStore } from '../stores/navigationStore'
 import { generatePhotoSession, generateInfluencerImage } from '../services/geminiService'
-import { generatePhotoSessionWithGrok, editImageWithSeedream5Lite } from '../services/falService'
+import { generatePhotoSessionWithGrok, editImageWithSeedream5Lite, extractPoseSkeleton } from '../services/falService'
 import { editWithSoulReference } from '../services/higgsfieldService'
 import { VIBE_TO_SOUL_STYLE, SOUL_STYLES, SOUL_STYLES_CURATED, SOUL_STYLE_CATEGORIES, type SoulStyleCategory } from '../data/soulStyles'
 import { useProfile } from '../contexts/ProfileContext'
 import { useToast } from '../contexts/ToastContext'
-import { ImageSize, AspectRatio, ENGINE_METADATA, OPERATION_CREDIT_COSTS } from '../types'
-import type { InfluencerParams } from '../types'
-import { PHOTO_SESSION_PRESETS, mixShots } from '../data/sessionPresets'
+import { ImageSize, AspectRatio, ENGINE_METADATA, CREDIT_COSTS } from '../types'
+import type { InfluencerParams, SessionPoseItem } from '../types'
+import { PHOTO_SESSION_PRESETS, mixShots, REALISM_PREFIX } from '../data/sessionPresets'
 import { usePipelineStore } from '../stores/pipelineStore'
 import { PipelineCTA } from '../components/PipelineCTA'
+import { runSessionPipeline, SESSION_TIER_COSTS, type SessionTier, type SessionPipelineConfig } from '../services/photoSessionPipeline'
 
 // ─── Scene presets (used as optional override) ──────────
 const scenes = [
@@ -46,6 +47,32 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
   const [selectedEngine, setSelectedEngine] = useState<string>('grok')
   const [selectedResolution, setSelectedResolution] = useState('1k')
   const [showEngineModal, setShowEngineModal] = useState(false)
+  const [realisticMode, setRealisticMode] = useState(true)
+
+  // Pipeline tier & mode
+  const [selectedTier, setSelectedTier] = useState<SessionTier>('basic')
+  const [poseMode, setPoseMode] = useState<'presets' | 'manual'>('presets')
+  const [gridMode, setGridMode] = useState(false)
+  const [upscaleMode, setUpscaleMode] = useState(false)
+  const [progressStep, setProgressStep] = useState('')
+
+  // Manual pose cards
+  const [manualPoses, setManualPoses] = useState<SessionPoseItem[]>([
+    { id: crypto.randomUUID(), text: '', images: [] },
+  ])
+  const poseFileRefs = useRef<Record<string, HTMLInputElement | null>>({})
+
+  const addManualPose = () => {
+    if (manualPoses.length >= 8) return
+    setManualPoses(prev => [...prev, { id: crypto.randomUUID(), text: '', images: [] }])
+  }
+  const removeManualPose = (id: string) => {
+    if (manualPoses.length <= 1) return
+    setManualPoses(prev => prev.filter(p => p.id !== id))
+  }
+  const updateManualPose = (id: string, update: Partial<SessionPoseItem>) => {
+    setManualPoses(prev => prev.map(p => p.id === id ? { ...p, ...update } : p))
+  }
 
   // Reference image (optional — for scene reference)
   const [refImage, setRefImage] = useState<{ file: File; preview: string } | null>(null)
@@ -161,10 +188,100 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
   // Scene override text (empty string means no override)
   const sceneOverride = customScene.trim() || (selectedScene ? (scenes.find(s => s.id === selectedScene)?.label || '') : '')
 
-  const handleGenerate = async () => {
-    // Determine base image source
+  // Pipeline-based generation (tier-aware)
+  const handlePipelineGenerate = async () => {
     const hasGalleryBase = sourceMode === 'gallery' && selectedGalleryItem
     const hasUploadBase = sourceMode === 'upload' && uploadedSubject
+
+    if (!hasGalleryBase && !hasUploadBase) {
+      toast.error(sourceMode === 'gallery' ? 'Select a photo from gallery' : 'Upload a photo')
+      return
+    }
+
+    if (effectivePoses.length === 0) {
+      toast.error(poseMode === 'presets' ? 'Select at least one vibe' : 'Add at least one pose')
+      return
+    }
+
+    const poseCount = gridMode ? 4 : effectivePoses.length
+    const totalCost = poseCount * costPerShot
+    const ok = await decrementCredits(totalCost)
+    if (!ok) { toast.error('Insufficient credits'); return }
+
+    setGenerating(true)
+    setProgress(0)
+    setProgressStep('Preparing...')
+    abortRef.current = new AbortController()
+
+    try {
+      // Build base image file
+      let baseFile: File
+      if (hasGalleryBase) {
+        const resp = await fetch(selectedGalleryItem!.url)
+        const blob = await resp.blob()
+        baseFile = new File([blob], 'base.png', { type: blob.type || 'image/png' })
+      } else {
+        baseFile = uploadedSubject!.file
+      }
+
+      // Build pipeline config
+      const config: SessionPipelineConfig = {
+        tier: selectedTier,
+        baseImage: baseFile,
+        poses: gridMode ? effectivePoses.slice(0, 4) : effectivePoses,
+        realisticMode,
+        gridMode: gridMode && effectivePoses.length >= 4,
+        scenario: sceneOverride || undefined,
+        upscale: upscaleMode,
+        aspectRatio: AspectRatio.Portrait,
+        loraUrl: selectedChar?.loraUrl,
+        loraTriggerWord: selectedChar?.name || 'subject',
+        onProgress: (step, pct) => { setProgressStep(step); setProgress(pct) },
+        abortSignal: abortRef.current.signal,
+      }
+
+      const result = await runSessionPipeline(config)
+
+      setGeneratedImages(result.images)
+      setSelectedResult(0)
+
+      const tierLabel = `${selectedTier}-pipeline`
+      const items: GalleryItem[] = result.images.map((url) => ({
+        id: crypto.randomUUID(),
+        url,
+        prompt: `${sceneOverride || 'Base photo'} · ${selectedPresetLabels.join(' + ')}`,
+        model: tierLabel,
+        timestamp: Date.now(),
+        type: 'session' as const,
+        characterId: selectedGalleryItem?.characterId || undefined,
+        tags: ['photo-session', selectedTier, ...selectedPresetLabels.map(l => l.toLowerCase())],
+      }))
+
+      useGalleryStore.getState().addItems(items)
+      toast.success(`${result.images.length} photos generated (${selectedTier})`)
+
+    } catch (err: any) {
+      if (err?.name !== 'AbortError') {
+        restoreCredits(totalCost)
+        toast.error(err?.message || 'Error generating session')
+        console.error(err)
+      }
+    } finally {
+      setGenerating(false)
+      setProgress(0)
+      setProgressStep('')
+    }
+  }
+
+  const handleGenerate = async () => {
+    // Route to pipeline for gallery/upload sources when using tiers
+    const hasGalleryBase = sourceMode === 'gallery' && selectedGalleryItem
+    const hasUploadBase = sourceMode === 'upload' && uploadedSubject
+    if ((hasGalleryBase || hasUploadBase) && selectedEngine !== 'higgsfield:soul' && selectedEngine !== 'seedream5-edit') {
+      return handlePipelineGenerate()
+    }
+
+    // Legacy path for character mode and special engines
     const hasCharacter = sourceMode === 'character' && selectedChar
 
     if (!hasGalleryBase && !hasUploadBase && !hasCharacter) {
@@ -180,8 +297,8 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
     }
 
     const effectiveShotCount = (hasGalleryBase || hasUploadBase) ? mixedShots.length : shotCount
-    const costPerShot = OPERATION_CREDIT_COSTS.photoSession
-    const totalCost = effectiveShotCount * costPerShot
+    const legacyCostPerShot = CREDIT_COSTS['grok-edit']
+    const totalCost = effectiveShotCount * legacyCostPerShot
 
     const ok = await decrementCredits(totalCost)
     if (!ok) { toast.error('Insufficient credits'); return }
@@ -193,6 +310,8 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
     const selectedPresetLabels = PHOTO_SESSION_PRESETS
       .filter(p => selectedPresets.has(p.id))
       .map(p => p.label)
+
+    const realismPfx = realisticMode ? REALISM_PREFIX : ''
 
     try {
       if (hasGalleryBase || hasUploadBase) {
@@ -217,7 +336,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
           const scenePart = sceneOverride ? `Scene: ${sceneOverride}.` : ''
           for (let i = 0; i < mixedShots.length; i++) {
             const angle = mixedShots[i]
-            const prompt = `${angle}. ${scenePart} Same person, editorial fashion quality.`
+            const prompt = `${realismPfx} ${angle}. ${scenePart} Same person, same outfit.`
             const urls = await editWithSoulReference(
               refFile,
               prompt,
@@ -236,7 +355,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
           const scenePart = sceneOverride ? `Scene: ${sceneOverride}.` : ''
           for (let i = 0; i < mixedShots.length; i++) {
             const angle = mixedShots[i]
-            const prompt = `Edit this photo. Creative direction: ${angle}. ${scenePart} Keep the same person, vary the pose naturally.`
+            const prompt = `${realismPfx} Edit this photo. Creative direction: ${angle}. ${scenePart} Keep the same person and outfit, vary the pose naturally.`
             const urls = await editImageWithSeedream5Lite(
               refFile,
               prompt,
@@ -252,7 +371,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
             refFile,
             mixedShots.length,
             {
-              scenario: sceneOverride || 'Same type of location as the reference photo',
+              scenario: `${realismPfx} ${sceneOverride || 'Same type of location as the reference photo'}`,
               lighting: 'natural, varied per shot',
             },
             (p) => setProgress(p),
@@ -264,7 +383,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
             refFile,
             mixedShots.length,
             {
-              scenario: sceneOverride || undefined,
+              scenario: `${realismPfx} ${sceneOverride || ''}`.trim(),
               angles: mixedShots,
             },
             (p) => setProgress(p),
@@ -298,8 +417,8 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
           refFile = new File([selectedChar!.modelImageBlobs[0]], 'reference.jpg', { type: 'image/jpeg' })
         }
 
-        const sessionPrompt = sceneOverride || 'professional photo studio'
-        const fullPrompt = `${sessionPrompt}. ${mixedShots.length > 0 ? '' : PHOTO_SESSION_PRESETS.filter(p => selectedPresets.has(p.id)).map(p => p.description).join('. ') + '.'}`
+        const sessionPrompt = sceneOverride || 'natural indoor setting'
+        const fullPrompt = `${realismPfx} ${sessionPrompt}. ${mixedShots.length > 0 ? '' : PHOTO_SESSION_PRESETS.filter(p => selectedPresets.has(p.id)).map(p => p.description).join('. ') + '.'}`
 
         if (refFile) {
           const engineLabel = selectedEngine === 'higgsfield:soul' ? 'soul-session' : selectedEngine === 'seedream5-edit' ? 'seedream5-session' : selectedEngine !== 'gemini' ? 'grok-session' : 'gemini-photo-session'
@@ -312,7 +431,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
             const angles = mixedShots.length > 0 ? mixedShots : Array.from({ length: shotCount }, (_, i) => `Shot ${i + 1}`)
             for (let i = 0; i < angles.length; i++) {
               const angle = angles[i]
-              const prompt = `${angle}. ${fullPrompt} Same person, editorial fashion quality.`
+              const prompt = `${angle}. ${fullPrompt} Same person, same outfit.`
               const urls = await editWithSoulReference(
                 refFile,
                 prompt,
@@ -331,7 +450,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
             const angles = mixedShots.length > 0 ? mixedShots : Array.from({ length: shotCount }, (_, i) => `Shot ${i + 1}`)
             for (let i = 0; i < angles.length; i++) {
               const angle = angles[i]
-              const prompt = `Edit this photo. Creative direction: ${angle}. ${fullPrompt} Keep the same person, vary the pose naturally.`
+              const prompt = `${realismPfx} Edit this photo. Creative direction: ${angle}. ${fullPrompt} Keep the same person and outfit, vary the pose naturally.`
               const urls = await editImageWithSeedream5Lite(
                 refFile,
                 prompt,
@@ -436,10 +555,15 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
     }
   }
 
-  const costPerShot = OPERATION_CREDIT_COSTS.photoSession
+  const costPerShot = SESSION_TIER_COSTS[selectedTier]
   const selectedPresetLabels = PHOTO_SESSION_PRESETS.filter(p => selectedPresets.has(p.id)).map(p => p.label)
   const activeSceneLabel = sceneOverride || 'No override'
   const activeSceneIcon = customScene.trim() ? '\uD83D\uDCCD' : (selectedScene ? (scenes.find(s => s.id === selectedScene)?.icon || '') : '')
+
+  // Effective poses for generation
+  const effectivePoses: SessionPoseItem[] = poseMode === 'manual'
+    ? manualPoses.filter(p => p.text.trim() || p.images.length > 0)
+    : mixedShots.map((text, i) => ({ id: `preset-${i}`, text, images: [] }))
 
   // Determine if generate button should be disabled
   const canGenerate = (() => {
@@ -459,7 +583,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
   })()
 
   return (
-    <div className="h-screen flex" style={{ background: 'var(--joi-bg-0)' }}>
+    <div className="h-full flex" style={{ background: 'var(--joi-bg-0)' }}>
       {/* Hidden file inputs */}
       <input ref={refInputRef} type="file" accept="image/*" className="hidden" onChange={handleRefUpload} />
       <input ref={subjectInputRef} type="file" accept="image/*" className="hidden" onChange={handleSubjectUpload} />
@@ -615,6 +739,171 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4 joi-scroll">
 
+          {/* Tier Selector */}
+          <div>
+            <div className="joi-label mb-2">Quality Tier</div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {([
+                { tier: 'basic' as SessionTier, label: 'Basic', desc: 'Gemini', icon: '\u26A1', cost: SESSION_TIER_COSTS.basic },
+                { tier: 'standard' as SessionTier, label: 'Standard', desc: 'Kontext + Grok', icon: '\u2728', cost: SESSION_TIER_COSTS.standard },
+                { tier: 'premium' as SessionTier, label: 'Premium', desc: 'LoRA', icon: '\uD83D\uDC8E', cost: SESSION_TIER_COSTS.premium },
+              ]).map(t => {
+                const active = selectedTier === t.tier
+                const disabled = t.tier === 'premium' && !selectedChar?.loraUrl
+                return (
+                  <button key={t.tier} onClick={() => !disabled && setSelectedTier(t.tier)}
+                    className="p-2.5 rounded-lg text-center transition-all relative"
+                    style={{
+                      background: active ? 'rgba(255,107,157,.1)' : 'var(--joi-bg-3)',
+                      border: `1px solid ${active ? 'rgba(255,107,157,.3)' : 'var(--joi-border)'}`,
+                      opacity: disabled ? 0.35 : 1,
+                    }}>
+                    <span className="text-base block">{t.icon}</span>
+                    <div className="text-[10px] font-medium mt-0.5" style={{ color: active ? 'var(--joi-pink)' : 'var(--joi-text-2)' }}>{t.label}</div>
+                    <div className="text-[8px] mt-0.5" style={{ color:'var(--joi-text-3)' }}>{t.desc}</div>
+                    <div className="text-[8px] font-mono mt-0.5" style={{ color: active ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>{t.cost}cr/shot</div>
+                    {disabled && <div className="text-[7px] mt-0.5" style={{ color:'var(--joi-text-3)' }}>Need LoRA</div>}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Pose Mode Toggle */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="joi-label">Poses</div>
+              <div className="flex gap-0.5 p-0.5 rounded-md" style={{ background:'var(--joi-bg-3)' }}>
+                <button onClick={() => setPoseMode('presets')}
+                  className="px-2.5 py-1 rounded-md text-[9px] font-medium transition-all"
+                  style={{
+                    background: poseMode === 'presets' ? 'rgba(255,107,157,.08)' : 'transparent',
+                    color: poseMode === 'presets' ? 'var(--joi-pink)' : 'var(--joi-text-3)',
+                  }}>
+                  Presets
+                </button>
+                <button onClick={() => setPoseMode('manual')}
+                  className="px-2.5 py-1 rounded-md text-[9px] font-medium transition-all"
+                  style={{
+                    background: poseMode === 'manual' ? 'rgba(167,139,250,.08)' : 'transparent',
+                    color: poseMode === 'manual' ? 'var(--joi-violet)' : 'var(--joi-text-3)',
+                  }}>
+                  Manual
+                </button>
+              </div>
+            </div>
+
+            {poseMode === 'manual' && (
+              <div className="space-y-2">
+                {manualPoses.map((pose, idx) => (
+                  <div key={pose.id} className="p-2.5 rounded-lg relative" style={{ background:'var(--joi-bg-3)', border:'1px solid var(--joi-border)' }}>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-[9px] font-mono" style={{ color:'var(--joi-text-3)' }}>#{idx + 1}</span>
+                      {manualPoses.length > 1 && (
+                        <button onClick={() => removeManualPose(pose.id)}
+                          className="ml-auto w-5 h-5 rounded flex items-center justify-center text-[10px]"
+                          style={{ color:'var(--joi-text-3)' }}>{'\u2715'}</button>
+                      )}
+                    </div>
+                    <input type="text" placeholder="Describe the pose..."
+                      className="w-full px-2.5 py-1.5 rounded-lg text-[11px] border outline-none mb-1.5"
+                      style={{ background:'var(--joi-bg-2)', borderColor:'rgba(255,255,255,.04)', color:'var(--joi-text-1)' }}
+                      value={pose.text}
+                      onChange={e => updateManualPose(pose.id, { text: e.target.value })} />
+                    <div className="flex gap-1.5">
+                      {/* Pose image */}
+                      {pose.images.length > 0 ? (
+                        <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0" style={{ border:'1px solid rgba(167,139,250,.3)' }}>
+                          <img src={URL.createObjectURL(pose.images[0])} className="w-full h-full object-cover" alt="" />
+                          <button onClick={() => updateManualPose(pose.id, { images: [] })}
+                            className="absolute top-0 right-0 w-4 h-4 flex items-center justify-center text-[8px] bg-black/70 text-white rounded-bl">{'\u2715'}</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => poseFileRefs.current[pose.id]?.click()}
+                          className="w-12 h-12 rounded-lg flex items-center justify-center text-[9px] shrink-0"
+                          style={{ background:'var(--joi-bg-2)', border:'1px dashed rgba(255,255,255,.06)', color:'var(--joi-text-3)' }}
+                          title="Upload pose reference image">
+                          {'\uD83D\uDCF7'}
+                        </button>
+                      )}
+                      <input ref={el => { poseFileRefs.current[pose.id] = el }} type="file" accept="image/*" className="hidden"
+                        onChange={e => {
+                          const file = e.target.files?.[0]
+                          if (file) updateManualPose(pose.id, { images: [file] })
+                          e.target.value = ''
+                        }} />
+                      {/* Skeleton extraction button */}
+                      {pose.images.length > 0 && (
+                        <button onClick={async () => {
+                          try {
+                            toast.info('Extracting skeleton...')
+                            const skeletonUrl = await extractPoseSkeleton(pose.images[0])
+                            const resp = await fetch(skeletonUrl)
+                            const blob = await resp.blob()
+                            const skeletonFile = new File([blob], 'skeleton.png', { type: 'image/png' })
+                            updateManualPose(pose.id, { images: [skeletonFile] })
+                            toast.success('Skeleton extracted')
+                          } catch {
+                            toast.error('Could not extract skeleton')
+                          }
+                        }}
+                          className="px-2 py-1 rounded-lg text-[9px] transition-all self-center"
+                          style={{ background:'rgba(167,139,250,.08)', border:'1px solid rgba(167,139,250,.15)', color:'var(--joi-violet)' }}
+                          title="Extract pose skeleton — avoids copying face/clothes from reference">
+                          {'\uD83E\uDDB4'} Skeleton
+                        </button>
+                      )}
+                      {/* Accessory */}
+                      <input type="text" placeholder="Accessory..."
+                        className="flex-1 min-w-0 px-2 py-1 rounded-lg text-[9px] border outline-none"
+                        style={{ background:'var(--joi-bg-2)', borderColor:'rgba(255,255,255,.04)', color:'var(--joi-text-1)' }}
+                        value={pose.accessory || ''}
+                        onChange={e => updateManualPose(pose.id, { accessory: e.target.value })} />
+                    </div>
+                  </div>
+                ))}
+                {manualPoses.length < 8 && (
+                  <button onClick={addManualPose}
+                    className="w-full py-2 rounded-lg text-[10px] font-medium transition-all"
+                    style={{ background:'rgba(167,139,250,.06)', border:'1px dashed rgba(167,139,250,.15)', color:'var(--joi-violet)' }}>
+                    + Add Pose
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Grid + Upscale Toggles */}
+          <div className="flex gap-2">
+            <button onClick={() => setGridMode(!gridMode)}
+              className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-medium transition-all"
+              style={{
+                background: gridMode ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)',
+                border: `1px solid ${gridMode ? 'rgba(255,107,157,.2)' : 'var(--joi-border)'}`,
+                color: gridMode ? 'var(--joi-pink)' : 'var(--joi-text-2)',
+              }}>
+              <span>{gridMode ? '\u2611' : '\u2610'}</span> Grid 4-in-1
+            </button>
+            <button onClick={() => setUpscaleMode(!upscaleMode)}
+              className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-medium transition-all"
+              style={{
+                background: upscaleMode ? 'rgba(167,139,250,.08)' : 'var(--joi-bg-3)',
+                border: `1px solid ${upscaleMode ? 'rgba(167,139,250,.2)' : 'var(--joi-border)'}`,
+                color: upscaleMode ? 'var(--joi-violet)' : 'var(--joi-text-2)',
+              }}>
+              <span>{upscaleMode ? '\u2611' : '\u2610'}</span> Upscale
+            </button>
+            <button onClick={() => setRealisticMode(!realisticMode)}
+              className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-medium transition-all"
+              style={{
+                background: realisticMode ? 'rgba(80,216,160,.08)' : 'var(--joi-bg-3)',
+                border: `1px solid ${realisticMode ? 'rgba(80,216,160,.2)' : 'var(--joi-border)'}`,
+                color: realisticMode ? '#50d8a0' : 'var(--joi-text-2)',
+              }}>
+              <span>{realisticMode ? '\u2611' : '\u2610'}</span> Realistic
+            </button>
+          </div>
+
           {/* Scene Override (optional) */}
           <div>
             <div className="joi-label mb-1">
@@ -648,8 +937,8 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
               onChange={e => setCustomScene(e.target.value)} />
           </div>
 
-          {/* Vibes — Session Presets OR Soul Styles */}
-          <div>
+          {/* Vibes — Session Presets OR Soul Styles (only in presets mode) */}
+          {poseMode === 'presets' && <div>
             <div className="flex items-center justify-between mb-2">
               <div className="joi-label">{selectedEngine === 'higgsfield:soul' ? 'Soul Style' : 'Pick your vibes'}</div>
               {selectedEngine !== 'higgsfield:soul' && (
@@ -745,7 +1034,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                 ))}
               </div>
             )}
-          </div>
+          </div>}
 
           {/* Reference image (optional) */}
           <div>
@@ -810,10 +1099,10 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
             </div>
             <div className="mt-1.5 flex items-center justify-between">
               <div className="text-[9px] truncate pr-2" style={{ color:'var(--joi-text-3)' }}>
-                {mixedShots.length} shots {'\u00b7'} {selectedPresetLabels.join(' + ')}
+                {poseMode === 'presets' ? `${mixedShots.length} shots · ${selectedPresetLabels.join(' + ')}` : `${effectivePoses.length} poses (manual)`}
               </div>
               <span className="badge text-[9px] shrink-0" style={{ background:'rgba(255,107,157,.08)', color:'var(--joi-pink)', border:'1px solid rgba(255,107,157,.15)' }}>
-                {shotCount * costPerShot} credits
+                {(gridMode ? 4 : effectivePoses.length) * costPerShot} credits · {selectedTier}
               </span>
             </div>
           </div>
@@ -821,7 +1110,9 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
           <button onClick={handleGenerate} disabled={!canGenerate}
             className={`joi-btn-solid w-full py-3 text-sm ${!generating && canGenerate ? 'joi-breathe' : ''}`}
             style={{ opacity: !canGenerate ? 0.5 : 1 }}>
-            {generating ? `\u27F3 Generating... ${Math.round(progress)}%` : `\u2726 Shoot ${shotCount} Photos`}
+            {generating
+              ? `\u27F3 ${progressStep || 'Generating...'} ${Math.round(progress)}%`
+              : `\u2726 Shoot ${gridMode ? 4 : effectivePoses.length} Photos · ${selectedTier}`}
           </button>
         </div>
       </div>

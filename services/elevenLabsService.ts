@@ -1,9 +1,11 @@
 // ─────────────────────────────────────────────
 // ElevenLabs TTS Service
-// All calls go through /elevenlabs-api proxy to keep API key server-side
+// All calls go through proxy to keep API key server-side
+// In production: Cloudflare Worker at /api/ai/elevenlabs
+// In dev: Vite proxy at /elevenlabs-api
 // ─────────────────────────────────────────────
 
-const PROXY_BASE = '/elevenlabs-api';
+const PROXY_BASE = import.meta.env.PROD ? '/api/ai/elevenlabs' : '/elevenlabs-api';
 
 // ─────────────────────────────────────────────
 // Types

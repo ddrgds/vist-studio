@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useCharacterStore } from '../stores/characterStore'
 import { useGalleryStore } from '../stores/galleryStore'
+import { useToast } from '../contexts/ToastContext'
 
 const gradients = [
   'linear-gradient(135deg,#f06848,#d048b0)',
@@ -27,7 +28,9 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
   const [detailTab, setDetailTab] = useState('Overview')
 
   const storeCharacters = useCharacterStore(s => s.characters)
+  const trainLoRA = useCharacterStore(s => s.trainLoRA)
   const galleryItems = useGalleryStore(s => s.items)
+  const toast = useToast()
 
   const characters = useMemo(() => storeCharacters.map((c, idx) => {
     const charItems = galleryItems.filter(i => i.characterId === c.id)
@@ -274,8 +277,81 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <button className="btn-primary flex-1 py-2.5 text-sm">◎ New Session</button>
-                      <button className="btn-ghost flex-1 py-2.5 text-sm">✦ Edit with AI</button>
+                      <button className="btn-primary flex-1 py-2.5 text-sm">New Session</button>
+                      <button className="btn-ghost flex-1 py-2.5 text-sm">Edit with AI</button>
+                    </div>
+
+                    {/* LoRA Training */}
+                    <div className="mt-4">
+                      {(() => {
+                        const sc = storeCharacters[selectedChar]
+                        if (!sc) return null
+                        if (sc.loraTrainingStatus === 'ready') {
+                          return (
+                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg"
+                              style={{ background: 'rgba(80,216,160,0.1)', border: '1px solid rgba(80,216,160,0.15)' }}>
+                              <span className="text-sm" style={{ color: '#50d8a0' }}>&#10003;</span>
+                              <span className="text-[12px] font-medium" style={{ color: 'var(--joi-text-2)' }}>LoRA trained</span>
+                              {sc.loraTrainedAt && (
+                                <span className="ml-auto text-[9px] font-mono" style={{ color: 'var(--joi-text-3)' }}>
+                                  {new Date(sc.loraTrainedAt).toLocaleDateString('en', { month: 'short', day: 'numeric' })}
+                                </span>
+                              )}
+                            </div>
+                          )
+                        }
+                        if (sc.loraTrainingStatus === 'training') {
+                          return (
+                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg"
+                              style={{ background: 'rgba(167,139,250,0.1)', border: '1px solid rgba(167,139,250,0.15)' }}>
+                              <span className="inline-block w-3.5 h-3.5 border-2 border-[#A78BFA]/30 border-t-[#A78BFA] rounded-full animate-spin" />
+                              <span className="text-[12px] font-medium" style={{ color: 'var(--joi-text-2)' }}>Training LoRA (~15 min)...</span>
+                            </div>
+                          )
+                        }
+                        if (sc.loraTrainingStatus === 'failed') {
+                          return (
+                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg"
+                              style={{ background: 'rgba(255,107,107,0.08)', border: '1px solid rgba(255,107,107,0.15)' }}>
+                              <span className="text-sm" style={{ color: '#ff6b6b' }}>!</span>
+                              <span className="text-[12px] font-medium" style={{ color: 'var(--joi-text-2)' }}>Training failed</span>
+                              <button
+                                onClick={async () => {
+                                  try { await trainLoRA(sc.id); toast.success('LoRA training restarted') }
+                                  catch (e: any) { toast.error(e.message || 'Training failed') }
+                                }}
+                                className="ml-auto text-[10px] font-medium px-2 py-1 rounded-md"
+                                style={{ background: 'rgba(167,139,250,0.15)', color: '#A78BFA' }}>
+                                Retry
+                              </button>
+                            </div>
+                          )
+                        }
+                        // idle / no status
+                        const photoCount = sc.modelImageBlobs?.length || 0
+                        return (
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`Train LoRA for ${sc.name}? This costs 571 credits and takes ~15 minutes.`)) return
+                              try {
+                                await trainLoRA(sc.id)
+                                toast.success('LoRA training started')
+                              } catch (e: any) {
+                                toast.error(e.message || 'Training failed')
+                              }
+                            }}
+                            disabled={photoCount < 5}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[12px] font-medium transition-all"
+                            style={{
+                              background: photoCount < 5 ? 'rgba(255,255,255,0.03)' : 'rgba(167,139,250,0.15)',
+                              color: photoCount < 5 ? 'var(--joi-text-3)' : '#A78BFA',
+                              border: `1px solid ${photoCount < 5 ? 'rgba(255,255,255,0.04)' : 'rgba(167,139,250,0.25)'}`,
+                              cursor: photoCount < 5 ? 'not-allowed' : 'pointer',
+                            }}>
+                            Train LoRA{photoCount < 5 ? ` (need ${5 - photoCount} more photos)` : ' (571 credits)'}
+                          </button>
+                        )
+                      })()}
                     </div>
                   </div>
                 )}

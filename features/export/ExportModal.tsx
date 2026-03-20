@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { exportForFormat } from '../../utils/smartExport';
 
 interface ExportModalProps {
   imageUrl: string;
@@ -11,16 +12,17 @@ interface Preset {
   label: string;
   dimensions: string;
   ratio: string;
+  formatKey: string;
 }
 
 const presets: Preset[] = [
-  { id: 'instagram-post', icon: '📸', label: 'Instagram Post', dimensions: '1080 × 1350', ratio: '4:5' },
-  { id: 'instagram-story', icon: '📱', label: 'Instagram Story', dimensions: '1080 × 1920', ratio: '9:16' },
-  { id: 'tiktok-reel', icon: '🎬', label: 'TikTok / Reel', dimensions: '1080 × 1920', ratio: '9:16' },
-  { id: 'youtube-thumb', icon: '🖥️', label: 'YouTube Thumbnail', dimensions: '1280 × 720', ratio: '16:9' },
-  { id: 'twitter-x', icon: '🐦', label: 'Twitter / X', dimensions: '1600 × 900', ratio: '16:9' },
-  { id: 'square', icon: '📐', label: 'Square', dimensions: '1080 × 1080', ratio: '1:1' },
-  { id: 'original', icon: '💾', label: 'Original', dimensions: 'Full resolution', ratio: 'as-is' },
+  { id: 'instagram-post', icon: '\uD83D\uDCF8', label: 'Instagram Post', dimensions: '1080 x 1350', ratio: '4:5', formatKey: 'ig-post' },
+  { id: 'instagram-story', icon: '\uD83D\uDCF1', label: 'Instagram Story', dimensions: '1080 x 1920', ratio: '9:16', formatKey: 'ig-story' },
+  { id: 'tiktok-reel', icon: '\uD83C\uDFAC', label: 'TikTok / Reel', dimensions: '1080 x 1920', ratio: '9:16', formatKey: 'tiktok' },
+  { id: 'youtube-thumb', icon: '\uD83D\uDDA5\uFE0F', label: 'YouTube Thumbnail', dimensions: '1280 x 720', ratio: '16:9', formatKey: 'youtube' },
+  { id: 'twitter-x', icon: '\uD83D\uDC26', label: 'Twitter / X', dimensions: '1600 x 900', ratio: '16:9', formatKey: 'twitter' },
+  { id: 'square', icon: '\uD83D\uDCD0', label: 'Square', dimensions: '1080 x 1080', ratio: '1:1', formatKey: 'square' },
+  { id: 'original', icon: '\uD83D\uDCBE', label: 'Original', dimensions: 'Full resolution', ratio: 'as-is', formatKey: 'original' },
 ];
 
 const ExportModal: React.FC<ExportModalProps> = ({ imageUrl, onClose }) => {
@@ -29,12 +31,11 @@ const ExportModal: React.FC<ExportModalProps> = ({ imageUrl, onClose }) => {
   const handleExport = async (preset: Preset) => {
     setExporting(preset.id);
     try {
-      const res = await fetch(imageUrl);
-      const blob = await res.blob();
+      const blob = await exportForFormat(imageUrl, preset.formatKey);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `vist-${preset.id}-${Date.now()}.png`;
+      a.download = `vist-${preset.formatKey}-${Date.now()}.png`;
       a.click();
       URL.revokeObjectURL(url);
       onClose();

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { generateVirtualTryOn } from '../services/replicateService';
 import { useToast } from '../contexts/ToastContext';
 import { useProfile } from '../contexts/ProfileContext';
-import { OPERATION_CREDIT_COSTS } from '../types';
+import { CREDIT_COSTS } from '../types';
 import ProgressBar from './ProgressBar';
 
 type Category = 'upper_body' | 'lower_body' | 'dresses';
@@ -61,7 +61,7 @@ const TryOnModal: React.FC<TryOnModalProps> = ({ targetItem, onClose, onSave }) 
     if (!garmentFile) { toast.error('Upload a photo of the garment'); return; }
     if (!garmentDesc.trim()) { toast.error('Briefly describe the garment'); return; }
 
-    const cost = OPERATION_CREDIT_COSTS.virtualTryOn;
+    const cost = CREDIT_COSTS['try-on'];
     const hasCredits = await decrementCredits(cost);
     if (!hasCredits) { toast.error('Insufficient credits. Please upgrade your plan.'); return; }
 

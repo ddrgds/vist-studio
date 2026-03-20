@@ -2,11 +2,17 @@
 import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from "@google/genai";
 import { InfluencerParams, PoseModificationParams, VideoParams, GeminiImageModel, BatchOutfitItem, IMAGEN4_MODELS, AIEditParams } from "../types";
 
-// API key is injected server-side by the /gemini-api proxy.
+// In production: requests go to /api/ai/gemini/...
+// In dev: Vite proxy still works at /gemini-api/...
+const GEMINI_BASE = import.meta.env.PROD
+  ? `${window.location.origin}/api/ai/gemini`
+  : `${window.location.origin}/gemini-api`;
+
+// API key is injected server-side by the proxy (Vite in dev, Cloudflare Worker in prod).
 // We pass a placeholder apiKey (the SDK requires a non-empty string)
 // and route all requests through the proxy via httpOptions.baseUrl.
 const createGeminiClient = () =>
-  new GoogleGenAI({ apiKey: 'PROXIED', httpOptions: { baseUrl: `${window.location.origin}/gemini-api` } });
+  new GoogleGenAI({ apiKey: 'PROXIED', httpOptions: { baseUrl: GEMINI_BASE } });
 
 // ─────────────────────────────────────────────
 // Relaxed Safety Settings (maximum allowed
@@ -1060,7 +1066,7 @@ const SESSION_ANGLES = [
 export const generatePhotoSession = async (
   referenceImage: File,
   count: number,
-  options: { scenario?: string; lighting?: string; aspectRatio?: string; imageSize?: string; angles?: string[] } = {},
+  options: { scenario?: string; lighting?: string; aspectRatio?: string; imageSize?: string; angles?: string[]; realistic?: boolean } = {},
   onProgress?: (percent: number) => void,
   abortSignal?: AbortSignal
 ): Promise<PoseGenerationResult[]> => {
@@ -1084,29 +1090,40 @@ export const generatePhotoSession = async (
     const cameraDesc = angleData ? angleData.camera : (options.angles?.[index % options.angles.length] || 'natural varied angle');
     const envDesc = angleData ? angleData.env : '';
 
+    const isRealistic = options.realistic !== false;
     const prompt = `PHOTO SESSION — Shot ${index + 1} of ${clampedCount}
 
-Create a NEW photograph from scratch. Do NOT copy the reference photo — use it ONLY to learn the person's identity.
+⚠️ FACE LOCK — ABSOLUTE CONSTRAINT (process before anything else):
+The face in the Base Image is FROZEN. You are FORBIDDEN from altering, redesigning, smoothing, idealizing, or blending it in any way.
+Reproduce with pixel-perfect fidelity: bone structure, eye shape, eye color, iris color, nose, lips, skin tone, skin texture, hair color, hair style, and every distinguishing facial feature.
 
-PERSON (identity must match reference):
-- Same face, bone structure, eye shape, eye color, skin tone, hair
+TASK: You are a photo retoucher performing a MINIMAL edit on a photograph. The ONLY permitted change is the body pose and camera angle.
+${isRealistic ? `
+STYLE: Shot on iPhone 15 Pro. Natural phone camera quality — slight lens softness, shallow depth of field, imperfect framing. Must look like a real Instagram post, NOT an AI render. No perfect symmetry, no airbrushed skin, no studio lighting.
+` : ''}
+PERSON (identity must match Base Image):
+- Same face, bone structure, eye shape, eye color, skin tone, hair — FROZEN from Base Image
 - Same body proportions
-- Same outfit: clothing, colors, fabrics, fit
+- Same outfit: clothing, colors, fabrics, fit — PRESERVED from Base Image
 
 CREATIVE DIRECTION: ${cameraDesc}
-The person should adopt the pose, expression, and body language described above NATURALLY — do NOT make them stand stiffly or copy the reference pose. Each shot should feel like a different moment with different energy.
+The person should adopt the pose, expression, and body language described above NATURALLY — do NOT make them stand stiffly or copy the reference pose. Each shot should feel like a different moment with different energy.${isRealistic ? ' Phone should be visible in hand where the pose involves a selfie or mirror shot.' : ''}
+
+OUTFIT: Preserve the exact outfit from the Base Image — same garments, colors, textures, and fit. No clothing changes.
 
 SCENE: ${options.scenario || 'Same type of location as the reference image.'}
-${options.lighting ? `LIGHTING: ${options.lighting}` : ''}
+${options.lighting ? `LIGHTING: ${options.lighting}` : (isRealistic ? 'LIGHTING: Natural window light, no flash, no ring light.' : '')}
 
-BACKGROUND: ${envDesc || 'Must look different from other shots — different framing of the same space.'}
+BACKGROUND: ${envDesc || (isRealistic ? 'Real environment with natural clutter — beauty products, towels, flowers, real furniture. Must look different from other shots — different framing of the same space.' : 'Must look different from other shots — different framing of the same space.')}
 The camera has physically moved. Background MUST change — different walls, depth, objects visible.
 
-ONE photo only. No collages or grids. Ultra-photorealistic, natural skin, sharp focus.`;
+ONE photo only. No collages or grids. Ultra-photorealistic, natural skin, sharp focus.
+
+⚠️ FINAL FACE CHECK: Before rendering — verify the face matches the Base Image exactly. If it does not, correct it to match. The face is the non-negotiable identity anchor.`;
 
     const parts: any[] = [
       refPart,
-      { text: '[REFERENCE] Identity source only — copy the person\'s face, body, and outfit. Ignore the background and camera angle.' },
+      { text: '[BASE IMAGE] Source for Identity, Face, Hair, Outfit, and Clothing. Copy the person\'s face with pixel-perfect fidelity. Preserve the outfit exactly. Ignore the background and camera angle — only the pose changes.' },
       { text: prompt },
     ];
 

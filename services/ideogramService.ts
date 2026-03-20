@@ -2,8 +2,10 @@ import { InfluencerParams, IdeogramModel, AspectRatio } from '../types';
 
 // ─────────────────────────────────────────────
 // Config
+// In production: Cloudflare Worker at /api/ai/ideogram/...
+// In dev: Vite proxy at /ideogram-api/...
 // ─────────────────────────────────────────────
-const BASE_URL = '/ideogram-api';
+const BASE_URL = import.meta.env.PROD ? '/api/ai/ideogram' : '/ideogram-api';
 
 // ─────────────────────────────────────────────
 // Helpers

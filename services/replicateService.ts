@@ -3,29 +3,27 @@ import { InfluencerParams, ReplicateModel, AspectRatio } from '../types';
 
 // ─────────────────────────────────────────────
 // Config
-// Replicate's API blocks direct browser calls (CORS). In dev we route
-// through the Vite proxy (/replicate-api → https://api.replicate.com).
+// Replicate's API blocks direct browser calls (CORS). We route through
+// a proxy: Vite proxy in dev (/replicate-api), Cloudflare Worker in
+// production (/api/ai/replicate).
 // ─────────────────────────────────────────────
 
-const isDev = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+const REPLICATE_PROXY = import.meta.env.PROD ? '/api/ai/replicate' : '/replicate-api';
 
 const replicate = new Replicate({
-  // In dev the Vite proxy injects the Authorization header server-side,
+  // The proxy injects the Authorization header server-side,
   // so we pass a dummy token to satisfy the SDK's type requirement while
   // avoiding a real Authorization header in the browser request (which
   // would trigger a CORS preflight that api.replicate.com blocks).
-  // In production the real token is used directly.
-  auth: isDev ? 'proxy-injected' : process.env.REPLICATE_API_TOKEN,
-  fetch: isDev
-    ? ((url: RequestInfo | URL, init?: RequestInit) => {
-      // Rewrite URL through Vite proxy
-      const urlStr = url.toString().replace('https://api.replicate.com', '/replicate-api');
-      // Strip the Authorization header — the proxy adds the real token
-      const headers = new Headers(init?.headers);
-      headers.delete('Authorization');
-      return fetch(urlStr, { ...init, headers });
-    })
-    : undefined,
+  auth: 'proxy-injected',
+  fetch: (url: RequestInfo | URL, init?: RequestInit) => {
+    // Rewrite URL through proxy (dev: Vite, prod: Cloudflare Worker)
+    const urlStr = url.toString().replace('https://api.replicate.com', REPLICATE_PROXY);
+    // Strip the Authorization header — the proxy adds the real token
+    const headers = new Headers(init?.headers);
+    headers.delete('Authorization');
+    return fetch(urlStr, { ...init, headers });
+  },
 });
 
 // ─────────────────────────────────────────────
@@ -490,6 +488,119 @@ export const generateWithGrokImagine = async (
 // ─────────────────────────────────────────────
 // Main router
 // ─────────────────────────────────────────────
+// Recraft Crisp Upscale — clarity-preserving upscale
+// ─────────────────────────────────────────────
+export async function upscaleWithRecraft(
+  imageUrl: string,
+  onProgress?: (p: number) => void,
+  abortSignal?: AbortSignal,
+): Promise<string> {
+  onProgress?.(10);
+  const output = await replicate.run('recraft-ai/recraft-crisp-upscale' as `${string}/${string}`, {
+    input: { image: imageUrl },
+  });
+  onProgress?.(100);
+  // Replicate returns string or string[] depending on model
+  return typeof output === 'string' ? output : (output as string[])[0];
+}
+
+// ─────────────────────────────────────────────
+// Bria Expand — outpaint / expand image borders
+// ─────────────────────────────────────────────
+export async function expandWithBria(
+  imageUrl: string,
+  direction: 'up' | 'down' | 'left' | 'right' | 'all',
+  pixels: number = 256,
+  onProgress?: (p: number) => void,
+  abortSignal?: AbortSignal,
+): Promise<string> {
+  const padding = {
+    up: { top: pixels, bottom: 0, left: 0, right: 0 },
+    down: { top: 0, bottom: pixels, left: 0, right: 0 },
+    left: { top: 0, bottom: 0, left: pixels, right: 0 },
+    right: { top: 0, bottom: 0, left: 0, right: pixels },
+    all: { top: pixels, bottom: pixels, left: pixels, right: pixels },
+  }[direction];
+
+  onProgress?.(10);
+  const output = await replicate.run('bria/expand-image' as `${string}/${string}`, {
+    input: { image: imageUrl, ...padding },
+  });
+  onProgress?.(100);
+  return typeof output === 'string' ? output : (output as string[])[0];
+}
+
+// ─────────────────────────────────────────────
+// Pruna P-Image-Edit — fallback edit engine
+// ─────────────────────────────────────────────
+export async function editWithPruna(
+  imageUrl: string,
+  prompt: string,
+  onProgress?: (p: number) => void,
+  abortSignal?: AbortSignal,
+): Promise<string> {
+  onProgress?.(10);
+  const output = await replicate.run('prunaai/p-image-edit' as `${string}/${string}`, {
+    input: { image: imageUrl, prompt },
+  });
+  onProgress?.(100);
+  return typeof output === 'string' ? output : (output as string[])[0];
+}
+
+// ─────────────────────────────────────────────
+// FLUX 2 Pro — generation via Replicate
+// ─────────────────────────────────────────────
+export async function generateWithFlux2Pro(
+  params: InfluencerParams,
+  onProgress?: (p: number) => void,
+  abortSignal?: AbortSignal,
+): Promise<string[]> {
+  const prompt = params.scenario || 'a beautiful photo';
+  onProgress?.(10);
+  const output = await replicate.run('black-forest-labs/flux-2-pro' as `${string}/${string}`, {
+    input: {
+      prompt,
+      aspect_ratio: params.aspectRatio === AspectRatio.Portrait ? '3:4' :
+                     params.aspectRatio === AspectRatio.Landscape ? '4:3' :
+                     params.aspectRatio === AspectRatio.Wide ? '16:9' : '1:1',
+      num_outputs: params.numberOfImages || 1,
+      guidance: params.guidanceScale || 3.5,
+      ...(params.seed ? { seed: params.seed } : {}),
+    },
+  });
+  onProgress?.(100);
+  const urls = Array.isArray(output) ? output : [output];
+  return urls.map(u => typeof u === 'string' ? u : (u as any).url || String(u));
+}
+
+// ─────────────────────────────────────────────
+// FLUX 2 Klein 4B — fast, economical generation
+// ─────────────────────────────────────────────
+export async function generateWithFlux2Klein(
+  params: InfluencerParams,
+  onProgress?: (p: number) => void,
+  abortSignal?: AbortSignal,
+): Promise<string[]> {
+  const prompt = params.scenario || 'a beautiful photo';
+  onProgress?.(10);
+  const output = await replicate.run('black-forest-labs/flux-2-klein-4b' as `${string}/${string}`, {
+    input: {
+      prompt,
+      aspect_ratio: params.aspectRatio === AspectRatio.Portrait ? '3:4' :
+                     params.aspectRatio === AspectRatio.Landscape ? '4:3' :
+                     params.aspectRatio === AspectRatio.Wide ? '16:9' : '1:1',
+      num_outputs: params.numberOfImages || 1,
+      ...(params.seed ? { seed: params.seed } : {}),
+    },
+  });
+  onProgress?.(100);
+  const urls = Array.isArray(output) ? output : [output];
+  return urls.map(u => typeof u === 'string' ? u : (u as any).url || String(u));
+}
+
+// ─────────────────────────────────────────────
+// Main router
+// ─────────────────────────────────────────────
 export const generateWithReplicate = async (
   params: InfluencerParams,
   model: ReplicateModel = ReplicateModel.Flux2Max,
@@ -505,6 +616,10 @@ export const generateWithReplicate = async (
       return generateWithGrokImagine(params, onProgress, abortSignal);
     case ReplicateModel.IDMVTON:
       throw new Error('For Virtual Try-On use generateVirtualTryOn() directly.');
+    case ReplicateModel.Flux2Pro:
+      return generateWithFlux2Pro(params, onProgress, abortSignal);
+    case ReplicateModel.Flux2Klein4B:
+      return generateWithFlux2Klein(params, onProgress, abortSignal);
     default:
       return generateWithFlux2Max(params, onProgress);
   }

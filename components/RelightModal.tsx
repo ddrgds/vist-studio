@@ -6,7 +6,7 @@ import {
 } from '../services/relightService';
 import { useToast } from '../contexts/ToastContext';
 import { useProfile } from '../contexts/ProfileContext';
-import { OPERATION_CREDIT_COSTS } from '../types';
+import { CREDIT_COSTS } from '../types';
 import ProgressBar from './ProgressBar';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -783,7 +783,7 @@ const RelightModal: React.FC<RelightModalProps> = ({ targetItem, onClose, onSave
   };
 
   const handleAI = async () => {
-    const cost = OPERATION_CREDIT_COSTS.relight;
+    const cost = CREDIT_COSTS['relight'];
     const hasCredits = await decrementCredits(cost);
     if (!hasCredits) { toast.error('Insufficient credits. Please upgrade your plan.'); return; }
 

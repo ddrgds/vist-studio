@@ -2,11 +2,12 @@ import { fal } from '@fal-ai/client';
 import { InfluencerParams, FalModel, AspectRatio, PoseModificationParams } from '../types';
 
 // ─────────────────────────────────────────────
-// Config — API key is injected server-side by the /fal-api proxy.
-// The fal SDK's requestMiddleware rewrites URLs to go through the proxy.
+// Config — API key is injected server-side by the proxy.
+// In production: Cloudflare Worker at /api/ai/fal
+// In dev: Vite proxy at /fal-api
 // ─────────────────────────────────────────────
 fal.config({
-  proxyUrl: '/fal-api',
+  proxyUrl: import.meta.env.PROD ? '/api/ai/fal' : '/fal-api',
 });
 
 // ─────────────────────────────────────────────
@@ -261,6 +262,51 @@ export const generateWithKontextMulti = async (
   if (onProgress) onProgress(100);
   return results;
 };
+
+// ─────────────────────────────────────────────
+// FLUX Kontext Pro — single/multi-ref identity editing
+// Uses fal-ai/flux-kontext-pro endpoint
+// ─────────────────────────────────────────────
+export async function generateWithKontextPro(
+  params: InfluencerParams,
+  onProgress?: (p: number) => void,
+  abortSignal?: AbortSignal,
+): Promise<string[]> {
+  const character = params.characters[0];
+  if (!character?.modelImages?.length) throw new Error('Kontext Pro requires reference images');
+
+  const refUrls = await Promise.all(
+    character.modelImages.slice(0, 4).map(f => uploadToFalStorage(f))
+  );
+
+  // Build prompt from params — same pattern as generateWithKontextMulti
+  const prompt = [
+    params.characters[0]?.characteristics || '',
+    params.scenario || '',
+    params.characters[0]?.pose || '',
+    params.lighting || '',
+    params.camera || '',
+  ].filter(Boolean).join('. ');
+
+  onProgress?.(10);
+  const result = await fal.subscribe('fal-ai/flux-kontext-pro', {
+    input: {
+      prompt,
+      image_urls: refUrls,
+      num_images: params.numberOfImages || 1,
+      guidance_scale: params.guidanceScale || 3.5,
+      seed: params.seed,
+    },
+    pollInterval: 2000,
+    onQueueUpdate: (u) => {
+      if (u.status === 'IN_PROGRESS') onProgress?.(50);
+    },
+    ...(abortSignal ? { signal: abortSignal } : {}),
+  });
+
+  onProgress?.(100);
+  return (result.data as any).images.map((img: any) => img.url);
+}
 
 // ─────────────────────────────────────────────
 // FLUX.2 Pro Edit — multi-reference image editor
@@ -1220,13 +1266,20 @@ export const editImageWithGrokFal = async (
   baseImage: File,
   prompt: string,
   onProgress?: (percent: number) => void,
-  abortSignal?: AbortSignal
+  abortSignal?: AbortSignal,
+  referenceImages?: File[],
 ): Promise<string[]> => {
   if (abortSignal?.aborted) throw new Error('Cancelado');
   if (onProgress) onProgress(15);
 
   // Must upload to fal.storage — model expects public URLs, not data URIs
   const imageUrl = await uploadToFalStorage(baseImage);
+  const refUrls: string[] = [];
+  if (referenceImages?.length) {
+    for (const ref of referenceImages) {
+      refUrls.push(await uploadToFalStorage(ref));
+    }
+  }
   if (onProgress) onProgress(35);
 
   // Grok needs explicit "lock" instructions to preserve unchanged areas
@@ -1236,7 +1289,7 @@ export const editImageWithGrokFal = async (
   const result = await fal.subscribe('xai/grok-imagine-image/edit', {
     input: {
       prompt: fullPrompt,
-      image_urls: [imageUrl],
+      image_urls: [imageUrl, ...refUrls],
       num_images: 1,
       output_format: 'jpeg',
     },
@@ -1290,7 +1343,7 @@ const GROK_SESSION_ANGLES = [
 export const generatePhotoSessionWithGrok = async (
   referenceImage: File,
   count: number,
-  options: { angles?: string[]; scenario?: string } = {},
+  options: { angles?: string[]; scenario?: string; realistic?: boolean } = {},
   onProgress?: (percent: number) => void,
   abortSignal?: AbortSignal
 ): Promise<{ url: string; poseIndex: number }[]> => {
@@ -1323,7 +1376,13 @@ export const generatePhotoSessionWithGrok = async (
     if (abortSignal?.aborted) throw new Error('Cancelado');
     const angle = angles[i];
     const scenePart = options.scenario ? ` Scene: ${options.scenario}.` : '';
-    const prompt = `Professional photo session — shot ${i + 1} of ${clampedCount}. Same person (face identity, hair, skin tone) as reference image. Creative direction for this shot: ${angle}.${scenePart} The person should adopt the pose, expression, and body language described above naturally — NOT a stiff copy of the reference. Vary the pose and mood for each shot while keeping the same person recognizable.`;
+    const isRealistic = options.realistic !== false;
+    const faceLock = `FACE LOCK: The face from the reference image is FROZEN — reproduce with pixel-perfect fidelity: bone structure, eye shape, eye color, nose, lips, skin tone, skin texture, hair color, hair style. Do NOT alter, smooth, or idealize any facial feature.`;
+    const outfitLock = `OUTFIT LOCK: Preserve the EXACT outfit from the reference image — same garments, colors, textures, and fit. No clothing changes.`;
+    const faceCheck = `FINAL CHECK: Verify the face matches the reference exactly before rendering.`;
+    const prompt = isRealistic
+      ? `${faceLock} ${outfitLock} Shot on iPhone 15 Pro, natural phone camera quality, looks like a real Instagram post not AI. Photo session — shot ${i + 1} of ${clampedCount}. Same person as reference image. Creative direction for this shot: ${angle}.${scenePart} The person should adopt the pose, expression, and body language described naturally — NOT a stiff copy of the reference. Phone visible in hand where the pose involves a selfie or mirror. Natural window light, no flash, slight lens softness, imperfect framing. Real environment clutter visible. Vary the pose and mood for each shot while keeping the same person and outfit. ${faceCheck}`
+      : `${faceLock} ${outfitLock} Photo session — shot ${i + 1} of ${clampedCount}. Same person as reference image. Creative direction for this shot: ${angle}.${scenePart} The person should adopt the pose, expression, and body language described naturally — NOT a stiff copy of the reference. Vary the pose and mood for each shot while keeping the same person and outfit. ${faceCheck}`;
 
     const result = await fal.subscribe('xai/grok-imagine-image/edit', {
       input: { prompt, image_urls: [imageUrl], num_images: 1, output_format: 'jpeg' },
@@ -1635,6 +1694,122 @@ export const trainLoRAForCharacter = async (
 
   return { loraUrl: loraFile.url, triggerWord };
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LoRA Inference — Generate images using a trained LoRA model
+// Uses fal-ai/flux-lora-general with character-specific weights.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Generates images using a trained LoRA model for maximum character consistency.
+ * The trigger word is injected at the start of the prompt to activate the LoRA identity.
+ *
+ * @param loraUrl      - FAL storage URL of the trained LoRA weights (.safetensors)
+ * @param triggerWord  - Unique trigger word (e.g. "ELENA01") used during training
+ * @param prompt       - Scene/pose description (trigger word is prepended automatically)
+ * @param options      - Generation options
+ * @param onProgress   - Progress callback (0–100)
+ * @param abortSignal  - Optional abort signal
+ */
+export const generateWithLoRA = async (
+  loraUrl: string,
+  triggerWord: string,
+  prompt: string,
+  options: {
+    imageSize?: string;
+    numImages?: number;
+    loraScale?: number;
+    guidanceScale?: number;
+    steps?: number;
+  } = {},
+  onProgress?: (percent: number) => void,
+  abortSignal?: AbortSignal,
+): Promise<string[]> => {
+  if (abortSignal?.aborted) throw new Error('Cancelado');
+  if (!loraUrl) throw new Error('Se requiere URL del modelo LoRA entrenado.');
+  if (onProgress) onProgress(10);
+
+  const fullPrompt = `A photo of ${triggerWord}, ${prompt}`;
+
+  const result: any = await fal.subscribe('fal-ai/flux-lora-general', {
+    input: {
+      prompt: fullPrompt,
+      loras: [{ path: loraUrl, scale: options.loraScale ?? 0.85 }],
+      image_size: options.imageSize || 'portrait_4_3',
+      num_images: options.numImages || 1,
+      guidance_scale: options.guidanceScale ?? 3.5,
+      num_inference_steps: options.steps ?? 28,
+      enable_safety_checker: false,
+      output_format: 'jpeg',
+    } as any,
+    onQueueUpdate: (update: any) => {
+      if (abortSignal?.aborted) return;
+      if (update.status === 'IN_PROGRESS' && onProgress) {
+        onProgress(Math.min(85, 10 + Math.random() * 70));
+      }
+    },
+  });
+
+  if (abortSignal?.aborted) throw new Error('Cancelado');
+
+  const r = unwrap(result);
+  const images = r?.images ?? [];
+  if (images.length === 0) throw new Error('LoRA generation: no images returned.');
+
+  // Convert FAL URLs to data URLs
+  const dataUrls: string[] = await Promise.all(
+    images.map(async (img: any) => {
+      const url = img?.url;
+      if (!url) return null;
+      const resp = await fetch(url);
+      if (!resp.ok) return null;
+      const blob = await resp.blob();
+      return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    })
+  );
+
+  if (onProgress) onProgress(100);
+  return dataUrls.filter((u): u is string => u !== null);
+};
+
+// ─────────────────────────────────────────────
+// FLUX 2 Klein 9B Edit+LoRA — edit with custom LoRA weights
+// Uses fal-ai/flux-2/klein/9b/edit/lora endpoint
+// ─────────────────────────────────────────────
+export async function generateWithKleinEditLoRA(
+  baseImageUrl: string,
+  loraUrl: string,
+  triggerWord: string,
+  prompt: string,
+  options?: { seed?: number; imageSize?: string },
+  onProgress?: (p: number) => void,
+  abortSignal?: AbortSignal,
+): Promise<string[]> {
+  onProgress?.(10);
+
+  const result = await fal.subscribe('fal-ai/flux-2/klein/9b/edit/lora', {
+    input: {
+      prompt: `${triggerWord} ${prompt}`,
+      image_urls: [baseImageUrl],
+      loras: [{ path: loraUrl, scale: 0.9 }],
+      seed: options?.seed,
+      image_size: options?.imageSize || 'landscape_4_3',
+    },
+    pollInterval: 2000,
+    onQueueUpdate: (u) => {
+      if (u.status === 'IN_PROGRESS') onProgress?.(50);
+    },
+    ...(abortSignal ? { signal: abortSignal } : {}),
+  });
+
+  onProgress?.(100);
+  return (result.data as any).images.map((img: any) => img.url);
+}
 
 // ─────────────────────────────────────────────
 // Z-Image Turbo — Alibaba Tongyi-MAI 6B · fal-ai/z-image/turbo

@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef, lazy, Suspense, useCallback } from 'react'
 import type { Page } from '../App'
-import { Camera, Film, Images, Sparkles, Upload, ChevronDown, Check, X } from 'lucide-react'
+import { Camera, Film, Images, Sparkles, Upload, ChevronDown, Check, X, ImagePlus } from 'lucide-react'
 import { useCharacterStore, type SavedCharacter } from '../stores/characterStore'
 import { useGalleryStore, type GalleryItem } from '../stores/galleryStore'
 import { useToast } from '../contexts/ToastContext'
 import { generateInfluencerImage } from '../services/geminiService'
 import {
   changeScene, changeOutfit, relight, faceSwap, realisticSkin,
-  styleTransfer, upscale, generateAngles, uploadToFal,
+  styleTransfer, upscale, generateAngles, aiEdit, grokEdit, uploadToFal,
   SCENE_PRESETS, RELIGHT_PRESETS, STYLE_PRESETS,
   ANGLE_PROMPTS, ANGLE_GROK_ENHANCE_PROMPTS,
   type ToolResult,
@@ -368,7 +368,7 @@ const CreatePanel: React.FC<{
       </div>
 
       {/* Generate Button */}
-      <div className="shrink-0 px-4 py-3" style={{ borderTop: '1px solid rgba(255,255,255,.04)' }}>
+      <div className="shrink-0 px-4 py-3 pb-20 lg:pb-3" style={{ borderTop: '1px solid rgba(255,255,255,.04)' }}>
         <BigButton onClick={() => onGenerate({ scene: scenePrompt, outfit, pose, camera, lighting: lightingPrompt, aspectRatio })}
           disabled={!canGenerate} loading={generating}>
           <Sparkles size={15} />
@@ -443,12 +443,30 @@ const EditPanel: React.FC<{
 
       case 'relight':
         return (
-          <PresetGrid presets={RELIGHT_PRESETS} selected={presetId} onSelect={handlePresetSelect} />
+          <div className="space-y-2">
+            <PresetGrid presets={RELIGHT_PRESETS} selected={presetId} onSelect={handlePresetSelect} />
+            <input type="text" placeholder="Or describe custom lighting..."
+              value={presetId ? '' : toolInput}
+              onChange={e => { setToolInput(e.target.value); setPresetId(null) }}
+              style={inputStyle}
+              onFocus={e => e.currentTarget.style.borderColor = 'rgba(255,107,157,.35)'}
+              onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,.08)'}
+            />
+          </div>
         )
 
       case 'style-transfer':
         return (
-          <PresetGrid presets={STYLE_PRESETS} selected={presetId} onSelect={handlePresetSelect} />
+          <div className="space-y-2">
+            <PresetGrid presets={STYLE_PRESETS} selected={presetId} onSelect={handlePresetSelect} />
+            <input type="text" placeholder="Or describe a custom style..."
+              value={presetId ? '' : toolInput}
+              onChange={e => { setToolInput(e.target.value); setPresetId(null) }}
+              style={inputStyle}
+              onFocus={e => e.currentTarget.style.borderColor = 'rgba(255,107,157,.35)'}
+              onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,.08)'}
+            />
+          </div>
         )
 
       case 'outfit':
@@ -541,8 +559,8 @@ const EditPanel: React.FC<{
     if (!activeTool || generating) return false
     switch (activeTool) {
       case 'scene': return !!(toolInput.trim() || presetId)
-      case 'relight': return !!presetId
-      case 'style-transfer': return !!presetId
+      case 'relight': return !!(presetId || toolInput.trim())
+      case 'style-transfer': return !!(presetId || toolInput.trim())
       case 'outfit': return !!toolInput.trim()
       case 'ai-edit': return !!toolInput.trim()
       case 'face-swap': return !!faceFile
@@ -586,7 +604,7 @@ const EditPanel: React.FC<{
 
       {/* Apply Button */}
       {activeTool && (
-        <div className="shrink-0 px-4 py-3" style={{ borderTop: '1px solid rgba(255,255,255,.04)' }}>
+        <div className="shrink-0 px-4 py-3 pb-20 lg:pb-3" style={{ borderTop: '1px solid rgba(255,255,255,.04)' }}>
           <BigButton onClick={handleApply} disabled={!canApply()} loading={generating}>
             Apply {EDIT_TOOLS.find(t => t.id === activeTool)?.label}
           </BigButton>
@@ -622,10 +640,31 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
   const [activeTool, setActiveTool] = useState<EditToolId | null>(null)
   const [generating, setGenerating] = useState(false)
 
+  // "Bring Your Own" upload state
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null)
+  const uploadInputRef = useRef<HTMLInputElement>(null)
+
   // Stores
   const characters = useCharacterStore(s => s.characters)
   const addGalleryItems = useGalleryStore(s => s.addItems)
   const toast = useToast()
+
+  // Handle uploaded photo for "bring your own" flow
+  const handleBYOUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const url = reader.result as string
+      setUploadedImageUrl(url)
+      setCurrentImageUrl(url)
+      setFilmstrip([{ url, label: 'Upload', tool: 'upload' }])
+      setFilmstripIndex(0)
+      setPhase('edit')
+    }
+    reader.readAsDataURL(file)
+    if (e.target) e.target.value = ''
+  }, [])
 
   // ── Phase transitions ──
   useEffect(() => {
@@ -815,8 +854,8 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
               // If ultra quality, enhance with Grok
               if (aQuality === 'ultra' && ANGLE_GROK_ENHANCE_PROMPTS[aMode as keyof typeof ANGLE_GROK_ENHANCE_PROMPTS]) {
                 const enhancePrompt = ANGLE_GROK_ENHANCE_PROMPTS[aMode as keyof typeof ANGLE_GROK_ENHANCE_PROMPTS]
-                const enhanced = await changeScene(finalUrl, enhancePrompt)
-                if (enhanced.url) finalUrl = enhanced.url
+                const enhancedUrl = await grokEdit(finalUrl, enhancePrompt)
+                if (enhancedUrl) finalUrl = enhancedUrl
               }
               result = { url: finalUrl, engine: aQuality === 'ultra' ? 'nb2+grok' : 'nb2' }
             } else {
@@ -831,8 +870,8 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
           break
         }
         case 'ai-edit': {
-          // Free prompt edit using Grok — changeScene uses grokEdit under the hood
-          result = await changeScene(currentImageUrl, input)
+          // Free prompt edit — sends user's exact intent to Grok
+          result = await aiEdit(currentImageUrl, input)
           label = 'AI Edit'
           break
         }
@@ -877,6 +916,9 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Hidden upload input for "bring your own" flow */}
+      <input ref={uploadInputRef} type="file" accept="image/*" className="hidden" onChange={handleBYOUpload} />
+
       {/* Mode switcher bar */}
       <div className="shrink-0 flex items-center gap-2 px-5 py-2.5"
         style={{ borderBottom: '1px solid rgba(255,255,255,.03)', background: 'var(--joi-bg-1)' }}>
@@ -910,17 +952,48 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
           {mode === 'photo' && (
             phase === 'create' ? (
               /* PHASE 1: Director — full screen, all its features */
-              <Director
-                onNav={onNav}
-                onEditImage={(url: string) => {
-                  // Capture the generated image and transition to edit phase
-                  setCurrentImageUrl(url)
-                  setFilmstrip([{ url, label: 'Original', tool: 'generate' }])
-                  setFilmstripIndex(0)
-                  setPhase('edit')
-                }}
-                onExportImage={onExportImage}
-              />
+              <div className="flex flex-col h-full">
+                {/* "Bring your own" upload banner */}
+                {!selectedCharId && characters.length === 0 && (
+                  <div className="shrink-0 mx-5 mt-4 mb-2 p-4 rounded-xl flex items-center gap-4"
+                    style={{
+                      background: 'rgba(167,139,250,0.05)',
+                      border: '1px dashed rgba(167,139,250,0.3)',
+                    }}>
+                    <ImagePlus size={22} style={{ color: '#A78BFA', opacity: 0.7, flexShrink: 0 }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-medium" style={{ color: 'var(--joi-text-1)' }}>
+                        No character? No problem.
+                      </p>
+                      <p className="text-[11px] mt-0.5" style={{ color: 'var(--joi-text-3)' }}>
+                        Upload a photo and start editing directly with AI tools.
+                      </p>
+                    </div>
+                    <label className="shrink-0 cursor-pointer px-4 py-2 rounded-lg text-[12px] font-semibold transition-all"
+                      style={{
+                        background: 'linear-gradient(135deg, #FF6B9D, #A78BFA)',
+                        color: 'white',
+                        boxShadow: '0 4px 16px rgba(255,107,157,.2)',
+                      }}>
+                      Upload
+                      <input type="file" accept="image/*" className="hidden" onChange={handleBYOUpload} />
+                    </label>
+                  </div>
+                )}
+                <div className="flex-1 overflow-hidden">
+                  <Director
+                    onNav={onNav}
+                    onEditImage={(url: string) => {
+                      // Capture the generated image and transition to edit phase
+                      setCurrentImageUrl(url)
+                      setFilmstrip([{ url, label: 'Original', tool: 'generate' }])
+                      setFilmstripIndex(0)
+                      setPhase('edit')
+                    }}
+                    onExportImage={onExportImage}
+                  />
+                </div>
+              </div>
             ) : (
             /* PHASE 2: Edit tools + image viewer */
             <div className="flex flex-col h-full">

@@ -2,9 +2,11 @@ import { InfluencerParams, OpenAIModel, AspectRatio } from '../types';
 
 // ─────────────────────────────────────────────
 // Config
+// In production: Cloudflare Worker at /api/ai/openai/...
+// In dev: Vite proxy at /openai-api/...
 // ─────────────────────────────────────────────
-// API key is injected server-side by the Vite proxy (vite.config.ts)
-const BASE_URL = '/openai-api/v1/images';
+const OPENAI_PROXY = import.meta.env.PROD ? '/api/ai/openai' : '/openai-api';
+const BASE_URL = `${OPENAI_PROXY}/v1/images`;
 
 // ─────────────────────────────────────────────
 // Helpers
@@ -324,7 +326,7 @@ export interface ChatMessage {
 }
 
 export const askOpenAIVision = async (messages: ChatMessage[]): Promise<string> => {
-  const CHAT_URL = '/openai-api/v1/chat/completions';
+  const CHAT_URL = `${OPENAI_PROXY}/v1/chat/completions`;
 
   const formattedMessages = messages.map(msg => {
     if (msg.role !== 'user' || !msg.imageBase64) {

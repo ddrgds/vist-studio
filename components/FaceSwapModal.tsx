@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { faceSwapWithGemini } from '../services/geminiService';
 import { useToast } from '../contexts/ToastContext';
 import { useProfile } from '../contexts/ProfileContext';
-import { OPERATION_CREDIT_COSTS } from '../types';
+import { CREDIT_COSTS } from '../types';
 import ProgressBar from './ProgressBar';
 
 interface FaceSwapModalProps {
@@ -50,7 +50,7 @@ const FaceSwapModal: React.FC<FaceSwapModalProps> = ({ targetItem, onClose, onSa
   const handleGenerate = async () => {
     if (!sourceFaceFile) { toast.error('Upload a photo of the face to use'); return; }
 
-    const cost = OPERATION_CREDIT_COSTS.faceSwap;
+    const cost = CREDIT_COSTS['face-swap'];
     const hasCredits = await decrementCredits(cost);
     if (!hasCredits) { toast.error('Insufficient credits. Please upgrade your plan.'); return; }
 

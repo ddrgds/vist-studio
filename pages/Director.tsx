@@ -9,7 +9,7 @@ import { generateWithOpenAI } from '../services/openaiService'
 import { generateWithFal } from '../services/falService'
 import { useProfile } from '../contexts/ProfileContext'
 import { useToast } from '../contexts/ToastContext'
-import { ImageSize, AspectRatio, ENGINE_METADATA, OPERATION_CREDIT_COSTS, FEATURE_ENGINES, AIProvider } from '../types'
+import { ImageSize, AspectRatio, ENGINE_METADATA, CREDIT_COSTS, FEATURE_ENGINES, AIProvider } from '../types'
 import type { InfluencerParams } from '../types'
 import { POSE_OPTIONS, CAMERA_OPTIONS, LIGHTING_OPTIONS, INSPIRATIONS } from '../data/directorOptions'
 import type { ChipOption } from '../data/directorOptions'
@@ -124,7 +124,7 @@ const joiInputStyle = (hasValue: boolean) => ({
   backdropFilter: 'blur(8px)',
 })
 
-export function Director({ onNav, onEditImage, onExportImage }: { onNav?: (page: string) => void; onEditImage?: (url: string) => void; onExportImage?: (url: string) => void }) {
+export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl }: { onNav?: (page: string) => void; onEditImage?: (url: string) => void; onExportImage?: (url: string) => void; uploadedImageUrl?: string | null }) {
   // ── Character ──
   const characters = useCharacterStore(s => s.characters)
   const [selectedCharId, setSelectedCharId] = useState<string | null>(null)
@@ -149,6 +149,27 @@ export function Director({ onNav, onEditImage, onExportImage }: { onNav?: (page:
       setCharacteristics(selectedChar.characteristics || '')
     }
   }, [selectedChar?.id])
+
+  // ── "Bring Your Own" upload state ──
+  const [byoImageUrl, setByoImageUrl] = useState<string | null>(uploadedImageUrl || null)
+  const byoInputRef = useRef<HTMLInputElement>(null)
+
+  const handleByoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => setByoImageUrl(reader.result as string)
+    reader.readAsDataURL(file)
+    if (e.target) e.target.value = ''
+  }
+
+  // If BYO image exists, skip generation and send to edit
+  useEffect(() => {
+    if (byoImageUrl && onEditImage) {
+      onEditImage(byoImageUrl)
+      setByoImageUrl(null) // consume it
+    }
+  }, [byoImageUrl, onEditImage])
 
   // ── Reference images ──
   const [faceRefs, setFaceRefs] = useState<{ file: File; preview: string }[]>([])
@@ -283,7 +304,7 @@ export function Director({ onNav, onEditImage, onExportImage }: { onNav?: (page:
       return
     }
 
-    const costPerShot = OPERATION_CREDIT_COSTS.photoSession
+    const costPerShot = CREDIT_COSTS['grok-edit']
     const totalCost = numberOfImages * costPerShot
 
     const ok = await decrementCredits(totalCost)
@@ -348,11 +369,11 @@ export function Director({ onNav, onEditImage, onExportImage }: { onNav?: (page:
     }
   }
 
-  const costPerShot = OPERATION_CREDIT_COSTS.photoSession
+  const costPerShot = CREDIT_COSTS['grok-edit']
   const activeEngineLabel = selectedEngine === 'auto' ? 'Auto' : (ENGINE_METADATA.find(e => e.key === selectedEngine)?.userFriendlyName || selectedEngine)
 
   return (
-    <div className="h-screen flex" style={{ background: 'var(--joi-bg-0)' }}>
+    <div className="h-full flex" style={{ background: 'var(--joi-bg-0)' }}>
       <input ref={faceInputRef} type="file" accept="image/*" className="hidden" onChange={handleFaceRefUpload} />
 
       {/* ── Left Panel — Frosted Glass ── */}
@@ -484,11 +505,27 @@ export function Director({ onNav, onEditImage, onExportImage }: { onNav?: (page:
                 <div className="text-[11px] font-medium mb-2" style={{ color: 'var(--joi-text-2)' }}>Character</div>
                 <div className="flex gap-2 flex-wrap">
                   {characters.length === 0 ? (
-                    <div className="text-[12px] py-3 px-4 rounded-xl w-full text-center" style={{
-                      color: 'var(--joi-text-3)',
-                      background: 'rgba(255,255,255,.02)',
-                      border: '1px dashed rgba(255,255,255,.06)',
-                    }}>No characters yet — <span style={{ color: 'var(--joi-pink)', cursor: 'pointer' }} onClick={() => onNav?.('create')}>create one</span></div>
+                    <div className="space-y-2 w-full">
+                      <div className="text-[12px] py-3 px-4 rounded-xl w-full text-center" style={{
+                        color: 'var(--joi-text-3)',
+                        background: 'rgba(255,255,255,.02)',
+                        border: '1px dashed rgba(255,255,255,.06)',
+                      }}>No characters yet — <span style={{ color: 'var(--joi-pink)', cursor: 'pointer' }} onClick={() => onNav?.('create')}>create one</span></div>
+                      <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{
+                        background: 'rgba(167,139,250,.05)',
+                        border: '1px dashed rgba(167,139,250,.25)',
+                      }}>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[11px] font-medium" style={{ color: 'var(--joi-text-1)' }}>Or upload a photo</p>
+                          <p className="text-[9px] mt-0.5" style={{ color: 'var(--joi-text-3)' }}>Skip to editing tools directly</p>
+                        </div>
+                        <label className="shrink-0 cursor-pointer px-3 py-1.5 rounded-lg text-[11px] font-semibold"
+                          style={{ background: 'linear-gradient(135deg, #FF6B9D, #A78BFA)', color: 'white' }}>
+                          Upload
+                          <input ref={byoInputRef} type="file" accept="image/*" className="hidden" onChange={handleByoUpload} />
+                        </label>
+                      </div>
+                    </div>
                   ) : (
                     characters.slice(0, 6).map(c => (
                       <button key={c.id} onClick={() => setSelectedCharId(c.id)}
@@ -753,7 +790,7 @@ export function Director({ onNav, onEditImage, onExportImage }: { onNav?: (page:
         </div>
 
         {/* ── Bottom: images + generate ── */}
-        <div className="px-5 py-4 shrink-0 space-y-3" style={{
+        <div className="px-5 py-4 pb-20 lg:pb-4 shrink-0 space-y-3" style={{
           borderTop: '1px solid rgba(255,255,255,.04)',
           background: 'linear-gradient(to top, var(--joi-bg-1), rgba(14,12,20,.95))',
         }}>

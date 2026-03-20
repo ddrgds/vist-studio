@@ -63,7 +63,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
         avatarUrl: null,
         subscriptionPlan: 'starter',
         subscriptionStatus: 'free',
-        creditsRemaining: 100,
+        creditsRemaining: 150,
         subscriptionRenewsAt: null,
         lemonSqueezySubscriptionId: null,
         createdAt: new Date().toISOString(),

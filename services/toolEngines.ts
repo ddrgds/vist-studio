@@ -1,9 +1,10 @@
 import { fal } from '@fal-ai/client';
-import { readFileSync } from 'fs';
+import { editImageWithAI } from './geminiService';
 
 // ─────────────────────────────────────────────
 // Tool Engine Service — Best model per editing tool
 // Decided after A/B testing 8 models × 8 tools (2026-03-17)
+// Prompt templates optimized per engine (2026-03-17)
 // ─────────────────────────────────────────────
 
 fal.config({ proxyUrl: '/fal-api' });
@@ -14,22 +15,121 @@ const unwrap = (result: any): any => result?.data ?? result ?? {};
 
 export type ToolId =
   | 'relight'
-  | 'scene'        // bg swap / scene change
+  | 'scene'
   | 'outfit'
   | 'face-swap'
   | 'realistic-skin'
   | 'style-transfer'
   | 'upscale'
-  | 'angles';
+  | 'angles'
+  | 'ai-edit';
+
+export type EngineId = 'grok' | 'kontext' | 'seedream' | 'qwen' | 'aura-sr' | 'nb2' | 'nb-pro' | 'pruna' | 'recraft';
 
 export interface ToolResult {
   url: string;
-  engine: string;
+  engine: EngineId;
 }
 
-// ─── Grok Edit (default for 6/8 tools) ──────
+// ─── Default engine per tool (from A/B testing) ──
 
-async function grokEdit(imageUrl: string, prompt: string): Promise<string> {
+export const TOOL_ENGINE_DEFAULTS: Record<ToolId, EngineId> = {
+  'relight': 'grok',
+  'scene': 'grok',
+  'outfit': 'grok',
+  'face-swap': 'grok',
+  'realistic-skin': 'grok',
+  'style-transfer': 'grok',
+  'upscale': 'aura-sr',
+  'angles': 'nb2',
+  'ai-edit': 'grok',
+};
+
+// ═════════════════════════════════════════════
+// PROMPT TEMPLATES — per tool × engine
+// Each engine expects a different prompt style
+// ═════════════════════════════════════════════
+
+type PromptBuilder = (input: string) => string;
+
+const PROMPTS: Partial<Record<ToolId, Partial<Record<EngineId, PromptBuilder>>>> = {
+  relight: {
+    // Grok: short & direct (per xAI docs)
+    grok: (input) => `Change the lighting to ${input}, keeping the subject identical.`,
+    // Kontext: natural language with "while maintaining"
+    kontext: (input) => `Change the lighting to ${input} while maintaining the exact same person and composition.`,
+    // Seedream: multi-instruction style
+    seedream: (input) => `Apply new lighting: ${input}. Do not change the person, outfit, or background.`,
+    // Qwen: descriptive
+    qwen: (input) => `Change the lighting in this photo to ${input}. Keep the same person, pose, outfit, and background.`,
+    // NB2: detailed instruction for Gemini's structured prompt template
+    nb2: (input) => `Change ONLY the lighting to: ${input}. Do not alter the subject's face, body, pose, outfit, hair, or background. Only modify light direction, color temperature, shadows, and highlights.`,
+  },
+
+  scene: {
+    grok: (input) => `Change the background to ${input}, keeping the subject identical.`,
+    kontext: (input) => `Change the setting to ${input} while maintaining the exact same person, pose, and outfit.`,
+    seedream: (input) => `Change the background to ${input}. Keep the person, clothing, and pose identical.`,
+    qwen: (input) => `Replace the background with ${input}. Keep the same person, face, pose, and outfit unchanged.`,
+    nb2: (input) => `Replace the background/environment with: ${input}. Keep the subject's face, body, pose, outfit, and hair completely unchanged. Blend lighting to match the new scene naturally.`,
+  },
+
+  outfit: {
+    grok: (input) => `Change the clothing to ${input}, keeping the face and background identical.`,
+    kontext: (input) => `Change the outfit to ${input} while maintaining the same person, face, and background.`,
+    seedream: (input) => `Dress the person in ${input}. Keep the face, pose, and background unchanged.`,
+    qwen: (input) => `Change the clothing to ${input}. Keep the same person, face, pose, hair, and background.`,
+    nb2: (input) => `Change ONLY the clothing/outfit to: ${input}. Keep the subject's face, skin, hair, body pose, and background completely identical. The new outfit must fit the body naturally and match the scene lighting.`,
+  },
+
+  'face-swap': {
+    grok: (_) => 'Replace the face in the first image with the face from the second image. Keep everything else the same. Blend the new face naturally with the lighting and skin tone.',
+    kontext: (_) => 'Swap the face from the second image onto the person in the first image while keeping the body, outfit, pose, and background identical.',
+    seedream: (_) => 'Replace the face of the person with the face from the reference image. Match skin tone and lighting. Keep body, outfit, and background unchanged.',
+    qwen: (_) => 'Replace the face in the first image with the face from the second image. Keep body, outfit, pose, and background exactly the same. Blend naturally.',
+    nb2: (_) => 'Replace the face of the subject with the face from the Reference image. Transfer bone structure, eye shape, eye color, nose, lips, jaw, and skin tone. Keep the original hair style, body, pose, outfit, and background unchanged. Match lighting direction and color temperature on the new face.',
+  },
+
+  'realistic-skin': {
+    grok: (_) => 'Add realistic skin detail: visible pores, micro-imperfections, and natural skin texture. Keep the subject and composition identical.',
+    kontext: (_) => 'Add photorealistic skin texture with visible pores and natural imperfections while keeping everything else identical.',
+    seedream: (_) => 'Enhance skin realism: add visible pores, subtle imperfections, natural skin shine. Do not change the person, pose, or background.',
+    qwen: (_) => 'Make the skin more photorealistic with visible pores, micro-imperfections, and natural texture. Keep everything else the same.',
+    nb2: (_) => 'Enhance skin realism ONLY: add visible pores, micro-imperfections, natural skin shine, and subtle subsurface scattering. Do not alter the face shape, features, expression, hair, outfit, pose, or background. The goal is photorealistic skin texture, not beauty retouching.',
+  },
+
+  'style-transfer': {
+    grok: (input) => `Render this as ${input}, maintaining the subject's likeness and composition.`,
+    kontext: (input) => `Transform this image into ${input} while preserving the subject's likeness and composition.`,
+    seedream: (input) => `Apply artistic style: ${input}. Maintain the subject's identity and composition.`,
+    qwen: (input) => `Transform this photo into ${input}. Keep the same person and composition.`,
+    nb2: (input) => `Transform the visual style to: ${input}. The subject's identity, pose, and composition must remain recognizable. Apply the artistic style to the entire image uniformly.`,
+  },
+
+  'ai-edit': {
+    grok: (input) => `${input}, keeping the subject's identity.`,
+    kontext: (input) => `${input} while maintaining the subject's identity.`,
+    seedream: (input) => `${input}. Keep the subject's identity unchanged.`,
+    qwen: (input) => `${input}. Preserve the subject's identity and face.`,
+    nb2: (input) => `${input}`,
+  },
+};
+
+/** Get the optimized prompt for a tool × engine combination */
+export function getPrompt(tool: ToolId, engine: EngineId, input: string): string {
+  const enginePrompts = PROMPTS[tool];
+  if (!enginePrompts) return input;
+  const builder = enginePrompts[engine] || enginePrompts['grok'];
+  if (!builder) return input;
+  return builder(input);
+}
+
+// ═════════════════════════════════════════════
+// ENGINE ADAPTERS — each engine has different API
+// ═════════════════════════════════════════════
+
+/** Grok edit via fal.ai — image_urls array */
+export async function grokEdit(imageUrl: string, prompt: string): Promise<string> {
   const result = await fal.subscribe('xai/grok-imagine-image/edit', {
     input: {
       image_urls: [imageUrl],
@@ -43,8 +143,7 @@ async function grokEdit(imageUrl: string, prompt: string): Promise<string> {
   return data.images?.[0]?.url || data.image?.url;
 }
 
-// ─── Grok Edit with 2 images (face swap) ────
-
+/** Grok edit with multiple images (face swap) */
 async function grokEditMulti(imageUrls: string[], prompt: string): Promise<string> {
   const result = await fal.subscribe('xai/grok-imagine-image/edit', {
     input: {
@@ -59,6 +158,154 @@ async function grokEditMulti(imageUrls: string[], prompt: string): Promise<strin
   return data.images?.[0]?.url || data.image?.url;
 }
 
+/** Flux Kontext edit — single image_url */
+async function kontextEdit(imageUrl: string, prompt: string): Promise<string> {
+  const result = await fal.subscribe('fal-ai/flux-pro/kontext', {
+    input: {
+      image_url: imageUrl,
+      prompt,
+    },
+    timeout: 120000,
+  }) as any;
+  const data = unwrap(result);
+  return data.images?.[0]?.url || data.image?.url;
+}
+
+/** Seedream edit — image_urls array */
+async function seedreamEdit(imageUrl: string, prompt: string): Promise<string> {
+  const result = await fal.subscribe('fal-ai/bytedance/seedream/v4/edit', {
+    input: {
+      image_urls: [imageUrl],
+      prompt,
+      num_images: 1,
+    },
+    timeout: 120000,
+  }) as any;
+  const data = unwrap(result);
+  return data.images?.[0]?.url || data.image?.url;
+}
+
+/** Qwen edit — image_urls array */
+async function qwenEdit(imageUrl: string, prompt: string): Promise<string> {
+  const result = await fal.subscribe('fal-ai/qwen-image-2/pro/edit', {
+    input: {
+      image_urls: [imageUrl],
+      prompt,
+    },
+    timeout: 120000,
+  }) as any;
+  const data = unwrap(result);
+  return data.images?.[0]?.url || data.image?.url;
+}
+
+/** NB2 (Gemini) edit — URL→File bridge, then structured prompt via editImageWithAI */
+async function nb2Edit(imageUrl: string, prompt: string): Promise<string> {
+  // Fetch image URL and convert to File (NB2 uses base64 inline data, not URLs)
+  const response = await fetch(imageUrl);
+  const blob = await response.blob();
+  const ext = blob.type.split('/')[1] || 'jpeg';
+  const file = new File([blob], `input.${ext}`, { type: blob.type });
+
+  // editImageWithAI wraps with its own PRESERVATION RULE + INTEGRATION RULES template
+  // Our prompt goes into the EDIT INSTRUCTION section
+  const results = await editImageWithAI({ baseImage: file, instruction: prompt });
+  if (!results || results.length === 0) throw new Error('NB2 returned no images');
+  return results[0]; // base64 data URL
+}
+
+/** NB Pro (Gemini Pro) edit — higher quality than NB2, uses GeminiImageModel.Pro */
+export async function nbProEdit(imageUrl: string, prompt: string): Promise<string> {
+  // Dynamic import to avoid circular dependency
+  const { editImageWithAI } = await import('./geminiService');
+  const { GeminiImageModel } = await import('../types');
+  type AIEditParams = import('../types').AIEditParams;
+
+  // Fetch the image URL and convert to File (same pattern as nb2Edit)
+  const response = await fetch(imageUrl);
+  const blob = await response.blob();
+  const file = new File([blob], 'input.png', { type: blob.type });
+
+  const params: AIEditParams = {
+    baseImage: file,
+    instruction: prompt,
+    model: GeminiImageModel.Pro,  // Use NB Pro instead of default NB2
+  };
+
+  const results = await editImageWithAI(params);
+  if (!results.length) throw new Error('NB Pro edit returned no results');
+  return results[0];
+}
+
+/** Pruna P-Image-Edit — fallback edit engine via Replicate */
+export async function prunaEdit(imageUrl: string, prompt: string): Promise<string> {
+  const { editWithPruna } = await import('./replicateService');
+  return editWithPruna(imageUrl, prompt);
+}
+
+/** Route to correct engine adapter */
+async function runEngine(engine: EngineId, imageUrl: string, prompt: string): Promise<string> {
+  switch (engine) {
+    case 'grok': return grokEdit(imageUrl, prompt);
+    case 'kontext': return kontextEdit(imageUrl, prompt);
+    case 'seedream': return seedreamEdit(imageUrl, prompt);
+    case 'qwen': return qwenEdit(imageUrl, prompt);
+    case 'nb2': return nb2Edit(imageUrl, prompt);
+    case 'nb-pro': return nbProEdit(imageUrl, prompt);
+    case 'pruna': return prunaEdit(imageUrl, prompt);
+    default: return grokEdit(imageUrl, prompt);
+  }
+}
+
+// ─── Edit engine fallback chain ──────────────
+// Fallback triggers: HTTP 5xx, content policy rejection, or timeout >30s.
+// Failed attempts do NOT charge credits. Chain: Grok -> NB Pro -> Pruna.
+
+const EDIT_FALLBACK_CHAIN: EngineId[] = ['grok', 'nb-pro', 'pruna'];
+
+/** 30-second timeout wrapper -- works with any async function */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Timeout')), ms)
+    ),
+  ]);
+}
+
+export async function runEditWithFallback(
+  imageUrl: string,
+  prompt: string,
+  preferredEngine: EngineId,
+  toolId: ToolId,
+): Promise<ToolResult> {
+  // Build ordered chain starting from preferred engine
+  const chain = [preferredEngine, ...EDIT_FALLBACK_CHAIN.filter(e => e !== preferredEngine)];
+  const getEnginePrompt = (engine: EngineId) =>
+    PROMPTS[toolId]?.[engine]?.(prompt) || PROMPTS[toolId]?.grok?.(prompt) || prompt;
+
+  for (const engine of chain) {
+    try {
+      let engineCall: Promise<string>;
+      switch (engine) {
+        case 'grok': engineCall = grokEdit(imageUrl, getEnginePrompt(engine)); break;
+        case 'nb-pro': engineCall = nbProEdit(imageUrl, getEnginePrompt(engine)); break;
+        case 'pruna': engineCall = prunaEdit(imageUrl, prompt); break;
+        default: throw new Error(`Unknown edit engine: ${engine}`);
+      }
+
+      // Race the engine call against 30s timeout
+      const url = await withTimeout(engineCall, 30000);
+      return { url, engine };
+    } catch (err: any) {
+      const isRetryable = err?.status >= 500 || err?.message?.includes('content policy') || err?.message === 'Timeout';
+      if (!isRetryable) throw err; // Non-retryable error, bubble up
+      console.warn(`Engine ${engine} failed for ${toolId}, trying next...`, err.message);
+    }
+  }
+
+  throw new Error(`All edit engines failed for ${toolId}`);
+}
+
 // ─── Upload helper ───────────────────────────
 
 export async function uploadToFal(file: File): Promise<string> {
@@ -67,82 +314,125 @@ export async function uploadToFal(file: File): Promise<string> {
 
 // ═════════════════════════════════════════════
 // TOOL IMPLEMENTATIONS
+// Each accepts optional engine override
 // ═════════════════════════════════════════════
 
 /** Relight — change lighting on existing image */
 export async function relight(
   imageUrl: string,
   lightingDescription: string,
+  engine: EngineId = TOOL_ENGINE_DEFAULTS.relight,
 ): Promise<ToolResult> {
-  const prompt = `Same photo same woman but with ${lightingDescription}. Keep face, pose, outfit, and composition identical.`;
-  const url = await grokEdit(imageUrl, prompt);
-  return { url, engine: 'grok' };
+  const prompt = getPrompt('relight', engine, lightingDescription);
+  const url = await runEngine(engine, imageUrl, prompt);
+  return { url, engine };
 }
 
 /** Scene / BG Swap — change background/location */
 export async function changeScene(
   imageUrl: string,
   sceneDescription: string,
+  engine: EngineId = TOOL_ENGINE_DEFAULTS.scene,
 ): Promise<ToolResult> {
-  const prompt = `Same woman same pose same outfit but ${sceneDescription}. Keep the person exactly the same.`;
-  const url = await grokEdit(imageUrl, prompt);
-  return { url, engine: 'grok' };
+  const prompt = getPrompt('scene', engine, sceneDescription);
+  const url = await runEngine(engine, imageUrl, prompt);
+  return { url, engine };
 }
 
 /** Outfit Change — change clothing */
 export async function changeOutfit(
   imageUrl: string,
   outfitDescription: string,
+  engine: EngineId = TOOL_ENGINE_DEFAULTS.outfit,
 ): Promise<ToolResult> {
-  const prompt = `Same woman same face same pose same background but wearing ${outfitDescription}. Keep face and background identical.`;
-  const url = await grokEdit(imageUrl, prompt);
-  return { url, engine: 'grok' };
+  const prompt = getPrompt('outfit', engine, outfitDescription);
+  const url = await runEngine(engine, imageUrl, prompt);
+  return { url, engine };
 }
 
 /** Face Swap — replace face with another person's face */
 export async function faceSwap(
   baseImageUrl: string,
   faceSourceUrl: string,
+  engine: EngineId = TOOL_ENGINE_DEFAULTS['face-swap'],
 ): Promise<ToolResult> {
-  const prompt = 'Replace the face of the person in the first image with the face of the person from the second image. Keep everything else the same — body, outfit, background, pose. Adapt hair color and skin tone to match the new face naturally.';
-  const url = await grokEditMulti([baseImageUrl, faceSourceUrl], prompt);
+  const prompt = getPrompt('face-swap', engine, '');
+
+  // Grok: native multi-image support
+  if (engine === 'grok') {
+    const url = await grokEditMulti([baseImageUrl, faceSourceUrl], prompt);
+    return { url, engine };
+  }
+
+  // NB2: uses editImageWithAI with referenceImage parameter
+  if (engine === 'nb2') {
+    const [baseResp, faceResp] = await Promise.all([fetch(baseImageUrl), fetch(faceSourceUrl)]);
+    const [baseBlob, faceBlob] = await Promise.all([baseResp.blob(), faceResp.blob()]);
+    const baseFile = new File([baseBlob], 'base.jpeg', { type: baseBlob.type });
+    const faceFile = new File([faceBlob], 'face.jpeg', { type: faceBlob.type });
+    const results = await editImageWithAI({ baseImage: baseFile, instruction: prompt, referenceImage: faceFile });
+    if (!results || results.length === 0) throw new Error('NB2 face swap returned no images');
+    return { url: results[0], engine: 'nb2' };
+  }
+
+  // Other engines: fall back to Grok for face swap (multi-image)
+  const url = await grokEditMulti([baseImageUrl, faceSourceUrl], getPrompt('face-swap', 'grok', ''));
   return { url, engine: 'grok' };
 }
 
 /** Realistic Skin — add natural skin texture */
 export async function realisticSkin(
   imageUrl: string,
+  engine: EngineId = TOOL_ENGINE_DEFAULTS['realistic-skin'],
 ): Promise<ToolResult> {
-  const prompt = 'Enhance this photo to be more photorealistic. Add natural skin texture with visible pores, slight imperfections, natural lighting on skin. Keep the person, pose, outfit, and background exactly the same. Do not change the composition.';
-  const url = await grokEdit(imageUrl, prompt);
-  return { url, engine: 'grok' };
+  const prompt = getPrompt('realistic-skin', engine, '');
+  const url = await runEngine(engine, imageUrl, prompt);
+  return { url, engine };
 }
 
 /** Style Transfer — apply artistic style */
 export async function styleTransfer(
   imageUrl: string,
   styleDescription: string,
+  engine: EngineId = TOOL_ENGINE_DEFAULTS['style-transfer'],
 ): Promise<ToolResult> {
-  const prompt = `Transform this photo into ${styleDescription}. Keep the same person and composition.`;
-  const url = await grokEdit(imageUrl, prompt);
-  return { url, engine: 'grok' };
+  const prompt = getPrompt('style-transfer', engine, styleDescription);
+  const url = await runEngine(engine, imageUrl, prompt);
+  return { url, engine };
 }
 
-/** Upscale — increase resolution */
+/** Upscale — increase resolution (AuraSR only) */
 export async function upscale(
   imageUrl: string,
-  factor: number = 2,
+  engine: 'recraft' | 'aura-sr' = 'recraft',
 ): Promise<ToolResult> {
-  const result = await fal.subscribe('fal-ai/aura-sr', {
-    input: {
-      image_url: imageUrl,
-      upscaling_factor: factor,
-    },
-    timeout: 120000,
-  }) as any;
-  const data = unwrap(result);
-  const url = data.images?.[0]?.url || data.image?.url;
-  return { url, engine: 'aura-sr' };
+  if (engine === 'aura-sr') {
+    const result = await fal.subscribe('fal-ai/aura-sr', {
+      input: {
+        image_url: imageUrl,
+        upscaling_factor: 2 as any,
+      },
+      timeout: 120000,
+    }) as any;
+    const data = unwrap(result);
+    const url = data.images?.[0]?.url || data.image?.url;
+    return { url, engine: 'aura-sr' };
+  } else {
+    const { upscaleWithRecraft } = await import('./replicateService');
+    const url = await upscaleWithRecraft(imageUrl);
+    return { url, engine: 'recraft' };
+  }
+}
+
+/** AI Edit — free-form prompt edit */
+export async function aiEdit(
+  imageUrl: string,
+  editDescription: string,
+  engine: EngineId = TOOL_ENGINE_DEFAULTS['ai-edit'],
+): Promise<ToolResult> {
+  const prompt = getPrompt('ai-edit', engine, editDescription);
+  const url = await runEngine(engine, imageUrl, prompt);
+  return { url, engine };
 }
 
 /** Angles/360 — generate character sheet with multiple views */
@@ -151,30 +441,12 @@ export async function generateAngles(
   mode: 'face' | 'body' | 'expressions',
   quality: 'standard' | 'ultra' = 'standard',
 ): Promise<ToolResult> {
-  const prompts: Record<string, string> = {
-    face: 'A 360 turnaround view of the subject, Close up shot of face in 4 different angles on a 2x2 grid. Top-left: front view. Top-right: right profile. Bottom-left: left profile. Bottom-right: three-quarter view. All white background. High resolution, sharp detail.',
-    body: 'A 360 turnaround full body view of the subject in 4 different angles side by side. Front view, half turn, side profile, back view. Full-body shots, all white background. High resolution, sharp detail.',
-    expressions: 'An expression sheet of the subject showing 9 different facial expressions in a 3x3 grid. Happy smile, Crying/sad, Surprised, Angry, Laughing, Serious, Flirty/wink, Disgusted, Peaceful/eyes closed. Close-up headshots, all white background. Same person in every frame.',
-  };
-
-  // Step 1: NB2 generates the sheet
-  // This calls Gemini via the proxy — handled by geminiService in the app
-  // For now, return the prompt so the caller can route to Gemini
-  // In production, this would call the Gemini API directly
-
+  // Angles always use NB2 (Gemini) for generation
+  // The caller handles the actual Gemini API call
   if (quality === 'ultra') {
-    // NB2 generates → Grok enhances
-    // The caller should: 1) call Gemini with the prompt, 2) pass result to grokEdit
-    return {
-      url: '', // placeholder — caller handles the 2-step flow
-      engine: 'nb2+grok',
-    };
+    return { url: '', engine: 'nb2' }; // caller does NB2 → Grok enhance
   }
-
-  return {
-    url: '', // placeholder — caller routes to Gemini
-    engine: 'nb2',
-  };
+  return { url: '', engine: 'nb2' }; // caller routes to Gemini
 }
 
 // ─── Angle prompts (exported for use by caller) ─
@@ -189,6 +461,36 @@ export const ANGLE_GROK_ENHANCE_PROMPTS = {
   face: 'Enhance this character reference sheet to be more photorealistic. Add natural skin texture, visible pores, realistic lighting. Keep all 4 angles and the same person. Do not change layout.',
   expressions: 'Enhance this expression sheet to be more photorealistic. More natural skin, expressive eyes, realistic detail. Keep all expressions and the same person. Do not change layout.',
 };
+
+// ─── Character sheet pipeline ────────────────
+
+export type SheetType = 'face' | 'body' | 'expressions';
+
+/** Generate a character sheet grid using NB2 (Gemini) */
+export async function generateCharacterSheet(
+  approvedImageUrl: string,
+  sheetType: SheetType,
+): Promise<string> {
+  const prompt = ANGLE_PROMPTS[sheetType];
+  return nb2Edit(approvedImageUrl, prompt);
+}
+
+/** Enhance a character sheet with Grok (ultra mode) */
+export async function enhanceSheetWithGrok(
+  sheetUrl: string,
+  sheetType: 'face' | 'expressions',
+): Promise<string> {
+  // NB2 returns data URLs; Grok needs hosted URLs — upload first
+  let url = sheetUrl;
+  if (sheetUrl.startsWith('data:')) {
+    const resp = await fetch(sheetUrl);
+    const blob = await resp.blob();
+    const file = new File([blob], `sheet-${sheetType}.png`, { type: blob.type });
+    url = await uploadToFal(file);
+  }
+  const prompt = ANGLE_GROK_ENHANCE_PROMPTS[sheetType];
+  return grokEdit(url, prompt);
+}
 
 // ─── Style presets ───────────────────────────
 
@@ -221,14 +523,14 @@ export const RELIGHT_PRESETS = [
 // ─── Scene presets ───────────────────────────
 
 export const SCENE_PRESETS = [
-  { id: 'tokyo', label: 'Tokyo Night', prompt: 'standing on a busy Tokyo street at night with neon signs, rain-wet pavement, and colorful reflections' },
-  { id: 'paris-cafe', label: 'Paris Café', prompt: 'sitting in a cozy Parisian café with warm ambient lighting, vintage posters on walls, coffee on table' },
-  { id: 'beach-sunset', label: 'Beach Sunset', prompt: 'standing on a tropical beach at sunset, golden sky, gentle waves, palm trees silhouette' },
-  { id: 'nyc-rooftop', label: 'NYC Rooftop', prompt: 'on a rooftop in Manhattan with the city skyline at dusk, warm ambient lights' },
-  { id: 'gym', label: 'Gym', prompt: 'in a modern gym with equipment, mirrors, and motivational atmosphere' },
-  { id: 'pool', label: 'Pool Party', prompt: 'by a luxury swimming pool with turquoise water, lounge chairs, tropical vibes' },
-  { id: 'forest', label: 'Forest', prompt: 'in a lush green forest with dappled sunlight filtering through the trees' },
-  { id: 'studio-white', label: 'White Studio', prompt: 'in a clean white photography studio with professional lighting' },
-  { id: 'nightclub', label: 'Nightclub', prompt: 'in a nightclub with colorful laser lights, smoke machine atmosphere, dance floor' },
-  { id: 'library', label: 'Library', prompt: 'in an elegant old library with wooden bookshelves, warm reading lamp, leather chairs' },
+  { id: 'tokyo', label: 'Tokyo Night', prompt: 'a busy Tokyo street at night with neon signs, rain-wet pavement, and colorful reflections' },
+  { id: 'paris-cafe', label: 'Paris Café', prompt: 'a cozy Parisian café with warm ambient lighting, vintage posters on walls, coffee on table' },
+  { id: 'beach-sunset', label: 'Beach Sunset', prompt: 'a tropical beach at sunset with golden sky, gentle waves, and palm tree silhouettes' },
+  { id: 'nyc-rooftop', label: 'NYC Rooftop', prompt: 'a Manhattan rooftop with the city skyline at dusk and warm ambient lights' },
+  { id: 'gym', label: 'Gym', prompt: 'a modern gym with equipment, mirrors, and motivational atmosphere' },
+  { id: 'pool', label: 'Pool Party', prompt: 'a luxury poolside with turquoise water, lounge chairs, and tropical vibes' },
+  { id: 'forest', label: 'Forest', prompt: 'a lush green forest with dappled sunlight filtering through the trees' },
+  { id: 'studio-white', label: 'White Studio', prompt: 'a clean white photography studio with professional lighting' },
+  { id: 'nightclub', label: 'Nightclub', prompt: 'a nightclub with colorful laser lights, smoke machine atmosphere, and a dance floor' },
+  { id: 'library', label: 'Library', prompt: 'an elegant old library with wooden bookshelves, warm reading lamp, and leather chairs' },
 ] as const;

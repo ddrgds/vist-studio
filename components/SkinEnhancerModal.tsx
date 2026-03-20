@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { editImageWithAI } from '../services/geminiService';
-import { GeminiImageModel, OPERATION_CREDIT_COSTS } from '../types';
+import { GeminiImageModel, CREDIT_COSTS } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import { useProfile } from '../contexts/ProfileContext';
 import ProgressBar from './ProgressBar';
@@ -43,7 +43,7 @@ const SkinEnhancerModal: React.FC<SkinEnhancerModalProps> = ({ targetItem, onClo
   const [result, setResult] = useState<string | null>(null);
 
   const handleGenerate = async () => {
-    const cost = OPERATION_CREDIT_COSTS.skinEnhancer;
+    const cost = CREDIT_COSTS['realistic-skin'];
     const hasCredits = await decrementCredits(cost);
     if (!hasCredits) { toast.error('Insufficient credits. Please upgrade your plan.'); return; }
 
