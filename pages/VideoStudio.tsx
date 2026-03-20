@@ -67,7 +67,7 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
   const [resultUrl, setResultUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const { profile, decrementCredits } = useProfile()
+  const { profile, decrementCredits, restoreCredits } = useProfile()
   const addGalleryItems = useGalleryStore(s => s.addItems)
   const toast = useToast()
 
@@ -147,9 +147,10 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
   const handleGenerate = async () => {
     if (!canGenerate() || !selectedChar) return
 
-    // Check credits
-    if ((profile?.creditsRemaining ?? 0) < creditCost) {
-      toast.error('Créditos insuficientes')
+    // Pre-deduct credits atomically
+    const ok = await decrementCredits(creditCost)
+    if (!ok) {
+      toast.error(`Créditos insuficientes. Necesitas ${creditCost} créditos.`)
       return
     }
 
@@ -196,7 +197,6 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
       if (!result.videoUrl) throw new Error('No video URL returned')
 
       setResultUrl(result.videoUrl)
-      await decrementCredits(creditCost)
 
       // Save to gallery
       addGalleryItems([{
@@ -212,8 +212,9 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
 
       toast.success('¡Video generado!')
     } catch (err: any) {
+      restoreCredits(creditCost)
       setError(err.message || 'Error en la generación')
-      toast.error(err.message || 'Error en la generación')
+      toast.error(`Error al generar video: ${err.message || 'Error desconocido'}`)
     } finally {
       setGenerating(false)
       setProgress(null)

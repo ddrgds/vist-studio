@@ -5,6 +5,7 @@ import { InspirationBoard, type InspirationIdea } from '../components/Inspiratio
 import { useCharacterStore, type SavedCharacter } from '../stores/characterStore'
 import { useGalleryStore, type GalleryItem } from '../stores/galleryStore'
 import { useToast } from '../contexts/ToastContext'
+import { useProfile } from '../contexts/ProfileContext'
 import { generateInfluencerImage } from '../services/geminiService'
 import {
   changeScene, changeOutfit, relight, faceSwap, realisticSkin,
@@ -13,7 +14,7 @@ import {
   ANGLE_PROMPTS, ANGLE_GROK_ENHANCE_PROMPTS,
   type ToolResult,
 } from '../services/toolEngines'
-import { ImageSize, AspectRatio, GeminiImageModel } from '../types'
+import { ImageSize, AspectRatio, GeminiImageModel, CREDIT_COSTS } from '../types'
 import type { InfluencerParams, CharacterParams } from '../types'
 
 // Lazy load sub-modes
@@ -653,6 +654,7 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
   const characters = useCharacterStore(s => s.characters)
   const addGalleryItems = useGalleryStore(s => s.addItems)
   const toast = useToast()
+  const { profile, decrementCredits, restoreCredits } = useProfile()
 
   // Handle uploaded photo for "bring your own" flow
   const handleBYOUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -714,6 +716,10 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
   }) => {
     const char = characters.find(c => c.id === selectedCharId)
     if (!char) { toast.error('Selecciona un personaje primero'); return }
+
+    const cost = CREDIT_COSTS[GeminiImageModel.Flash2] || 19
+    const ok = await decrementCredits(cost)
+    if (!ok) { toast.error(`Créditos insuficientes. Necesitas ${cost} créditos.`); return }
 
     setGenerating(true)
 
@@ -786,12 +792,13 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
         }
       } catch (fallbackErr: any) {
         console.error('Grok fallback also failed:', fallbackErr)
-        toast.error(`Generation failed: ${fallbackErr?.message || 'Unknown error'}`)
+        restoreCredits(cost)
+        toast.error(`Error al generar: ${fallbackErr?.message || 'Error desconocido'}`)
       }
     } finally {
       setGenerating(false)
     }
-  }, [characters, selectedCharId, getCharacterFiles, toast])
+  }, [characters, selectedCharId, getCharacterFiles, toast, decrementCredits, restoreCredits])
 
   // ═══════════════════════════════════════════════
   // PHASE 2: Apply Edit Tool
@@ -799,6 +806,11 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
 
   const handleApplyTool = useCallback(async (tool: EditToolId, input: string, extra?: any) => {
     if (!currentImageUrl) return
+
+    const toolCost = CREDIT_COSTS['grok-edit'] || 8
+    const okTool = await decrementCredits(toolCost)
+    if (!okTool) { toast.error(`Créditos insuficientes. Necesitas ${toolCost} créditos.`); return }
+
     setGenerating(true)
 
     try {
@@ -889,15 +901,17 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
         setFilmstripIndex(newFilmstrip.length - 1)
         toast.success(`${label} applied`)
       } else {
+        restoreCredits(toolCost)
         toast.error('La herramienta no devolvió resultado')
       }
     } catch (err: any) {
+      restoreCredits(toolCost)
       console.error(`Tool ${tool} failed:`, err)
-      toast.error(`${tool} failed: ${err?.message || 'Unknown error'}`)
+      toast.error(`Error al aplicar ${tool}: ${err?.message || 'Error desconocido'}`)
     } finally {
       setGenerating(false)
     }
-  }, [currentImageUrl, filmstrip, filmstripIndex, getCharacterFiles, selectedCharId, toast])
+  }, [currentImageUrl, filmstrip, filmstripIndex, getCharacterFiles, selectedCharId, toast, decrementCredits, restoreCredits])
 
   // ── Save to Gallery ──
   const handleSaveToGallery = useCallback(() => {
