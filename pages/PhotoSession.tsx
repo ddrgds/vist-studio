@@ -14,6 +14,8 @@ import { PHOTO_SESSION_PRESETS, mixShots, REALISM_PREFIX } from '../data/session
 import { usePipelineStore } from '../stores/pipelineStore'
 import { PipelineCTA } from '../components/PipelineCTA'
 import { runSessionPipeline, SESSION_TIER_COSTS, type SessionTier, type SessionPipelineConfig } from '../services/photoSessionPipeline'
+// Grid splitting (splitGrid, GRID_2x2_PROMPT_TEMPLATE) is handled internally by photoSessionPipeline
+// Import available if needed for direct use: import { splitGrid, GRID_2x2_PROMPT_TEMPLATE } from '../services/gridSplitter'
 
 // ─── Scene presets (used as optional override) ──────────
 const scenes = [
@@ -61,6 +63,10 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
     { id: crypto.randomUUID(), text: '', images: [] },
   ])
   const poseFileRefs = useRef<Record<string, HTMLInputElement | null>>({})
+  // Track which pose cards have skeleton-extracted images (by pose id)
+  const [skeletonPoseIds, setSkeletonPoseIds] = useState<Set<string>>(new Set())
+  // Track which poses are currently extracting skeletons
+  const [extractingSkeletonIds, setExtractingSkeletonIds] = useState<Set<string>>(new Set())
 
   const addManualPose = () => {
     if (manualPoses.length >= 8) return
@@ -69,9 +75,28 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
   const removeManualPose = (id: string) => {
     if (manualPoses.length <= 1) return
     setManualPoses(prev => prev.filter(p => p.id !== id))
+    setSkeletonPoseIds(prev => { const next = new Set(prev); next.delete(id); return next })
   }
   const updateManualPose = (id: string, update: Partial<SessionPoseItem>) => {
     setManualPoses(prev => prev.map(p => p.id === id ? { ...p, ...update } : p))
+    // If images are cleared, remove skeleton flag
+    if (update.images && update.images.length === 0) {
+      setSkeletonPoseIds(prev => { const next = new Set(prev); next.delete(id); return next })
+    }
+  }
+
+  const handleExtractSkeleton = async (poseId: string, imageFile: File) => {
+    setExtractingSkeletonIds(prev => new Set(prev).add(poseId))
+    try {
+      const skeletonFile = await extractPoseSkeleton(imageFile)
+      updateManualPose(poseId, { images: [skeletonFile] })
+      setSkeletonPoseIds(prev => new Set(prev).add(poseId))
+      toast.success('Skeleton extracted')
+    } catch {
+      toast.error('Could not extract skeleton')
+    } finally {
+      setExtractingSkeletonIds(prev => { const next = new Set(prev); next.delete(poseId); return next })
+    }
   }
 
   // Reference image (optional — for scene reference)
@@ -744,25 +769,61 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
             <div className="joi-label mb-2">Quality Tier</div>
             <div className="grid grid-cols-3 gap-1.5">
               {([
-                { tier: 'basic' as SessionTier, label: 'Basic', desc: 'Gemini', icon: '\u26A1', cost: SESSION_TIER_COSTS.basic },
-                { tier: 'standard' as SessionTier, label: 'Standard', desc: 'Kontext + Grok', icon: '\u2728', cost: SESSION_TIER_COSTS.standard },
-                { tier: 'premium' as SessionTier, label: 'Premium', desc: 'LoRA', icon: '\uD83D\uDC8E', cost: SESSION_TIER_COSTS.premium },
+                {
+                  tier: 'basic' as SessionTier,
+                  label: 'Basic',
+                  engine: 'Gemini Flash (NB2)',
+                  benefit: 'Fast & affordable',
+                  icon: '\u26A1',
+                  cost: SESSION_TIER_COSTS.basic,
+                  accentColor: 'rgba(255,107,157',
+                },
+                {
+                  tier: 'standard' as SessionTier,
+                  label: 'Standard',
+                  engine: 'FLUX Kontext Pro',
+                  benefit: 'Best quality',
+                  icon: '\u2B50',
+                  cost: SESSION_TIER_COSTS.standard,
+                  recommended: true,
+                  accentColor: 'rgba(167,139,250',
+                },
+                {
+                  tier: 'premium' as SessionTier,
+                  label: 'Premium',
+                  engine: 'Klein Edit LoRA',
+                  benefit: 'Your trained model',
+                  icon: '\uD83D\uDC51',
+                  cost: SESSION_TIER_COSTS.premium,
+                  accentColor: 'rgba(255,199,95',
+                },
               ]).map(t => {
                 const active = selectedTier === t.tier
                 const disabled = t.tier === 'premium' && !selectedChar?.loraUrl
+                const ac = t.accentColor
                 return (
                   <button key={t.tier} onClick={() => !disabled && setSelectedTier(t.tier)}
                     className="p-2.5 rounded-lg text-center transition-all relative"
                     style={{
-                      background: active ? 'rgba(255,107,157,.1)' : 'var(--joi-bg-3)',
-                      border: `1px solid ${active ? 'rgba(255,107,157,.3)' : 'var(--joi-border)'}`,
+                      background: active ? `${ac},.1)` : 'var(--joi-bg-3)',
+                      border: `1px solid ${active ? `${ac},.3)` : 'var(--joi-border)'}`,
                       opacity: disabled ? 0.35 : 1,
+                      cursor: disabled ? 'not-allowed' : 'pointer',
                     }}>
-                    <span className="text-base block">{t.icon}</span>
-                    <div className="text-[10px] font-medium mt-0.5" style={{ color: active ? 'var(--joi-pink)' : 'var(--joi-text-2)' }}>{t.label}</div>
-                    <div className="text-[8px] mt-0.5" style={{ color:'var(--joi-text-3)' }}>{t.desc}</div>
-                    <div className="text-[8px] font-mono mt-0.5" style={{ color: active ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>{t.cost}cr/shot</div>
-                    {disabled && <div className="text-[7px] mt-0.5" style={{ color:'var(--joi-text-3)' }}>Need LoRA</div>}
+                    {t.recommended && (
+                      <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 px-1.5 py-0 rounded-full text-[7px] font-bold uppercase tracking-wider whitespace-nowrap"
+                        style={{ background: `${ac},.9)`, color: '#0E0C14' }}>
+                        Recommended
+                      </span>
+                    )}
+                    <span className="text-lg block mt-0.5">{t.icon}</span>
+                    <div className="text-[10px] font-semibold mt-1" style={{ color: active ? `${ac},.9)` : 'var(--joi-text-1)' }}>{t.label}</div>
+                    <div className="text-[8px] mt-0.5" style={{ color: active ? `${ac},.7)` : 'var(--joi-text-3)' }}>{t.benefit}</div>
+                    <div className="text-[7px] mt-0.5 truncate" style={{ color:'var(--joi-text-3)' }}>{t.engine}</div>
+                    <div className="text-[9px] font-mono font-bold mt-1" style={{ color: active ? `${ac},.9)` : 'var(--joi-text-3)' }}>~{t.cost}cr/img</div>
+                    {disabled && (
+                      <div className="text-[7px] mt-0.5 font-medium" style={{ color:'var(--joi-pink)' }}>Train LoRA first</div>
+                    )}
                   </button>
                 )
               })}
@@ -795,26 +856,44 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
 
             {poseMode === 'manual' && (
               <div className="space-y-2">
-                {manualPoses.map((pose, idx) => (
-                  <div key={pose.id} className="p-2.5 rounded-lg relative" style={{ background:'var(--joi-bg-3)', border:'1px solid var(--joi-border)' }}>
+                <div className="text-[9px] px-1 mb-1" style={{ color:'var(--joi-text-3)' }}>
+                  {manualPoses.length}/8 pose cards — describe each pose or upload a reference image
+                </div>
+                {manualPoses.map((pose, idx) => {
+                  const isSkeleton = skeletonPoseIds.has(pose.id)
+                  const isExtracting = extractingSkeletonIds.has(pose.id)
+                  return (
+                  <div key={pose.id} className="p-2.5 rounded-lg relative" style={{ background:'var(--joi-bg-3)', border: `1px solid ${isSkeleton ? 'rgba(167,139,250,.25)' : 'var(--joi-border)'}` }}>
                     <div className="flex items-center gap-2 mb-1.5">
                       <span className="text-[9px] font-mono" style={{ color:'var(--joi-text-3)' }}>#{idx + 1}</span>
+                      {isSkeleton && (
+                        <span className="text-[7px] px-1.5 py-0.5 rounded-full font-medium"
+                          style={{ background:'rgba(167,139,250,.1)', color:'var(--joi-violet)', border:'1px solid rgba(167,139,250,.2)' }}>
+                          Skeleton
+                        </span>
+                      )}
                       {manualPoses.length > 1 && (
                         <button onClick={() => removeManualPose(pose.id)}
-                          className="ml-auto w-5 h-5 rounded flex items-center justify-center text-[10px]"
+                          className="ml-auto w-5 h-5 rounded flex items-center justify-center text-[10px] hover:bg-white/5 transition-colors"
                           style={{ color:'var(--joi-text-3)' }}>{'\u2715'}</button>
                       )}
                     </div>
-                    <input type="text" placeholder="Describe the pose..."
+                    <input type="text" placeholder="e.g. looking over shoulder, slight smile"
                       className="w-full px-2.5 py-1.5 rounded-lg text-[11px] border outline-none mb-1.5"
                       style={{ background:'var(--joi-bg-2)', borderColor:'rgba(255,255,255,.04)', color:'var(--joi-text-1)' }}
                       value={pose.text}
                       onChange={e => updateManualPose(pose.id, { text: e.target.value })} />
                     <div className="flex gap-1.5">
-                      {/* Pose image */}
+                      {/* Pose reference image */}
                       {pose.images.length > 0 ? (
-                        <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0" style={{ border:'1px solid rgba(167,139,250,.3)' }}>
+                        <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0"
+                          style={{ border: `1px solid ${isSkeleton ? 'rgba(167,139,250,.4)' : 'rgba(167,139,250,.3)'}` }}>
                           <img src={URL.createObjectURL(pose.images[0])} className="w-full h-full object-cover" alt="" />
+                          {isExtracting && (
+                            <div className="absolute inset-0 flex items-center justify-center" style={{ background:'rgba(0,0,0,.6)' }}>
+                              <span className="text-[10px] animate-spin">{'\u27F3'}</span>
+                            </div>
+                          )}
                           <button onClick={() => updateManualPose(pose.id, { images: [] })}
                             className="absolute top-0 right-0 w-4 h-4 flex items-center justify-center text-[8px] bg-black/70 text-white rounded-bl">{'\u2715'}</button>
                         </div>
@@ -829,28 +908,27 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                       <input ref={el => { poseFileRefs.current[pose.id] = el }} type="file" accept="image/*" className="hidden"
                         onChange={e => {
                           const file = e.target.files?.[0]
-                          if (file) updateManualPose(pose.id, { images: [file] })
+                          if (file) {
+                            updateManualPose(pose.id, { images: [file] })
+                            // Clear skeleton flag when a new image is uploaded
+                            setSkeletonPoseIds(prev => { const next = new Set(prev); next.delete(pose.id); return next })
+                          }
                           e.target.value = ''
                         }} />
-                      {/* Skeleton extraction button */}
-                      {pose.images.length > 0 && (
-                        <button onClick={async () => {
-                          try {
-                            toast.info('Extracting skeleton...')
-                            const skeletonUrl = await extractPoseSkeleton(pose.images[0])
-                            const resp = await fetch(skeletonUrl)
-                            const blob = await resp.blob()
-                            const skeletonFile = new File([blob], 'skeleton.png', { type: 'image/png' })
-                            updateManualPose(pose.id, { images: [skeletonFile] })
-                            toast.success('Skeleton extracted')
-                          } catch {
-                            toast.error('Could not extract skeleton')
-                          }
-                        }}
+                      {/* Extract Skeleton button — only visible when an image is uploaded */}
+                      {pose.images.length > 0 && !isSkeleton && (
+                        <button
+                          onClick={() => handleExtractSkeleton(pose.id, pose.images[0])}
+                          disabled={isExtracting}
                           className="px-2 py-1 rounded-lg text-[9px] transition-all self-center"
-                          style={{ background:'rgba(167,139,250,.08)', border:'1px solid rgba(167,139,250,.15)', color:'var(--joi-violet)' }}
-                          title="Extract pose skeleton — avoids copying face/clothes from reference">
-                          {'\uD83E\uDDB4'} Skeleton
+                          style={{
+                            background: isExtracting ? 'rgba(167,139,250,.04)' : 'rgba(167,139,250,.08)',
+                            border:'1px solid rgba(167,139,250,.15)',
+                            color:'var(--joi-violet)',
+                            opacity: isExtracting ? 0.6 : 1,
+                          }}
+                          title="Extracts only the posture so it won't copy clothes or face from this photo">
+                          {isExtracting ? '\u27F3' : '\uD83E\uDDB4'} {isExtracting ? 'Extracting...' : 'Extract Skeleton'}
                         </button>
                       )}
                       {/* Accessory */}
@@ -861,31 +939,34 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                         onChange={e => updateManualPose(pose.id, { accessory: e.target.value })} />
                     </div>
                   </div>
-                ))}
+                  )
+                })}
                 {manualPoses.length < 8 && (
                   <button onClick={addManualPose}
                     className="w-full py-2 rounded-lg text-[10px] font-medium transition-all"
                     style={{ background:'rgba(167,139,250,.06)', border:'1px dashed rgba(167,139,250,.15)', color:'var(--joi-violet)' }}>
-                    + Add Pose
+                    + Add Pose ({manualPoses.length}/8)
                   </button>
                 )}
               </div>
             )}
           </div>
 
-          {/* Grid + Upscale Toggles */}
+          {/* Grid + Upscale + Realistic Toggles */}
           <div className="flex gap-2">
             <button onClick={() => setGridMode(!gridMode)}
               className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-medium transition-all"
+              title="Generates 1 image as a 2x2 grid, then splits into 4 individual images"
               style={{
                 background: gridMode ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)',
                 border: `1px solid ${gridMode ? 'rgba(255,107,157,.2)' : 'var(--joi-border)'}`,
                 color: gridMode ? 'var(--joi-pink)' : 'var(--joi-text-2)',
               }}>
-              <span>{gridMode ? '\u2611' : '\u2610'}</span> Grid 4-in-1
+              <span>{gridMode ? '\u2611' : '\u2610'}</span> Grid (4-in-1)
             </button>
             <button onClick={() => setUpscaleMode(!upscaleMode)}
               className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-medium transition-all"
+              title="Upscale all results with AuraSR after generation"
               style={{
                 background: upscaleMode ? 'rgba(167,139,250,.08)' : 'var(--joi-bg-3)',
                 border: `1px solid ${upscaleMode ? 'rgba(167,139,250,.2)' : 'var(--joi-border)'}`,
@@ -895,6 +976,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
             </button>
             <button onClick={() => setRealisticMode(!realisticMode)}
               className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-medium transition-all"
+              title="Apply iPhone-style realism prefix to prompts"
               style={{
                 background: realisticMode ? 'rgba(80,216,160,.08)' : 'var(--joi-bg-3)',
                 border: `1px solid ${realisticMode ? 'rgba(80,216,160,.2)' : 'var(--joi-border)'}`,
@@ -903,6 +985,13 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
               <span>{realisticMode ? '\u2611' : '\u2610'}</span> Realistic
             </button>
           </div>
+
+          {/* Grid mode helper text */}
+          {gridMode && (
+            <div className="text-[9px] px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(255,107,157,.04)', border: '1px solid rgba(255,107,157,.08)', color: 'var(--joi-text-3)' }}>
+              Grid mode generates a single 2x2 image with 4 poses, then splits it into individual photos. Best with 4 poses.
+            </div>
+          )}
 
           {/* Scene Override (optional) */}
           <div>
@@ -1099,10 +1188,13 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
             </div>
             <div className="mt-1.5 flex items-center justify-between">
               <div className="text-[9px] truncate pr-2" style={{ color:'var(--joi-text-3)' }}>
-                {poseMode === 'presets' ? `${mixedShots.length} shots · ${selectedPresetLabels.join(' + ')}` : `${effectivePoses.length} poses (manual)`}
+                {poseMode === 'presets'
+                  ? `${mixedShots.length} shots · ${selectedPresetLabels.join(' + ')}`
+                  : `${effectivePoses.length} pose${effectivePoses.length !== 1 ? 's' : ''} (manual)${effectivePoses.some(p => p.images.length > 0) ? ' · ref imgs' : ''}`
+                }
               </div>
               <span className="badge text-[9px] shrink-0" style={{ background:'rgba(255,107,157,.08)', color:'var(--joi-pink)', border:'1px solid rgba(255,107,157,.15)' }}>
-                {(gridMode ? 4 : effectivePoses.length) * costPerShot} credits · {selectedTier}
+                {(gridMode ? 4 : effectivePoses.length) * costPerShot} cr · {selectedTier}
               </span>
             </div>
           </div>
@@ -1110,9 +1202,15 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
           <button onClick={handleGenerate} disabled={!canGenerate}
             className={`joi-btn-solid w-full py-3 text-sm ${!generating && canGenerate ? 'joi-breathe' : ''}`}
             style={{ opacity: !canGenerate ? 0.5 : 1 }}>
-            {generating
-              ? `\u27F3 ${progressStep || 'Generating...'} ${Math.round(progress)}%`
-              : `\u2726 Shoot ${gridMode ? 4 : effectivePoses.length} Photos · ${selectedTier}`}
+            {generating ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="animate-spin">{'\u27F3'}</span>
+                <span>{progressStep || 'Generating...'}</span>
+                <span className="font-mono text-[10px] opacity-80">{Math.round(progress)}%</span>
+              </span>
+            ) : (
+              `\u2726 Shoot ${gridMode ? 4 : effectivePoses.length} Photos · ${selectedTier}`
+            )}
           </button>
         </div>
       </div>

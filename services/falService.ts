@@ -1,6 +1,7 @@
 import { fal } from '@fal-ai/client';
 import { InfluencerParams, FalModel, AspectRatio, PoseModificationParams } from '../types';
 import { proxyUrl } from './apiAuth';
+import { FACE_LOCK_PROMPT, OUTFIT_PRESERVE_PROMPT, FACE_CHECK_PROMPT } from '../data/sessionPresets';
 
 // ─────────────────────────────────────────────
 // Config — API key is injected server-side by the proxy.
@@ -280,11 +281,15 @@ export async function generateWithKontextPro(
 
   // Build prompt from params — same pattern as generateWithKontextMulti
   const prompt = [
+    FACE_LOCK_PROMPT,
+    'Keep the EXACT same face, skin tone, hair color and style from the base image.',
     params.characters[0]?.characteristics || '',
     params.scenario || '',
     params.characters[0]?.pose || '',
     params.lighting || '',
     params.camera || '',
+    OUTFIT_PRESERVE_PROMPT,
+    FACE_CHECK_PROMPT,
   ].filter(Boolean).join('. ');
 
   onProgress?.(10);
@@ -1376,12 +1381,9 @@ export const generatePhotoSessionWithGrok = async (
     const angle = angles[i];
     const scenePart = options.scenario ? ` Scene: ${options.scenario}.` : '';
     const isRealistic = options.realistic !== false;
-    const faceLock = `FACE LOCK: The face from the reference image is FROZEN — reproduce with pixel-perfect fidelity: bone structure, eye shape, eye color, nose, lips, skin tone, skin texture, hair color, hair style. Do NOT alter, smooth, or idealize any facial feature.`;
-    const outfitLock = `OUTFIT LOCK: Preserve the EXACT outfit from the reference image — same garments, colors, textures, and fit. No clothing changes.`;
-    const faceCheck = `FINAL CHECK: Verify the face matches the reference exactly before rendering.`;
     const prompt = isRealistic
-      ? `${faceLock} ${outfitLock} Shot on iPhone 15 Pro, natural phone camera quality, looks like a real Instagram post not AI. Photo session — shot ${i + 1} of ${clampedCount}. Same person as reference image. Creative direction for this shot: ${angle}.${scenePart} The person should adopt the pose, expression, and body language described naturally — NOT a stiff copy of the reference. Phone visible in hand where the pose involves a selfie or mirror. Natural window light, no flash, slight lens softness, imperfect framing. Real environment clutter visible. Vary the pose and mood for each shot while keeping the same person and outfit. ${faceCheck}`
-      : `${faceLock} ${outfitLock} Photo session — shot ${i + 1} of ${clampedCount}. Same person as reference image. Creative direction for this shot: ${angle}.${scenePart} The person should adopt the pose, expression, and body language described naturally — NOT a stiff copy of the reference. Vary the pose and mood for each shot while keeping the same person and outfit. ${faceCheck}`;
+      ? `${FACE_LOCK_PROMPT} ${OUTFIT_PRESERVE_PROMPT} Shot on iPhone 15 Pro, natural phone camera quality, looks like a real Instagram post not AI. Photo session — shot ${i + 1} of ${clampedCount}. Same person as reference image. Keep the EXACT same face, skin tone, hair color and style from the base image. Creative direction for this shot: ${angle}.${scenePart} The person should adopt the pose, expression, and body language described naturally — NOT a stiff copy of the reference. Phone visible in hand where the pose involves a selfie or mirror. Natural window light, no flash, slight lens softness, imperfect framing. Real environment clutter visible. Vary the pose and mood for each shot while keeping the same person and outfit. ${FACE_CHECK_PROMPT}`
+      : `${FACE_LOCK_PROMPT} ${OUTFIT_PRESERVE_PROMPT} Photo session — shot ${i + 1} of ${clampedCount}. Same person as reference image. Keep the EXACT same face, skin tone, hair color and style from the base image. Creative direction for this shot: ${angle}.${scenePart} The person should adopt the pose, expression, and body language described naturally — NOT a stiff copy of the reference. Vary the pose and mood for each shot while keeping the same person and outfit. ${FACE_CHECK_PROMPT}`;
 
     const result = await fal.subscribe('xai/grok-imagine-image/edit', {
       input: { prompt, image_urls: [imageUrl], num_images: 1, output_format: 'jpeg' },

@@ -1092,6 +1092,23 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
             </div>
           </>}
 
+          {activeTool === 'rembg' && <>
+            <div className="joi-label mb-2">Remove Background</div>
+            <p className="text-[10px] mb-3" style={{ color:'var(--joi-text-3)', lineHeight: 1.5 }}>
+              Instantly removes the background from any image, leaving only the subject on a transparent canvas.
+              Perfect for product shots, profile pictures, or compositing.
+            </p>
+            <div className="rounded-xl p-3 mb-3" style={{ background: 'rgba(80,216,160,.06)', border: '1px solid rgba(80,216,160,.12)' }}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm">{'\u2702\uFE0F'}</span>
+                <span className="text-[11px] font-medium" style={{ color: '#50d8a0' }}>One-click removal</span>
+              </div>
+              <p className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>
+                No parameters needed — hit Apply to process. The result will have a transparent background (PNG).
+              </p>
+            </div>
+          </>}
+
           {activeTool === 'expand' && <>
             <div className="space-y-4">
               <div>
@@ -1301,13 +1318,12 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
       {showBasicEditor && inputImage && (
         <Suspense fallback={null}>
           <ImageEditor
-            src={inputImage}
-            onSave={(blob) => {
-              const url = URL.createObjectURL(blob)
-              setResultImage(url)
-              setEditHistory(prev => [...prev, url])
-              addItems([{ url, type: 'edit', model: 'basic-editor', tags: ['edited'] }])
-              toast.addToast('Imagen editada guardada', 'success')
+            imageUrl={inputImage}
+            onSave={(editedDataUrl) => {
+              setResultImage(editedDataUrl)
+              setEditHistory(prev => [...prev, editedDataUrl])
+              addItems([{ url: editedDataUrl, type: 'edit', model: 'basic-editor', tags: ['edited'] }])
+              toast.addToast('Edited image saved', 'success')
             }}
             onClose={() => setShowBasicEditor(false)}
           />

@@ -1,8 +1,11 @@
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
 import { useGalleryStore, type GalleryItem } from '../stores/galleryStore'
 import { useCharacterStore } from '../stores/characterStore'
 import { useToast } from '../contexts/ToastContext'
 import { useNavigationStore } from '../stores/navigationStore'
+import { removeBackground } from '../services/falService'
+
+const ImageEditor = lazy(() => import('../components/ImageEditor'))
 
 const BASE_FILTERS = ['All','Relight','Face Swap','Try-On','360°','Background','Enhanced','Style Transfer','Inpaint']
 const sortOpts = ['Recent','Oldest','Most Edited','Favorites']
@@ -62,8 +65,14 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
   const [selected, setSelected] = useState<string[]>([])
   const [sortBy, setSortBy] = useState('Recent')
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const [lbZoom, setLbZoom] = useState(1)
+  const [lbPan, setLbPan] = useState({ x: 0, y: 0 })
+  const [lbPanning, setLbPanning] = useState(false)
+  const lbPanStart = useRef({ x: 0, y: 0, px: 0, py: 0 })
   const [filterValues, setFilterValues] = useState({ ...DEFAULT_FILTERS })
   const [activePreset, setActivePreset] = useState<string | null>(null)
+  const [editorSrc, setEditorSrc] = useState<string | null>(null)
+  const [removingBg, setRemovingBg] = useState(false)
 
   // Build dynamic filters
   const filters = useMemo(() => {
@@ -283,7 +292,7 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
             return (
               <div
                 key={img.id}
-                onClick={() => { setLightboxIndex(idx); setFilterValues({ ...DEFAULT_FILTERS }); setActivePreset(null) }}
+                onClick={() => { setLightboxIndex(idx); setLbZoom(1); setLbPan({ x: 0, y: 0 }); setFilterValues({ ...DEFAULT_FILTERS }); setActivePreset(null) }}
                 className={`group cursor-pointer rounded-xl overflow-hidden relative transition-all hover:scale-[1.02] joi-border-glow ${viewMode==='masonry' ? 'break-inside-avoid' : ''}`}
                 style={{
                   border: `1px solid ${selected.includes(img.id) ? 'rgba(255,107,157,.3)' : 'rgba(255,255,255,.04)'}`,
@@ -380,21 +389,36 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
             {/* Arrow left */}
             <button className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl flex items-center justify-center text-lg z-10 transition-all hover:scale-110"
               style={{ background: 'rgba(255,255,255,.06)', color: 'var(--joi-text-2)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,.04)' }}
-              onClick={(e) => { e.stopPropagation(); setLightboxIndex(lightboxIndex > 0 ? lightboxIndex - 1 : sorted.length - 1); setFilterValues({ ...DEFAULT_FILTERS }); setActivePreset(null) }}>{'\u2039'}</button>
+              onClick={(e) => { e.stopPropagation(); setLightboxIndex(lightboxIndex > 0 ? lightboxIndex - 1 : sorted.length - 1); setLbZoom(1); setLbPan({ x: 0, y: 0 }); setFilterValues({ ...DEFAULT_FILTERS }); setActivePreset(null) }}>{'\u2039'}</button>
 
             {/* Arrow right */}
             <button className="absolute right-[300px] top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl flex items-center justify-center text-lg z-10 transition-all hover:scale-110"
               style={{ background: 'rgba(255,255,255,.06)', color: 'var(--joi-text-2)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,.04)' }}
-              onClick={(e) => { e.stopPropagation(); setLightboxIndex(lightboxIndex < sorted.length - 1 ? lightboxIndex + 1 : 0); setFilterValues({ ...DEFAULT_FILTERS }); setActivePreset(null) }}>{'\u203a'}</button>
+              onClick={(e) => { e.stopPropagation(); setLightboxIndex(lightboxIndex < sorted.length - 1 ? lightboxIndex + 1 : 0); setLbZoom(1); setLbPan({ x: 0, y: 0 }); setFilterValues({ ...DEFAULT_FILTERS }); setActivePreset(null) }}>{'\u203a'}</button>
 
             {/* Content */}
             <div className="flex max-w-[95vw] max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
 
-              {/* Image */}
-              <div className="flex-1 min-w-0 flex items-center justify-center p-4">
-                <img src={item.url} alt=""
-                  className="max-w-full max-h-[85vh] object-contain rounded-2xl"
-                  style={{ filter: computeFilterCSS(filterValues) }} />
+              {/* Image — scroll to zoom, drag to pan */}
+              <div className="flex-1 min-w-0 flex items-center justify-center p-4 overflow-hidden relative"
+                onWheel={(e) => { e.stopPropagation(); const delta = e.deltaY > 0 ? -0.2 : 0.2; setLbZoom(z => { const nz = Math.max(1, Math.min(6, z + delta)); if (nz <= 1) setLbPan({ x: 0, y: 0 }); return nz }) }}
+                onPointerDown={(e) => { if (lbZoom <= 1) return; e.stopPropagation(); setLbPanning(true); lbPanStart.current = { x: e.clientX, y: e.clientY, px: lbPan.x, py: lbPan.y }; (e.target as HTMLElement).setPointerCapture?.(e.pointerId) }}
+                onPointerMove={(e) => { if (!lbPanning) return; setLbPan({ x: lbPanStart.current.px + (e.clientX - lbPanStart.current.x), y: lbPanStart.current.py + (e.clientY - lbPanStart.current.y) }) }}
+                onPointerUp={() => setLbPanning(false)}
+                onDoubleClick={(e) => { e.stopPropagation(); if (lbZoom > 1) { setLbZoom(1); setLbPan({ x: 0, y: 0 }) } else { setLbZoom(3) } }}
+                style={{ cursor: lbZoom > 1 ? (lbPanning ? 'grabbing' : 'grab') : 'zoom-in' }}
+              >
+                <img src={item.url} alt="" draggable={false}
+                  className="max-w-full max-h-[85vh] object-contain rounded-2xl select-none"
+                  style={{ filter: computeFilterCSS(filterValues), transform: `scale(${lbZoom}) translate(${lbPan.x / lbZoom}px, ${lbPan.y / lbZoom}px)`, transition: lbPanning ? 'none' : 'transform 0.15s ease' }} />
+                {lbZoom > 1 && (
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-mono"
+                    style={{ background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(8px)', color: 'var(--joi-text-2)', border: '1px solid rgba(255,255,255,.06)' }}>
+                    <span>{Math.round(lbZoom * 100)}%</span>
+                    <button onClick={(e) => { e.stopPropagation(); setLbZoom(1); setLbPan({ x: 0, y: 0 }) }}
+                      className="px-1.5 py-0.5 rounded text-[9px] hover:bg-white/10 transition-colors" style={{ color: 'var(--joi-pink)' }}>Reset</button>
+                  </div>
+                )}
               </div>
 
               {/* Sidebar */}
@@ -408,6 +432,28 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
                     style={{ background: 'rgba(255,107,157,.08)', border: '1px solid rgba(255,107,157,.15)', color: 'var(--joi-pink)' }}>
                     {'\u2726'} Edit in AI Editor
+                  </button>
+                  <button onClick={() => { setEditorSrc(item.url) }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
+                    style={{ background: 'rgba(167,139,250,.08)', border: '1px solid rgba(167,139,250,.15)', color: 'var(--joi-violet)' }}>
+                    {'\u270F\uFE0F'} Basic Editor
+                  </button>
+                  <button onClick={async () => {
+                    setRemovingBg(true)
+                    try {
+                      const resultUrl = await removeBackground(item.url)
+                      addItems([{ url: resultUrl, type: 'edit', model: 'bg-removal', tags: ['background-removed'] }])
+                      addToast('Background removed', 'success')
+                    } catch {
+                      addToast('Failed to remove background', 'error')
+                    } finally {
+                      setRemovingBg(false)
+                    }
+                  }}
+                    disabled={removingBg}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
+                    style={{ background: 'rgba(80,216,160,.08)', border: '1px solid rgba(80,216,160,.15)', color: '#50d8a0', opacity: removingBg ? 0.5 : 1 }}>
+                    {removingBg ? '\u27F3 Removing...' : '\u2702 Remove Background'}
                   </button>
                   <button onClick={() => { setLightboxIndex(null); navigateToSession(item.url); onNav?.('studio') }}
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
@@ -517,6 +563,20 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
             </div>
           </div>
         </div>
+      )}
+
+      {/* Basic Image Editor overlay */}
+      {editorSrc && (
+        <Suspense fallback={null}>
+          <ImageEditor
+            imageUrl={editorSrc}
+            onSave={(editedDataUrl) => {
+              addItems([{ url: editedDataUrl, type: 'edit', model: 'basic-editor', tags: ['edited'] }])
+              addToast('Edited image saved', 'success')
+            }}
+            onClose={() => setEditorSrc(null)}
+          />
+        </Suspense>
       )}
     </div>
   )

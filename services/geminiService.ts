@@ -3,6 +3,7 @@ import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from "@google/genai";
 import { InfluencerParams, PoseModificationParams, VideoParams, GeminiImageModel, BatchOutfitItem, IMAGEN4_MODELS, AIEditParams } from "../types";
 
 import { proxyUrl } from './apiAuth';
+import { FACE_LOCK_PROMPT, OUTFIT_PRESERVE_PROMPT, FACE_CHECK_PROMPT } from '../data/sessionPresets';
 
 // In dev, proxyUrl returns relative path — needs origin prefix.
 // In prod, proxyUrl returns full Worker URL — use as-is.
@@ -1095,9 +1096,7 @@ export const generatePhotoSession = async (
     const isRealistic = options.realistic !== false;
     const prompt = `PHOTO SESSION — Shot ${index + 1} of ${clampedCount}
 
-⚠️ FACE LOCK — ABSOLUTE CONSTRAINT (process before anything else):
-The face in the Base Image is FROZEN. You are FORBIDDEN from altering, redesigning, smoothing, idealizing, or blending it in any way.
-Reproduce with pixel-perfect fidelity: bone structure, eye shape, eye color, iris color, nose, lips, skin tone, skin texture, hair color, hair style, and every distinguishing facial feature.
+${FACE_LOCK_PROMPT}
 
 TASK: You are a photo retoucher performing a MINIMAL edit on a photograph. The ONLY permitted change is the body pose and camera angle.
 ${isRealistic ? `
@@ -1111,7 +1110,7 @@ PERSON (identity must match Base Image):
 CREATIVE DIRECTION: ${cameraDesc}
 The person should adopt the pose, expression, and body language described above NATURALLY — do NOT make them stand stiffly or copy the reference pose. Each shot should feel like a different moment with different energy.${isRealistic ? ' Phone should be visible in hand where the pose involves a selfie or mirror shot.' : ''}
 
-OUTFIT: Preserve the exact outfit from the Base Image — same garments, colors, textures, and fit. No clothing changes.
+${OUTFIT_PRESERVE_PROMPT}
 
 SCENE: ${options.scenario || 'Same type of location as the reference image.'}
 ${options.lighting ? `LIGHTING: ${options.lighting}` : (isRealistic ? 'LIGHTING: Natural window light, no flash, no ring light.' : '')}
@@ -1121,7 +1120,7 @@ The camera has physically moved. Background MUST change — different walls, dep
 
 ONE photo only. No collages or grids. Ultra-photorealistic, natural skin, sharp focus.
 
-⚠️ FINAL FACE CHECK: Before rendering — verify the face matches the Base Image exactly. If it does not, correct it to match. The face is the non-negotiable identity anchor.`;
+${FACE_CHECK_PROMPT}`;
 
     const parts: any[] = [
       refPart,
