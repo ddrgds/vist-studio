@@ -13,6 +13,8 @@ import type { InfluencerParams, SessionPoseItem } from '../types'
 import { PHOTO_SESSION_PRESETS, mixShots, REALISM_PREFIX } from '../data/sessionPresets'
 import { usePipelineStore } from '../stores/pipelineStore'
 import { PipelineCTA } from '../components/PipelineCTA'
+import { PresetManager } from '../components/PresetManager'
+import type { CustomPreset } from '../stores/presetStore'
 import { runSessionPipeline, SESSION_TIER_COSTS, type SessionTier, type SessionPipelineConfig } from '../services/photoSessionPipeline'
 // Grid splitting (splitGrid, GRID_2x2_PROMPT_TEMPLATE) is handled internally by photoSessionPipeline
 // Import available if needed for direct use: import { splitGrid, GRID_2x2_PROMPT_TEMPLATE } from '../services/gridSplitter'
@@ -127,6 +129,28 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
   const [generatedImages, setGeneratedImages] = useState<string[]>([])
   const [selectedResult, setSelectedResult] = useState<number>(0)
   const abortRef = useRef<AbortController | null>(null)
+
+  // ── Advanced: Negative Prompt & Image Boost ──
+  const [negativePrompt, setNegativePrompt] = useState('')
+  const [imageBoostOn, setImageBoostOn] = useState(false)
+  const [advancedOpen, setAdvancedOpen] = useState(false)
+  const IMAGE_BOOST_KEYWORDS = 'masterpiece, best quality, highly detailed, sharp focus, 8k uhd'
+
+  // ── Reuse Parameters (from Gallery) ──
+  const reuseParams = useGalleryStore(s => s.reuseParams)
+  const setReuseParams = useGalleryStore(s => s.setReuseParams)
+
+  useEffect(() => {
+    if (reuseParams && reuseParams.target === 'session') {
+      if (reuseParams.negativePrompt) { setNegativePrompt(reuseParams.negativePrompt); setAdvancedOpen(true) }
+      if (reuseParams.imageBoost) { setImageBoostOn(true); setAdvancedOpen(true) }
+      if (reuseParams.characterId) {
+        const match = characters.find(c => c.id === reuseParams.characterId)
+        if (match) setSelectedCharId(match.id)
+      }
+      setReuseParams(null)
+    }
+  }, [reuseParams])
 
   // Credits & toast
   const { decrementCredits, restoreCredits } = useProfile()
@@ -398,6 +422,8 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
             {
               scenario: `${realismPfx} ${sceneOverride || 'Same type of location as the reference photo'}`,
               lighting: 'natural, varied per shot',
+              negativePrompt: negativePrompt.trim() || undefined,
+              imageBoost: imageBoostOn ? IMAGE_BOOST_KEYWORDS : undefined,
             },
             (p) => setProgress(p),
             abortRef.current.signal
@@ -410,6 +436,8 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
             {
               scenario: `${realismPfx} ${sceneOverride || ''}`.trim(),
               angles: mixedShots,
+              negativePrompt: negativePrompt.trim() || undefined,
+              imageBoost: imageBoostOn ? IMAGE_BOOST_KEYWORDS : undefined,
             },
             (p) => setProgress(p),
             abortRef.current.signal
@@ -494,6 +522,8 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                 scenario: fullPrompt,
                 lighting: 'natural, varied per shot',
                 angles: mixedShots.length > 0 ? mixedShots : undefined,
+                negativePrompt: negativePrompt.trim() || undefined,
+                imageBoost: imageBoostOn ? IMAGE_BOOST_KEYWORDS : undefined,
               },
               (p) => setProgress(p),
               abortRef.current.signal
@@ -503,7 +533,12 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
             results = await generatePhotoSessionWithGrok(
               refFile,
               shotCount,
-              { scenario: fullPrompt, angles: mixedShots.length > 0 ? mixedShots : undefined },
+              {
+                scenario: fullPrompt,
+                angles: mixedShots.length > 0 ? mixedShots : undefined,
+                negativePrompt: negativePrompt.trim() || undefined,
+                imageBoost: imageBoostOn ? IMAGE_BOOST_KEYWORDS : undefined,
+              },
               (p) => setProgress(p),
               abortRef.current.signal
             )
@@ -620,6 +655,26 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
             <span style={{ color: 'var(--joi-pink)' }}>Photo</span>{' '}
             <span style={{ color: 'var(--joi-text-1)' }}>Session</span>
           </h1>
+        </div>
+
+        {/* Preset Manager */}
+        <div className="px-4 py-2.5 shrink-0" style={{ borderBottom:'1px solid var(--joi-border)' }}>
+          <PresetManager
+            currentSettings={{
+              prompt: customScene,
+              vibes: Array.from(selectedPresets),
+              engine: selectedEngine,
+              realisticMode,
+              gridMode,
+            }}
+            onLoad={(preset: CustomPreset) => {
+              if (preset.prompt !== undefined) setCustomScene(preset.prompt)
+              if (preset.vibes) setSelectedPresets(new Set(preset.vibes))
+              if (preset.engine !== undefined) setSelectedEngine(preset.engine)
+              if (preset.realisticMode !== undefined) setRealisticMode(preset.realisticMode)
+              if (preset.gridMode !== undefined) setGridMode(preset.gridMode)
+            }}
+          />
         </div>
 
         {/* Source selector — gallery / upload / character */}
@@ -1177,6 +1232,76 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                 )}
               </div>
             )}
+          </div>
+        </div>
+
+        {/* ── ADVANCED: Negative Prompt & Image Boost ── */}
+        <div style={{ borderBottom: '1px solid rgba(255,255,255,.03)' }}>
+          <button onClick={() => setAdvancedOpen(prev => !prev)}
+            className="w-full px-4 py-2.5 flex items-center gap-2 group transition-colors"
+            style={{ color: 'var(--joi-text-2)' }}>
+            <span className="text-sm" style={{ opacity: 0.5 }}>{'\u2699'}</span>
+            <span className="text-[10px] font-medium tracking-wide uppercase" style={{ letterSpacing: '0.08em' }}>Advanced</span>
+            {(negativePrompt.trim() || imageBoostOn) && (
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--joi-pink)' }} />
+            )}
+            <span className="ml-auto text-[9px] transition-transform" style={{
+              color: 'var(--joi-text-3)',
+              transform: advancedOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+            }}>{'\u25BC'}</span>
+          </button>
+          <div className="overflow-hidden transition-all" style={{
+            maxHeight: advancedOpen ? '350px' : '0',
+            opacity: advancedOpen ? 1 : 0,
+            transition: 'max-height .3s ease, opacity .2s ease',
+          }}>
+            <div className="px-4 pb-4 space-y-3">
+              {/* Image Boost toggle */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[11px] font-medium" style={{ color: 'var(--joi-text-2)' }}>Image Boost</div>
+                  <div className="text-[9px] mt-0.5" style={{ color: 'var(--joi-text-3)' }}>Appends quality keywords</div>
+                </div>
+                <button onClick={() => setImageBoostOn(prev => !prev)}
+                  className="relative w-9 h-5 rounded-full transition-all"
+                  style={{
+                    background: imageBoostOn ? 'rgba(255,107,157,.35)' : 'rgba(255,255,255,.08)',
+                    border: `1px solid ${imageBoostOn ? 'rgba(255,107,157,.4)' : 'rgba(255,255,255,.06)'}`,
+                  }}>
+                  <div className="absolute top-0.5 w-3.5 h-3.5 rounded-full transition-all"
+                    style={{
+                      left: imageBoostOn ? '18px' : '2px',
+                      background: imageBoostOn ? 'var(--joi-pink)' : 'rgba(255,255,255,.25)',
+                      boxShadow: imageBoostOn ? '0 0 8px rgba(255,107,157,.4)' : 'none',
+                    }} />
+                </button>
+              </div>
+              {imageBoostOn && (
+                <div className="text-[9px] font-mono px-3 py-1.5 rounded-lg" style={{
+                  background: 'rgba(255,107,157,.04)',
+                  border: '1px solid rgba(255,107,157,.08)',
+                  color: 'var(--joi-text-3)',
+                }}>{IMAGE_BOOST_KEYWORDS}</div>
+              )}
+
+              {/* Negative Prompt */}
+              <div>
+                <div className="text-[11px] font-medium mb-1.5" style={{ color: 'var(--joi-text-2)' }}>Negative Prompt</div>
+                <textarea
+                  rows={2}
+                  placeholder="Things to avoid: blurry, low quality, extra fingers..."
+                  className="w-full px-3 py-2 rounded-xl text-[11px] border outline-none resize-none transition-colors"
+                  style={{
+                    background: 'var(--joi-bg-2)',
+                    borderColor: negativePrompt ? 'rgba(255,107,157,.15)' : 'rgba(255,255,255,.04)',
+                    color: 'var(--joi-text-1)',
+                    backdropFilter: 'blur(8px)',
+                  }}
+                  value={negativePrompt}
+                  onChange={e => setNegativePrompt(e.target.value)}
+                />
+              </div>
+            </div>
           </div>
         </div>
 

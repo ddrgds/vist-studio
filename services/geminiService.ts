@@ -1069,7 +1069,7 @@ const SESSION_ANGLES = [
 export const generatePhotoSession = async (
   referenceImage: File,
   count: number,
-  options: { scenario?: string; lighting?: string; aspectRatio?: string; imageSize?: string; angles?: string[]; realistic?: boolean } = {},
+  options: { scenario?: string; lighting?: string; aspectRatio?: string; imageSize?: string; angles?: string[]; realistic?: boolean; negativePrompt?: string; imageBoost?: string } = {},
   onProgress?: (percent: number) => void,
   abortSignal?: AbortSignal
 ): Promise<PoseGenerationResult[]> => {
@@ -1119,6 +1119,7 @@ BACKGROUND: ${envDesc || (isRealistic ? 'Real environment with natural clutter â
 The camera has physically moved. Background MUST change â€” different walls, depth, objects visible.
 
 ONE photo only. No collages or grids. Ultra-photorealistic, natural skin, sharp focus.
+${options.imageBoost ? `\nQUALITY: ${options.imageBoost}.` : ''}${options.negativePrompt ? `\nAVOID: ${options.negativePrompt}.` : ''}
 
 ${FACE_CHECK_PROMPT}`;
 

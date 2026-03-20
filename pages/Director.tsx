@@ -16,6 +16,8 @@ import type { ChipOption } from '../data/directorOptions'
 import { ENHANCERS, buildEnhancerPrompt } from '../data/enhancers'
 import { usePipelineStore } from '../stores/pipelineStore'
 import { PipelineCTA } from '../components/PipelineCTA'
+import { PresetManager } from '../components/PresetManager'
+import type { CustomPreset } from '../stores/presetStore'
 
 // ─── Accordion Section (Joi style) ─────────────────────
 const AccordionSection: React.FC<{
@@ -124,7 +126,7 @@ const joiInputStyle = (hasValue: boolean) => ({
   backdropFilter: 'blur(8px)',
 })
 
-export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl }: { onNav?: (page: string) => void; onEditImage?: (url: string) => void; onExportImage?: (url: string) => void; uploadedImageUrl?: string | null }) {
+export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, initialPrompt }: { onNav?: (page: string) => void; onEditImage?: (url: string) => void; onExportImage?: (url: string) => void; uploadedImageUrl?: string | null; initialPrompt?: string | null }) {
   // ── Character ──
   const characters = useCharacterStore(s => s.characters)
   const [selectedCharId, setSelectedCharId] = useState<string | null>(null)
@@ -187,8 +189,13 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl }
   const [customLighting, setCustomLighting] = useState('')
 
   // ── Scenario ──
-  const [scenario, setScenario] = useState('')
+  const [scenario, setScenario] = useState(initialPrompt || '')
   const [enhancingScenario, setEnhancingScenario] = useState(false)
+
+  // Apply initialPrompt when it changes (from InspirationBoard)
+  useEffect(() => {
+    if (initialPrompt) setScenario(initialPrompt)
+  }, [initialPrompt])
 
   // ── Outfit ──
   const [outfitDescription, setOutfitDescription] = useState('')
@@ -196,6 +203,29 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl }
   // ── Enhancers ──
   const [selectedEnhancers, setSelectedEnhancers] = useState<Set<string>>(new Set())
   const [customEnhancer, setCustomEnhancer] = useState('')
+
+  // ── Advanced: Negative Prompt & Image Boost ──
+  const [negativePrompt, setNegativePrompt] = useState('')
+  const [imageBoostOn, setImageBoostOn] = useState(false)
+  const [advancedOpen, setAdvancedOpen] = useState(false)
+  const IMAGE_BOOST_KEYWORDS = 'masterpiece, best quality, highly detailed, sharp focus, 8k uhd'
+
+  // ── Reuse Parameters (from Gallery) ──
+  const reuseParams = useGalleryStore(s => s.reuseParams)
+  const setReuseParams = useGalleryStore(s => s.setReuseParams)
+
+  useEffect(() => {
+    if (reuseParams && reuseParams.target === 'director') {
+      if (reuseParams.prompt) setScenario(reuseParams.prompt)
+      if (reuseParams.negativePrompt) { setNegativePrompt(reuseParams.negativePrompt); setAdvancedOpen(true) }
+      if (reuseParams.imageBoost) { setImageBoostOn(true); setAdvancedOpen(true) }
+      if (reuseParams.characterId) {
+        const match = characters.find(c => c.id === reuseParams.characterId)
+        if (match) setSelectedCharId(match.id)
+      }
+      setReuseParams(null)
+    }
+  }, [reuseParams])
 
   // ── Engine & generation ──
   const [selectedEngine, setSelectedEngine] = useState<string>('auto')
@@ -289,6 +319,8 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl }
       scenarioImage: scenarioRef ? [scenarioRef.file] : undefined,
       lighting: lightingValue,
       camera: cameraValue,
+      negativePrompt: negativePrompt.trim() || undefined,
+      imageBoost: imageBoostOn ? IMAGE_BOOST_KEYWORDS : undefined,
       imageSize,
       aspectRatio: selectedAspectRatio,
       numberOfImages,
@@ -350,6 +382,18 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl }
         type: 'create' as const,
         characterId: selectedChar?.id,
         tags: ['director', 'hero-shot'],
+        params: {
+          characters: [{ id: selectedChar?.id || 'director-char', characteristics: characteristics || '' }],
+          scenario: scenario || 'professional photo shoot',
+          lighting: buildParams().lighting,
+          camera: buildParams().camera,
+          negativePrompt: negativePrompt.trim() || undefined,
+          imageBoost: imageBoostOn ? IMAGE_BOOST_KEYWORDS : undefined,
+          imageSize: buildParams().imageSize,
+          aspectRatio: selectedAspectRatio,
+          numberOfImages,
+        } as any,
+        source: 'director' as const,
       }))
 
       useGalleryStore.getState().addItems(items)
@@ -493,6 +537,22 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl }
               </div>
             )}
           </div>
+        </div>
+
+        {/* Preset Manager */}
+        <div className="px-5 py-2.5 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,.03)' }}>
+          <PresetManager
+            currentSettings={{
+              prompt: scenario,
+              aspectRatio: selectedAspectRatio,
+              engine: selectedEngine,
+            }}
+            onLoad={(preset: CustomPreset) => {
+              if (preset.prompt !== undefined) setScenario(preset.prompt)
+              if (preset.aspectRatio !== undefined) setSelectedAspectRatio(preset.aspectRatio as any)
+              if (preset.engine !== undefined) setSelectedEngine(preset.engine)
+            }}
+          />
         </div>
 
         {/* Scrollable accordion */}
@@ -787,6 +847,71 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl }
                 onChange={e => setCustomEnhancer(e.target.value)} />
             </div>
           </AccordionSection>
+
+          {/* ── ADVANCED: Negative Prompt & Image Boost ── */}
+          <div style={{ borderBottom: '1px solid rgba(255,255,255,.03)' }}>
+            <button onClick={() => setAdvancedOpen(prev => !prev)}
+              className="w-full px-5 py-3 flex items-center gap-2.5 group transition-colors"
+              style={{ color: 'var(--joi-text-2)' }}>
+              <span className="text-sm" style={{ opacity: 0.5 }}>{'\u2699'}</span>
+              <span className="text-xs font-medium tracking-wide uppercase" style={{ letterSpacing: '0.08em' }}>Advanced</span>
+              {(negativePrompt.trim() || imageBoostOn) && (
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--joi-pink)' }} />
+              )}
+              <span className="ml-auto text-[10px] transition-transform" style={{
+                color: 'var(--joi-text-3)',
+                transform: advancedOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+              }}>{'\u25BC'}</span>
+            </button>
+            <div className="overflow-hidden transition-all" style={{
+              maxHeight: advancedOpen ? '400px' : '0',
+              opacity: advancedOpen ? 1 : 0,
+              transition: 'max-height .3s ease, opacity .2s ease',
+            }}>
+              <div className="px-5 pb-5 space-y-4">
+                {/* Image Boost toggle */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-[11px] font-medium" style={{ color: 'var(--joi-text-2)' }}>Image Boost</div>
+                    <div className="text-[9px] mt-0.5" style={{ color: 'var(--joi-text-3)' }}>Appends quality keywords to prompt</div>
+                  </div>
+                  <button onClick={() => setImageBoostOn(prev => !prev)}
+                    className="relative w-9 h-5 rounded-full transition-all"
+                    style={{
+                      background: imageBoostOn ? 'rgba(255,107,157,.35)' : 'rgba(255,255,255,.08)',
+                      border: `1px solid ${imageBoostOn ? 'rgba(255,107,157,.4)' : 'rgba(255,255,255,.06)'}`,
+                    }}>
+                    <div className="absolute top-0.5 w-3.5 h-3.5 rounded-full transition-all"
+                      style={{
+                        left: imageBoostOn ? '18px' : '2px',
+                        background: imageBoostOn ? 'var(--joi-pink)' : 'rgba(255,255,255,.25)',
+                        boxShadow: imageBoostOn ? '0 0 8px rgba(255,107,157,.4)' : 'none',
+                      }} />
+                  </button>
+                </div>
+                {imageBoostOn && (
+                  <div className="text-[9px] font-mono px-3 py-1.5 rounded-lg" style={{
+                    background: 'rgba(255,107,157,.04)',
+                    border: '1px solid rgba(255,107,157,.08)',
+                    color: 'var(--joi-text-3)',
+                  }}>{IMAGE_BOOST_KEYWORDS}</div>
+                )}
+
+                {/* Negative Prompt */}
+                <div>
+                  <div className="text-[11px] font-medium mb-1.5" style={{ color: 'var(--joi-text-2)' }}>Negative Prompt</div>
+                  <textarea
+                    rows={2}
+                    placeholder="Things to avoid: blurry, low quality, extra fingers..."
+                    className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none resize-none transition-colors"
+                    style={joiInputStyle(!!negativePrompt)}
+                    value={negativePrompt}
+                    onChange={e => setNegativePrompt(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* ── Bottom: images + generate ── */}

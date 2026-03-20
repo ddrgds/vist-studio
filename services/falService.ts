@@ -1347,7 +1347,7 @@ const GROK_SESSION_ANGLES = [
 export const generatePhotoSessionWithGrok = async (
   referenceImage: File,
   count: number,
-  options: { angles?: string[]; scenario?: string; realistic?: boolean } = {},
+  options: { angles?: string[]; scenario?: string; realistic?: boolean; negativePrompt?: string; imageBoost?: string } = {},
   onProgress?: (percent: number) => void,
   abortSignal?: AbortSignal
 ): Promise<{ url: string; poseIndex: number }[]> => {
@@ -1380,10 +1380,12 @@ export const generatePhotoSessionWithGrok = async (
     if (abortSignal?.aborted) throw new Error('Cancelado');
     const angle = angles[i];
     const scenePart = options.scenario ? ` Scene: ${options.scenario}.` : '';
+    const boostPart = options.imageBoost ? ` ${options.imageBoost}.` : '';
+    const negativePart = options.negativePrompt ? ` Avoid: ${options.negativePrompt}.` : '';
     const isRealistic = options.realistic !== false;
     const prompt = isRealistic
-      ? `${FACE_LOCK_PROMPT} ${OUTFIT_PRESERVE_PROMPT} Shot on iPhone 15 Pro, natural phone camera quality, looks like a real Instagram post not AI. Photo session — shot ${i + 1} of ${clampedCount}. Same person as reference image. Keep the EXACT same face, skin tone, hair color and style from the base image. Creative direction for this shot: ${angle}.${scenePart} The person should adopt the pose, expression, and body language described naturally — NOT a stiff copy of the reference. Phone visible in hand where the pose involves a selfie or mirror. Natural window light, no flash, slight lens softness, imperfect framing. Real environment clutter visible. Vary the pose and mood for each shot while keeping the same person and outfit. ${FACE_CHECK_PROMPT}`
-      : `${FACE_LOCK_PROMPT} ${OUTFIT_PRESERVE_PROMPT} Photo session — shot ${i + 1} of ${clampedCount}. Same person as reference image. Keep the EXACT same face, skin tone, hair color and style from the base image. Creative direction for this shot: ${angle}.${scenePart} The person should adopt the pose, expression, and body language described naturally — NOT a stiff copy of the reference. Vary the pose and mood for each shot while keeping the same person and outfit. ${FACE_CHECK_PROMPT}`;
+      ? `${FACE_LOCK_PROMPT} ${OUTFIT_PRESERVE_PROMPT} Shot on iPhone 15 Pro, natural phone camera quality, looks like a real Instagram post not AI. Photo session — shot ${i + 1} of ${clampedCount}. Same person as reference image. Keep the EXACT same face, skin tone, hair color and style from the base image. Creative direction for this shot: ${angle}.${scenePart}${boostPart} The person should adopt the pose, expression, and body language described naturally — NOT a stiff copy of the reference. Phone visible in hand where the pose involves a selfie or mirror. Natural window light, no flash, slight lens softness, imperfect framing. Real environment clutter visible. Vary the pose and mood for each shot while keeping the same person and outfit.${negativePart} ${FACE_CHECK_PROMPT}`
+      : `${FACE_LOCK_PROMPT} ${OUTFIT_PRESERVE_PROMPT} Photo session — shot ${i + 1} of ${clampedCount}. Same person as reference image. Keep the EXACT same face, skin tone, hair color and style from the base image. Creative direction for this shot: ${angle}.${scenePart}${boostPart} The person should adopt the pose, expression, and body language described naturally — NOT a stiff copy of the reference. Vary the pose and mood for each shot while keeping the same person and outfit.${negativePart} ${FACE_CHECK_PROMPT}`;
 
     const result = await fal.subscribe('xai/grok-imagine-image/edit', {
       input: { prompt, image_urls: [imageUrl], num_images: 1, output_format: 'jpeg' },

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, lazy, Suspense, useCallback } from 'react'
 import type { Page } from '../App'
-import { Camera, Film, Images, Sparkles, Upload, ChevronDown, Check, X, ImagePlus } from 'lucide-react'
+import { Camera, Film, Images, Sparkles, Upload, ChevronDown, Check, X, ImagePlus, Lightbulb } from 'lucide-react'
+import { InspirationBoard, type InspirationIdea } from '../components/InspirationBoard'
 import { useCharacterStore, type SavedCharacter } from '../stores/characterStore'
 import { useGalleryStore, type GalleryItem } from '../stores/galleryStore'
 import { useToast } from '../contexts/ToastContext'
@@ -640,6 +641,10 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
   const [activeTool, setActiveTool] = useState<EditToolId | null>(null)
   const [generating, setGenerating] = useState(false)
 
+  // Inspiration board
+  const [showInspiration, setShowInspiration] = useState(false)
+  const [inspirationPrompt, setInspirationPrompt] = useState<string | null>(null)
+
   // "Bring Your Own" upload state
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null)
   const uploadInputRef = useRef<HTMLInputElement>(null)
@@ -940,6 +945,21 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
         <span className="text-[10px] ml-2" style={{ color: 'var(--joi-text-3)' }}>
           {MODES.find(m => m.id === mode)?.desc}
         </span>
+
+        <div className="ml-auto">
+          <button
+            onClick={() => setShowInspiration(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-all"
+            style={{
+              background: 'rgba(167,139,250,.08)',
+              border: '1px solid rgba(167,139,250,.18)',
+              color: '#A78BFA',
+            }}
+          >
+            <Lightbulb size={13} />
+            Inspiration
+          </button>
+        </div>
       </div>
 
       {/* Content */}
@@ -991,6 +1011,7 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
                       setPhase('edit')
                     }}
                     onExportImage={onExportImage}
+                    initialPrompt={inspirationPrompt}
                   />
                 </div>
               </div>
@@ -1076,6 +1097,19 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
           {mode === 'video' && <VideoStudio onNav={onNav} />}
         </Suspense>
       </div>
+
+      {/* Inspiration Board Modal */}
+      {showInspiration && (
+        <InspirationBoard
+          onSelectIdea={(idea: InspirationIdea) => {
+            setInspirationPrompt(idea.prompt)
+            setMode('photo')
+            setPhase('create')
+            setShowInspiration(false)
+          }}
+          onClose={() => setShowInspiration(false)}
+        />
+      )}
     </div>
   )
 }

@@ -28,7 +28,7 @@ const ProfilePage = lazy(() => import('./components/ProfilePage'));
 const AIEditor = lazy(() => import('./pages/AIEditor'));
 const ExportModal = lazy(() => import('./features/export/ExportModal'));
 
-export type Page = 'create' | 'studio' | 'gallery' | 'characters' | 'pricing' | 'profile';
+export type Page = 'create' | 'studio' | 'editor' | 'gallery' | 'characters' | 'pricing' | 'profile';
 
 function App() {
   return (
@@ -126,6 +126,7 @@ function AuthenticatedApp() {
   const pages: Record<Page, JSX.Element> = {
     create: <CreatePersona onNav={handleNav} />,
     studio: <ContentStudio onNav={handleNav} onEditImage={openEditor} onExportImage={openExport} />,
+    editor: <AIEditor onNav={handleNav} />,
     gallery: <Gallery onNav={handleNav} onEditImage={openEditor} onExportImage={openExport} />,
     characters: <CharacterGallery onNav={handleNav} />,
     pricing: <PricingPage />,
@@ -140,7 +141,7 @@ function AuthenticatedApp() {
 
       <main
         ref={mainRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden relative"
+        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative"
         style={{
           opacity: transitioning ? 0 : 1,
           transition: 'opacity .15s ease',

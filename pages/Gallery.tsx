@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
-import { useGalleryStore, type GalleryItem } from '../stores/galleryStore'
+import { useGalleryStore, type GalleryItem, type ReuseParams } from '../stores/galleryStore'
 import { useCharacterStore } from '../stores/characterStore'
 import { useToast } from '../contexts/ToastContext'
 import { useNavigationStore } from '../stores/navigationStore'
@@ -10,6 +10,7 @@ import { StoryboardView } from '../components/StoryboardView'
 
 const ImageEditor = lazy(() => import('../components/ImageEditor'))
 const CaptionModal = lazy(() => import('../components/CaptionModal'))
+const BatchOutfitModal = lazy(() => import('../components/BatchOutfitModal'))
 
 const BASE_FILTERS = ['All','Relight','Face Swap','Try-On','360°','Background','Enhanced','Style Transfer','Inpaint']
 const sortOpts = ['Recent','Oldest','Most Edited','Favorites']
@@ -63,6 +64,7 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
   const updateItem = useGalleryStore(s => s.updateItem)
   const addToStoryboard = useGalleryStore(s => s.addToStoryboard)
   const storyboardIds = useGalleryStore(s => s.storyboardIds)
+  const setReuseParams = useGalleryStore(s => s.setReuseParams)
   const { addToast } = useToast()
   const { navigateToEditor, navigateToSession, navigateToUpload } = useNavigationStore()
 
@@ -81,6 +83,10 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
   const [editorSrc, setEditorSrc] = useState<string | null>(null)
   const [removingBg, setRemovingBg] = useState(false)
   const [captionImage, setCaptionImage] = useState<string | null>(null)
+
+  // Batch edit mode
+  const [batchMode, setBatchMode] = useState(false)
+  const [showBatchOutfit, setShowBatchOutfit] = useState(false)
 
   // Compare mode state
   const [compareFirst, setCompareFirst] = useState<GalleryItem | null>(null)
@@ -244,6 +250,18 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
               )}
             </button>
           </div>
+          {galleryTab === 'gallery' && (
+            <button
+              onClick={() => { setBatchMode(prev => !prev); if (batchMode) setSelected([]) }}
+              className="px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all"
+              style={{
+                background: batchMode ? 'rgba(255,107,157,.12)' : 'rgba(255,255,255,.04)',
+                border: `1px solid ${batchMode ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}`,
+                color: batchMode ? 'var(--joi-pink)' : 'var(--joi-text-2)',
+              }}>
+              {batchMode ? 'Exit Batch' : 'Batch Edit'}
+            </button>
+          )}
           {galleryTab === 'gallery' && selected.length > 0 && (
             <span className="text-[11px] font-mono px-3 py-1.5 rounded-lg" style={{ background:'rgba(255,107,157,.08)', color:'var(--joi-pink)' }}>
               {selected.length} selected
@@ -336,7 +354,10 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
             return (
               <div
                 key={img.id}
-                onClick={() => { setLightboxIndex(idx); setLbZoom(1); setLbPan({ x: 0, y: 0 }); setFilterValues({ ...DEFAULT_FILTERS }); setActivePreset(null) }}
+                onClick={() => {
+                  if (batchMode) { toggleSelect(img.id) }
+                  else { setLightboxIndex(idx); setLbZoom(1); setLbPan({ x: 0, y: 0 }); setFilterValues({ ...DEFAULT_FILTERS }); setActivePreset(null) }
+                }}
                 className={`group cursor-pointer rounded-xl overflow-hidden relative transition-all hover:scale-[1.02] joi-border-glow ${viewMode==='masonry' ? 'break-inside-avoid' : ''}`}
                 style={{
                   border: `1px solid ${selected.includes(img.id) ? 'rgba(255,107,157,.3)' : 'rgba(255,255,255,.04)'}`,
@@ -438,14 +459,64 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                   <div className="text-[8px]" style={{ color: 'var(--joi-text-3)' }}>{dateStr}</div>
                 </div>
 
-                {/* Select indicator */}
-                {selected.includes(img.id) && (
+                {/* Select indicator / batch checkbox */}
+                {batchMode && (
+                  <div className="absolute top-2 right-2 w-5 h-5 rounded-md flex items-center justify-center text-[10px] transition-all"
+                    style={{
+                      background: selected.includes(img.id) ? 'var(--joi-pink)' : 'rgba(255,255,255,0.12)',
+                      border: selected.includes(img.id) ? 'none' : '1px solid rgba(255,255,255,0.15)',
+                      color: '#fff',
+                    }}>
+                    {selected.includes(img.id) ? '\u2713' : ''}
+                  </div>
+                )}
+                {!batchMode && selected.includes(img.id) && (
                   <div className="absolute top-2 right-2 w-5 h-5 rounded-lg flex items-center justify-center text-[10px] text-white"
                     style={{ background:'var(--joi-pink)' }}>{'\u2713'}</div>
                 )}
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Batch mode floating action bar */}
+      {batchMode && selected.length > 0 && (
+        <div
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl"
+          style={{
+            background: 'rgba(14,12,20,0.95)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255,107,157,0.2)',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.5), 0 0 20px rgba(255,107,157,0.08)',
+          }}
+        >
+          <span className="text-[11px] font-mono font-bold px-2 py-1 rounded-lg"
+            style={{ background: 'rgba(255,107,157,0.1)', color: '#FF6B9D' }}>
+            {selected.length} selected
+          </span>
+          <button
+            onClick={() => setShowBatchOutfit(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-bold transition-all hover:scale-[1.02]"
+            style={{
+              background: 'linear-gradient(135deg, #FF6B9D, #A78BFA)',
+              color: '#fff',
+              boxShadow: '0 4px 16px rgba(255,107,157,0.25)',
+            }}
+          >
+            {'\uD83D\uDC57'} Change Outfit
+          </button>
+          <button
+            onClick={() => { setSelected([]); setBatchMode(false) }}
+            className="px-3 py-2 rounded-xl text-[11px] font-medium transition-all"
+            style={{
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              color: 'var(--joi-text-3)',
+            }}
+          >
+            Cancel
+          </button>
         </div>
       )}
 
@@ -549,6 +620,26 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
                     style={{ background: 'rgba(255,107,157,.06)', border: '1px solid rgba(255,107,157,.12)', color: 'var(--joi-pink)' }}>
                     {'\u270D\uFE0F'} Generate Caption
+                  </button>
+                  <button onClick={() => {
+                      const p = item.params as any
+                      const target = item.type === 'session' ? 'session' : 'director'
+                      const reuse: ReuseParams = {
+                        prompt: item.prompt || p?.scenario || undefined,
+                        negativePrompt: p?.negativePrompt || undefined,
+                        imageBoost: p?.imageBoost || undefined,
+                        model: item.model || undefined,
+                        characterId: item.characterId || undefined,
+                        target,
+                      }
+                      setReuseParams(reuse)
+                      setLightboxIndex(null)
+                      onNav?.(target === 'session' ? 'studio' : 'studio')
+                      addToast(`Parameters loaded in ${target === 'session' ? 'Photo Session' : 'Director'}`, 'success')
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
+                    style={{ background: 'rgba(167,139,250,.06)', border: '1px solid rgba(167,139,250,.12)', color: 'var(--joi-violet)' }}>
+                    {'\u21BB'} Reuse Parameters
                   </button>
                   <button onClick={() => {
                       if (storyboardIds.includes(item.id)) {
@@ -763,6 +854,21 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
             Slider
           </button>
         </div>
+      )}
+
+      {/* Batch Outfit Modal */}
+      {showBatchOutfit && selected.length > 0 && (
+        <Suspense fallback={null}>
+          <BatchOutfitModal
+            imageUrls={selected.map(id => items.find(i => i.id === id)?.url).filter(Boolean) as string[]}
+            onClose={() => setShowBatchOutfit(false)}
+            onComplete={() => {
+              setShowBatchOutfit(false)
+              setSelected([])
+              setBatchMode(false)
+            }}
+          />
+        </Suspense>
       )}
     </div>
   )

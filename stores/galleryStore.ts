@@ -87,6 +87,19 @@ const fromGeneratedContent = (gc: GeneratedContent): GalleryItem => ({
 // Store
 // ─────────────────────────────────────────────
 
+// ─────────────────────────────────────────────
+// Reuse Parameters — extracted from a GalleryItem
+// ─────────────────────────────────────────────
+export interface ReuseParams {
+  prompt?: string;
+  negativePrompt?: string;
+  imageBoost?: string;
+  model?: string;
+  characterId?: string;
+  /** Target page: 'director' or 'session' */
+  target: 'director' | 'session';
+}
+
 interface GalleryState {
   items: GalleryItem[];
   selectedItem: GalleryItem | null;
@@ -103,6 +116,10 @@ interface GalleryState {
   removeFromStoryboard: (id: string) => void;
   reorderStoryboard: (ids: string[]) => void;
   clearStoryboard: () => void;
+
+  // ─── Reuse Parameters ────────────────────────
+  reuseParams: ReuseParams | null;
+  setReuseParams: (params: ReuseParams | null) => void;
 
   hydrate: (userId?: string) => Promise<void>;
   addItems: (items: GalleryItem[]) => void;
@@ -121,6 +138,10 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
   isLoading: false,
   _userId: undefined,
   storyboardIds: [],
+  reuseParams: null,
+
+  // ─── Reuse Parameters ─────────────────────
+  setReuseParams: (params) => set({ reuseParams: params }),
 
   // ─── Storyboard ────────────────────────────
   addToStoryboard: (id) => {
