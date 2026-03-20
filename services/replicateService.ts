@@ -1,14 +1,11 @@
 import Replicate from 'replicate';
 import { InfluencerParams, ReplicateModel, AspectRatio } from '../types';
+import { proxyUrl } from './apiAuth';
 
 // ─────────────────────────────────────────────
 // Config
-// Replicate's API blocks direct browser calls (CORS). We route through
-// a proxy: Vite proxy in dev (/replicate-api), Cloudflare Worker in
-// production (/api/ai/replicate).
 // ─────────────────────────────────────────────
-
-const REPLICATE_PROXY = import.meta.env.PROD ? '/api/ai/replicate' : '/replicate-api';
+const REPLICATE_PROXY = proxyUrl('replicate', '/replicate-api');
 
 const replicate = new Replicate({
   // The proxy injects the Authorization header server-side,

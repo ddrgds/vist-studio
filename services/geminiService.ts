@@ -2,10 +2,12 @@
 import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from "@google/genai";
 import { InfluencerParams, PoseModificationParams, VideoParams, GeminiImageModel, BatchOutfitItem, IMAGEN4_MODELS, AIEditParams } from "../types";
 
-// In production: requests go to /api/ai/gemini/...
-// In dev: Vite proxy still works at /gemini-api/...
+import { proxyUrl } from './apiAuth';
+
+// In dev, proxyUrl returns relative path — needs origin prefix.
+// In prod, proxyUrl returns full Worker URL — use as-is.
 const GEMINI_BASE = import.meta.env.PROD
-  ? `${window.location.origin}/api/ai/gemini`
+  ? proxyUrl('gemini', '')
   : `${window.location.origin}/gemini-api`;
 
 // API key is injected server-side by the proxy (Vite in dev, Cloudflare Worker in prod).

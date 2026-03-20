@@ -1,13 +1,12 @@
 import { fal } from '@fal-ai/client';
 import { InfluencerParams, FalModel, AspectRatio, PoseModificationParams } from '../types';
+import { proxyUrl } from './apiAuth';
 
 // ─────────────────────────────────────────────
 // Config — API key is injected server-side by the proxy.
-// In production: Cloudflare Worker at /api/ai/fal
-// In dev: Vite proxy at /fal-api
 // ─────────────────────────────────────────────
 fal.config({
-  proxyUrl: import.meta.env.PROD ? '/api/ai/fal' : '/fal-api',
+  proxyUrl: proxyUrl('fal', '/fal-api'),
 });
 
 // ─────────────────────────────────────────────

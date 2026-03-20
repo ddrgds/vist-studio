@@ -7,7 +7,7 @@ ALLOWED_ORIGIN = "https://vist-studio.pages.dev"
 
 [[kv_namespaces]]
 binding = "RATE_LIMIT"
-id = "create-via-wrangler"
+id = "bef30beba1564dd0bee443b91dbde5f5"
 
 # Secrets (set via `wrangler secret put`):
 # GEMINI_API_KEY, FAL_KEY, REPLICATE_API_TOKEN,

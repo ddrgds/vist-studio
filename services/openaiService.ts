@@ -1,11 +1,10 @@
 import { InfluencerParams, OpenAIModel, AspectRatio } from '../types';
+import { proxyUrl } from './apiAuth';
 
 // ─────────────────────────────────────────────
 // Config
-// In production: Cloudflare Worker at /api/ai/openai/...
-// In dev: Vite proxy at /openai-api/...
 // ─────────────────────────────────────────────
-const OPENAI_PROXY = import.meta.env.PROD ? '/api/ai/openai' : '/openai-api';
+const OPENAI_PROXY = proxyUrl('openai', '/openai-api');
 const BASE_URL = `${OPENAI_PROXY}/v1/images`;
 
 // ─────────────────────────────────────────────
