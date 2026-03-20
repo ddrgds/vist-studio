@@ -118,13 +118,13 @@ const ProfilePage: React.FC = () => {
     .join('');
 
   const memberSince = profile?.createdAt
-    ? new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    ? new Date(profile.createdAt).toLocaleDateString('es-MX', { month: 'long', year: 'numeric' })
     : '—';
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full" style={{ color: '#6B5A56' }}>
-        <span className="animate-pulse text-sm font-jet">Loading profile…</span>
+        <span className="animate-pulse text-sm font-jet">Cargando perfil…</span>
       </div>
     );
   }
@@ -169,7 +169,7 @@ const ProfilePage: React.FC = () => {
               disabled={avatarUploading}
               className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
               style={{ background: 'linear-gradient(135deg, #FF5C35, #FFB347)', boxShadow: '0 2px 8px rgba(255,92,53,0.5)' }}
-              title="Change avatar"
+              title="Cambiar avatar"
             >
               <Camera className="w-3.5 h-3.5 text-white" />
             </button>
@@ -184,7 +184,7 @@ const ProfilePage: React.FC = () => {
 
           <div className="space-y-1">
             <p className="text-lg font-bold font-display text-white">
-              {profile?.displayName || user?.email?.split('@')[0] || 'Your name'}
+              {profile?.displayName || user?.email?.split('@')[0] || 'Tu nombre'}
             </p>
             <p className="text-sm font-jet" style={{ color: '#6B5A56' }}>{user?.email}</p>
             <div className="flex items-center justify-center gap-2 mt-2">
@@ -197,7 +197,7 @@ const ProfilePage: React.FC = () => {
                   onMouseEnter={e => (e.currentTarget.style.color = '#FFB347')}
                   onMouseLeave={e => (e.currentTarget.style.color = '#FF5C35')}
                 >
-                  Upgrade →
+                  Mejorar Plan →
                 </button>
               )}
             </div>
@@ -206,9 +206,9 @@ const ProfilePage: React.FC = () => {
 
         {/* ── Stats ── */}
         <div className="grid grid-cols-3 gap-3">
-          <StatCard label="Characters" value={characters.length} />
-          <StatCard label="Generations" value={galleryItems.length} />
-          <StatCard label="Member since" value={memberSince} />
+          <StatCard label="Personajes" value={characters.length} />
+          <StatCard label="Generaciones" value={galleryItems.length} />
+          <StatCard label="Miembro desde" value={memberSince} />
         </div>
 
         {/* ── Subscription & Credits ── */}
@@ -220,16 +220,16 @@ const ProfilePage: React.FC = () => {
             className="text-xs font-jet font-semibold tracking-widest uppercase"
             style={{ color: '#6B5A56' }}
           >
-            Subscription
+            Suscripción
           </h2>
 
           {/* Credits bar */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs font-jet">
-              <span style={{ color: '#B8A9A5' }}>Credits remaining</span>
+              <span style={{ color: '#B8A9A5' }}>Créditos restantes</span>
               <span className="font-bold" style={{ color: '#FFB347' }}>
                 {sub.isUnlimited
-                  ? <span className="flex items-center gap-1"><Infinity className="w-3 h-3" /> Unlimited</span>
+                  ? <span className="flex items-center gap-1"><Infinity className="w-3 h-3" /> Ilimitados</span>
                   : sub.credits.toLocaleString('en-US')
                 }
               </span>
@@ -259,8 +259,8 @@ const ProfilePage: React.FC = () => {
           {/* Renewal info */}
           {sub.renewsAt && (
             <p className="text-xs font-jet" style={{ color: '#6B5A56' }}>
-              {sub.status === 'cancelled' ? 'Access until' : 'Renews'}{' '}
-              {new Date(sub.renewsAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              {sub.status === 'cancelled' ? 'Acceso hasta' : 'Se renueva el'}{' '}
+              {new Date(sub.renewsAt).toLocaleDateString('es-MX', { month: 'long', day: 'numeric', year: 'numeric' })}
             </p>
           )}
 
@@ -276,7 +276,7 @@ const ProfilePage: React.FC = () => {
                   fontFamily: 'var(--font-display)',
                 }}
               >
-                Upgrade plan
+                Mejorar plan
               </button>
             ) : (
               <>
@@ -287,7 +287,7 @@ const ProfilePage: React.FC = () => {
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,92,53,0.4)'; (e.currentTarget as HTMLElement).style.color = '#FF5C35'; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#2A1F1C'; (e.currentTarget as HTMLElement).style.color = '#B8A9A5'; }}
                 >
-                  Change plan
+                  Cambiar plan
                 </button>
                 {sub.lsSubscriptionId && (
                   <button
@@ -298,7 +298,7 @@ const ProfilePage: React.FC = () => {
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,92,53,0.4)'; (e.currentTarget as HTMLElement).style.color = '#FF5C35'; }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#2A1F1C'; (e.currentTarget as HTMLElement).style.color = '#B8A9A5'; }}
                   >
-                    {portalLoading ? '…' : <><ExternalLink className="w-3.5 h-3.5" /> Manage</>}
+                    {portalLoading ? '…' : <><ExternalLink className="w-3.5 h-3.5" /> Administrar</>}
                   </button>
                 )}
               </>
@@ -315,17 +315,17 @@ const ProfilePage: React.FC = () => {
             className="text-xs font-jet font-semibold tracking-widest uppercase"
             style={{ color: '#6B5A56' }}
           >
-            Profile
+            Perfil
           </h2>
 
           {/* Display name */}
           <div className="space-y-1.5">
-            <label className="text-xs font-jet" style={{ color: '#B8A9A5' }}>Display name</label>
+            <label className="text-xs font-jet" style={{ color: '#B8A9A5' }}>Nombre visible</label>
             <input
               type="text"
               value={displayName}
               onChange={e => setDisplayName(e.target.value)}
-              placeholder="Your name"
+              placeholder="Tu nombre"
               maxLength={50}
               className="w-full px-4 py-2.5 rounded-xl text-sm text-white outline-none transition-all"
               style={{ background: '#161110', border: '1px solid #2A1F1C', fontFamily: 'var(--font-body)' }}
@@ -336,11 +336,11 @@ const ProfilePage: React.FC = () => {
 
           {/* Bio */}
           <div className="space-y-1.5">
-            <label className="text-xs font-jet" style={{ color: '#B8A9A5' }}>Bio</label>
+            <label className="text-xs font-jet" style={{ color: '#B8A9A5' }}>Biografía</label>
             <textarea
               value={bio}
               onChange={e => setBio(e.target.value)}
-              placeholder="Tell the world about your creative vision…"
+              placeholder="Cuéntale al mundo sobre tu visión creativa…"
               maxLength={200}
               rows={3}
               className="w-full px-4 py-2.5 rounded-xl text-sm text-white outline-none transition-all resize-none"
@@ -368,11 +368,11 @@ const ProfilePage: React.FC = () => {
             }}
           >
             {saved ? (
-              <><Check className="w-4 h-4" /> Saved</>
+              <><Check className="w-4 h-4" /> Guardado</>
             ) : saving ? (
-              'Saving…'
+              'Guardando…'
             ) : (
-              <><Pencil className="w-4 h-4" /> Save changes</>
+              <><Pencil className="w-4 h-4" /> Guardar cambios</>
             )}
           </button>
         </div>
@@ -386,7 +386,7 @@ const ProfilePage: React.FC = () => {
             className="text-xs font-jet font-semibold tracking-widest uppercase"
             style={{ color: '#6B5A56' }}
           >
-            Account
+            Cuenta
           </h2>
 
           <button
@@ -403,7 +403,7 @@ const ProfilePage: React.FC = () => {
             }}
           >
             <LogOut className="w-4 h-4" />
-            Sign out
+            Cerrar Sesión
           </button>
         </div>
 

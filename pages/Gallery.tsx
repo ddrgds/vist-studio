@@ -12,32 +12,32 @@ const ImageEditor = lazy(() => import('../components/ImageEditor'))
 const CaptionModal = lazy(() => import('../components/CaptionModal'))
 const BatchOutfitModal = lazy(() => import('../components/BatchOutfitModal'))
 
-const BASE_FILTERS = ['All','Relight','Face Swap','Try-On','360°','Background','Enhanced','Style Transfer','Inpaint']
-const sortOpts = ['Recent','Oldest','Most Edited','Favorites']
+const BASE_FILTERS = ['Todas','Reiluminar','Cambio de Rostro','Try-On','360°','Fondo','Mejorada','Transferencia de Estilo','Inpaint']
+const sortOpts = ['Recientes','Más antiguas','Más editadas','Favoritos']
 
 function getItemCategory(item: GalleryItem): string {
   const model = (item.model || '').toLowerCase()
   const tags = item.tags || []
-  if (model.includes('relight') || tags.includes('relight')) return 'Relight'
-  if (model.includes('swap') || tags.includes('faceswap')) return 'Face Swap'
+  if (model.includes('relight') || tags.includes('relight')) return 'Reiluminar'
+  if (model.includes('swap') || tags.includes('faceswap')) return 'Cambio de Rostro'
   if (model.includes('try') || model.includes('tryon') || tags.includes('tryon')) return 'Try-On'
   if (model.includes('360') || tags.includes('360')) return '360°'
-  if (model.includes('background') || model.includes('bg') || tags.includes('background')) return 'Background'
-  if (model.includes('enhance') || model.includes('skin') || tags.includes('enhance')) return 'Enhanced'
-  if (model.includes('style') || tags.includes('style')) return 'Style Transfer'
+  if (model.includes('background') || model.includes('bg') || tags.includes('background')) return 'Fondo'
+  if (model.includes('enhance') || model.includes('skin') || tags.includes('enhance')) return 'Mejorada'
+  if (model.includes('style') || tags.includes('style')) return 'Transferencia de Estilo'
   if (model.includes('inpaint') || tags.includes('inpaint')) return 'Inpaint'
-  if (item.type === 'session') return 'Session'
-  if (item.type === 'create') return 'Creation'
-  return 'Other'
+  if (item.type === 'session') return 'Sesión'
+  if (item.type === 'create') return 'Creación'
+  return 'Otra'
 }
 
 const FILTER_PRESETS: Record<string, { brightness: number, contrast: number, saturation: number, temperature: number }> = {
-  'Warm': { brightness: 5, contrast: 0, saturation: 20, temperature: 30 },
-  'B&W': { brightness: 0, contrast: 10, saturation: -100, temperature: 0 },
+  'Cálido': { brightness: 5, contrast: 0, saturation: 20, temperature: 30 },
+  'B&N': { brightness: 0, contrast: 10, saturation: -100, temperature: 0 },
   'Vintage': { brightness: 5, contrast: -10, saturation: -20, temperature: 20 },
-  'Cool': { brightness: 5, contrast: 0, saturation: -10, temperature: -30 },
-  'Dramatic': { brightness: -5, contrast: 30, saturation: 10, temperature: 0 },
-  'Fade': { brightness: 10, contrast: -10, saturation: -20, temperature: 0 },
+  'Frío': { brightness: 5, contrast: 0, saturation: -10, temperature: -30 },
+  'Dramático': { brightness: -5, contrast: 30, saturation: 10, temperature: 0 },
+  'Desvanecido': { brightness: 10, contrast: -10, saturation: -20, temperature: 0 },
 }
 
 function computeFilterCSS(v: { brightness: number, contrast: number, saturation: number, temperature: number }): string {
@@ -69,10 +69,10 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
   const { navigateToEditor, navigateToSession, navigateToUpload } = useNavigationStore()
 
   const [galleryTab, setGalleryTab] = useState<'gallery'|'storyboard'>('gallery')
-  const [activeFilter, setActiveFilter] = useState('All')
+  const [activeFilter, setActiveFilter] = useState('Todas')
   const [viewMode, setViewMode] = useState<'grid'|'masonry'>('grid')
   const [selected, setSelected] = useState<string[]>([])
-  const [sortBy, setSortBy] = useState('Recent')
+  const [sortBy, setSortBy] = useState('Recientes')
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [lbZoom, setLbZoom] = useState(1)
   const [lbPan, setLbPan] = useState({ x: 0, y: 0 })
@@ -96,18 +96,18 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
   // Build dynamic filters
   const filters = useMemo(() => {
     const extra: string[] = []
-    if (items.some(i => getItemCategory(i) === 'Session')) extra.push('Session')
-    if (items.some(i => getItemCategory(i) === 'Creation')) extra.push('Creation')
+    if (items.some(i => getItemCategory(i) === 'Sesión')) extra.push('Sesión')
+    if (items.some(i => getItemCategory(i) === 'Creación')) extra.push('Creación')
     return [...BASE_FILTERS, ...extra]
   }, [items])
 
-  const filtered = activeFilter === 'All' ? items : items.filter(i => getItemCategory(i) === activeFilter)
+  const filtered = activeFilter === 'Todas' ? items : items.filter(i => getItemCategory(i) === activeFilter)
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
-      if (sortBy === 'Recent') return b.timestamp - a.timestamp
-      if (sortBy === 'Oldest') return a.timestamp - b.timestamp
-      if (sortBy === 'Favorites') return (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0)
+      if (sortBy === 'Recientes') return b.timestamp - a.timestamp
+      if (sortBy === 'Más antiguas') return a.timestamp - b.timestamp
+      if (sortBy === 'Favoritos') return (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0)
       return 0
     })
   }, [filtered, sortBy])
@@ -127,10 +127,10 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
 
   const stats = [
     { l:'Total', v: filtered.length, c:'var(--joi-pink)' },
-    { l:'Face Swaps', v: categoryCounts['Face Swap'] ?? 0, c:'var(--joi-coral)' },
-    { l:'Relights', v: categoryCounts['Relight'] ?? 0, c:'var(--joi-magenta)' },
+    { l:'Cambios de Rostro', v: categoryCounts['Cambio de Rostro'] ?? 0, c:'var(--joi-coral)' },
+    { l:'Reiluminaciones', v: categoryCounts['Reiluminar'] ?? 0, c:'var(--joi-magenta)' },
     { l:'Try-Ons', v: categoryCounts['Try-On'] ?? 0, c:'var(--joi-cyan-warm)' },
-    { l:'Sessions', v: categoryCounts['Session'] ?? 0, c:'var(--joi-lavender)' },
+    { l:'Sesiones', v: categoryCounts['Sesión'] ?? 0, c:'var(--joi-lavender)' },
   ].filter(s => s.l === 'Total' || s.v > 0)
 
   // --- Handlers ---
@@ -145,9 +145,9 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
       a.download = `vist-${id.slice(0,8)}.png`
       a.click()
       URL.revokeObjectURL(a.href)
-      addToast('Image downloaded', 'success')
+      addToast('Imagen descargada', 'success')
     } catch {
-      addToast('Download failed', 'error')
+      addToast('Error al descargar', 'error')
     }
   }
 
@@ -161,7 +161,7 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
   const confirmDelete = () => {
     if (deleteConfirm) {
       removeItem(deleteConfirm)
-      addToast('Image deleted', 'info')
+      addToast('Imagen eliminada', 'info')
       setDeleteConfirm(null)
       if (lightboxIndex !== null) setLightboxIndex(null)
     }
@@ -170,7 +170,7 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
   const handleSaveFilter = async (item: GalleryItem) => {
     const filterCSS = computeFilterCSS(filterValues)
     if (filterCSS === computeFilterCSS(DEFAULT_FILTERS)) {
-      addToast('No filters applied', 'info')
+      addToast('No hay filtros aplicados', 'info')
       return
     }
     try {
@@ -197,9 +197,9 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
       updateItem(item.id, { url: dataUrl })
       setFilterValues({ ...DEFAULT_FILTERS })
       setActivePreset(null)
-      addToast('Filters saved', 'success')
+      addToast('Filtros guardados', 'success')
     } catch {
-      addToast('Failed to save filters', 'error')
+      addToast('Error al guardar filtros', 'error')
     }
   }
 
@@ -226,10 +226,10 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
       <div className="px-8 pt-8 pb-2 flex items-end justify-between">
         <div>
           <h1 className="joi-heading joi-glow--subtle" style={{ fontSize: '1.75rem' }}>
-            <span className="joi-text-gradient">Gallery</span>{' '}
-            <span style={{ color: 'var(--joi-text-1)' }}>of Creations</span>
+            <span className="joi-text-gradient">Galería</span>{' '}
+            <span style={{ color: 'var(--joi-text-1)' }}>de Creaciones</span>
           </h1>
-          <p className="joi-label mt-1" style={{ color: 'var(--joi-lavender)' }}>All your AI-edited images in one place</p>
+          <p className="joi-label mt-1" style={{ color: 'var(--joi-lavender)' }}>Todas tus imágenes editadas con AI en un solo lugar</p>
         </div>
         <div className="flex items-center gap-2">
           {/* Gallery / Storyboard tab toggle */}
@@ -237,7 +237,7 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
             <button onClick={()=>setGalleryTab('gallery')}
               className="px-3 py-1 rounded-lg text-[11px] font-medium transition-all"
               style={{ background: galleryTab==='gallery' ? 'var(--joi-bg-3)' : 'transparent', color: galleryTab==='gallery' ? 'var(--joi-text-1)' : 'var(--joi-text-3)' }}>
-              Gallery
+              Galería
             </button>
             <button onClick={()=>setGalleryTab('storyboard')}
               className="px-3 py-1 rounded-lg text-[11px] font-medium transition-all flex items-center gap-1.5"
@@ -259,12 +259,12 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                 border: `1px solid ${batchMode ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}`,
                 color: batchMode ? 'var(--joi-pink)' : 'var(--joi-text-2)',
               }}>
-              {batchMode ? 'Exit Batch' : 'Batch Edit'}
+              {batchMode ? 'Salir de Lote' : 'Editar en Lote'}
             </button>
           )}
           {galleryTab === 'gallery' && selected.length > 0 && (
             <span className="text-[11px] font-mono px-3 py-1.5 rounded-lg" style={{ background:'rgba(255,107,157,.08)', color:'var(--joi-pink)' }}>
-              {selected.length} selected
+              {selected.length} seleccionadas
             </span>
           )}
           {galleryTab === 'gallery' && (
@@ -327,16 +327,16 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
         <div className="px-8 pb-8 flex items-center justify-center" style={{ minHeight: '50vh' }}>
           <div className="joi-glass px-10 py-12 text-center rounded-2xl" style={{ maxWidth: '460px', border: '1px solid rgba(255,255,255,.04)' }}>
             <div className="text-3xl mb-4">✦</div>
-            <h2 className="joi-heading text-lg mb-2">Your gallery is empty</h2>
+            <h2 className="joi-heading text-lg mb-2">Tu galería está vacía</h2>
             <p className="text-[12px] mb-6" style={{ color:'var(--joi-text-3)' }}>
-              Start creating! Direct a hero shot or edit an image with AI tools.
+              ¡Empieza a crear! Dirige una toma o edita una imagen con herramientas AI.
             </p>
             <div className="flex gap-3 justify-center">
               <button onClick={() => onNav?.('studio')} className="joi-btn-solid px-5 py-2.5 text-[12px]">
-                ◎ Direct a Scene
+                ◎ Dirigir una Escena
               </button>
               <button onClick={() => onNav?.('studio')} className="joi-btn-ghost px-5 py-2.5 text-[12px]">
-                ✦ Open AI Editor
+                ✦ Abrir Editor AI
               </button>
             </div>
           </div>
@@ -345,9 +345,9 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
         /* Image Grid */
         <div className={`px-8 pb-8 ${viewMode==='grid' ? 'grid grid-cols-6 gap-3' : 'columns-5 gap-3 space-y-3'}`}>
           {sorted.map((img, idx) => {
-            const charName = characters.find(c => c.id === img.characterId)?.name || 'No character'
+            const charName = characters.find(c => c.id === img.characterId)?.name || 'Sin personaje'
             const category = getItemCategory(img)
-            const dateStr = new Date(img.timestamp).toLocaleDateString('en', { day:'numeric', month:'short' })
+            const dateStr = new Date(img.timestamp).toLocaleDateString('es', { day:'numeric', month:'short' })
             const colorMap: Record<number, string> = { 0:'var(--joi-pink)', 1:'var(--joi-lavender)', 2:'var(--joi-coral)' }
             const fallbackColor = colorMap[idx % 3] || 'var(--joi-pink)'
 
@@ -397,23 +397,23 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                         <button onClick={(e) => { e.stopPropagation(); onEditImage ? onEditImage(img.url) : (navigateToEditor(img.url), onNav?.('studio')) }}
                           className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] transition-all hover:scale-110"
                           style={{ background: 'rgba(255,107,157,.2)', color: 'var(--joi-pink)' }}
-                          title="Edit in AI Editor">{'\u2726'}</button>
+                          title="Editar en Editor AI">{'\u2726'}</button>
                         <button onClick={(e) => handleDownload(e, img.url, img.id)}
                           className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] transition-all hover:scale-110"
                           style={{ background:'rgba(255,255,255,.1)', color: 'var(--joi-text-2)' }}
-                          title="Download">{'\u2193'}</button>
+                          title="Descargar">{'\u2193'}</button>
                         <button
                           className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] transition-all hover:scale-110"
                           style={{ background: img.favorite ? 'rgba(255,107,157,.25)' : 'rgba(255,255,255,.1)' }}
                           onClick={(e) => { e.stopPropagation(); toggleFavorite(img.id) }}
-                          title="Favorite">
+                          title="Favorito">
                           {img.favorite ? '\u2605' : '\u2606'}
                         </button>
                         <button onClick={(e) => {
                             e.stopPropagation()
                             if (!compareFirst) {
                               setCompareFirst(img)
-                              addToast('Select a second image to compare', 'info')
+                              addToast('Selecciona una segunda imagen para comparar', 'info')
                             } else if (compareFirst.id !== img.id) {
                               setCompareItems([compareFirst, img])
                               setCompareMode('ab')
@@ -426,14 +426,14 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                             color: '#A78BFA',
                             boxShadow: compareFirst?.id === img.id ? '0 0 8px rgba(167,139,250,.3)' : 'none',
                           }}
-                          title={compareFirst ? (compareFirst.id === img.id ? 'Selected for compare' : 'Compare with this') : 'Compare'}>{'\u2194'}</button>
+                          title={compareFirst ? (compareFirst.id === img.id ? 'Seleccionada para comparar' : 'Comparar con esta') : 'Comparar'}>{'\u2194'}</button>
                         <button onClick={(e) => {
                             e.stopPropagation()
                             if (storyboardIds.includes(img.id)) {
-                              addToast('Already in storyboard', 'info')
+                              addToast('Ya está en el storyboard', 'info')
                             } else {
                               addToStoryboard(img.id)
-                              addToast('Added to storyboard', 'success')
+                              addToast('Agregada al storyboard', 'success')
                             }
                           }}
                           className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] transition-all hover:scale-110"
@@ -441,11 +441,11 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                             background: storyboardIds.includes(img.id) ? 'rgba(167,139,250,.3)' : 'rgba(167,139,250,.12)',
                             color: 'var(--joi-violet)',
                           }}
-                          title={storyboardIds.includes(img.id) ? 'In storyboard' : 'Add to Storyboard'}>{storyboardIds.includes(img.id) ? '\u2713' : '+'}</button>
+                          title={storyboardIds.includes(img.id) ? 'En storyboard' : 'Agregar al Storyboard'}>{storyboardIds.includes(img.id) ? '\u2713' : '+'}</button>
                         <button onClick={(e) => handleDelete(e, img)}
                           className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] transition-all hover:scale-110"
                           style={{ background: 'rgba(255,60,60,.15)', color: '#e05050' }}
-                          title="Delete">{'\u2715'}</button>
+                          title="Eliminar">{'\u2715'}</button>
                       </div>
                     </div>
                   </div>
@@ -493,7 +493,7 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
         >
           <span className="text-[11px] font-mono font-bold px-2 py-1 rounded-lg"
             style={{ background: 'rgba(255,107,157,0.1)', color: '#FF6B9D' }}>
-            {selected.length} selected
+            {selected.length} seleccionadas
           </span>
           <button
             onClick={() => setShowBatchOutfit(true)}
@@ -504,7 +504,7 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
               boxShadow: '0 4px 16px rgba(255,107,157,0.25)',
             }}
           >
-            {'\uD83D\uDC57'} Change Outfit
+            {'\uD83D\uDC57'} Cambiar Ropa
           </button>
           <button
             onClick={() => { setSelected([]); setBatchMode(false) }}
@@ -515,7 +515,7 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
               color: 'var(--joi-text-3)',
             }}
           >
-            Cancel
+            Cancelar
           </button>
         </div>
       )}
@@ -567,7 +567,7 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                     style={{ background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(8px)', color: 'var(--joi-text-2)', border: '1px solid rgba(255,255,255,.06)' }}>
                     <span>{Math.round(lbZoom * 100)}%</span>
                     <button onClick={(e) => { e.stopPropagation(); setLbZoom(1); setLbPan({ x: 0, y: 0 }) }}
-                      className="px-1.5 py-0.5 rounded text-[9px] hover:bg-white/10 transition-colors" style={{ color: 'var(--joi-pink)' }}>Reset</button>
+                      className="px-1.5 py-0.5 rounded text-[9px] hover:bg-white/10 transition-colors" style={{ color: 'var(--joi-pink)' }}>Restablecer</button>
                   </div>
                 )}
               </div>
@@ -577,26 +577,26 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                 style={{ background: 'var(--joi-bg-1)', borderLeft: '1px solid var(--joi-border)', backdropFilter: 'blur(16px)' }}>
 
                 {/* Navigation actions */}
-                <div className="joi-label" style={{ color: 'var(--joi-text-3)' }}>Actions</div>
+                <div className="joi-label" style={{ color: 'var(--joi-text-3)' }}>Acciones</div>
                 <div className="flex flex-col gap-1.5">
                   <button onClick={() => { setLightboxIndex(null); onEditImage ? onEditImage(item.url) : (navigateToEditor(item.url), onNav?.('studio')) }}
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
                     style={{ background: 'rgba(255,107,157,.08)', border: '1px solid rgba(255,107,157,.15)', color: 'var(--joi-pink)' }}>
-                    {'\u2726'} Edit in AI Editor
+                    {'\u2726'} Editar en Editor AI
                   </button>
                   <button onClick={() => { setEditorSrc(item.url) }}
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
                     style={{ background: 'rgba(167,139,250,.08)', border: '1px solid rgba(167,139,250,.15)', color: 'var(--joi-violet)' }}>
-                    {'\u270F\uFE0F'} Basic Editor
+                    {'\u270F\uFE0F'} Editor Básico
                   </button>
                   <button onClick={async () => {
                     setRemovingBg(true)
                     try {
                       const resultUrl = await removeBackground(item.url)
                       addItems([{ url: resultUrl, type: 'edit', model: 'bg-removal', tags: ['background-removed'] }])
-                      addToast('Background removed', 'success')
+                      addToast('Fondo eliminado', 'success')
                     } catch {
-                      addToast('Failed to remove background', 'error')
+                      addToast('Error al quitar fondo', 'error')
                     } finally {
                       setRemovingBg(false)
                     }
@@ -604,22 +604,22 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                     disabled={removingBg}
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
                     style={{ background: 'rgba(80,216,160,.08)', border: '1px solid rgba(80,216,160,.15)', color: '#50d8a0', opacity: removingBg ? 0.5 : 1 }}>
-                    {removingBg ? '\u27F3 Removing...' : '\u2702 Remove Background'}
+                    {removingBg ? '\u27F3 Quitando...' : '\u2702 Quitar Fondo'}
                   </button>
                   <button onClick={() => { setLightboxIndex(null); navigateToSession(item.url); onNav?.('studio') }}
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
                     style={{ background: 'rgba(200,120,255,.08)', border: '1px solid rgba(200,120,255,.15)', color: 'var(--joi-magenta)' }}>
-                    {'\u25ce'} New Photo Session
+                    {'\u25ce'} Nueva Sesión de Fotos
                   </button>
                   <button onClick={() => { setLightboxIndex(null); navigateToUpload(item.url); onNav?.('create') }}
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
                     style={{ background: 'rgba(180,170,255,.08)', border: '1px solid rgba(180,170,255,.15)', color: 'var(--joi-lavender)' }}>
-                    {'\u2295'} Create Character
+                    {'\u2295'} Crear Personaje
                   </button>
                   <button onClick={() => setCaptionImage(item.url)}
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
                     style={{ background: 'rgba(255,107,157,.06)', border: '1px solid rgba(255,107,157,.12)', color: 'var(--joi-pink)' }}>
-                    {'\u270D\uFE0F'} Generate Caption
+                    {'\u270D\uFE0F'} Generar Descripción
                   </button>
                   <button onClick={() => {
                       const p = item.params as any
@@ -635,18 +635,18 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                       setReuseParams(reuse)
                       setLightboxIndex(null)
                       onNav?.(target === 'session' ? 'studio' : 'studio')
-                      addToast(`Parameters loaded in ${target === 'session' ? 'Photo Session' : 'Director'}`, 'success')
+                      addToast(`Parámetros cargados en ${target === 'session' ? 'Sesión de Fotos' : 'Director'}`, 'success')
                     }}
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
                     style={{ background: 'rgba(167,139,250,.06)', border: '1px solid rgba(167,139,250,.12)', color: 'var(--joi-violet)' }}>
-                    {'\u21BB'} Reuse Parameters
+                    {'\u21BB'} Reutilizar Parámetros
                   </button>
                   <button onClick={() => {
                       if (storyboardIds.includes(item.id)) {
-                        addToast('Already in storyboard', 'info')
+                        addToast('Ya está en el storyboard', 'info')
                       } else {
                         addToStoryboard(item.id)
-                        addToast('Added to storyboard', 'success')
+                        addToast('Agregada al storyboard', 'success')
                       }
                     }}
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
@@ -655,7 +655,7 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                       border: `1px solid ${storyboardIds.includes(item.id) ? 'rgba(167,139,250,.25)' : 'rgba(167,139,250,.12)'}`,
                       color: 'var(--joi-violet)',
                     }}>
-                    {storyboardIds.includes(item.id) ? '\u2713 In Storyboard' : '+ Add to Storyboard'}
+                    {storyboardIds.includes(item.id) ? '\u2713 En Storyboard' : '+ Agregar al Storyboard'}
                   </button>
                 </div>
 
@@ -664,19 +664,19 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                   <button onClick={(e) => handleDownload(e, item.url, item.id)}
                     className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[10px] transition-all hover:scale-[1.02]"
                     style={{ background: 'var(--joi-bg-3)', color: 'var(--joi-text-2)' }}>
-                    {'\u2193'} Download
+                    {'\u2193'} Descargar
                   </button>
                   <button onClick={(e) => { handleDelete(e, item); setLightboxIndex(null) }}
                     className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[10px] transition-all hover:scale-[1.02]"
                     style={{ background: 'rgba(255,60,60,.06)', color: '#e05050' }}>
-                    {'\u2715'} Delete
+                    {'\u2715'} Eliminar
                   </button>
                 </div>
 
                 <div className="joi-divider my-1" />
 
                 {/* Filter Presets */}
-                <div className="joi-label" style={{ color: 'var(--joi-text-3)' }}>Presets</div>
+                <div className="joi-label" style={{ color: 'var(--joi-text-3)' }}>Presets de Filtro</div>
                 <div className="grid grid-cols-3 gap-1.5">
                   {Object.keys(FILTER_PRESETS).map(name => (
                     <button key={name} onClick={() => { setActivePreset(name); setFilterValues(FILTER_PRESETS[name]) }}
@@ -690,11 +690,13 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                 </div>
 
                 {/* Sliders */}
-                <div className="joi-label mt-1" style={{ color: 'var(--joi-text-3)' }}>Adjust</div>
-                {(['brightness', 'contrast', 'saturation', 'temperature'] as const).map(key => (
+                <div className="joi-label mt-1" style={{ color: 'var(--joi-text-3)' }}>Ajustar</div>
+                {(['brightness', 'contrast', 'saturation', 'temperature'] as const).map(key => {
+                  const sliderLabel: Record<string, string> = { brightness: 'Brillo', contrast: 'Contraste', saturation: 'Saturación', temperature: 'Temperatura' }
+                  return (
                   <div key={key}>
                     <div className="flex justify-between mb-1">
-                      <span className="text-[9px] capitalize" style={{ color: 'var(--joi-text-3)' }}>{key}</span>
+                      <span className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>{sliderLabel[key]}</span>
                       <span className="text-[9px] font-mono" style={{ color: filterValues[key] !== 0 ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>
                         {filterValues[key] > 0 ? '+' : ''}{filterValues[key]}
                       </span>
@@ -706,27 +708,27 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                         setFilterValues(prev => ({ ...prev, [key]: parseInt(e.target.value) }))
                       }} />
                   </div>
-                ))}
+                )})}
 
                 {/* Reset / Save */}
                 <div className="flex gap-2 mt-1">
                   <button onClick={() => { setFilterValues({ ...DEFAULT_FILTERS }); setActivePreset(null) }}
                     className="joi-btn-ghost flex-1 px-3 py-2 rounded-xl text-[10px] transition-all">
-                    Reset
+                    Restablecer
                   </button>
                   <button onClick={() => handleSaveFilter(item)}
                     className="joi-btn-solid flex-1 px-3 py-2 rounded-xl text-[10px] font-bold transition-all">
-                    Save
+                    Guardar
                   </button>
                 </div>
 
                 {/* Image info */}
                 <div className="joi-divider my-1" />
-                <div className="joi-label" style={{ color: 'var(--joi-text-3)' }}>Info</div>
+                <div className="joi-label" style={{ color: 'var(--joi-text-3)' }}>Información</div>
                 <div className="text-[10px] space-y-1" style={{ color: 'var(--joi-text-2)' }}>
-                  <div>Category: {getItemCategory(item)}</div>
-                  {item.model && <div>Model: {item.model}</div>}
-                  <div>Date: {new Date(item.timestamp).toLocaleDateString()}</div>
+                  <div>Categoría: {getItemCategory(item)}</div>
+                  {item.model && <div>Modelo: {item.model}</div>}
+                  <div>Fecha: {new Date(item.timestamp).toLocaleDateString()}</div>
                 </div>
               </div>
             </div>
@@ -742,15 +744,15 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
           <div className="joi-glass p-6 rounded-2xl max-w-xs text-center" onClick={e => e.stopPropagation()}
             style={{ border: '1px solid rgba(255,60,60,.15)' }}>
             <div className="text-2xl mb-3">🗑</div>
-            <h3 className="text-sm font-semibold mb-1" style={{ color: 'var(--joi-text-1)' }}>Delete this creation?</h3>
-            <p className="text-[11px] mb-5" style={{ color: 'var(--joi-text-3)' }}>This action cannot be undone.</p>
+            <h3 className="text-sm font-semibold mb-1" style={{ color: 'var(--joi-text-1)' }}>¿Eliminar esta creación?</h3>
+            <p className="text-[11px] mb-5" style={{ color: 'var(--joi-text-3)' }}>Esta acción no se puede deshacer.</p>
             <div className="flex gap-2">
               <button onClick={() => setDeleteConfirm(null)}
-                className="joi-btn-ghost flex-1 py-2 text-[11px]">Cancel</button>
+                className="joi-btn-ghost flex-1 py-2 text-[11px]">Cancelar</button>
               <button onClick={confirmDelete}
                 className="flex-1 py-2 rounded-xl text-[11px] font-medium transition-all"
                 style={{ background: 'rgba(255,60,60,.15)', color: '#e05050', border: '1px solid rgba(255,60,60,.2)' }}>
-                Delete
+                Eliminar
               </button>
             </div>
           </div>
@@ -764,7 +766,7 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
             imageUrl={editorSrc}
             onSave={(editedDataUrl) => {
               addItems([{ url: editedDataUrl, type: 'edit', model: 'basic-editor', tags: ['edited'] }])
-              addToast('Edited image saved', 'success')
+              addToast('Imagen editada guardada', 'success')
             }}
             onClose={() => setEditorSrc(null)}
           />
@@ -792,13 +794,13 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
           }}
         >
           <img src={compareFirst.url} alt="" className="w-8 h-8 rounded-lg object-cover" style={{ border: '2px solid #A78BFA' }} />
-          <span className="text-[11px] text-white font-medium">Select a second image to compare</span>
+          <span className="text-[11px] text-white font-medium">Selecciona una segunda imagen para comparar</span>
           <button
             onClick={() => setCompareFirst(null)}
             className="px-3 py-1 rounded-lg text-[10px] font-medium transition-all"
             style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--joi-text-2)', border: '1px solid rgba(255,255,255,0.06)' }}
           >
-            Cancel
+            Cancelar
           </button>
         </div>
       )}
@@ -840,7 +842,7 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
               border: compareMode === 'ab' ? '1px solid rgba(167,139,250,0.2)' : '1px solid transparent',
             }}
           >
-            A/B Side
+            A/B Lado a Lado
           </button>
           <button
             onClick={() => setCompareMode('slider')}
@@ -851,7 +853,7 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
               border: compareMode === 'slider' ? '1px solid rgba(167,139,250,0.2)' : '1px solid transparent',
             }}
           >
-            Slider
+            Deslizador
           </button>
         </div>
       )}

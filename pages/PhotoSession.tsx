@@ -21,20 +21,20 @@ import { runSessionPipeline, SESSION_TIER_COSTS, type SessionTier, type SessionP
 
 // ─── Scene presets (used as optional override) ──────────
 const scenes = [
-  { id: 'studio',   label: 'White Studio',   icon: '\uD83C\uDFDB\uFE0F' },
-  { id: 'street',   label: 'Urban Street',   icon: '\uD83C\uDF03' },
-  { id: 'beach',    label: 'Tropical Beach',  icon: '\uD83C\uDFD6\uFE0F' },
-  { id: 'cafe',     label: 'Parisian Caf\u00e9',   icon: '\u2615' },
-  { id: 'rooftop',  label: 'Rooftop NYC',     icon: '\uD83C\uDFD9\uFE0F' },
-  { id: 'forest',   label: 'Mystic Forest',   icon: '\uD83C\uDF32' },
-  { id: 'club',     label: 'Night Club',      icon: '\uD83E\uDEA9' },
-  { id: 'desert',   label: 'Desert',          icon: '\uD83C\uDFDC\uFE0F' },
-  { id: 'tokyo',    label: 'Tokyo Night',     icon: '\uD83D\uDDFC' },
-  { id: 'gallery',  label: 'Art Gallery',     icon: '\uD83C\uDFA8' },
-  { id: 'mansion',  label: 'Mansion',         icon: '\uD83C\uDFF0' },
-  { id: 'bedroom',  label: 'Cozy Bedroom',    icon: '\uD83D\uDECF\uFE0F' },
-  { id: 'gym',      label: 'Gym',             icon: '\uD83C\uDFCB\uFE0F' },
-  { id: 'pool',     label: 'Pool Party',      icon: '\uD83C\uDFCA' },
+  { id: 'studio',   label: 'Estudio Blanco',  icon: '\uD83C\uDFDB\uFE0F' },
+  { id: 'street',   label: 'Calle Urbana',    icon: '\uD83C\uDF03' },
+  { id: 'beach',    label: 'Playa Tropical',   icon: '\uD83C\uDFD6\uFE0F' },
+  { id: 'cafe',     label: 'Caf\u00e9 Parisino',   icon: '\u2615' },
+  { id: 'rooftop',  label: 'Azotea NYC',       icon: '\uD83C\uDFD9\uFE0F' },
+  { id: 'forest',   label: 'Bosque Místico',   icon: '\uD83C\uDF32' },
+  { id: 'club',     label: 'Club Nocturno',    icon: '\uD83E\uDEA9' },
+  { id: 'desert',   label: 'Desierto',         icon: '\uD83C\uDFDC\uFE0F' },
+  { id: 'tokyo',    label: 'Noche en Tokyo',   icon: '\uD83D\uDDFC' },
+  { id: 'gallery',  label: 'Galería de Arte',  icon: '\uD83C\uDFA8' },
+  { id: 'mansion',  label: 'Mansión',          icon: '\uD83C\uDFF0' },
+  { id: 'bedroom',  label: 'Habitación Acogedora', icon: '\uD83D\uDECF\uFE0F' },
+  { id: 'gym',      label: 'Gimnasio',         icon: '\uD83C\uDFCB\uFE0F' },
+  { id: 'pool',     label: 'Fiesta en Piscina', icon: '\uD83C\uDFCA' },
 ]
 
 export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
@@ -93,9 +93,9 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
       const skeletonFile = await extractPoseSkeleton(imageFile)
       updateManualPose(poseId, { images: [skeletonFile] })
       setSkeletonPoseIds(prev => new Set(prev).add(poseId))
-      toast.success('Skeleton extracted')
+      toast.success('Esqueleto extraído')
     } catch {
-      toast.error('Could not extract skeleton')
+      toast.error('No se pudo extraer el esqueleto')
     } finally {
       setExtractingSkeletonIds(prev => { const next = new Set(prev); next.delete(poseId); return next })
     }
@@ -243,23 +243,23 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
     const hasUploadBase = sourceMode === 'upload' && uploadedSubject
 
     if (!hasGalleryBase && !hasUploadBase) {
-      toast.error(sourceMode === 'gallery' ? 'Select a photo from gallery' : 'Upload a photo')
+      toast.error(sourceMode === 'gallery' ? 'Selecciona una foto de la galería' : 'Sube una foto')
       return
     }
 
     if (effectivePoses.length === 0) {
-      toast.error(poseMode === 'presets' ? 'Select at least one vibe' : 'Add at least one pose')
+      toast.error(poseMode === 'presets' ? 'Selecciona al menos un vibe' : 'Agrega al menos una pose')
       return
     }
 
     const poseCount = gridMode ? 4 : effectivePoses.length
     const totalCost = poseCount * costPerShot
     const ok = await decrementCredits(totalCost)
-    if (!ok) { toast.error('Insufficient credits'); return }
+    if (!ok) { toast.error('Créditos insuficientes'); return }
 
     setGenerating(true)
     setProgress(0)
-    setProgressStep('Preparing...')
+    setProgressStep('Preparando...')
     abortRef.current = new AbortController()
 
     try {
@@ -312,7 +312,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
     } catch (err: any) {
       if (err?.name !== 'AbortError') {
         restoreCredits(totalCost)
-        toast.error(err?.message || 'Error generating session')
+        toast.error(err?.message || 'Error al generar la sesión')
         console.error(err)
       }
     } finally {
@@ -334,14 +334,14 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
     const hasCharacter = sourceMode === 'character' && selectedChar
 
     if (!hasGalleryBase && !hasUploadBase && !hasCharacter) {
-      if (sourceMode === 'gallery') toast.error('Select a photo from gallery')
-      else if (sourceMode === 'upload') toast.error('Upload a photo')
-      else toast.error('Select a character')
+      if (sourceMode === 'gallery') toast.error('Selecciona una foto de la galería')
+      else if (sourceMode === 'upload') toast.error('Sube una foto')
+      else toast.error('Selecciona un personaje')
       return
     }
 
     if (mixedShots.length === 0 && (hasGalleryBase || hasUploadBase)) {
-      toast.error('Select at least one vibe')
+      toast.error('Selecciona al menos un vibe')
       return
     }
 
@@ -350,7 +350,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
     const totalCost = effectiveShotCount * legacyCostPerShot
 
     const ok = await decrementCredits(totalCost)
-    if (!ok) { toast.error('Insufficient credits'); return }
+    if (!ok) { toast.error('Créditos insuficientes'); return }
 
     setGenerating(true)
     setProgress(0)
@@ -606,7 +606,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
     } catch (err: any) {
       if (err?.name !== 'AbortError') {
         restoreCredits(totalCost)
-        toast.error('Error generating session')
+        toast.error('Error al generar la sesión')
         console.error(err)
       }
     } finally {
@@ -617,7 +617,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
 
   const costPerShot = SESSION_TIER_COSTS[selectedTier]
   const selectedPresetLabels = PHOTO_SESSION_PRESETS.filter(p => selectedPresets.has(p.id)).map(p => p.label)
-  const activeSceneLabel = sceneOverride || 'No override'
+  const activeSceneLabel = sceneOverride || 'Sin cambio'
   const activeSceneIcon = customScene.trim() ? '\uD83D\uDCCD' : (selectedScene ? (scenes.find(s => s.id === selectedScene)?.icon || '') : '')
 
   // Effective poses for generation
@@ -652,8 +652,8 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
       <div className="w-[360px] shrink-0 flex flex-col" style={{ background:'var(--joi-bg-1)', borderRight:'1px solid var(--joi-border)' }}>
         <div className="px-5 h-14 flex items-center shrink-0" style={{ borderBottom:'1px solid var(--joi-border)' }}>
           <h1 className="joi-heading joi-glow" style={{ fontSize: '1.75rem' }}>
-            <span style={{ color: 'var(--joi-pink)' }}>Photo</span>{' '}
-            <span style={{ color: 'var(--joi-text-1)' }}>Session</span>
+            <span style={{ color: 'var(--joi-pink)' }}>Sesión de</span>{' '}
+            <span style={{ color: 'var(--joi-text-1)' }}>Fotos</span>
           </h1>
         </div>
 
@@ -680,7 +680,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
         {/* Source selector — gallery / upload / character */}
         <div className="px-4 py-3" style={{ borderBottom:'1px solid var(--joi-border)' }}>
           <div className="flex items-center justify-between mb-2">
-            <div className="joi-label">Source</div>
+            <div className="joi-label">Fuente</div>
             <div className="flex gap-0.5 p-0.5 rounded-md" style={{ background:'var(--joi-bg-3)' }}>
               {(['gallery', 'upload', 'character'] as const).map(mode => (
                 <button key={mode} onClick={() => setSourceMode(mode)}
@@ -689,7 +689,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                     background: sourceMode === mode ? 'rgba(255,107,157,.08)' : 'transparent',
                     color: sourceMode === mode ? 'var(--joi-pink)' : 'var(--joi-text-3)',
                   }}>
-                  {mode === 'gallery' ? 'Gallery' : mode === 'upload' ? 'Upload' : 'Character'}
+                  {mode === 'gallery' ? 'Galería' : mode === 'upload' ? 'Subir' : 'Personaje'}
                 </button>
               ))}
             </div>
@@ -700,7 +700,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
             <div>
               {recentPhotos.length === 0 ? (
                 <div className="text-[11px] py-3 text-center" style={{ color:'var(--joi-text-3)' }}>
-                  No gallery photos yet. Generate some in Director first.
+                  Aún no hay fotos en la galería. Genera algunas en Director primero.
                 </div>
               ) : (
                 <>
@@ -719,9 +719,9 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                     <div className="flex items-center gap-2 mt-2">
                       <img src={selectedGalleryItem.url} className="w-10 h-10 rounded-lg object-cover" alt="" />
                       <div className="flex-1 min-w-0">
-                        <div className="text-[11px] font-medium truncate" style={{ color:'var(--joi-text-1)' }}>Base photo selected</div>
+                        <div className="text-[11px] font-medium truncate" style={{ color:'var(--joi-text-1)' }}>Foto base seleccionada</div>
                         <div className="text-[9px] truncate" style={{ color:'var(--joi-text-3)' }}>
-                          {selectedGalleryItem.model || 'Gallery photo'}
+                          {selectedGalleryItem.model || 'Foto de galería'}
                         </div>
                       </div>
                       <button onClick={() => setSelectedGalleryItem(null)}
@@ -752,9 +752,9 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                 <div className="flex items-center gap-2 flex-1">
                   <img src={uploadedSubject.preview} className="w-10 h-10 rounded-lg object-cover" alt="" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-[11px] font-medium truncate" style={{ color:'var(--joi-text-1)' }}>Photo uploaded</div>
+                    <div className="text-[11px] font-medium truncate" style={{ color:'var(--joi-text-1)' }}>Foto subida</div>
                     <button onClick={() => subjectInputRef.current?.click()}
-                      className="text-[9px]" style={{ color:'var(--joi-pink)' }}>Change</button>
+                      className="text-[9px]" style={{ color:'var(--joi-pink)' }}>Cambiar</button>
                   </div>
                   <button onClick={() => setUploadedSubject(null)}
                     className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] shrink-0"
@@ -765,7 +765,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                   className="flex-1 py-3 rounded-xl text-center transition-all"
                   style={{ background:'var(--joi-bg-2)', border:'1px dashed rgba(255,255,255,.04)', backdropFilter:'blur(8px)' }}>
                   <span className="text-sm block mb-0.5" style={{ color:'var(--joi-pink)' }}>{'\u2191'}</span>
-                  <span className="text-[10px]" style={{ color:'var(--joi-text-2)' }}>Upload a photo</span>
+                  <span className="text-[10px]" style={{ color:'var(--joi-text-2)' }}>Sube una foto</span>
                 </button>
               )}
               {/* Engine selector */}
@@ -783,7 +783,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
             /* Character mode (fallback) */
             <div className="flex gap-2 items-center">
               {characters.length === 0 ? (
-                <div className="text-[11px] py-2 flex-1" style={{ color:'var(--joi-text-3)' }}>No characters created</div>
+                <div className="text-[11px] py-2 flex-1" style={{ color:'var(--joi-text-3)' }}>No hay personajes creados</div>
               ) : (
                 characters.slice(0, 4).map(c => (
                   <button key={c.id} onClick={() => setSelectedCharId(c.id)}
@@ -821,23 +821,23 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
 
           {/* Tier Selector */}
           <div>
-            <div className="joi-label mb-2">Quality Tier</div>
+            <div className="joi-label mb-2">Nivel de Calidad</div>
             <div className="grid grid-cols-4 gap-1.5">
               {([
                 {
                   tier: 'basic' as SessionTier,
-                  label: 'Basic',
+                  label: 'Básico',
                   engine: 'Gemini Flash (NB2)',
-                  benefit: 'Fast & affordable',
+                  benefit: 'Rápido y económico',
                   icon: '\u26A1',
                   cost: SESSION_TIER_COSTS.basic,
                   accentColor: 'rgba(255,107,157',
                 },
                 {
                   tier: 'standard' as SessionTier,
-                  label: 'Standard',
+                  label: 'Estándar',
                   engine: 'FLUX Kontext Pro',
-                  benefit: 'Best quality',
+                  benefit: 'Mejor calidad',
                   icon: '\u2B50',
                   cost: SESSION_TIER_COSTS.standard,
                   recommended: true,
@@ -847,7 +847,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                   tier: 'premium' as SessionTier,
                   label: 'Premium',
                   engine: 'Klein Edit LoRA',
-                  benefit: 'Your trained model',
+                  benefit: 'Tu modelo entrenado',
                   icon: '\uD83D\uDC51',
                   cost: SESSION_TIER_COSTS.premium,
                   accentColor: 'rgba(255,199,95',
@@ -856,7 +856,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                   tier: 'soul' as SessionTier,
                   label: 'Soul 2.0',
                   engine: 'Higgsfield Soul',
-                  benefit: 'Fashion-grade realism',
+                  benefit: 'Realismo nivel moda',
                   icon: '\u2726',
                   cost: SESSION_TIER_COSTS.soul,
                   accentColor: 'rgba(255,107,157',
@@ -877,7 +877,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                     {t.recommended && (
                       <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 px-1.5 py-0 rounded-full text-[7px] font-bold uppercase tracking-wider whitespace-nowrap"
                         style={{ background: `${ac},.9)`, color: '#0E0C14' }}>
-                        Recommended
+                        Recomendado
                       </span>
                     )}
                     <span className="text-lg block mt-0.5">{t.icon}</span>
@@ -886,7 +886,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                     <div className="text-[7px] mt-0.5 truncate" style={{ color:'var(--joi-text-3)' }}>{t.engine}</div>
                     <div className="text-[9px] font-mono font-bold mt-1" style={{ color: active ? `${ac},.9)` : 'var(--joi-text-3)' }}>~{t.cost}cr/img</div>
                     {disabled && (
-                      <div className="text-[7px] mt-0.5 font-medium" style={{ color:'var(--joi-pink)' }}>Train LoRA first</div>
+                      <div className="text-[7px] mt-0.5 font-medium" style={{ color:'var(--joi-pink)' }}>Entrena LoRA primero</div>
                     )}
                   </button>
                 )
@@ -921,7 +921,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
             {poseMode === 'manual' && (
               <div className="space-y-2">
                 <div className="text-[9px] px-1 mb-1" style={{ color:'var(--joi-text-3)' }}>
-                  {manualPoses.length}/8 pose cards — describe each pose or upload a reference image
+                  {manualPoses.length}/8 tarjetas de pose — describe cada pose o sube una imagen de referencia
                 </div>
                 {manualPoses.map((pose, idx) => {
                   const isSkeleton = skeletonPoseIds.has(pose.id)
@@ -933,7 +933,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                       {isSkeleton && (
                         <span className="text-[7px] px-1.5 py-0.5 rounded-full font-medium"
                           style={{ background:'rgba(167,139,250,.1)', color:'var(--joi-violet)', border:'1px solid rgba(167,139,250,.2)' }}>
-                          Skeleton
+                          Esqueleto
                         </span>
                       )}
                       {manualPoses.length > 1 && (
@@ -942,7 +942,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                           style={{ color:'var(--joi-text-3)' }}>{'\u2715'}</button>
                       )}
                     </div>
-                    <input type="text" placeholder="e.g. looking over shoulder, slight smile"
+                    <input type="text" placeholder="ej. mirando sobre el hombro, sonrisa leve"
                       className="w-full px-2.5 py-1.5 rounded-lg text-[11px] border outline-none mb-1.5"
                       style={{ background:'var(--joi-bg-2)', borderColor:'rgba(255,255,255,.04)', color:'var(--joi-text-1)' }}
                       value={pose.text}
@@ -991,12 +991,12 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                             color:'var(--joi-violet)',
                             opacity: isExtracting ? 0.6 : 1,
                           }}
-                          title="Extracts only the posture so it won't copy clothes or face from this photo">
-                          {isExtracting ? '\u27F3' : '\uD83E\uDDB4'} {isExtracting ? 'Extracting...' : 'Extract Skeleton'}
+                          title="Extrae solo la postura para no copiar ropa ni rostro de esta foto">
+                          {isExtracting ? '\u27F3' : '\uD83E\uDDB4'} {isExtracting ? 'Extrayendo...' : 'Extraer Esqueleto'}
                         </button>
                       )}
                       {/* Accessory */}
-                      <input type="text" placeholder="Accessory..."
+                      <input type="text" placeholder="Accesorio..."
                         className="flex-1 min-w-0 px-2 py-1 rounded-lg text-[9px] border outline-none"
                         style={{ background:'var(--joi-bg-2)', borderColor:'rgba(255,255,255,.04)', color:'var(--joi-text-1)' }}
                         value={pose.accessory || ''}
@@ -1009,7 +1009,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                   <button onClick={addManualPose}
                     className="w-full py-2 rounded-lg text-[10px] font-medium transition-all"
                     style={{ background:'rgba(167,139,250,.06)', border:'1px dashed rgba(167,139,250,.15)', color:'var(--joi-violet)' }}>
-                    + Add Pose ({manualPoses.length}/8)
+                    + Agregar Pose ({manualPoses.length}/8)
                   </button>
                 )}
               </div>
@@ -1020,17 +1020,17 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
           <div className="flex gap-2">
             <button onClick={() => setGridMode(!gridMode)}
               className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-medium transition-all"
-              title="Generates 1 image as a 2x2 grid, then splits into 4 individual images"
+              title="Genera 1 imagen como cuadrícula 2x2, luego la divide en 4 imágenes individuales"
               style={{
                 background: gridMode ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)',
                 border: `1px solid ${gridMode ? 'rgba(255,107,157,.2)' : 'var(--joi-border)'}`,
                 color: gridMode ? 'var(--joi-pink)' : 'var(--joi-text-2)',
               }}>
-              <span>{gridMode ? '\u2611' : '\u2610'}</span> Grid (4-in-1)
+              <span>{gridMode ? '\u2611' : '\u2610'}</span> Cuadrícula (4 en 1)
             </button>
             <button onClick={() => setUpscaleMode(!upscaleMode)}
               className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-medium transition-all"
-              title="Upscale all results with AuraSR after generation"
+              title="Escalar todos los resultados con AuraSR después de la generación"
               style={{
                 background: upscaleMode ? 'rgba(167,139,250,.08)' : 'var(--joi-bg-3)',
                 border: `1px solid ${upscaleMode ? 'rgba(167,139,250,.2)' : 'var(--joi-border)'}`,
@@ -1040,30 +1040,30 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
             </button>
             <button onClick={() => setRealisticMode(!realisticMode)}
               className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-medium transition-all"
-              title="Apply iPhone-style realism prefix to prompts"
+              title="Aplica un prefijo de realismo estilo iPhone a los prompts"
               style={{
                 background: realisticMode ? 'rgba(80,216,160,.08)' : 'var(--joi-bg-3)',
                 border: `1px solid ${realisticMode ? 'rgba(80,216,160,.2)' : 'var(--joi-border)'}`,
                 color: realisticMode ? '#50d8a0' : 'var(--joi-text-2)',
               }}>
-              <span>{realisticMode ? '\u2611' : '\u2610'}</span> Realistic
+              <span>{realisticMode ? '\u2611' : '\u2610'}</span> Realista
             </button>
           </div>
 
           {/* Grid mode helper text */}
           {gridMode && (
             <div className="text-[9px] px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(255,107,157,.04)', border: '1px solid rgba(255,107,157,.08)', color: 'var(--joi-text-3)' }}>
-              Grid mode generates a single 2x2 image with 4 poses, then splits it into individual photos. Best with 4 poses.
+              El modo cuadrícula genera una sola imagen 2x2 con 4 poses, luego la divide en fotos individuales. Mejor con 4 poses.
             </div>
           )}
 
           {/* Scene Override (optional) */}
           <div>
             <div className="joi-label mb-1">
-              Scene Override
+              Cambio de Escena
             </div>
             <div className="text-[9px] mb-2" style={{ color:'var(--joi-text-3)' }}>
-              Replaces the default background of your selected vibe
+              Reemplaza el fondo predeterminado de tu vibe seleccionado
             </div>
             <div className="flex gap-1.5 overflow-x-auto pb-1.5" style={{ scrollbarWidth:'none' }}>
               {scenes.map(s => (
@@ -1078,7 +1078,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                 </button>
               ))}
             </div>
-            <input type="text" placeholder="Or describe a custom scene override..."
+            <input type="text" placeholder="O describe un cambio de escena personalizado..."
               className="w-full mt-2 px-3 py-2 rounded-xl text-[11px] border outline-none transition-colors"
               style={{
                 background: 'var(--joi-bg-2)',
@@ -1093,16 +1093,16 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
           {/* Vibes — Session Presets OR Soul Styles (only in presets mode) */}
           {poseMode === 'presets' && <div>
             <div className="flex items-center justify-between mb-2">
-              <div className="joi-label">{selectedEngine === 'higgsfield:soul' ? 'Soul Style' : 'Pick your vibes'}</div>
+              <div className="joi-label">{selectedEngine === 'higgsfield:soul' ? 'Estilo Soul' : 'Elige tus vibes'}</div>
               {selectedEngine !== 'higgsfield:soul' && (
                 <div className="text-[9px] font-mono" style={{ color:'var(--joi-pink)' }}>
-                  {selectedPresets.size} selected
+                  {selectedPresets.size} seleccionados
                 </div>
               )}
             </div>
             {selectedPresets.size > 1 && selectedEngine !== 'higgsfield:soul' && (
               <div className="text-[9px] mb-2 px-2 py-1 rounded-lg" style={{ background: 'rgba(255,107,157,.04)', color: 'var(--joi-text-3)', border: '1px solid rgba(255,107,157,.08)' }}>
-                Each vibe generates its own set of photos — shots are mixed across vibes
+                Cada vibe genera su propio set de fotos — las tomas se mezclan entre vibes
               </div>
             )}
 
@@ -1147,7 +1147,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                 <button onClick={() => setShowAllStyles(!showAllStyles)}
                   className="w-full mt-1.5 py-1 rounded-md text-[9px] font-medium transition-all"
                   style={{ color: 'var(--joi-text-3)', background: 'rgba(255,255,255,.02)' }}>
-                  {showAllStyles ? 'Show curated' : `Show all ${SOUL_STYLES.length} styles`}
+                  {showAllStyles ? 'Mostrar selección' : `Mostrar los ${SOUL_STYLES.length} estilos`}
                 </button>
               </>
             ) : (
@@ -1192,7 +1192,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
           {/* Reference image (optional) */}
           <div>
             <div className="joi-label mb-2">
-              Reference <span style={{ opacity: 0.5 }}>(optional)</span>
+              Referencia <span style={{ opacity: 0.5 }}>(opcional)</span>
             </div>
 
             {refImage ? (
@@ -1203,7 +1203,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                   className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
                   style={{ background:'rgba(0,0,0,.7)', color:'var(--joi-text-1)' }}>{'\u2715'}</button>
                 <div className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded-md text-[9px] backdrop-blur-sm"
-                  style={{ background:'rgba(0,0,0,.5)', color:'var(--joi-text-1)' }}>Look reference</div>
+                  style={{ background:'rgba(0,0,0,.5)', color:'var(--joi-text-1)' }}>Referencia visual</div>
               </div>
             ) : (
               <div className="flex gap-2">
@@ -1211,7 +1211,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                   className="flex-1 py-3 rounded-xl text-center transition-all"
                   style={{ background:'var(--joi-bg-2)', border:'1px dashed rgba(255,255,255,.04)', backdropFilter:'blur(8px)' }}>
                   <span className="text-sm block mb-0.5" style={{ color:'var(--joi-pink)' }}>{'\u2191'}</span>
-                  <span className="text-[10px]" style={{ color:'var(--joi-text-2)' }}>Upload</span>
+                  <span className="text-[10px]" style={{ color:'var(--joi-text-2)' }}>Subir</span>
                 </button>
 
                 {galleryItems.length > 0 && (
@@ -1241,7 +1241,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
             className="w-full px-4 py-2.5 flex items-center gap-2 group transition-colors"
             style={{ color: 'var(--joi-text-2)' }}>
             <span className="text-sm" style={{ opacity: 0.5 }}>{'\u2699'}</span>
-            <span className="text-[10px] font-medium tracking-wide uppercase" style={{ letterSpacing: '0.08em' }}>Advanced</span>
+            <span className="text-[10px] font-medium tracking-wide uppercase" style={{ letterSpacing: '0.08em' }}>Avanzado</span>
             {(negativePrompt.trim() || imageBoostOn) && (
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--joi-pink)' }} />
             )}
@@ -1260,7 +1260,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-[11px] font-medium" style={{ color: 'var(--joi-text-2)' }}>Image Boost</div>
-                  <div className="text-[9px] mt-0.5" style={{ color: 'var(--joi-text-3)' }}>Appends quality keywords</div>
+                  <div className="text-[9px] mt-0.5" style={{ color: 'var(--joi-text-3)' }}>Agrega palabras clave de calidad</div>
                 </div>
                 <button onClick={() => setImageBoostOn(prev => !prev)}
                   className="relative w-9 h-5 rounded-full transition-all"
@@ -1286,10 +1286,10 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
 
               {/* Negative Prompt */}
               <div>
-                <div className="text-[11px] font-medium mb-1.5" style={{ color: 'var(--joi-text-2)' }}>Negative Prompt</div>
+                <div className="text-[11px] font-medium mb-1.5" style={{ color: 'var(--joi-text-2)' }}>Prompt Negativo</div>
                 <textarea
                   rows={2}
-                  placeholder="Things to avoid: blurry, low quality, extra fingers..."
+                  placeholder="Cosas a evitar: borroso, baja calidad, dedos extra..."
                   className="w-full px-3 py-2 rounded-xl text-[11px] border outline-none resize-none transition-colors"
                   style={{
                     background: 'var(--joi-bg-2)',
@@ -1308,7 +1308,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
         {/* Bottom: shot count + generate */}
         <div className="px-4 py-3 shrink-0 space-y-3" style={{ borderTop:'1px solid var(--joi-border)' }}>
           <div>
-            <div className="joi-label mb-2">Photos</div>
+            <div className="joi-label mb-2">Fotos</div>
             <div className="flex gap-1.5">
               {[1,2,3,4,5,6,7,8].map(n => (
                 <button key={n} onClick={() => setShotCount(n)}
@@ -1339,11 +1339,11 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
             {generating ? (
               <span className="flex items-center justify-center gap-2">
                 <span className="animate-spin">{'\u27F3'}</span>
-                <span>{progressStep || 'Generating...'}</span>
+                <span>{progressStep || 'Generando...'}</span>
                 <span className="font-mono text-[10px] opacity-80">{Math.round(progress)}%</span>
               </span>
             ) : (
-              `\u2726 Shoot ${gridMode ? 4 : effectivePoses.length} Photos · ${selectedTier}`
+              `\u2726 Disparar ${gridMode ? 4 : effectivePoses.length} Fotos · ${selectedTier}`
             )}
           </button>
         </div>
@@ -1376,7 +1376,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                       style={{ background:'rgba(255,107,157,.1)', border:'1px solid rgba(255,107,157,.2)' }}>
                       <span className="text-xl">{'\uD83D\uDCF8'}</span>
                     </div>
-                    <p className="text-[11px]" style={{ color:'var(--joi-text-2)' }}>Base photo ready — pick vibes and shoot</p>
+                    <p className="text-[11px]" style={{ color:'var(--joi-text-2)' }}>Foto base lista — elige vibes y dispara</p>
                   </div>
                 </div>
               </div>
@@ -1468,14 +1468,14 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
         <div className="fixed z-50 w-[340px] max-h-[90vh] flex flex-col rounded-xl backdrop-blur-xl"
           style={{ top:'50%', left:'calc(50% + 110px)', transform:'translate(-50%,-50%)', background:'var(--joi-bg-glass)', border:'1px solid var(--joi-border-glass)', boxShadow:'0 20px 60px rgba(0,0,0,.6)', overflow:'hidden' }}>
           <div className="overflow-y-auto p-3 pb-2 space-y-1 flex-1 min-h-0 joi-scroll">
-            <div className="joi-label mb-2 px-1">Engine</div>
+            <div className="joi-label mb-2 px-1">Motor</div>
 
             {/* Only show edit-capable engines for Photo Session */}
             {[
-              { key: 'grok', label: 'Grok Imagine', desc: 'xAI creative edit — best for sessions', icon: '\u26A1', cost: '1cr', time: '~4s' },
-              { key: 'gemini', label: 'Gemini Edit', desc: 'Google AI image editing', icon: '\u2728', cost: '1cr', time: '~8s' },
-              { key: 'seedream5-edit', label: 'Seedream 5 Edit', desc: 'ByteDance intelligent editing, low hallucination', icon: '\uD83E\uDDE0', cost: '8cr', time: '~12s' },
-              { key: 'higgsfield:soul', label: 'Soul 2.0', desc: 'Fashion-grade editorial realism · Higgsfield', icon: '\uD83C\uDF1F', cost: '6cr', time: '~15s' },
+              { key: 'grok', label: 'Grok Imagine', desc: 'Edición creativa xAI — ideal para sesiones', icon: '\u26A1', cost: '1cr', time: '~4s' },
+              { key: 'gemini', label: 'Gemini Edit', desc: 'Edición de imagen Google AI', icon: '\u2728', cost: '1cr', time: '~8s' },
+              { key: 'seedream5-edit', label: 'Seedream 5 Edit', desc: 'Edición inteligente ByteDance, baja alucinación', icon: '\uD83E\uDDE0', cost: '8cr', time: '~12s' },
+              { key: 'higgsfield:soul', label: 'Soul 2.0', desc: 'Realismo editorial de moda · Higgsfield', icon: '\uD83C\uDF1F', cost: '6cr', time: '~15s' },
             ].map(eng => (
               <button key={eng.key} onClick={() => { setSelectedEngine(eng.key); setShowEngineModal(false) }}
                 className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all"
@@ -1497,7 +1497,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
           </div>
 
           <div className="shrink-0 px-3 pb-3 pt-2" style={{ borderTop:'1px solid var(--joi-border)' }}>
-            <div className="joi-label mb-2 px-1">Resolution</div>
+            <div className="joi-label mb-2 px-1">Resolución</div>
             <div className="flex gap-2">
               {[
                 { id:'1k', label:'1K', desc:'1024px' },

@@ -38,7 +38,7 @@ export const PHOTO_SESSION_PRESETS: SessionPreset[] = [
     id: 'selfies',
     icon: '\uD83E\uDD33',
     label: 'Selfies',
-    description: 'Mirror selfies, phone visible, real rooms',
+    description: 'Selfies de espejo, teléfono visible, cuartos reales',
     shots: [
       'bathroom mirror selfie standing, iPhone with colored case visible in hand, marble tiles and LED backlit mirror behind, beauty products and folded towels on counter, casual confident stance, natural window light',
       'bedroom full-length arch mirror selfie, standing with back slightly turned looking over shoulder at phone screen, bed with white sheets and pillows visible in reflection, pink flowers on nightstand, warm afternoon light',
@@ -53,7 +53,7 @@ export const PHOTO_SESSION_PRESETS: SessionPreset[] = [
     id: 'grwm',
     icon: '\uD83D\uDC84',
     label: 'GRWM',
-    description: 'Getting ready, beauty routine, mirror',
+    description: 'Arreglándose, rutina de belleza, espejo',
     shots: [
       'applying lip gloss in bathroom mirror, phone in other hand filming, beauty products scattered on marble counter, focused concentrated expression, natural light from window',
       'sitting on bathroom counter doing mascara, legs dangling, mirror reflection showing the room behind, towels and skincare bottles visible, morning routine vibe',
@@ -66,7 +66,7 @@ export const PHOTO_SESSION_PRESETS: SessionPreset[] = [
     id: 'stories',
     icon: '\uD83D\uDCF1',
     label: 'Stories',
-    description: 'Vertical phone content, casual energy',
+    description: 'Contenido vertical, energía casual',
     shots: [
       'front camera selfie talking to phone, arm extended holding iPhone, expressive face mid-sentence, cozy room background slightly blurred, natural indoor light',
       'walking down hallway toward a mirror, phone up recording, casual outfit, natural stride, apartment interior visible',
@@ -79,7 +79,7 @@ export const PHOTO_SESSION_PRESETS: SessionPreset[] = [
     id: 'editorial',
     icon: '\uD83C\uDF9E\uFE0F',
     label: 'Editorial',
-    description: 'Fashion-forward, styled but natural',
+    description: 'Estilizado pero natural, moda vanguardista',
     shots: [
       'mirror selfie in leather jacket over a dress, phone visible in hand, bathroom marble background, confident stance with one hand on hip, natural window light',
       'sitting on windowsill in styled outfit, phone resting on knee, city view behind, natural sidelight, thoughtful gaze toward window',
@@ -91,8 +91,8 @@ export const PHOTO_SESSION_PRESETS: SessionPreset[] = [
   {
     id: 'portrait',
     icon: '\uD83D\uDDBC\uFE0F',
-    label: 'Portrait',
-    description: 'Close-up face shots, natural light',
+    label: 'Retrato',
+    description: 'Fotos close-up del rostro, luz natural',
     shots: [
       'close-up selfie with phone at face level, soft three-quarter turn, resting chin on hand, warm window light on face, bedroom or living room blurred behind',
       'looking at phone screen with gentle smile, face lit by screen glow mixed with natural light, hair tucked behind ear, candid intimate moment',
@@ -105,7 +105,7 @@ export const PHOTO_SESSION_PRESETS: SessionPreset[] = [
     id: 'street',
     icon: '\uD83C\uDFD9\uFE0F',
     label: 'Street Style',
-    description: 'Outdoor candid, urban settings',
+    description: 'Candid al aire libre, escenarios urbanos',
     shots: [
       'walking on sidewalk, friend taking the photo from a few steps away, looking back over shoulder with a smile, outfit on full display, city street blurred behind',
       'leaning against a wall on a sunny street, phone in hand checking something, one foot up, candid unposed moment, natural daylight',
@@ -117,8 +117,8 @@ export const PHOTO_SESSION_PRESETS: SessionPreset[] = [
   {
     id: 'creator',
     icon: '\u2728',
-    label: 'Creator',
-    description: 'Influencer content, phone-first',
+    label: 'Creador',
+    description: 'Contenido de influencer, teléfono primero',
     shots: [
       'mirror selfie holding up a product next to face, excited genuine expression, bathroom or bedroom setting, phone visible capturing the moment, ring light subtle in background',
       'sitting at desk with laptop and coffee, phone propped up recording, looking at camera mid-sentence, natural workspace clutter, window light',
@@ -131,7 +131,7 @@ export const PHOTO_SESSION_PRESETS: SessionPreset[] = [
     id: 'lifestyle',
     icon: '\uD83C\uDF3F',
     label: 'Lifestyle',
-    description: 'Everyday moments, candid and cozy',
+    description: 'Momentos del día a día, candid y acogedor',
     shots: [
       'sipping coffee on couch, phone on the cushion beside, both hands on mug, looking out window, blanket over legs, warm morning light',
       'walking through a park, friend took the photo, hands in jacket pockets, relaxed smile, dappled sunlight through trees, phone peeking from pocket',
@@ -144,7 +144,7 @@ export const PHOTO_SESSION_PRESETS: SessionPreset[] = [
     id: 'fitness',
     icon: '\uD83D\uDCAA',
     label: 'Fitness',
-    description: 'Gym mirror selfies, workout candid',
+    description: 'Selfies de espejo en el gym, candid entrenando',
     shots: [
       'gym mirror selfie in workout clothes, phone at waist level, subtle flex, gym equipment blurred behind, fluorescent gym lighting mixed with natural light',
       'post-workout mirror selfie, towel around neck, sweaty glow, phone held up, gym locker room or weight area behind, proud smile',
@@ -156,8 +156,8 @@ export const PHOTO_SESSION_PRESETS: SessionPreset[] = [
   {
     id: 'nightout',
     icon: '\uD83C\uDF19',
-    label: 'Night Out',
-    description: 'Going out, bathroom mirror, nightlife',
+    label: 'Noche',
+    description: 'Saliendo, espejo del baño, vida nocturna',
     shots: [
       'bathroom mirror selfie before going out, dressed up, phone flash reflecting in mirror, makeup done, clutch in other hand, restaurant or club bathroom',
       'sitting at a bar or restaurant table, cocktail in hand, phone on table, warm ambient candlelight, glammed up, flirty smirk',
@@ -170,7 +170,7 @@ export const PHOTO_SESSION_PRESETS: SessionPreset[] = [
     id: 'fotodump',
     icon: '\uD83D\uDCF7',
     label: 'Foto Dump',
-    description: 'Same scene, different angles/moments',
+    description: 'Misma escena, diferentes ángulos/momentos',
     shots: [
       'same outfit same location, mirror selfie straight on, phone visible, casual expression, natural light, unfiltered vibe',
       'same outfit same location, slightly turned to the side, looking at phone screen instead of mirror, candid unposed moment',
@@ -183,8 +183,8 @@ export const PHOTO_SESSION_PRESETS: SessionPreset[] = [
   {
     id: 'datenight',
     icon: '\uD83C\uDF77',
-    label: 'Date Night',
-    description: 'Romantic dinner, candlelight selfies',
+    label: 'Cita',
+    description: 'Cena romántica, selfies con velas',
     shots: [
       'restaurant bathroom mirror selfie before returning to the table, dressed up, phone flash, checking makeup one last time, slight smile',
       'sitting at restaurant table, candlelight on face, chin on hand, wine glass in front, phone on table, flirty eyes looking at camera, someone across the table took the photo',
@@ -196,8 +196,8 @@ export const PHOTO_SESSION_PRESETS: SessionPreset[] = [
   {
     id: 'pool',
     icon: '\uD83C\uDFCA',
-    label: 'Pool / Summer',
-    description: 'Poolside selfies, summer vibes',
+    label: 'Piscina / Verano',
+    description: 'Selfies en la piscina, vibra de verano',
     shots: [
       'pool selfie lounging on chair, sunglasses on forehead, phone held up, tropical drink on side table, sun-kissed golden light, lazy vacation energy',
       'sitting on pool edge with feet in water, phone in hand taking a selfie looking over shoulder, water splashing around feet, bright summer sun',
@@ -209,8 +209,8 @@ export const PHOTO_SESSION_PRESETS: SessionPreset[] = [
   {
     id: 'cozyhome',
     icon: '\uD83C\uDFE0',
-    label: 'Cozy Home',
-    description: 'Home selfies, bed, couch, morning',
+    label: 'En Casa',
+    description: 'Selfies en casa, cama, sofá, mañana',
     shots: [
       'just woke up selfie in bed, phone held above face, sleepy eyes, tangled white sheets, messy hair, soft morning light from window, pillow creases on cheek',
       'mirror selfie in oversized t-shirt, bedroom full-length mirror, messy bed visible behind, phone in hand, barefoot, lazy morning vibe',

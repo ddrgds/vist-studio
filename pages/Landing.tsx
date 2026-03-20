@@ -71,14 +71,14 @@ export default function Landing({ onAuth }: LandingProps) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '36px' }}>
           <nav style={{ display: 'flex', gap: '36px' }}>
-            {['Features', 'How it Works', 'Showcase'].map(l => (
-              <a key={l} href={`#${l.toLowerCase().replace(/\s/g, '-')}`} style={{
+            {[{ label: 'Funciones', href: '#features' }, { label: 'Cómo Funciona', href: '#how-it-works' }, { label: 'Galería', href: '#showcase' }].map(l => (
+              <a key={l.label} href={l.href} style={{
                 fontSize: '14px', fontWeight: 500, color: C.text3,
                 textDecoration: 'none', transition: 'color 150ms',
               }}
                 onMouseEnter={e => (e.currentTarget.style.color = C.pink)}
                 onMouseLeave={e => (e.currentTarget.style.color = C.text3)}
-              >{l}</a>
+              >{l.label}</a>
             ))}
           </nav>
           <div style={{ display: 'flex', gap: '12px' }}>
@@ -90,7 +90,7 @@ export default function Landing({ onAuth }: LandingProps) {
             }}
               onMouseEnter={e => (e.currentTarget.style.background = C.n700)}
               onMouseLeave={e => (e.currentTarget.style.background = C.n800)}
-            >Log In</button>
+            >Iniciar Sesión</button>
             <button onClick={onAuth} style={{
               background: C.pink, color: C.bg, border: 'none',
               borderRadius: '999px', padding: '0 24px', height: '40px',
@@ -100,7 +100,7 @@ export default function Landing({ onAuth }: LandingProps) {
             }}
               onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 0 25px rgba(255,107,157,0.6)')}
               onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 0 15px rgba(255,107,157,0.4)')}
-            >Get Started</button>
+            >Comenzar</button>
           </div>
         </div>
       </header>
@@ -109,17 +109,17 @@ export default function Landing({ onAuth }: LandingProps) {
       <HeroCarousel
         title={
           <>
-            CREATE CONTENT THAT<br />
+            CREA CONTENIDO QUE<br />
             <span style={{
               backgroundImage: 'linear-gradient(90deg, #FF6B9D, #A78BFA)',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-            }}>STOPS THE SCROLL</span>
+            }}>DETENGA EL SCROLL</span>
           </>
         }
-        subtitle="VIST Studio: The ultimate AI social media content platform for virtual influencers. Generate hyper-realistic posts, reels, and stories in seconds."
-        images={phoneImages.map((src, i) => ({ src, alt: `AI influencer ${i + 1}` }))}
+        subtitle="VIST Studio: La plataforma definitiva de contenido con IA para influencers virtuales. Genera posts, reels y stories hiperrealistas en segundos."
+        images={phoneImages.map((src, i) => ({ src, alt: `Influencer virtual ${i + 1}` }))}
         onCtaClick={onAuth}
-        ctaLabel="Start Creating Now"
+        ctaLabel="Empieza a Crear"
         style={{ minHeight: 'auto', paddingTop: '100px', paddingBottom: '40px' }}
       />
 
@@ -128,19 +128,19 @@ export default function Landing({ onAuth }: LandingProps) {
         <Reveal>
           <div style={{ textAlign: 'center', marginBottom: '48px' }}>
             <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: '12px' }}>
-              Why VIST Studio?
+              ¿Por qué VIST Studio?
             </h2>
             <p style={{ color: C.n400, fontSize: '18px', maxWidth: '600px', margin: '0 auto' }}>
-              Unlock the power of AI-driven content creation tailored specifically for virtual influencer personas.
+              Desbloquea el poder de la creación de contenido con IA, diseñada específicamente para influencers virtuales.
             </p>
           </div>
         </Reveal>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
           {[
-            { icon: '💡', title: 'Endless Creativity', desc: 'Generate unlimited concepts, aesthetics, and campaign ideas that perfectly match your virtual influencer\'s unique persona.' },
-            { icon: '📸', title: 'Hyper-Realistic Gen', desc: 'Our cutting-edge AI models generate hyper-realistic photos and short-form videos that look indistinguishable from real life.' },
-            { icon: '🚀', title: 'Seamless Posting', desc: 'Schedule, caption, and post directly to Instagram, TikTok, and X with one click from our integrated social media dashboard.' },
+            { icon: '💡', title: 'Creatividad Sin Límites', desc: 'Genera conceptos, estéticas e ideas de campaña ilimitadas que encajan perfecto con la personalidad única de tu influencer virtual.' },
+            { icon: '📸', title: 'Generación Hiperrealista', desc: 'Nuestros modelos de IA de última generación crean fotos y videos cortos hiperrealistas, imposibles de distinguir de la realidad.' },
+            { icon: '🚀', title: 'Publicación Directa', desc: 'Programa, escribe captions y publica directo a Instagram, TikTok y X con un solo clic desde nuestro panel integrado.' },
           ].map((f, i) => (
             <Reveal key={f.title} delay={i * 0.1}>
               <div style={{
@@ -196,19 +196,19 @@ export default function Landing({ onAuth }: LandingProps) {
               fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 900,
               letterSpacing: '-0.02em', lineHeight: 1.1, marginBottom: '20px',
             }}>
-              She's not real.<br />
-              <span style={{ color: C.pink }}>Her engagement is.</span>
+              Ella no es real.<br />
+              <span style={{ color: C.pink }}>Su engagement sí lo es.</span>
             </h2>
             <p style={{ color: C.n400, fontSize: '17px', lineHeight: 1.7, marginBottom: '32px', maxWidth: '440px' }}>
-              Create AI characters that post like real influencers. Same aesthetics, same engagement — zero production costs.
+              Crea personajes con IA que publican como influencers reales. Misma estética, mismo engagement — cero costos de producción.
             </p>
           </Reveal>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {[
-              { icon: '📸', stat: '50K+', label: 'Photos generated by creators' },
-              { icon: '🎬', stat: '4K+', label: 'Videos & reels produced' },
-              { icon: '⚡', stat: '<15s', label: 'Average generation time' },
+              { icon: '📸', stat: '50K+', label: 'Fotos generadas por creadores' },
+              { icon: '🎬', stat: '4K+', label: 'Videos y reels producidos' },
+              { icon: '⚡', stat: '<15s', label: 'Tiempo promedio de generación' },
             ].map((item, i) => (
               <Reveal key={item.label} delay={0.15 + i * 0.08}>
                 <div style={{
@@ -241,10 +241,10 @@ export default function Landing({ onAuth }: LandingProps) {
         <Reveal>
           <div style={{ textAlign: 'center', marginBottom: '40px' }}>
             <h2 style={{ fontSize: 'clamp(1.8rem, 3.5vw, 2.5rem)', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: '12px' }}>
-              Content that looks <span style={{ color: C.pink }}>real</span>
+              Contenido que se ve <span style={{ color: C.pink }}>real</span>
             </h2>
             <p style={{ color: C.n400, fontSize: '16px', maxWidth: '500px', margin: '0 auto' }}>
-              Every post is indistinguishable from a real influencer's feed.
+              Cada post es imposible de distinguir del feed de un influencer real.
             </p>
           </div>
         </Reveal>
@@ -321,13 +321,13 @@ export default function Landing({ onAuth }: LandingProps) {
                   <span>♡</span><span>💬</span><span>↗</span>
                   <span style={{ marginLeft: 'auto' }}>☆</span>
                 </div>
-                <div style={{ fontSize: '13px', fontWeight: 700, color: C.text1, marginBottom: '4px' }}>24,847 likes</div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: C.text1, marginBottom: '4px' }}>24,847 me gusta</div>
                 <div style={{ fontSize: '12px', color: C.text2, lineHeight: 1.5 }}>
                   <span style={{ fontWeight: 700, color: C.text1 }}>vist_character</span>{' '}
-                  Golden hour hits different ✨ New collection dropping soon 🔥
+                  La golden hour pega diferente ✨ Nueva colección viene pronto 🔥
                 </div>
-                <div style={{ fontSize: '10px', color: C.n400, marginTop: '6px' }}>View all 342 comments</div>
-                <div style={{ fontSize: '10px', color: C.n400, marginTop: '2px' }}>2 HOURS AGO</div>
+                <div style={{ fontSize: '10px', color: C.n400, marginTop: '6px' }}>Ver los 342 comentarios</div>
+                <div style={{ fontSize: '10px', color: C.n400, marginTop: '2px' }}>HACE 2 HORAS</div>
               </div>
             </div>
           </div>
@@ -338,16 +338,16 @@ export default function Landing({ onAuth }: LandingProps) {
       <section id="how-it-works" style={{ padding: '80px 80px', maxWidth: '800px', margin: '0 auto' }}>
         <Reveal>
           <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-            <h2 style={{ fontSize: 'clamp(1.8rem, 3.5vw, 2.5rem)', fontWeight: 700, marginBottom: '8px' }}>How it Works</h2>
-            <p style={{ color: C.n400, fontSize: '16px' }}>Three simple steps to viral content.</p>
+            <h2 style={{ fontSize: 'clamp(1.8rem, 3.5vw, 2.5rem)', fontWeight: 700, marginBottom: '8px' }}>Cómo Funciona</h2>
+            <p style={{ color: C.n400, fontSize: '16px' }}>Tres pasos simples para contenido viral.</p>
           </div>
         </Reveal>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
           {[
-            { num: '1', title: 'Create', desc: "Define your influencer's style, location, and prompt. Upload reference images or use our preset aesthetics.", icon: '✏️' },
-            { num: '2', title: 'Generate', desc: 'Let our advanced AI work its magic. Review multiple variations, upscale, and fine-tune details until it\'s perfect.', icon: '✨' },
-            { num: '3', title: 'Post', desc: 'Generate engaging captions automatically and schedule your content directly to your connected social channels.', icon: '📤' },
+            { num: '1', title: 'Crear', desc: "Define el estilo, ubicación y prompt de tu influencer. Sube imágenes de referencia o usa nuestras estéticas prediseñadas.", icon: '✏️' },
+            { num: '2', title: 'Generar', desc: 'Deja que nuestra IA avanzada haga su magia. Revisa múltiples variaciones, escala y ajusta los detalles hasta que quede perfecto.', icon: '✨' },
+            { num: '3', title: 'Publicar', desc: 'Genera captions atractivos automáticamente y programa tu contenido directo a tus redes sociales conectadas.', icon: '📤' },
           ].map((s, i) => (
             <Reveal key={s.num} delay={i * 0.1}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '24px' }}>
@@ -380,13 +380,13 @@ export default function Landing({ onAuth }: LandingProps) {
         <Reveal>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '32px' }}>
             <div>
-              <h2 style={{ fontSize: 'clamp(1.8rem, 3.5vw, 2.5rem)', fontWeight: 700, marginBottom: '8px' }}>Showcase</h2>
-              <p style={{ color: C.n400 }}>AI Influencers built with VIST</p>
+              <h2 style={{ fontSize: 'clamp(1.8rem, 3.5vw, 2.5rem)', fontWeight: 700, marginBottom: '8px' }}>Galería</h2>
+              <p style={{ color: C.n400 }}>Influencers virtuales creados con VIST</p>
             </div>
             <button onClick={onAuth} style={{
               background: 'transparent', border: 'none', color: C.pink,
               fontSize: '14px', fontWeight: 600, cursor: 'pointer',
-            }}>View Gallery →</button>
+            }}>Ver Galería →</button>
           </div>
         </Reveal>
 
@@ -415,7 +415,7 @@ export default function Landing({ onAuth }: LandingProps) {
                 >
                   <div>
                     <p style={{ fontWeight: 700, fontSize: '18px' }}>{img.name}</p>
-                    <p style={{ fontSize: '13px', color: C.text3 }}>Generated in {img.time}</p>
+                    <p style={{ fontSize: '13px', color: C.text3 }}>Generado en {img.time}</p>
                   </div>
                 </div>
               </div>
@@ -433,10 +433,10 @@ export default function Landing({ onAuth }: LandingProps) {
         }} />
         <Reveal>
           <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', fontWeight: 900, marginBottom: '20px', position: 'relative', zIndex: 1 }}>
-            Ready to build your empire?
+            ¿Lista para construir tu imperio?
           </h2>
           <p style={{ fontSize: '20px', color: C.n400, marginBottom: '40px', maxWidth: '640px', margin: '0 auto 40px', position: 'relative', zIndex: 1 }}>
-            Join thousands of creators building the next generation of social media influencers with VIST Studio.
+            Únete a miles de creadores construyendo la próxima generación de influencers en redes sociales con VIST Studio.
           </p>
           <div style={{ position: 'relative', zIndex: 1, display: 'inline-block' }}>
             <div style={{
@@ -452,7 +452,7 @@ export default function Landing({ onAuth }: LandingProps) {
               onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')}
               onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
             >
-              Get Started for Free
+              Comenzar Gratis
             </button>
           </div>
         </Reveal>
@@ -463,7 +463,7 @@ export default function Landing({ onAuth }: LandingProps) {
         borderTop: `1px solid ${C.n800}`, padding: '40px 0', marginTop: '40px',
         textAlign: 'center', color: C.n400, fontSize: '14px',
       }}>
-        © 2026 VIST Studio. All rights reserved.
+        © 2026 VIST Studio. Todos los derechos reservados.
       </footer>
     </div>
   );

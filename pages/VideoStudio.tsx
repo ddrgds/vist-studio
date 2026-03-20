@@ -20,9 +20,9 @@ import { Film, Clapperboard, Mic, Upload, Play, Square, ChevronDown, Sparkles, X
 
 // ─── Mode tabs ──────────────────────────────────────────
 const MODES: { id: VideoMode; label: string; icon: React.ReactNode; desc: string }[] = [
-  { id: 'motion-control', label: 'Motion Control', icon: <Clapperboard size={16} />, desc: 'Upload a viral video, your character recreates it' },
-  { id: 'lip-sync', label: 'Lip Sync', icon: <Mic size={16} />, desc: 'Make your character speak with any voice' },
-  { id: 'image-to-video', label: 'Image to Video', icon: <Film size={16} />, desc: 'Animate your character with a prompt' },
+  { id: 'motion-control', label: 'Movimiento', icon: <Clapperboard size={16} />, desc: 'Sube un video viral, tu personaje lo recrea' },
+  { id: 'lip-sync', label: 'Lip Sync', icon: <Mic size={16} />, desc: 'Haz que tu personaje hable con cualquier voz' },
+  { id: 'image-to-video', label: 'Imagen a Video', icon: <Film size={16} />, desc: 'Anima a tu personaje con un prompt' },
 ]
 
 // ─── Engine selector per mode ──────────────────────────
@@ -126,9 +126,9 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
       if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl)
       setAudioFile(result.file)
       setAudioPreviewUrl(result.url)
-      toast.success('Voice generated')
+      toast.success('Voz generada')
     } catch (err: any) {
-      toast.error(err.message || 'TTS failed')
+      toast.error(err.message || 'Error en TTS')
     } finally {
       setGeneratingTTS(false)
     }
@@ -149,7 +149,7 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
 
     // Check credits
     if ((profile?.creditsRemaining ?? 0) < creditCost) {
-      toast.error('Not enough credits')
+      toast.error('Créditos insuficientes')
       return
     }
 
@@ -210,10 +210,10 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
         timestamp: Date.now(),
       }])
 
-      toast.success('Video generated!')
+      toast.success('¡Video generado!')
     } catch (err: any) {
-      setError(err.message || 'Generation failed')
-      toast.error(err.message || 'Generation failed')
+      setError(err.message || 'Error en la generación')
+      toast.error(err.message || 'Error en la generación')
     } finally {
       setGenerating(false)
       setProgress(null)
@@ -236,7 +236,7 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
             Video Studio
           </h1>
           <p className="text-xs mt-1" style={{ color: 'var(--joi-text-3)' }}>
-            Create videos from your characters
+            Crea videos con tus personajes
           </p>
         </div>
 
@@ -264,12 +264,12 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
         <div style={{ borderTop: '1px solid rgba(255,255,255,.03)' }} />
 
         {/* Character Select */}
-        <Section title="Character" icon="👤">
+        <Section title="Personaje" icon="👤">
           {characters.length === 0 ? (
             <button onClick={() => onNav('create')}
               className="w-full py-3 rounded-xl text-xs font-medium transition-colors"
               style={{ background: 'rgba(255,107,157,.06)', color: 'var(--joi-pink)', border: '1px solid rgba(255,107,157,.15)' }}>
-              Create your first character
+              Crea tu primer personaje
             </button>
           ) : (
             <div className="flex gap-2 flex-wrap">
@@ -292,7 +292,7 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
         {/* Mode-specific inputs */}
         {mode === 'motion-control' && (
           <>
-            <Section title="Reference Video" icon="🎬">
+            <Section title="Video de Referencia" icon="🎬">
               <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoUpload} />
               {referenceVideo ? (
                 <div className="relative rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,107,157,.25)' }}>
@@ -308,13 +308,13 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
                   className="w-full py-8 rounded-xl flex flex-col items-center gap-2 transition-colors"
                   style={{ background: 'rgba(255,255,255,.02)', border: '1px dashed rgba(255,255,255,.08)', color: 'var(--joi-text-3)' }}>
                   <Upload size={20} />
-                  <span className="text-xs">Upload a reference video</span>
-                  <span className="text-[10px]">TikTok, promo, dance — up to 30s</span>
+                  <span className="text-xs">Sube un video de referencia</span>
+                  <span className="text-[10px]">TikTok, promo, baile — hasta 30s</span>
                 </button>
               )}
             </Section>
 
-            <Section title="Character Orientation" icon="🧭">
+            <Section title="Orientación del Personaje" icon="🧭">
               <div className="flex gap-2">
                 {(['video', 'image'] as const).map(o => (
                   <button key={o} onClick={() => setCharacterOrientation(o)}
@@ -324,7 +324,7 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
                       border: `1px solid ${characterOrientation === o ? 'rgba(255,107,157,.25)' : 'rgba(255,255,255,.06)'}`,
                       color: characterOrientation === o ? 'var(--joi-pink)' : 'var(--joi-text-2)',
                     }}>
-                    {o === 'video' ? 'Match video pose (30s)' : 'Match image pose (10s)'}
+                    {o === 'video' ? 'Igualar pose del video (30s)' : 'Igualar pose de imagen (10s)'}
                   </button>
                 ))}
               </div>
@@ -334,7 +334,7 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
 
         {mode === 'lip-sync' && (
           <>
-            <Section title="Voice" icon="🎙️">
+            <Section title="Voz" icon="🎙️">
               {/* Voice selector */}
               <select
                 value={selectedVoiceId ?? ''}
@@ -345,7 +345,7 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
                   border: '1px solid rgba(255,255,255,.06)',
                   color: 'var(--joi-text-1)',
                 }}>
-                <option value="">Select a voice...</option>
+                <option value="">Selecciona una voz...</option>
                 {voices.map(v => (
                   <option key={v.voice_id} value={v.voice_id}>{v.name}</option>
                 ))}
@@ -360,16 +360,16 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
                   }}
                   className="mt-2 flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-lg transition-colors"
                   style={{ color: 'var(--joi-pink)', background: 'rgba(255,107,157,.06)' }}>
-                  <Volume2 size={12} /> Preview voice
+                  <Volume2 size={12} /> Escuchar voz
                 </button>
               )}
             </Section>
 
-            <Section title="Script" icon="📝">
+            <Section title="Guión" icon="📝">
               <textarea
                 value={ttsText}
                 onChange={e => setTtsText(e.target.value)}
-                placeholder="Write what your character will say..."
+                placeholder="Escribe lo que dirá tu personaje..."
                 rows={4}
                 className="w-full px-3 py-2.5 rounded-xl text-xs resize-none"
                 style={{
@@ -384,15 +384,15 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
                   className="flex-1 py-2.5 rounded-xl text-xs font-medium flex items-center justify-center gap-2 transition-all disabled:opacity-40"
                   style={{ background: 'rgba(255,107,157,.10)', color: 'var(--joi-pink)', border: '1px solid rgba(255,107,157,.20)' }}>
                   {generatingTTS ? (
-                    <><span className="animate-spin">◌</span> Generating...</>
+                    <><span className="animate-spin">◌</span> Generando...</>
                   ) : (
-                    <><Sparkles size={12} /> Generate Audio</>
+                    <><Sparkles size={12} /> Generar Audio</>
                   )}
                 </button>
               </div>
             </Section>
 
-            <Section title="Or Upload Audio" icon="📎">
+            <Section title="O Sube Audio" icon="📎">
               <input ref={audioInputRef} type="file" accept="audio/*" className="hidden" onChange={handleAudioUpload} />
               {audioFile ? (
                 <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,107,157,.20)' }}>
@@ -406,7 +406,7 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
                   className="w-full py-4 rounded-xl flex flex-col items-center gap-1.5 transition-colors"
                   style={{ background: 'rgba(255,255,255,.02)', border: '1px dashed rgba(255,255,255,.08)', color: 'var(--joi-text-3)' }}>
                   <Upload size={16} />
-                  <span className="text-xs">Upload MP3 / WAV</span>
+                  <span className="text-xs">Subir MP3 / WAV</span>
                 </button>
               )}
             </Section>
@@ -414,7 +414,7 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
         )}
 
         {mode === 'image-to-video' && (
-          <Section title="Duration" icon="⏱️">
+          <Section title="Duración" icon="⏱️">
             <div className="flex gap-2">
               {(['5', '10'] as const).map(d => (
                 <button key={d} onClick={() => setDuration(d)}
@@ -437,9 +437,9 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
             value={prompt}
             onChange={e => setPrompt(e.target.value)}
             placeholder={
-              mode === 'motion-control' ? 'Describe the scene/background (optional)...'
-                : mode === 'lip-sync' ? 'Scene context for the talking video (optional)...'
-                : 'Describe the action — "walks forward confidently"...'
+              mode === 'motion-control' ? 'Describe la escena/fondo (opcional)...'
+                : mode === 'lip-sync' ? 'Contexto de la escena para el video hablando (opcional)...'
+                : 'Describe la acción — "camina hacia adelante con confianza"...'
             }
             rows={3}
             className="w-full px-3 py-2.5 rounded-xl text-xs resize-none"
@@ -451,7 +451,7 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
         </Section>
 
         {/* Engine selector */}
-        <Section title="Engine" icon="⚙️">
+        <Section title="Motor" icon="⚙️">
           <div className="flex flex-col gap-1.5">
             {availableEngines.map(engine => {
               const meta = VIDEO_ENGINE_LABELS[engine]
@@ -493,12 +493,12 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
             {generating ? (
               <>
                 <span className="animate-spin">◌</span>
-                {progress?.status === 'IN_QUEUE' ? `In queue (#${progress.queuePosition ?? '?'})...` : 'Generating...'}
+                {progress?.status === 'IN_QUEUE' ? `En cola (#${progress.queuePosition ?? '?'})...` : 'Generando...'}
               </>
             ) : (
               <>
                 <Sparkles size={14} />
-                Generate Video — {creditCost} credits
+                Generar Video — {creditCost} créditos
               </>
             )}
           </button>
@@ -521,12 +521,12 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
               <a href={resultUrl} download="video.mp4" target="_blank" rel="noopener noreferrer"
                 className="px-4 py-2 rounded-xl text-xs font-medium transition-colors"
                 style={{ background: 'rgba(255,255,255,.04)', color: 'var(--joi-text-2)', border: '1px solid rgba(255,255,255,.06)' }}>
-                Download
+                Descargar
               </a>
               <button onClick={() => setResultUrl(null)}
                 className="px-4 py-2 rounded-xl text-xs font-medium transition-colors"
                 style={{ background: 'rgba(255,107,157,.08)', color: 'var(--joi-pink)', border: '1px solid rgba(255,107,157,.15)' }}>
-                New Video
+                Nuevo Video
               </button>
             </div>
           </div>
@@ -539,11 +539,11 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
             <div className="text-center">
               <p className="text-sm font-medium" style={{ color: 'var(--joi-text-1)' }}>
                 {progress?.status === 'IN_QUEUE'
-                  ? `Waiting in queue (#${progress.queuePosition ?? '?'})...`
-                  : 'Generating your video...'}
+                  ? `Esperando en cola (#${progress.queuePosition ?? '?'})...`
+                  : 'Generando tu video...'}
               </p>
               <p className="text-xs mt-1" style={{ color: 'var(--joi-text-3)' }}>
-                This usually takes 1-3 minutes
+                Esto usualmente toma 1-3 minutos
               </p>
             </div>
             {/* Progress logs */}
@@ -562,7 +562,7 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
             </div>
             <p className="text-xs" style={{ color: '#ff5050' }}>{error}</p>
             <button onClick={() => setError(null)} className="text-[11px]" style={{ color: 'var(--joi-text-3)' }}>
-              Dismiss
+              Cerrar
             </button>
           </div>
         ) : (
@@ -575,12 +575,12 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
             </div>
             <div>
               <p className="text-sm font-medium" style={{ color: 'var(--joi-text-2)' }}>
-                {mode === 'motion-control' ? 'Upload a video and select a character'
-                  : mode === 'lip-sync' ? 'Write a script or upload audio'
-                  : 'Select a character and describe the action'}
+                {mode === 'motion-control' ? 'Sube un video y selecciona un personaje'
+                  : mode === 'lip-sync' ? 'Escribe un guión o sube audio'
+                  : 'Selecciona un personaje y describe la acción'}
               </p>
               <p className="text-xs mt-1" style={{ color: 'var(--joi-text-3)' }}>
-                Your video will appear here
+                Tu video aparecerá aquí
               </p>
             </div>
           </div>

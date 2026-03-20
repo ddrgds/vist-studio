@@ -5,23 +5,24 @@ import { useCharacterStore } from '../stores/characterStore'
 import { useGalleryStore } from '../stores/galleryStore'
 import {
   Sparkles, Clapperboard, Images, Users,
-  CreditCard, PanelLeftClose, PanelLeftOpen,
+  CreditCard, PanelLeftClose, PanelLeftOpen, Wand2,
 } from 'lucide-react'
 import { type LucideIcon } from 'lucide-react'
 
 const navSections: { title?: string; items: { id: Page; label: string; Icon: LucideIcon; sub: string }[] }[] = [
   {
-    title: 'CREATE',
+    title: 'CREAR',
     items: [
-      { id: 'create', label: 'Create Persona', Icon: Sparkles, sub: 'Design AI Character' },
-      { id: 'studio', label: 'Content Studio', Icon: Clapperboard, sub: 'Photos · Videos · Reels' },
+      { id: 'create', label: 'Crear Personaje', Icon: Sparkles, sub: 'Diseña un personaje AI' },
+      { id: 'studio', label: 'Estudio de Contenido', Icon: Clapperboard, sub: 'Fotos · Videos · Reels' },
+      { id: 'editor', label: 'Editor AI', Icon: Wand2, sub: 'Edita cualquier foto' },
     ],
   },
   {
-    title: 'MANAGE',
+    title: 'GESTIONAR',
     items: [
-      { id: 'gallery', label: 'Gallery', Icon: Images, sub: 'All Content' },
-      { id: 'characters', label: 'Characters', Icon: Users, sub: 'Your Personas' },
+      { id: 'gallery', label: 'Galería', Icon: Images, sub: 'Todo el contenido' },
+      { id: 'characters', label: 'Personajes', Icon: Users, sub: 'Tus personajes' },
     ],
   },
 ]
@@ -52,8 +53,8 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
   // Pipeline progress hint
   const pipelineHint = (id: string): string | null => {
     if (collapsed) return null
-    if (characters.length === 0 && id === 'create') return 'Start here'
-    if (characters.length > 0 && galleryItems.length === 0 && id === 'studio') return 'Next step'
+    if (characters.length === 0 && id === 'create') return 'Empieza aquí'
+    if (characters.length > 0 && galleryItems.length === 0 && id === 'studio') return 'Siguiente paso'
     return null
   }
 
@@ -169,11 +170,11 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
         <div className="flex gap-1">
           <button onClick={() => onNav('pricing')} className="flex-1 py-1.5 rounded-lg text-[11px] transition-colors"
             style={{ color: 'var(--joi-text-3)', background: 'var(--joi-bg-2)' }}>
-            {collapsed ? <CreditCard size={14} className="mx-auto" /> : 'Pricing'}
+            {collapsed ? <CreditCard size={14} className="mx-auto" /> : 'Precios'}
           </button>
           <button onClick={onToggle} className="flex-1 py-1.5 rounded-lg text-[11px] transition-colors flex items-center justify-center gap-1"
             style={{ color: 'var(--joi-text-3)', background: 'var(--joi-bg-2)' }}>
-            {collapsed ? <PanelLeftOpen size={14} /> : <><PanelLeftClose size={14} /> Collapse</>}
+            {collapsed ? <PanelLeftOpen size={14} /> : <><PanelLeftClose size={14} /> Colapsar</>}
           </button>
         </div>
       </div>

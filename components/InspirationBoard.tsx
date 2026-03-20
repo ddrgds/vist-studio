@@ -16,7 +16,7 @@ interface InspirationBoardProps {
 
 // ─── Hardcoded Inspiration Data ──────────────────────────
 
-const CATEGORIES = ['All', 'Fashion', 'Lifestyle', 'Travel', 'Beauty', 'Fitness', 'Food', 'Tech'] as const
+const CATEGORIES = ['Todas', 'Fashion', 'Lifestyle', 'Travel', 'Beauty', 'Fitness', 'Food', 'Tech'] as const
 
 const GRADIENTS: Record<string, string> = {
   Fashion:   'linear-gradient(135deg, #FF6B9D 0%, #A78BFA 100%)',
@@ -160,9 +160,9 @@ const IDEAS: InspirationIdea[] = [
 ]
 
 export function InspirationBoard({ onSelectIdea, onClose }: InspirationBoardProps) {
-  const [activeCategory, setActiveCategory] = useState<string>('All')
+  const [activeCategory, setActiveCategory] = useState<string>('Todas')
 
-  const filtered = activeCategory === 'All'
+  const filtered = activeCategory === 'Todas'
     ? IDEAS
     : IDEAS.filter(idea => idea.category === activeCategory)
 
@@ -186,10 +186,10 @@ export function InspirationBoard({ onSelectIdea, onClose }: InspirationBoardProp
           style={{ borderBottom: '1px solid rgba(255,255,255,.04)' }}>
           <div>
             <h2 className="text-lg font-semibold" style={{ color: 'var(--joi-text-1)' }}>
-              <span style={{ color: 'var(--joi-pink)' }}>Inspiration</span> Board
+              Tablero de <span style={{ color: 'var(--joi-pink)' }}>Inspiración</span>
             </h2>
             <p className="text-[11px] mt-0.5" style={{ color: 'var(--joi-text-3)' }}>
-              Click an idea to send it to Director with a ready-to-use prompt
+              Haz clic en una idea para enviarla al Director con un prompt listo para usar
             </p>
           </div>
           <button
@@ -254,7 +254,7 @@ export function InspirationBoard({ onSelectIdea, onClose }: InspirationBoardProp
                         background: 'rgba(255,107,157,.9)',
                         color: '#fff',
                       }}>
-                      Use this idea
+                      Usar esta idea
                     </span>
                   </div>
                 </div>
@@ -291,7 +291,7 @@ export function InspirationBoard({ onSelectIdea, onClose }: InspirationBoardProp
 
           {filtered.length === 0 && (
             <div className="text-center py-12" style={{ color: 'var(--joi-text-3)' }}>
-              <p className="text-sm">No ideas in this category yet.</p>
+              <p className="text-sm">No hay ideas en esta categoría todavía.</p>
             </div>
           )}
         </div>

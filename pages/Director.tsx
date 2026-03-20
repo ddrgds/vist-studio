@@ -332,7 +332,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
   const handleGenerate = async () => {
     const hasIdentity = selectedChar || faceRefs.length > 0
     if (!hasIdentity) {
-      toast.error('Select a character or upload face references')
+      toast.error('Selecciona un personaje o sube fotos de referencia')
       return
     }
 
@@ -340,7 +340,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
     const totalCost = numberOfImages * costPerShot
 
     const ok = await decrementCredits(totalCost)
-    if (!ok) { toast.error('Insufficient credits'); return }
+    if (!ok) { toast.error('Créditos insuficientes'); return }
 
     setGenerating(true)
     setProgress(0)
@@ -404,7 +404,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
     } catch (err: any) {
       if (err?.name !== 'AbortError') {
         restoreCredits(totalCost)
-        toast.error('Error generating hero shot')
+        toast.error('Error al generar la foto principal')
         console.error(err)
       }
     } finally {
@@ -452,7 +452,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                   overflow: 'hidden',
                 }}>
                 <div className="overflow-y-auto p-4 pb-2 space-y-1 flex-1 min-h-0 joi-scroll">
-                  <div className="joi-label mb-2 px-1">Engine</div>
+                  <div className="joi-label mb-2 px-1">Motor</div>
 
                   <button onClick={() => { setSelectedEngine('auto'); setShowEngineModal(false) }}
                     className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-all"
@@ -463,7 +463,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                     <span className="text-base">{'\u2728'}</span>
                     <div className="flex-1 min-w-0">
                       <div className="text-[11px] font-medium" style={{ color: selectedEngine === 'auto' ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>Auto</div>
-                      <div className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>Best engine automatically</div>
+                      <div className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>El mejor motor automáticamente</div>
                     </div>
                   </button>
 
@@ -480,7 +480,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                       <div className="flex-1 min-w-0">
                         <div className="text-[11px] font-medium" style={{ color: selectedEngine === eng.key ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{eng.userFriendlyName}</div>
                         <div className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>{eng.description}</div>
-                        {eng.bestFor && <div className="text-[8px] mt-0.5" style={{ color: 'var(--joi-pink)', opacity: 0.7 }}>Good for: {eng.bestFor}</div>}
+                        {eng.bestFor && <div className="text-[8px] mt-0.5" style={{ color: 'var(--joi-pink)', opacity: 0.7 }}>Ideal para: {eng.bestFor}</div>}
                       </div>
                       <div className="shrink-0 text-right">
                         <div className="text-[9px] font-mono" style={{ color: 'var(--joi-pink)' }}>{eng.creditCost}cr</div>
@@ -491,14 +491,14 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                 </div>
 
                 <div className="p-3" style={{ borderTop: '1px solid rgba(255,255,255,.04)' }}>
-                  <div className="joi-label mb-2 px-1">Format</div>
+                  <div className="joi-label mb-2 px-1">Formato</div>
                   <div className="flex gap-1.5">
                     {[
-                      { id: AspectRatio.Portrait, label: '3:4', icon: '▯', desc: 'Portrait' },
-                      { id: AspectRatio.Square, label: '1:1', icon: '⬜', desc: 'Square' },
-                      { id: AspectRatio.Landscape, label: '4:3', icon: '▭', desc: 'Landscape' },
+                      { id: AspectRatio.Portrait, label: '3:4', icon: '▯', desc: 'Retrato' },
+                      { id: AspectRatio.Square, label: '1:1', icon: '⬜', desc: 'Cuadrado' },
+                      { id: AspectRatio.Landscape, label: '4:3', icon: '▭', desc: 'Paisaje' },
                       { id: AspectRatio.Tall, label: '9:16', icon: '📱', desc: 'Story/Reel' },
-                      { id: AspectRatio.Wide, label: '16:9', icon: '🖥️', desc: 'Widescreen' },
+                      { id: AspectRatio.Wide, label: '16:9', icon: '🖥️', desc: 'Panorámico' },
                     ].map(a => (
                       <button key={a.id} onClick={() => setSelectedAspectRatio(a.id)}
                         className="flex-1 px-2 py-2 rounded-xl text-center transition-all"
@@ -515,7 +515,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                 </div>
 
                 <div className="p-3" style={{ borderTop: '1px solid rgba(255,255,255,.04)' }}>
-                  <div className="joi-label mb-2 px-1">Resolution</div>
+                  <div className="joi-label mb-2 px-1">Resolución</div>
                   <div className="flex gap-2">
                     {[
                       { id: '1k', label: '1K', desc: '1024px' },
@@ -559,10 +559,10 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
         <div className="flex-1 overflow-y-auto joi-scroll">
 
           {/* ── IDENTITY ── */}
-          <AccordionSection title="Identity" icon="👤" isOpen={!!openSections.identity} onToggle={() => toggleSection('identity')}>
+          <AccordionSection title="Identidad" icon="👤" isOpen={!!openSections.identity} onToggle={() => toggleSection('identity')}>
             <div className="space-y-4">
               <div>
-                <div className="text-[11px] font-medium mb-2" style={{ color: 'var(--joi-text-2)' }}>Character</div>
+                <div className="text-[11px] font-medium mb-2" style={{ color: 'var(--joi-text-2)' }}>Personaje</div>
                 <div className="flex gap-2 flex-wrap">
                   {characters.length === 0 ? (
                     <div className="space-y-2 w-full">
@@ -570,18 +570,18 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                         color: 'var(--joi-text-3)',
                         background: 'rgba(255,255,255,.02)',
                         border: '1px dashed rgba(255,255,255,.06)',
-                      }}>No characters yet — <span style={{ color: 'var(--joi-pink)', cursor: 'pointer' }} onClick={() => onNav?.('create')}>create one</span></div>
+                      }}>Aún no hay personajes — <span style={{ color: 'var(--joi-pink)', cursor: 'pointer' }} onClick={() => onNav?.('create')}>crea uno</span></div>
                       <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{
                         background: 'rgba(167,139,250,.05)',
                         border: '1px dashed rgba(167,139,250,.25)',
                       }}>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[11px] font-medium" style={{ color: 'var(--joi-text-1)' }}>Or upload a photo</p>
-                          <p className="text-[9px] mt-0.5" style={{ color: 'var(--joi-text-3)' }}>Skip to editing tools directly</p>
+                          <p className="text-[11px] font-medium" style={{ color: 'var(--joi-text-1)' }}>O sube una foto</p>
+                          <p className="text-[9px] mt-0.5" style={{ color: 'var(--joi-text-3)' }}>Pasa directo a las herramientas de edición</p>
                         </div>
                         <label className="shrink-0 cursor-pointer px-3 py-1.5 rounded-lg text-[11px] font-semibold"
                           style={{ background: 'linear-gradient(135deg, #FF6B9D, #A78BFA)', color: 'white' }}>
-                          Upload
+                          Subir
                           <input ref={byoInputRef} type="file" accept="image/*" className="hidden" onChange={handleByoUpload} />
                         </label>
                       </div>
@@ -614,8 +614,8 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
 
               <div>
                 <div className="text-[11px] font-medium mb-2" style={{ color: 'var(--joi-text-2)' }}>
-                  Face References <span className="font-mono" style={{ opacity: 0.4 }}>({faceRefs.length}/3)</span>
-                  <span title="Upload reference photos to maintain facial consistency across generations. Optional if you've selected a character above." className="cursor-help ml-1" style={{ opacity: 0.5 }}>ℹ️</span>
+                  Referencias de Rostro <span className="font-mono" style={{ opacity: 0.4 }}>({faceRefs.length}/3)</span>
+                  <span title="Sube fotos de referencia para mantener consistencia facial entre generaciones. Opcional si ya seleccionaste un personaje." className="cursor-help ml-1" style={{ opacity: 0.5 }}>ℹ️</span>
                 </div>
                 <div className="flex gap-2.5">
                   {faceRefs.map((ref, i) => (
@@ -632,7 +632,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                       className="w-16 h-16 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all"
                       style={{ background: 'rgba(255,255,255,.02)', border: '1px dashed rgba(255,255,255,.08)' }}>
                       <span className="text-sm" style={{ color: 'var(--joi-pink)', opacity: 0.6 }}>{'\u002B'}</span>
-                      <span className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>Face</span>
+                      <span className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>Rostro</span>
                     </button>
                   )}
                 </div>
@@ -641,12 +641,12 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
               <details className="group">
                 <summary className="text-[11px] font-medium cursor-pointer flex items-center gap-1.5 py-1" style={{ color: 'var(--joi-text-3)' }}>
                   <span className="text-[9px] transition-transform group-open:rotate-90">▶</span>
-                  Advanced: Edit prompt
+                  Avanzado: Editar prompt
                   {characteristics && <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--joi-pink)' }} />}
                 </summary>
                 <textarea
                   rows={3}
-                  placeholder="Technical prompt for the AI model. Auto-filled from character data."
+                  placeholder="Prompt técnico para el modelo AI. Se llena automáticamente con los datos del personaje."
                   className="w-full mt-2 px-3.5 py-2.5 rounded-xl text-[12px] border outline-none resize-none transition-colors"
                   style={joiInputStyle(!!characteristics)}
                   value={characteristics}
@@ -669,7 +669,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                 />
                 <div className="flex-1 min-w-0">
                   <div className="text-[11px] font-medium mb-1.5" style={{ color: 'var(--joi-text-2)' }}>
-                    {outfitRef ? 'Outfit from image' : 'Description'}
+                    {outfitRef ? 'Outfit desde imagen' : 'Descripción'}
                   </div>
                   {outfitRef ? (
                     <div className="text-[11px] p-3 rounded-xl" style={{
@@ -677,12 +677,12 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                       color: 'var(--joi-text-2)',
                       border: '1px solid rgba(255,107,157,.08)',
                     }}>
-                      AI will extract garment from image and apply to character
+                      La AI extraerá la prenda de la imagen y la aplicará al personaje
                     </div>
                   ) : (
                     <textarea
                       rows={2}
-                      placeholder="e.g. Black leather jacket, white t-shirt..."
+                      placeholder="ej. Chaqueta de cuero negra, camiseta blanca..."
                       className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none resize-none transition-colors"
                       style={joiInputStyle(!!outfitDescription)}
                       value={outfitDescription}
@@ -713,7 +713,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                   </div>
                 </div>
               </div>
-              <input type="text" placeholder="Or describe a custom pose..."
+              <input type="text" placeholder="O describe una pose personalizada..."
                 className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none transition-colors"
                 style={joiInputStyle(!!customPose)}
                 value={customPose}
@@ -722,14 +722,14 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
           </AccordionSection>
 
           {/* ── CAMERA ── (Advanced) */}
-          <AccordionSection title="Camera" icon="📷" isOpen={!!openSections.camera} onToggle={() => toggleSection('camera')}>
+          <AccordionSection title="Cámara" icon="📷" isOpen={!!openSections.camera} onToggle={() => toggleSection('camera')}>
             <div className="space-y-3">
               <div className="flex gap-2 flex-wrap">
                 {CAMERA_OPTIONS.map(c => (
                   <OptionChip key={c.id} option={c} selected={selectedCamera === c.id && !customCamera} onClick={() => { setSelectedCamera(c.id); setCustomCamera('') }} />
                 ))}
               </div>
-              <input type="text" placeholder="Or describe custom camera..."
+              <input type="text" placeholder="O describe una cámara personalizada..."
                 className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none transition-colors"
                 style={joiInputStyle(!!customCamera)}
                 value={customCamera}
@@ -738,14 +738,14 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
           </AccordionSection>
 
           {/* ── LIGHTING ── (Advanced) */}
-          <AccordionSection title="Lighting" icon="💡" isOpen={!!openSections.lighting} onToggle={() => toggleSection('lighting')}>
+          <AccordionSection title="Iluminación" icon="💡" isOpen={!!openSections.lighting} onToggle={() => toggleSection('lighting')}>
             <div className="space-y-3">
               <div className="flex gap-2 flex-wrap">
                 {LIGHTING_OPTIONS.map(l => (
                   <OptionChip key={l.id} option={l} selected={selectedLighting === l.id && !customLighting} onClick={() => { setSelectedLighting(l.id); setCustomLighting('') }} />
                 ))}
               </div>
-              <input type="text" placeholder="Or describe custom lighting..."
+              <input type="text" placeholder="O describe una iluminación personalizada..."
                 className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none transition-colors"
                 style={joiInputStyle(!!customLighting)}
                 value={customLighting}
@@ -754,11 +754,11 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
           </AccordionSection>
 
           {/* ── SCENARIO ── */}
-          <AccordionSection title="Scenario" icon="🎬" isOpen={!!openSections.scenario} onToggle={() => toggleSection('scenario')}>
+          <AccordionSection title="Escenario" icon="🎬" isOpen={!!openSections.scenario} onToggle={() => toggleSection('scenario')}>
             <div className="space-y-4">
               <textarea
                 rows={3}
-                placeholder="Describe the scene, environment, mood..."
+                placeholder="Describe la escena, el ambiente, el mood..."
                 className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none resize-none transition-colors"
                 style={joiInputStyle(!!scenario)}
                 value={scenario}
@@ -770,20 +770,20 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                     disabled={enhancingScenario}
                     onClick={async () => {
                       const ok = await decrementCredits(2)
-                      if (!ok) { toast.error('Insufficient credits (2cr)'); return }
+                      if (!ok) { toast.error('Créditos insuficientes (2cr)'); return }
                       setEnhancingScenario(true)
                       try {
                         const enhanced = await enhancePrompt(scenario, 'scenario')
                         if (enhanced && enhanced !== scenario) {
                           setScenario(enhanced)
-                          toast.success('Scenario enhanced!')
+                          toast.success('¡Escenario mejorado!')
                         } else {
                           restoreCredits(2)
-                          toast.info('No enhancement needed')
+                          toast.info('No se necesita mejora')
                         }
                       } catch {
                         restoreCredits(2)
-                        toast.error('Enhancement failed')
+                        toast.error('La mejora falló')
                       } finally {
                         setEnhancingScenario(false)
                       }
@@ -801,7 +801,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
               )}
 
               <div>
-                <div className="text-[11px] font-medium mb-2" style={{ color: 'var(--joi-text-2)' }}>Inspirations</div>
+                <div className="text-[11px] font-medium mb-2" style={{ color: 'var(--joi-text-2)' }}>Inspiraciones</div>
                 <div className="grid grid-cols-2 gap-2">
                   {INSPIRATIONS.map(ins => (
                     <button key={ins.id} onClick={() => setScenario(ins.scene)}
@@ -827,20 +827,20 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                   onUpload={f => setScenarioRef({ file: f, preview: URL.createObjectURL(f) })}
                   onRemove={() => { if (scenarioRef) URL.revokeObjectURL(scenarioRef.preview); setScenarioRef(null) }}
                 />
-                <span className="text-[11px]" style={{ color: 'var(--joi-text-3)' }}>Scene reference (optional)</span>
+                <span className="text-[11px]" style={{ color: 'var(--joi-text-3)' }}>Referencia de escena (opcional)</span>
               </div>
             </div>
           </AccordionSection>
 
           {/* ── ENHANCERS ── (Advanced) */}
-          <AccordionSection title="Enhancers" icon="✨" badge={selectedEnhancers.size > 0 ? `${selectedEnhancers.size}` : undefined} isOpen={!!openSections.enhancers} onToggle={() => toggleSection('enhancers')}>
+          <AccordionSection title="Mejoras" icon="✨" badge={selectedEnhancers.size > 0 ? `${selectedEnhancers.size}` : undefined} isOpen={!!openSections.enhancers} onToggle={() => toggleSection('enhancers')}>
             <div className="space-y-3">
               <div className="flex gap-2 flex-wrap">
                 {ENHANCERS.map(e => (
                   <EnhancerChip key={e.id} enhancer={e} selected={selectedEnhancers.has(e.id)} onClick={() => toggleEnhancer(e.id)} />
                 ))}
               </div>
-              <input type="text" placeholder="Custom enhancer text..."
+              <input type="text" placeholder="Texto de mejora personalizado..."
                 className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none transition-colors"
                 style={joiInputStyle(!!customEnhancer)}
                 value={customEnhancer}
@@ -854,7 +854,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
               className="w-full px-5 py-3 flex items-center gap-2.5 group transition-colors"
               style={{ color: 'var(--joi-text-2)' }}>
               <span className="text-sm" style={{ opacity: 0.5 }}>{'\u2699'}</span>
-              <span className="text-xs font-medium tracking-wide uppercase" style={{ letterSpacing: '0.08em' }}>Advanced</span>
+              <span className="text-xs font-medium tracking-wide uppercase" style={{ letterSpacing: '0.08em' }}>Avanzado</span>
               {(negativePrompt.trim() || imageBoostOn) && (
                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--joi-pink)' }} />
               )}
@@ -873,7 +873,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-[11px] font-medium" style={{ color: 'var(--joi-text-2)' }}>Image Boost</div>
-                    <div className="text-[9px] mt-0.5" style={{ color: 'var(--joi-text-3)' }}>Appends quality keywords to prompt</div>
+                    <div className="text-[9px] mt-0.5" style={{ color: 'var(--joi-text-3)' }}>Agrega palabras clave de calidad al prompt</div>
                   </div>
                   <button onClick={() => setImageBoostOn(prev => !prev)}
                     className="relative w-9 h-5 rounded-full transition-all"
@@ -899,10 +899,10 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
 
                 {/* Negative Prompt */}
                 <div>
-                  <div className="text-[11px] font-medium mb-1.5" style={{ color: 'var(--joi-text-2)' }}>Negative Prompt</div>
+                  <div className="text-[11px] font-medium mb-1.5" style={{ color: 'var(--joi-text-2)' }}>Prompt Negativo</div>
                   <textarea
                     rows={2}
-                    placeholder="Things to avoid: blurry, low quality, extra fingers..."
+                    placeholder="Cosas a evitar: borroso, baja calidad, dedos extra..."
                     className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none resize-none transition-colors"
                     style={joiInputStyle(!!negativePrompt)}
                     value={negativePrompt}
@@ -920,7 +920,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
           background: 'linear-gradient(to top, var(--joi-bg-1), rgba(14,12,20,.95))',
         }}>
           <div className="flex items-center gap-2">
-            <div className="text-[11px] font-medium" style={{ color: 'var(--joi-text-2)' }}>Images</div>
+            <div className="text-[11px] font-medium" style={{ color: 'var(--joi-text-2)' }}>Imágenes</div>
             <div className="flex gap-1.5 flex-1">
               {[1, 2, 3, 4].map(n => (
                 <button key={n} onClick={() => setNumberOfImages(n)}
@@ -952,9 +952,9 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
             {generating ? (
               <span className="flex items-center justify-center gap-2">
                 <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                Generating... {Math.round(progress)}%
+                Generando... {Math.round(progress)}%
               </span>
-            ) : (selectedChar || faceRefs.length > 0) ? `\u2726 Generate Hero Shot (${costPerShot * numberOfImages}cr)` : '\u2726 Generate Image'}
+            ) : (selectedChar || faceRefs.length > 0) ? `\u2726 Generar Foto Principal (${costPerShot * numberOfImages}cr)` : '\u2726 Generar Imagen'}
           </button>
         </div>
       </div>
@@ -971,7 +971,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
           </span>
           <div className="flex-1" />
           <span className="font-jet text-[10px]" style={{ color: 'var(--joi-text-3)' }}>
-            {activeEngineLabel} {'\u00b7'} {numberOfImages} image{numberOfImages > 1 ? 's' : ''}
+            {activeEngineLabel} {'\u00b7'} {numberOfImages} imagen{numberOfImages > 1 ? 'es' : ''}
           </span>
         </div>
 
@@ -1007,7 +1007,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                         color: 'var(--joi-pink)',
                         border: '1px solid rgba(255,107,157,.18)',
                       }}>
-                      <span>✨</span> Edit
+                      <span>✨</span> Editar
                     </button>
                   )}
                   {onNav && (
@@ -1018,7 +1018,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                         color: 'rgb(208,140,220)',
                         border: '1px solid rgba(208,72,176,.18)',
                       }}>
-                      <span>🎬</span> Make Reel
+                      <span>🎬</span> Crear Reel
                     </button>
                   )}
                   {onExportImage && (
@@ -1029,7 +1029,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                         color: 'rgb(140,160,240)',
                         border: '1px solid rgba(72,88,224,.18)',
                       }}>
-                      <span>📥</span> Export
+                      <span>📥</span> Exportar
                     </button>
                   )}
                 </div>
@@ -1044,8 +1044,8 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                       style={{ background: 'rgba(255,107,157,.06)', border: '1px solid rgba(255,107,157,.1)' }}>
                       <span className="text-2xl" style={{ opacity: 0.6 }}>{'\u2726'}</span>
                     </div>
-                    <p className="joi-heading text-[13px]" style={{ color: 'var(--joi-text-2)' }}>Your hero shot will appear here</p>
-                    <p className="text-[11px] mt-1" style={{ color: 'var(--joi-text-3)' }}>Select a character and configure your scene to get started</p>
+                    <p className="joi-heading text-[13px]" style={{ color: 'var(--joi-text-2)' }}>Tu foto principal aparecerá aquí</p>
+                    <p className="text-[11px] mt-1" style={{ color: 'var(--joi-text-3)' }}>Selecciona un personaje y configura tu escena para empezar</p>
                   </div>
                 </div>
               </div>
@@ -1067,7 +1067,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
           borderTop: '1px solid rgba(255,255,255,.03)',
           background: 'var(--joi-bg-1)',
         }}>
-          <span className="joi-label shrink-0 mr-1">Shots</span>
+          <span className="joi-label shrink-0 mr-1">Tomas</span>
           {generatedImages.length > 0 ? (
             generatedImages.map((url, i) => (
               <div key={i} onClick={() => setSelectedResult(i)}
@@ -1098,7 +1098,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                     border: '1px solid rgba(255,107,157,.18)',
                     color: 'var(--joi-pink)',
                   }}>
-                  <span>✨</span> Edit
+                  <span>✨</span> Editar
                 </button>
               )}
               {onExportImage && (
@@ -1109,14 +1109,14 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                     border: '1px solid rgba(72,88,224,.18)',
                     color: 'rgb(140,160,240)',
                   }}>
-                  <span>📥</span> Export
+                  <span>📥</span> Exportar
                 </button>
               )}
             </div>
           )}
           {generatedImages.length > 0 && onNav && !onEditImage && !onExportImage && (
             <div className="ml-auto shrink-0 w-56">
-              <PipelineCTA label="Perfect it in Editor" targetPage="editor" onNav={onNav} icon="🪄" />
+              <PipelineCTA label="Perfecciónalo en el Editor" targetPage="editor" onNav={onNav} icon="🪄" />
             </div>
           )}
         </div>

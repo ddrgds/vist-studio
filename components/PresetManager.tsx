@@ -66,7 +66,7 @@ export function PresetManager({ currentSettings, onLoad }: PresetManagerProps) {
         >
           <span style={{ opacity: 0.5, fontSize: 12 }}>{'\uD83D\uDCC1'}</span>
           <span className="truncate flex-1 text-left">
-            {presets.length > 0 ? `Presets (${presets.length})` : 'No presets saved'}
+            {presets.length > 0 ? `Presets (${presets.length})` : 'Sin presets guardados'}
           </span>
           <span className="text-[9px] shrink-0" style={{
             color: 'var(--joi-text-3)',
@@ -117,7 +117,7 @@ export function PresetManager({ currentSettings, onLoad }: PresetManagerProps) {
             value={presetName}
             onChange={e => setPresetName(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') setSaving(false) }}
-            placeholder="Preset name..."
+            placeholder="Nombre del preset..."
             className="w-[120px] px-2.5 py-1.5 rounded-lg text-[11px] outline-none"
             style={{
               background: 'rgba(255,255,255,.04)',
@@ -159,7 +159,7 @@ export function PresetManager({ currentSettings, onLoad }: PresetManagerProps) {
             color: 'var(--joi-pink)',
           }}
         >
-          <span style={{ fontSize: 11 }}>{'\uD83D\uDCBE'}</span> Save
+          <span style={{ fontSize: 11 }}>{'\uD83D\uDCBE'}</span> Guardar
         </button>
       )}
     </div>

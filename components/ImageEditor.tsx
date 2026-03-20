@@ -76,7 +76,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
   };
 
   const handleRestoreOriginal = () => {
-    if (confirm('Are you sure? This will discard all changes and crops.')) {
+    if (confirm('¿Estás seguro? Esto descartará todos los cambios y recortes.')) {
       setInternalSrc(imageUrl);
       setFilters(initialFilters);
       addToHistory(imageUrl, initialFilters);
@@ -398,7 +398,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
     <button
       key={id}
       onClick={() => applyPreset(id)}
-      title={`Apply ${name} preset`}
+      title={`Aplicar preset ${name}`}
       className={`h-16 rounded-lg ${bgClass} border border-white/10 hover:border-white/25 transition-all overflow-hidden relative group`}
     >
       <div className={`absolute inset-0 ${overlayClass}`} />
@@ -418,13 +418,13 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                   <path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
                 </svg>
               </div>
-              <span className="hidden sm:inline">Editor</span>
+              <span className="hidden sm:inline">Editor de Imagen</span>
             </h3>
             <div className="flex gap-1">
               <button
                 onClick={handleUndo}
                 disabled={historyIndex <= 0}
-                title="Undo (Ctrl+Z)"
+                title="Deshacer (Ctrl+Z)"
                 className={`p-2 rounded-lg hover:bg-white/5 transition-colors ${historyIndex <= 0 ? 'text-white/20' : 'text-white/60'}`}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6" /><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" /></svg>
@@ -432,7 +432,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
               <button
                 onClick={handleRedo}
                 disabled={historyIndex >= history.length - 1}
-                title="Redo (Ctrl+Y)"
+                title="Rehacer (Ctrl+Y)"
                 className={`p-2 rounded-lg hover:bg-white/5 transition-colors ${historyIndex >= history.length - 1 ? 'text-white/20' : 'text-white/60'}`}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 7v6h-6" /><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7" /></svg>
@@ -443,31 +443,31 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
           <div className="flex gap-2 lg:gap-3">
             <button
               onClick={handleRestoreOriginal}
-              title="Restore Original"
+              title="Restaurar Original"
               className="px-3 py-2 text-xs lg:text-sm text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-colors"
             >
-              Restore
+              Restaurar
             </button>
             <div className="w-px h-6 bg-white/10 my-auto hidden sm:block" />
             <button
               onClick={handleDownload}
               disabled={isProcessing || isCropping}
-              title="Download as PNG"
+              title="Descargar como PNG"
               className={`p-2 rounded-lg hover:bg-white/5 transition-colors ${isCropping ? 'text-white/20' : 'text-white/40 hover:text-white'}`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
             </button>
-            <button onClick={onClose} className="px-3 py-2 text-xs lg:text-sm text-white/40 hover:text-white transition-colors" title="Close without saving">
-              Cancel
+            <button onClick={onClose} className="px-3 py-2 text-xs lg:text-sm text-white/40 hover:text-white transition-colors" title="Cerrar sin guardar">
+              Cancelar
             </button>
             <button
               onClick={handleSave}
               disabled={isProcessing || isCropping}
-              title="Save changes"
+              title="Guardar cambios"
               className={`px-4 py-2 text-xs lg:text-sm bg-gradient-to-r from-[#FF6B9D] to-[#A78BFA] hover:opacity-90 text-white font-medium rounded-lg transition-all flex items-center gap-2 ${isCropping ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {isProcessing && <div className="animate-spin h-3 w-3 border-2 border-white/30 border-t-white rounded-full" />}
-              Save
+              Guardar
             </button>
           </div>
         </div>
@@ -570,7 +570,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
               <button
                 onClick={() => setZoom((prev) => Math.min(prev + 0.5, 5))}
                 className="p-2 hover:bg-white/5 text-white/40 hover:text-white rounded transition-colors"
-                title="Zoom In (+)"
+                title="Acercar (+)"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /><line x1="11" y1="8" x2="11" y2="14" /><line x1="8" y1="11" x2="14" y2="11" /></svg>
               </button>
@@ -584,14 +584,14 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                   })
                 }
                 className="p-2 hover:bg-white/5 text-white/40 hover:text-white rounded transition-colors"
-                title="Zoom Out (-)"
+                title="Alejar (-)"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /><line x1="8" y1="11" x2="14" y2="11" /></svg>
               </button>
               <button
                 onClick={handleResetZoom}
                 className="p-2 hover:bg-white/5 text-white/40 hover:text-white rounded transition-colors border-t border-white/10"
-                title="Reset Zoom"
+                title="Restablecer Zoom"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
               </button>
@@ -604,19 +604,19 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                 onMouseDown={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
               >
-                <span className="text-xs text-white/60 font-medium px-2 whitespace-nowrap">Adjust Crop</span>
+                <span className="text-xs text-white/60 font-medium px-2 whitespace-nowrap">Ajustar Recorte</span>
                 <div className="w-px h-4 bg-white/10" />
                 <button
                   onClick={() => toggleCropMode(false)}
                   className="p-1 hover:bg-white/5 rounded-full text-white/40 hover:text-white transition-colors"
-                  title="Cancel crop"
+                  title="Cancelar recorte"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                 </button>
                 <button
                   onClick={applyCrop}
                   className="p-1 hover:bg-white/5 rounded-full text-green-400 hover:text-green-300 transition-colors"
-                  title="Apply crop"
+                  title="Aplicar recorte"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                 </button>
@@ -629,51 +629,51 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
             <div className="p-5 flex-1 overflow-y-auto custom-scrollbar space-y-6">
               {/* Tools Section */}
               <div>
-                <h4 className="text-xs font-bold text-white/30 uppercase tracking-wider mb-3">Tools</h4>
+                <h4 className="text-xs font-bold text-white/30 uppercase tracking-wider mb-3">Herramientas</h4>
 
                 {!isCropping ? (
                   <button
                     onClick={() => toggleCropMode(true)}
-                    title="Activate crop tool (resets zoom)"
+                    title="Activar herramienta de recorte (reinicia el zoom)"
                     className="w-full flex items-center justify-center p-4 rounded-xl border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-all gap-2"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2v14a2 2 0 0 0 2 2h14" /><path d="M18 22V8a2 2 0 0 0-2-2H2" /></svg>
-                    <span className="text-sm font-medium">Crop Image</span>
+                    <span className="text-sm font-medium">Recortar Imagen</span>
                   </button>
                 ) : (
                   <div className="space-y-2">
-                    <div className="text-xs text-[#A78BFA] font-medium mb-2">Smart Crop</div>
+                    <div className="text-xs text-[#A78BFA] font-medium mb-2">Recorte Inteligente</div>
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={() => applySmartCrop(1, 1)}
                         className="px-3 py-2 bg-white/5 hover:bg-white/10 rounded text-xs text-white/60 border border-white/10"
                       >
-                        Square (1:1)
+                        Cuadrado (1:1)
                       </button>
                       <button
                         onClick={() => applySmartCrop(4, 5)}
                         className="px-3 py-2 bg-white/5 hover:bg-white/10 rounded text-xs text-white/60 border border-white/10"
                       >
-                        Portrait (4:5)
+                        Retrato (4:5)
                       </button>
                       <button
                         onClick={() => applySmartCrop(16, 9)}
                         className="px-3 py-2 bg-white/5 hover:bg-white/10 rounded text-xs text-white/60 border border-white/10"
                       >
-                        Landscape (16:9)
+                        Paisaje (16:9)
                       </button>
                       <button
                         onClick={() => applySmartCrop(9, 16)}
                         className="px-3 py-2 bg-white/5 hover:bg-white/10 rounded text-xs text-white/60 border border-white/10"
                       >
-                        Story (9:16)
+                        Historia (9:16)
                       </button>
                     </div>
                     <button
                       onClick={() => toggleCropMode(false)}
                       className="w-full mt-2 py-2 text-xs text-white/30 hover:text-white/60 underline"
                     >
-                      Cancel Crop
+                      Cancelar Recorte
                     </button>
                   </div>
                 )}
@@ -683,13 +683,13 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
               <div>
                 <h4 className="text-xs font-bold text-white/30 uppercase tracking-wider mb-3">Presets</h4>
                 <div className="grid grid-cols-2 gap-2">
-                  {renderPresetButton('bw', 'B&W', 'bg-zinc-800', 'bg-gradient-to-tr from-black to-transparent opacity-50')}
-                  {renderPresetButton('warm', 'Warm', 'bg-orange-900/30', 'bg-orange-500/10')}
-                  {renderPresetButton('cool', 'Cool', 'bg-blue-900/30', 'bg-blue-500/10')}
+                  {renderPresetButton('bw', 'B/N', 'bg-zinc-800', 'bg-gradient-to-tr from-black to-transparent opacity-50')}
+                  {renderPresetButton('warm', 'Cálido', 'bg-orange-900/30', 'bg-orange-500/10')}
+                  {renderPresetButton('cool', 'Frío', 'bg-blue-900/30', 'bg-blue-500/10')}
                   {renderPresetButton('vintage', 'Vintage', 'bg-amber-900/30', 'bg-amber-600/10')}
-                  {renderPresetButton('cinematic', 'Cinematic', 'bg-teal-900/30', 'bg-teal-500/10')}
-                  {renderPresetButton('vivid', 'Vivid', 'bg-pink-900/30', 'bg-pink-500/10')}
-                  {renderPresetButton('matte', 'Matte', 'bg-stone-800', 'bg-stone-500/10')}
+                  {renderPresetButton('cinematic', 'Cinemático', 'bg-teal-900/30', 'bg-teal-500/10')}
+                  {renderPresetButton('vivid', 'Vívido', 'bg-pink-900/30', 'bg-pink-500/10')}
+                  {renderPresetButton('matte', 'Mate', 'bg-stone-800', 'bg-stone-500/10')}
                 </div>
               </div>
 
@@ -701,7 +701,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                     onClick={() => toggleSection('light')}
                     className="w-full flex items-center justify-between p-3 text-xs font-medium text-white/60 hover:bg-white/5 transition-colors"
                   >
-                    <span>Light & Exposure</span>
+                    <span>Luz y Exposición</span>
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${openSection === 'light' ? 'rotate-180' : ''}`}><path d="m6 9 6 6 6-6" /></svg>
                   </button>
 
@@ -709,7 +709,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                     <div className="p-4 pt-0 space-y-4 animate-in slide-in-from-top-2 duration-200">
                       <div className="space-y-2 pt-2">
                         <div className="flex justify-between text-xs">
-                          <label className="text-white/40">Brightness</label>
+                          <label className="text-white/40">Brillo</label>
                           <span className="text-white/30 tabular-nums">{filters.brightness}%</span>
                         </div>
                         <input
@@ -723,7 +723,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between text-xs">
-                          <label className="text-white/40">Contrast</label>
+                          <label className="text-white/40">Contraste</label>
                           <span className="text-white/30 tabular-nums">{filters.contrast}%</span>
                         </div>
                         <input
@@ -745,7 +745,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                     onClick={() => toggleSection('color')}
                     className="w-full flex items-center justify-between p-3 text-xs font-medium text-white/60 hover:bg-white/5 transition-colors"
                   >
-                    <span>Color & Saturation</span>
+                    <span>Color y Saturación</span>
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${openSection === 'color' ? 'rotate-180' : ''}`}><path d="m6 9 6 6 6-6" /></svg>
                   </button>
 
@@ -753,7 +753,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                     <div className="p-4 pt-0 space-y-4 animate-in slide-in-from-top-2 duration-200">
                       <div className="space-y-2 pt-2">
                         <div className="flex justify-between text-xs">
-                          <label className="text-white/40">Saturation</label>
+                          <label className="text-white/40">Saturación</label>
                           <span className="text-white/30 tabular-nums">{filters.saturation}%</span>
                         </div>
                         <input
@@ -762,7 +762,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                           onChange={(e) => updateFilter('saturation', Number(e.target.value))}
                           onMouseUp={commitFilterChange}
                           onTouchEnd={commitFilterChange}
-                          title="Adjust color intensity"
+                          title="Ajustar intensidad del color"
                           className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#A78BFA]"
                         />
                       </div>
@@ -776,7 +776,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                     onClick={() => toggleSection('effects')}
                     className="w-full flex items-center justify-between p-3 text-xs font-medium text-white/60 hover:bg-white/5 transition-colors"
                   >
-                    <span>Filter Effects</span>
+                    <span>Efectos de Filtro</span>
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${openSection === 'effects' ? 'rotate-180' : ''}`}><path d="m6 9 6 6 6-6" /></svg>
                   </button>
 
@@ -793,13 +793,13 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                           onChange={(e) => updateFilter('sepia', Number(e.target.value))}
                           onMouseUp={commitFilterChange}
                           onTouchEnd={commitFilterChange}
-                          title="Add sepia tone"
+                          title="Agregar tono sepia"
                           className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#A78BFA]"
                         />
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between text-xs">
-                          <label className="text-white/40">Grayscale</label>
+                          <label className="text-white/40">Escala de grises</label>
                           <span className="text-white/30 tabular-nums">{filters.grayscale}%</span>
                         </div>
                         <input
@@ -808,7 +808,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                           onChange={(e) => updateFilter('grayscale', Number(e.target.value))}
                           onMouseUp={commitFilterChange}
                           onTouchEnd={commitFilterChange}
-                          title="Convert to grayscale"
+                          title="Convertir a escala de grises"
                           className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#A78BFA]"
                         />
                       </div>

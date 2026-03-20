@@ -66,7 +66,7 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
 
   const handleApply = async () => {
     if (!outfitDesc.trim()) {
-      addToast('Describe the outfit first', 'error')
+      addToast('Describe el outfit primero', 'error')
       return
     }
 
@@ -114,7 +114,7 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
   const handleSaveAll = () => {
     const successResults = results.filter(r => r.status === 'done' && r.resultUrl)
     if (successResults.length === 0) {
-      addToast('No results to save', 'info')
+      addToast('No hay resultados para guardar', 'info')
       return
     }
 
@@ -129,7 +129,7 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
     }))
 
     addItems(items)
-    addToast(`${items.length} outfit${items.length > 1 ? 's' : ''} saved to gallery`, 'success')
+    addToast(`${items.length} outfit${items.length > 1 ? 's' : ''} guardado${items.length > 1 ? 's' : ''} en la galería`, 'success')
     onComplete(successResults.map(r => r.resultUrl!))
   }
 
@@ -162,10 +162,10 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
             </div>
             <div>
               <h2 className="text-sm font-bold" style={{ color: 'var(--joi-text-1)' }}>
-                Batch Outfit Change
+                Cambio de Outfit en Lote
               </h2>
               <p className="text-[10px]" style={{ color: 'var(--joi-text-3)' }}>
-                {totalCount} image{totalCount !== 1 ? 's' : ''} selected
+                {totalCount} {totalCount !== 1 ? 'imágenes seleccionadas' : 'imagen seleccionada'}
               </p>
             </div>
           </div>
@@ -185,7 +185,7 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
           <div>
             <label className="text-[10px] font-semibold uppercase tracking-wider block mb-2"
               style={{ color: 'var(--joi-text-3)' }}>
-              Selected Photos
+              Fotos Seleccionadas
             </label>
             <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'thin' }}>
               {results.map((r, i) => (
@@ -231,13 +231,13 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
           <div>
             <label className="text-[10px] font-semibold uppercase tracking-wider block mb-2"
               style={{ color: 'var(--joi-text-3)' }}>
-              Outfit Description
+              Descripción del Outfit
             </label>
             <input
               type="text"
               value={outfitDesc}
               onChange={e => setOutfitDesc(e.target.value)}
-              placeholder="e.g. red evening gown with gold jewelry, black leather jacket with jeans..."
+              placeholder="ej. vestido de noche rojo con joyas doradas, chaqueta de cuero negra con jeans..."
               disabled={isProcessing}
               className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
               style={{
@@ -253,7 +253,7 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
           <div>
             <label className="text-[10px] font-semibold uppercase tracking-wider block mb-2"
               style={{ color: 'var(--joi-text-3)' }}>
-              Garment Reference <span className="normal-case font-normal">(optional)</span>
+              Referencia de Prenda <span className="normal-case font-normal">(opcional)</span>
             </label>
             <div
               className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all hover:border-white/15"
@@ -274,14 +274,14 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
                     <p className="text-[11px] truncate" style={{ color: 'var(--joi-text-2)' }}>
                       {garmentFile?.name || 'garment.png'}
                     </p>
-                    <p className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>Click to change</p>
+                    <p className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>Clic para cambiar</p>
                   </div>
                   <button
                     onClick={e => { e.stopPropagation(); setGarmentFile(null); setGarmentPreview(null) }}
                     className="text-[10px] px-2 py-1 rounded-lg transition-all"
                     style={{ background: 'rgba(255,60,60,0.1)', color: '#e05050' }}
                   >
-                    Remove
+                    Eliminar
                   </button>
                 </>
               ) : (
@@ -292,10 +292,10 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
                   </div>
                   <div>
                     <p className="text-[11px]" style={{ color: 'var(--joi-text-2)' }}>
-                      Upload a garment photo
+                      Sube una foto de la prenda
                     </p>
                     <p className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>
-                      Drop or click -- flat lay or worn
+                      Arrastra o haz clic -- tendida o puesta
                     </p>
                   </div>
                 </>
@@ -315,7 +315,7 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-medium" style={{ color: 'var(--joi-text-2)' }}>
-                  Processing {currentIndex + 1}/{totalCount}...
+                  Procesando {currentIndex + 1}/{totalCount}...
                 </span>
                 <span className="text-[10px] font-mono" style={{ color: '#FF6B9D' }}>
                   {progressPercent}%
@@ -340,7 +340,7 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
             <div>
               <label className="text-[10px] font-semibold uppercase tracking-wider block mb-2"
                 style={{ color: 'var(--joi-text-3)' }}>
-                Results ({doneCount} success{errorCount > 0 ? `, ${errorCount} failed` : ''})
+                Resultados ({doneCount} exitoso{doneCount !== 1 ? 's' : ''}{errorCount > 0 ? `, ${errorCount} fallido${errorCount !== 1 ? 's' : ''}` : ''})
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {results.map((r, i) => (
@@ -359,7 +359,7 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
                         <div className="absolute inset-0 flex items-center justify-center">
                           <span className="text-[9px] px-2 py-1 rounded-lg"
                             style={{ background: 'rgba(255,60,60,0.15)', color: '#e05050' }}>
-                            {r.error || 'Failed'}
+                            {r.error || 'Falló'}
                           </span>
                         </div>
                       </div>
@@ -387,7 +387,7 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
                   opacity: isProcessing ? 0.4 : 1,
                 }}
               >
-                Cancel
+                Cancelar
               </button>
               <div className="flex-1" />
               {isProcessing ? (
@@ -400,7 +400,7 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
                     color: '#e05050',
                   }}
                 >
-                  Stop
+                  Detener
                 </button>
               ) : (
                 <button
@@ -415,7 +415,7 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
                     boxShadow: outfitDesc.trim() ? '0 4px 20px rgba(255,107,157,0.25)' : 'none',
                   }}
                 >
-                  Apply to All ({totalCount})
+                  Aplicar a Todas ({totalCount})
                 </button>
               )}
             </>
@@ -430,7 +430,7 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
                   color: 'var(--joi-text-2)',
                 }}
               >
-                Close
+                Cerrar
               </button>
               <div className="flex-1" />
               <button
@@ -445,7 +445,7 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
                   boxShadow: doneCount > 0 ? '0 4px 20px rgba(255,107,157,0.25)' : 'none',
                 }}
               >
-                Save All to Gallery ({doneCount})
+                Guardar Todo en Galería ({doneCount})
               </button>
             </>
           )}

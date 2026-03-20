@@ -22,31 +22,31 @@ import { generateCharacterSheet, enhanceSheetWithGrok, type SheetType } from '..
 
 // ─── Character creation engine presets (Soul 2.0 prominent) ──────────
 const CHARACTER_ENGINES = [
-  { id: 'higgsfield:soul', label: 'Soul 2.0', desc: 'Fashion-grade realism', badge: 'Recommended' },
-  { id: 'gemini:nb2', label: 'Nano Banana 2', desc: 'Fast & reliable', badge: null },
-  { id: 'gemini:imagen4', label: 'Imagen 4', desc: 'Photorealistic, economical', badge: null },
-  { id: 'gemini:pro', label: 'NB Pro', desc: 'Maximum quality', badge: null },
+  { id: 'higgsfield:soul', label: 'Soul 2.0', desc: 'Realismo de moda', badge: 'Recomendado' },
+  { id: 'gemini:nb2', label: 'Nano Banana 2', desc: 'Rápido y confiable', badge: null },
+  { id: 'gemini:imagen4', label: 'Imagen 4', desc: 'Fotorrealista, económico', badge: null },
+  { id: 'gemini:pro', label: 'NB Pro', desc: 'Máxima calidad', badge: null },
 ] as const;
 
 // ─── Render styles ───────────────────────────────────────────────────
 const renderStyles = [
-  { id:'photorealistic', label:'Photorealistic', icon:'📷', desc:'Human-like, studio photography',
+  { id:'photorealistic', label:'Fotorrealista', icon:'📷', desc:'Aspecto humano, fotografía de estudio',
     prompt:'Ultra-photorealistic digital human, indistinguishable from photograph, shot on Phase One IQ4 150MP with Schneider 110mm f/2.8, natural skin with visible pores and subsurface blood flow, accurate eye moisture, individual hair strand rendering, physically-based material response,',
     scenario:'Professional photography studio with Profoto B10 key through 4ft octabox, V-flat fill, clean neutral background, shot on medium format digital, natural skin imperfections',
     bg:'linear-gradient(135deg, #f0b86020, #d4956b10)' },
-  { id:'anime', label:'Anime / Manga', icon:'🎨', desc:'Japanese animation style',
+  { id:'anime', label:'Anime / Manga', icon:'🎨', desc:'Estilo de animación japonesa',
     prompt:'Premium anime character, Production I.G / studio Bones quality, clean precise linework with variable stroke weight, cel-shaded with sophisticated shadow gradients, luminous multi-layered iris reflections, stylized proportions, dynamic hair strand groups,',
     scenario:'Anime background with atmospheric depth, soft painted sky, drawn in high-end anime style, NOT a photograph, NOT photorealistic, 2D illustration with volumetric lighting',
     bg:'linear-gradient(135deg, #e8749a15, #9a90c415)' },
-  { id:'3d-render', label:'3D Render', icon:'🖥️', desc:'CGI, Pixar-like, game character',
+  { id:'3d-render', label:'Render 3D', icon:'🖥️', desc:'CGI, estilo Pixar, personaje de juego',
     prompt:'AAA game-quality 3D character render, Unreal Engine 5 quality, high-poly sculpted mesh, PBR material workflow on all surfaces, subsurface scattering skin shader with detail maps, strand-based groomed hair, HDRI environment lighting with ray-traced AO,',
     scenario:'3D rendered environment with Lumen global illumination, cinematic depth of field with physically accurate bokeh, rendered in Octane/Unreal Engine 5',
     bg:'linear-gradient(135deg, #4858e015, #50d8a010)' },
-  { id:'illustration', label:'Illustration', icon:'✍️', desc:'Digital art, concept art',
+  { id:'illustration', label:'Ilustración', icon:'✍️', desc:'Arte digital, concept art',
     prompt:'High-end digital character illustration, concept art portfolio quality, painterly technique blending precise linework with expressive color blocking, sophisticated light study with warm/cool shifts, character design clarity with strong silhouette,',
     scenario:'Fantasy concept art environment with atmospheric perspective, rich texture variation suggesting mixed media, art book presentation quality',
     bg:'linear-gradient(135deg, #f0b86015, #e8725c10)' },
-  { id:'stylized', label:'Stylized', icon:'✨', desc:'Semi-realistic, Arcane / Spider-Verse',
+  { id:'stylized', label:'Estilizado', icon:'✨', desc:'Semi-realista, Arcane / Spider-Verse',
     prompt:'Distinctive stylized character with exaggerated design language, Arcane/Spider-Verse quality, strong graphic silhouette with memorable proportions, bold shape language defining personality, limited palette with strategic accent pops,',
     scenario:'Stylized cinematic environment with dramatic moody lighting and color grading, cel-shaded with painterly details, NOT photorealistic, poster-quality composition',
     bg:'linear-gradient(135deg, #d048b015, #f0684815)' },
@@ -173,7 +173,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     setChipSelections(prev => ({ ...prev, [category]: ids }))
   }
 
-  const steps = ['Base', 'Look', 'Style & Personality']
+  const steps = ['Base', 'Apariencia', 'Estilo y Personalidad']
   const isPhotorealistic = renderStyles[selRenderStyle]?.id === 'photorealistic'
 
   // Build the full prompt for generation
@@ -239,7 +239,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
   // ─── Generate variants ───────────────────────────────────────────
   const handleGenerate = async () => {
-    if (!name.trim()) { toast.error('Enter a name for the character'); return }
+    if (!name.trim()) { toast.error('Ingresa un nombre para el personaje'); return }
 
     const cost = costPerVariant
     setGenerating(true)
@@ -259,7 +259,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     // Generate 1 preview image
     const ok = await decrementCredits(cost)
     if (!ok) {
-      toast.error('Insufficient credits')
+      toast.error('Créditos insuficientes')
       setGenerating(false)
       setGenerationPhase('idle')
       return
@@ -288,12 +288,12 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
         setGenerationPhase('picking')
       } else {
         restoreCredits(cost)
-        toast.error('Generation failed — try again')
+        toast.error('Generación fallida — intenta de nuevo')
         setGenerationPhase('idle')
       }
     } catch {
       restoreCredits(cost)
-      toast.error('Generation failed — try again')
+      toast.error('Generación fallida — intenta de nuevo')
       setGenerationPhase('idle')
     }
 
@@ -307,7 +307,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   const handleGenerateSheet = async (type: SheetType) => {
     if (selectedVariant === null) return
     const ok = await decrementCredits(SHEET_CREDIT_COST)
-    if (!ok) { toast.error('Insufficient credits'); return }
+    if (!ok) { toast.error('Créditos insuficientes'); return }
 
     setSheetGenerating(type)
     setGenerationPhase('sheet')
@@ -317,7 +317,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
       setSheetResults(prev => ({ ...prev, [type]: url }))
     } catch {
       restoreCredits(SHEET_CREDIT_COST)
-      toast.error(`Failed to generate ${type} sheet`)
+      toast.error(`Error al generar hoja de ${type}`)
     }
 
     setSheetGenerating(null)
@@ -327,7 +327,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     const sourceUrl = sheetResults[type]
     if (!sourceUrl) return
     const ok = await decrementCredits(ULTRA_CREDIT_COST)
-    if (!ok) { toast.error('Insufficient credits'); return }
+    if (!ok) { toast.error('Créditos insuficientes'); return }
 
     const ultraKey = `${type}Ultra` as const
     setSheetGenerating(ultraKey)
@@ -337,7 +337,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
       setSheetResults(prev => ({ ...prev, [ultraKey]: url }))
     } catch {
       restoreCredits(ULTRA_CREDIT_COST)
-      toast.error(`Failed to enhance ${type} sheet`)
+      toast.error(`Error al mejorar hoja de ${type}`)
     }
 
     setSheetGenerating(null)
@@ -383,17 +383,17 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
       addCharacter(char)
       usePipelineStore.getState().setCharacter(char.id)
-      toast.success(`${name} created!`)
+      toast.success(`${name} creado!`)
       setCharacterSaved(true)
     } catch {
-      toast.error('Error saving character')
+      toast.error('Error al guardar personaje')
     }
   }
 
   // ─── Import ──────────────────────────────────────────────────────
   const handleImport = async () => {
-    if (importFiles.length === 0) { toast.error('Upload at least one image'); return }
-    if (!importName.trim()) { toast.error('Enter a name'); return }
+    if (importFiles.length === 0) { toast.error('Sube al menos una imagen'); return }
+    if (!importName.trim()) { toast.error('Ingresa un nombre'); return }
 
     setGenerating(true)
     try {
@@ -420,13 +420,13 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
       addCharacter(character)
       usePipelineStore.getState().setCharacter(character.id)
-      toast.success(`${importName} imported!`)
+      toast.success(`${importName} importado!`)
       setCharacterSaved(true)
       setImportFiles([])
       setImportName('')
       setImportBio('')
     } catch {
-      toast.error('Error importing character')
+      toast.error('Error al importar personaje')
     } finally {
       setGenerating(false)
     }
@@ -481,7 +481,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
   // Missing fields hint for Step 0
   const missingFields = step === 0
-    ? [!name.trim() && 'Name', !selGender && 'Gender', !selAge && 'Age'].filter(Boolean)
+    ? [!name.trim() && 'Nombre', !selGender && 'Género', !selAge && 'Edad'].filter(Boolean)
     : []
 
   // ─── Render ───────────────────────────────────────────────────────
@@ -489,10 +489,10 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     <div className="min-h-screen joi-mesh">
       <div className="px-8 pt-8 pb-2">
         <h1 className="joi-heading joi-glow text-2xl font-bold">
-          <span style={{ color: 'var(--joi-pink)' }}>Create</span>{' '}
-          <span style={{ color: 'var(--joi-text-1)' }}>Character</span>
+          <span style={{ color: 'var(--joi-pink)' }}>Crear</span>{' '}
+          <span style={{ color: 'var(--joi-text-1)' }}>Personaje</span>
         </h1>
-        <p className="joi-label mt-1" style={{ color: 'var(--joi-cyan-warm)' }}>Build from scratch or import reference images</p>
+        <p className="joi-label mt-1" style={{ color: 'var(--joi-cyan-warm)' }}>Crea desde cero o importa imágenes de referencia</p>
       </div>
 
       {/* Mode Toggle */}
@@ -506,7 +506,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                 color: mode === m ? 'var(--joi-text-1)' : 'var(--joi-text-3)',
                 boxShadow: mode === m ? '0 2px 8px rgba(0,0,0,.2)' : 'none',
               }}>
-              {m === 'create' ? '\u2295 Create from Scratch' : '\u2191 Import Images'}
+              {m === 'create' ? '\u2295 Crear desde Cero' : '\u2191 Importar Imágenes'}
             </button>
           ))}
         </div>
@@ -528,11 +528,11 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               onDragLeave={() => setDragOver(false)}
               onDrop={handleFileDrop}>
               <div className="text-4xl mb-3" style={{ color: 'var(--joi-pink)' }}>{'\u2191'}</div>
-              <div className="text-sm font-semibold mb-1" style={{ color: 'var(--joi-text-1)' }}>Upload 1-5 clear photos of a face</div>
-              <div className="text-[11px]" style={{ color: 'var(--joi-text-3)' }}>JPG, PNG, WEBP · Min resolution: 512×512px · Max 10MB each</div>
+              <div className="text-sm font-semibold mb-1" style={{ color: 'var(--joi-text-1)' }}>Sube 1-5 fotos claras de un rostro</div>
+              <div className="text-[11px]" style={{ color: 'var(--joi-text-3)' }}>JPG, PNG, WEBP · Resolución mín: 512×512px · Máx 10MB c/u</div>
               <div className="text-[11px] mt-2 px-3 py-1.5 rounded-xl inline-block"
                 style={{ background: 'rgba(255,107,157,.1)', color: 'var(--joi-pink)' }}>
-                or click to select files
+                o haz clic para seleccionar archivos
               </div>
             </div>
 
@@ -540,7 +540,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
             {importFiles.length > 0 && (
               <div className="mb-5">
                 <div className="text-[10px] font-mono uppercase tracking-wider mb-2" style={{ color: 'var(--joi-text-3)' }}>
-                  Uploaded ({importFiles.length}/20)
+                  Subidas ({importFiles.length}/20)
                 </div>
                 <div className="grid grid-cols-5 gap-3">
                   {importFiles.map((f, i) => (
@@ -559,24 +559,24 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
             {/* Name + Description */}
             <div className="p-5 space-y-4 rounded-xl joi-glass">
               <div>
-                <label className="joi-label block mb-1.5">Name</label>
-                <input value={importName} onChange={e => setImportName(e.target.value)} placeholder="Character name"
+                <label className="joi-label block mb-1.5">Nombre</label>
+                <input value={importName} onChange={e => setImportName(e.target.value)} placeholder="Nombre del personaje"
                   className="w-full px-3 py-2 rounded-xl text-xs border outline-none transition-colors"
                   style={{ background: 'var(--joi-bg-2)', borderColor: 'rgba(255,255,255,.04)', color: 'var(--joi-text-1)' }} />
               </div>
               <div>
-                <label className="joi-label block mb-1.5">Description (optional)</label>
+                <label className="joi-label block mb-1.5">Descripción (opcional)</label>
                 <textarea value={importBio} onChange={e => setImportBio(e.target.value)} rows={3}
-                  placeholder="Describe the character for better AI consistency..."
+                  placeholder="Describe al personaje para mejor consistencia con AI..."
                   className="w-full px-3 py-2 rounded-xl text-xs border outline-none transition-colors resize-none"
                   style={{ background: 'var(--joi-bg-2)', borderColor: 'rgba(255,255,255,.04)', color: 'var(--joi-text-1)' }} />
               </div>
               <button onClick={handleImport} disabled={generating}
                 className={`joi-btn-solid w-full py-3 text-sm${!generating ? ' joi-breathe' : ''}`}>
-                {generating ? '\u21BB Importing...' : '\u2726 Import Character'}
+                {generating ? '\u21BB Importando...' : '\u2726 Importar Personaje'}
               </button>
               {characterSaved && onNav && (
-                <PipelineCTA label="Create Hero Shot in Director" targetPage="director" onNav={onNav} icon="\u{1F3AC}" />
+                <PipelineCTA label="Crear Foto Principal en Director" targetPage="director" onNav={onNav} icon="\u{1F3AC}" />
               )}
             </div>
           </div>
@@ -584,15 +584,15 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
           {/* Right: Preview */}
           <div className="w-[300px] shrink-0">
             <div className="p-5 sticky top-8 rounded-xl joi-glass">
-              <div className="joi-label text-center mb-3">Preview</div>
+              <div className="joi-label text-center mb-3">Vista Previa</div>
               <div className="aspect-[3/4] rounded-xl overflow-hidden" style={{ background: 'var(--joi-bg-3)', border: '1px solid rgba(255,255,255,.04)' }}>
                 {importFiles.length > 0 ? (
-                  <img src={URL.createObjectURL(importFiles[0])} className="w-full h-full object-cover" alt="Preview" />
+                  <img src={URL.createObjectURL(importFiles[0])} className="w-full h-full object-cover" alt="Vista previa" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <div className="text-center">
                       <div className="text-3xl mb-2" style={{ color: 'var(--joi-text-3)' }}>{'\u25C8'}</div>
-                      <div className="text-[11px]" style={{ color: 'var(--joi-text-3)' }}>Upload images to<br />generate preview</div>
+                      <div className="text-[11px]" style={{ color: 'var(--joi-text-3)' }}>Sube imágenes para<br />generar vista previa</div>
                     </div>
                   </div>
                 )}
@@ -632,7 +632,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               <div className="relative shrink-0 ml-auto">
                 <button onClick={() => setShowEngineModal(v => !v)}
                   className="joi-btn-ghost w-8 h-8 rounded-xl flex items-center justify-center text-sm relative"
-                  title="Generation Engine">
+                  title="Motor de Generación">
                   🔧
                   {selectedEngine !== 'auto' && (
                     <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full" style={{ background: 'var(--joi-pink)' }} />
@@ -645,7 +645,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
             {step === 0 && (
               <div className="p-6 space-y-5 rounded-xl joi-glass">
                 <div>
-                  <label className="joi-label block mb-3">Render Style</label>
+                  <label className="joi-label block mb-3">Estilo de Render</label>
                   <div className="grid grid-cols-3 gap-3">
                     {renderStyles.map((rs, i) => (
                       <button key={rs.id} onClick={() => setSelRenderStyle(i)}
@@ -665,20 +665,20 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                 </div>
 
                 <div>
-                  <label className="joi-label block mb-1.5">Name <span style={{ color: 'var(--joi-pink)' }}>*</span></label>
-                  <input value={name} onChange={e => setName(e.target.value)} placeholder="E.g.: Luna Vex"
+                  <label className="joi-label block mb-1.5">Nombre <span style={{ color: 'var(--joi-pink)' }}>*</span></label>
+                  <input value={name} onChange={e => setName(e.target.value)} placeholder="Ej.: Luna Vex"
                     className="w-full px-4 py-3 rounded-xl text-sm border outline-none focus:border-[rgba(255,107,157,.4)] transition-colors"
                     style={{ background: 'var(--joi-bg-2)', borderColor: 'rgba(255,255,255,.04)', color: 'var(--joi-text-1)', backdropFilter: 'blur(8px)' }} />
                 </div>
 
                 <div>
-                  <label className="joi-label block mb-2">Gender <span style={{ color: 'var(--joi-pink)' }}>*</span></label>
+                  <label className="joi-label block mb-2">Género <span style={{ color: 'var(--joi-pink)' }}>*</span></label>
                   <ChipSelector options={GENDERS} selected={selGender ? [selGender] : []}
                     onSelect={ids => setSelGender(ids[0] || null)} />
                 </div>
 
                 <div>
-                  <label className="joi-label block mb-2">Age <span style={{ color: 'var(--joi-pink)' }}>*</span></label>
+                  <label className="joi-label block mb-2">Edad <span style={{ color: 'var(--joi-pink)' }}>*</span></label>
                   <ChipSelector options={AGE_RANGES} selected={selAge ? [selAge] : []}
                     onSelect={ids => setSelAge(ids[0] || null)} color="var(--joi-magenta)" />
                 </div>
@@ -698,7 +698,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                         color: activeTab === tab ? 'var(--joi-pink)' : 'var(--joi-text-3)',
                         boxShadow: activeTab === tab ? '0 2px 8px rgba(0,0,0,.2)' : 'none',
                       }}>
-                      {tab === 'builder' ? '\u{1F9E9} Builder' : '\u270D\uFE0F Prompt'}
+                      {tab === 'builder' ? '\u{1F9E9} Constructor' : '\u270D\uFE0F Prompt'}
                     </button>
                   ))}
                 </div>
@@ -708,38 +708,38 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                     /* ─── Builder Tab ─── */
                     <>
                       <div>
-                        <label className="joi-label block mb-2">Hair Style</label>
+                        <label className="joi-label block mb-2">Estilo de Cabello</label>
                         <ChipSelector options={HAIR_STYLES} selected={chipSelections.hairStyle}
                           onSelect={ids => updateChip('hairStyle', ids)} />
                       </div>
                       <div>
-                        <label className="joi-label block mb-2">Hair Color</label>
+                        <label className="joi-label block mb-2">Color de Cabello</label>
                         <ChipSelector options={HAIR_COLORS} selected={chipSelections.hairColor}
                           onSelect={ids => updateChip('hairColor', ids)} color="var(--joi-magenta)" />
                       </div>
                       <div>
-                        <label className="joi-label block mb-2">Skin Tone</label>
+                        <label className="joi-label block mb-2">Tono de Piel</label>
                         <ChipSelector options={SKIN_TONES} selected={chipSelections.skinTone}
                           onSelect={ids => updateChip('skinTone', ids)} color="var(--joi-blue)" />
                       </div>
                       <div>
-                        <label className="joi-label block mb-2">Eye Color</label>
+                        <label className="joi-label block mb-2">Color de Ojos</label>
                         <ChipSelector options={EYE_COLORS} selected={chipSelections.eyeColor}
                           onSelect={ids => updateChip('eyeColor', ids)} color="var(--joi-magenta)" />
                       </div>
                       <div>
-                        <label className="joi-label block mb-2">Face Shape</label>
+                        <label className="joi-label block mb-2">Forma de Rostro</label>
                         <ChipSelector options={FACE_SHAPES} selected={chipSelections.faceShape}
                           onSelect={ids => updateChip('faceShape', ids)} />
                       </div>
                       <div>
-                        <label className="joi-label block mb-2">Body Type</label>
+                        <label className="joi-label block mb-2">Tipo de Cuerpo</label>
                         <ChipSelector options={BODY_TYPES} selected={chipSelections.bodyType}
                           onSelect={ids => updateChip('bodyType', ids)} color="var(--joi-blue)" />
                       </div>
                       {!isPhotorealistic && (
                         <div>
-                          <label className="joi-label block mb-2">Skin Texture</label>
+                          <label className="joi-label block mb-2">Textura de Piel</label>
                           <ChipSelector options={SKIN_TEXTURES} selected={chipSelections.skinTexture}
                             onSelect={ids => updateChip('skinTexture', ids)} color="var(--joi-magenta)" />
                         </div>
@@ -748,12 +748,12 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                   ) : (
                     /* ─── Prompt Tab ─── */
                     <div>
-                      <label className="joi-label block mb-2">Describe your character</label>
+                      <label className="joi-label block mb-2">Describe tu personaje</label>
                       <textarea
                         value={promptText}
                         onChange={e => setPromptText(e.target.value)}
                         rows={8}
-                        placeholder={"Describe your character's appearance in detail.\n\nExample: A 25-year-old woman with wavy auburn hair, green eyes, light freckles, and a warm smile. Athletic build, wearing a casual linen shirt."}
+                        placeholder={"Describe la apariencia de tu personaje en detalle.\n\nEjemplo: Una mujer de 25 años con cabello castaño ondulado, ojos verdes, pecas ligeras y una sonrisa cálida. Complexión atlética, usando una camisa de lino casual."}
                         className="w-full px-4 py-3 rounded-xl text-sm border outline-none transition-colors resize-none"
                         style={{
                           background: 'var(--joi-bg-2)', borderColor: 'rgba(255,255,255,.04)',
@@ -763,9 +763,9 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                       {!promptText && (
                         <div className="flex gap-2 mt-2 flex-wrap">
                           {[
-                            { label: 'Cyberpunk girl', text: 'A 22-year-old woman with short neon blue hair, cybernetic eye implants glowing cyan, sharp jawline, pale skin with holographic tattoos, wearing a cropped tech jacket.' },
-                            { label: 'Classic gentleman', text: 'A 30-year-old man with slicked-back dark hair, strong brow, clean-shaven, warm brown eyes, athletic build, wearing a tailored navy suit with an open collar.' },
-                            { label: 'Fantasy elf', text: 'An ethereal elven woman with long silver hair, pointed ears, violet eyes with slit pupils, luminous pale skin, delicate features, wearing flowing white robes with gold accents.' },
+                            { label: 'Chica cyberpunk', text: 'A 22-year-old woman with short neon blue hair, cybernetic eye implants glowing cyan, sharp jawline, pale skin with holographic tattoos, wearing a cropped tech jacket.' },
+                            { label: 'Caballero clásico', text: 'A 30-year-old man with slicked-back dark hair, strong brow, clean-shaven, warm brown eyes, athletic build, wearing a tailored navy suit with an open collar.' },
+                            { label: 'Elfa fantástica', text: 'An ethereal elven woman with long silver hair, pointed ears, violet eyes with slit pupils, luminous pale skin, delicate features, wearing flowing white robes with gold accents.' },
                           ].map(ex => (
                             <button key={ex.label} onClick={() => setPromptText(ex.text)}
                               className="px-3 py-1.5 rounded-lg text-[10px] transition-all hover:scale-[1.02]"
@@ -777,27 +777,27 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                       )}
                       <div className="flex items-center justify-between mt-3">
                         <div className="text-[10px]" style={{ color: 'var(--joi-text-3)' }}>
-                          Tip: Be specific about physical features, expression, and style for best results.
+                          Tip: Sé específico con los rasgos físicos, expresión y estilo para mejores resultados.
                         </div>
                         <button
                           disabled={enhancing || !promptText.trim()}
                           onClick={async () => {
                             if (!promptText.trim()) return
                             const ok = await decrementCredits(2)
-                            if (!ok) { toast.error('Insufficient credits (2cr)'); return }
+                            if (!ok) { toast.error('Créditos insuficientes (2cr)'); return }
                             setEnhancing(true)
                             try {
                               const enhanced = await enhancePrompt(promptText, renderStyles[selRenderStyle].id)
                               if (enhanced && enhanced !== promptText) {
                                 setPromptText(enhanced)
-                                toast.success('Prompt enhanced!')
+                                toast.success('Prompt mejorado!')
                               } else {
                                 restoreCredits(2)
-                                toast.info('No enhancement needed')
+                                toast.info('No necesita mejora')
                               }
                             } catch {
                               restoreCredits(2)
-                              toast.error('Enhancement failed')
+                              toast.error('Error al mejorar')
                             } finally {
                               setEnhancing(false)
                             }
@@ -809,7 +809,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                             color: 'var(--joi-pink)',
                             opacity: (!promptText.trim() || enhancing) ? 0.4 : 1,
                           }}>
-                          {enhancing ? '...' : '✨ Enhance (2cr)'}
+                          {enhancing ? '...' : '✨ Mejorar (2cr)'}
                         </button>
                       </div>
                     </div>
@@ -819,10 +819,10 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                 {/* Reference photos — always visible */}
                 <div className="p-5 rounded-xl joi-glass">
                   <div className="flex items-center justify-between mb-3">
-                    <label className="joi-label">Reference Photos (optional)</label>
+                    <label className="joi-label">Fotos de Referencia (opcional)</label>
                     <span className="text-[10px] font-mono" style={{ color: 'var(--joi-text-3)' }}>{referenceFiles.length}/5</span>
                   </div>
-                  <div className="text-[10px] mb-3" style={{ color: 'var(--joi-text-3)' }}>Upload photos for better consistency</div>
+                  <div className="text-[10px] mb-3" style={{ color: 'var(--joi-text-3)' }}>Sube fotos para mejor consistencia</div>
                   <input ref={refInputRef} type="file" multiple accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleRefSelect} />
                   <div className="grid grid-cols-5 gap-2">
                     {Array.from({ length: 5 }).map((_, i) => (
@@ -859,7 +859,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               <div className="space-y-4">
                 <div className="p-6 space-y-5 rounded-xl joi-glass">
                   <div>
-                    <label className="joi-label block mb-1">Fashion Style <span style={{ color: 'var(--joi-text-3)', fontWeight: 400 }}>(max 2)</span></label>
+                    <label className="joi-label block mb-1">Estilo de Moda <span style={{ color: 'var(--joi-text-3)', fontWeight: 400 }}>(máx 2)</span></label>
                     <div className="mt-2">
                       <ChipSelector options={FASHION_STYLES} selected={selFashion}
                         onSelect={setSelFashion} maxSelect={2} color="var(--joi-magenta)" />
@@ -867,7 +867,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                   </div>
 
                   <div>
-                    <label className="joi-label block mb-1">Personality <span style={{ color: 'var(--joi-text-3)', fontWeight: 400 }}>(max 3)</span></label>
+                    <label className="joi-label block mb-1">Personalidad <span style={{ color: 'var(--joi-text-3)', fontWeight: 400 }}>(máx 3)</span></label>
                     <div className="mt-2">
                       <ChipSelector options={PERSONALITY_TRAITS} selected={selPersonality}
                         onSelect={setSelPersonality} maxSelect={3} />
@@ -875,11 +875,11 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                   </div>
 
                   <div>
-                    <label className="joi-label block mb-2">Accessories <span style={{ color: 'var(--joi-text-3)', fontWeight: 400 }}>(max 6)</span></label>
-                    <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5 mt-3" style={{ color: 'var(--joi-text-3)' }}>Everyday</div>
+                    <label className="joi-label block mb-2">Accesorios <span style={{ color: 'var(--joi-text-3)', fontWeight: 400 }}>(máx 6)</span></label>
+                    <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5 mt-3" style={{ color: 'var(--joi-text-3)' }}>Cotidianos</div>
                     <ChipSelector options={ACCESSORIES.filter(a => ['sunglasses','piercings','tattoos','jewelry','hat','scarf','watch','choker'].includes(a.id))} selected={selAccessories}
                       onSelect={setSelAccessories} maxSelect={6} color="var(--joi-blue)" />
-                    <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5 mt-3" style={{ color: 'var(--joi-text-3)' }}>Fantasy</div>
+                    <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5 mt-3" style={{ color: 'var(--joi-text-3)' }}>Fantasía</div>
                     <ChipSelector options={ACCESSORIES.filter(a => ['crown','mask','wings','horns','elf-ears','tail'].includes(a.id))} selected={selAccessories}
                       onSelect={setSelAccessories} maxSelect={6} color="var(--joi-blue)" />
                   </div>
@@ -888,7 +888,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                 {/* ─── Generation Zone ────────────────────────────── */}
                 {generationPhase !== 'idle' && (
                   <div className="p-5 rounded-xl joi-glass space-y-4">
-                    <div className="joi-label">Generated Variants</div>
+                    <div className="joi-label">Variantes Generadas</div>
 
                     {/* Variants grid */}
                     {variants.length > 0 && (
@@ -914,7 +914,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                     {(generationPhase === 'picking' || generationPhase === 'sheet') && selectedVariant !== null && !characterSaved && (
                       <div className="space-y-3">
                         <div className="text-[10px] font-mono uppercase tracking-wider" style={{ color: 'var(--joi-text-3)' }}>
-                          Character Sheet (optional)
+                          Hoja de Personaje (opcional)
                         </div>
 
                         {/* Step 1: Face Angles */}
@@ -931,10 +931,10 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                             <div className="flex items-center justify-between">
                               <div>
                                 <div className="text-[12px] font-medium" style={{ color: 'var(--joi-text-1)' }}>
-                                  {sheetGenerating === 'face' ? '\u21BB Generating...' : '\u{1F9D1} Face Angles (4 views)'}
+                                  {sheetGenerating === 'face' ? '\u21BB Generando...' : '\u{1F9D1} Ángulos de Rostro (4 vistas)'}
                                 </div>
                                 <div className="text-[10px]" style={{ color: 'var(--joi-text-3)' }}>
-                                  Front · Right profile · Left profile · Three-quarter
+                                  Frontal · Perfil derecho · Perfil izquierdo · Tres cuartos
                                 </div>
                               </div>
                               <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg"
@@ -950,10 +950,10 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                           </button>
                         ) : (
                           <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,107,157,.10)' }}>
-                            <img src={sheetResults.faceUltra || sheetResults.face} className="w-full object-contain" alt="Face angles" />
+                            <img src={sheetResults.faceUltra || sheetResults.face} className="w-full object-contain" alt="Ángulos de rostro" />
                             <div className="flex items-center justify-between px-3 py-2" style={{ background: 'rgba(255,107,157,.04)' }}>
                               <span className="text-[10px] font-mono" style={{ color: 'var(--joi-text-3)' }}>
-                                {sheetResults.faceUltra ? '\u2728 Ultra Enhanced' : 'Face Angles'}
+                                {sheetResults.faceUltra ? '\u2728 Ultra Mejorado' : 'Ángulos de Rostro'}
                               </span>
                               {!sheetResults.faceUltra && (
                                 <button
@@ -983,10 +983,10 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                             <div className="flex items-center justify-between">
                               <div>
                                 <div className="text-[12px] font-medium" style={{ color: 'var(--joi-text-1)' }}>
-                                  {sheetGenerating === 'body' ? '\u21BB Generating...' : '\u{1F9CD} Body Angles (4 views)'}
+                                  {sheetGenerating === 'body' ? '\u21BB Generando...' : '\u{1F9CD} Ángulos de Cuerpo (4 vistas)'}
                                 </div>
                                 <div className="text-[10px]" style={{ color: 'var(--joi-text-3)' }}>
-                                  Front · Half turn · Side profile · Back
+                                  Frontal · Media vuelta · Perfil lateral · Espalda
                                 </div>
                               </div>
                               <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg"
@@ -1003,9 +1003,9 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                         )}
                         {sheetResults.body && (
                           <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(167,139,250,.10)' }}>
-                            <img src={sheetResults.body} className="w-full object-contain" alt="Body angles" />
+                            <img src={sheetResults.body} className="w-full object-contain" alt="Ángulos de cuerpo" />
                             <div className="px-3 py-2" style={{ background: 'rgba(167,139,250,.04)' }}>
-                              <span className="text-[10px] font-mono" style={{ color: 'var(--joi-text-3)' }}>Body Angles</span>
+                              <span className="text-[10px] font-mono" style={{ color: 'var(--joi-text-3)' }}>Ángulos de Cuerpo</span>
                             </div>
                           </div>
                         )}
@@ -1024,10 +1024,10 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                             <div className="flex items-center justify-between">
                               <div>
                                 <div className="text-[12px] font-medium" style={{ color: 'var(--joi-text-1)' }}>
-                                  {sheetGenerating === 'expressions' ? '\u21BB Generating...' : '\u{1F3AD} Expressions (9 faces)'}
+                                  {sheetGenerating === 'expressions' ? '\u21BB Generando...' : '\u{1F3AD} Expresiones (9 rostros)'}
                                 </div>
                                 <div className="text-[10px]" style={{ color: 'var(--joi-text-3)' }}>
-                                  Happy · Sad · Surprised · Angry · Laughing · Serious · Flirty · Disgusted · Peaceful
+                                  Feliz · Triste · Sorprendido · Enojado · Riendo · Serio · Coqueto · Disgustado · Tranquilo
                                 </div>
                               </div>
                               <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg"
@@ -1044,10 +1044,10 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                         )}
                         {sheetResults.expressions && (
                           <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,107,157,.10)' }}>
-                            <img src={sheetResults.expressionsUltra || sheetResults.expressions} className="w-full object-contain" alt="Expressions" />
+                            <img src={sheetResults.expressionsUltra || sheetResults.expressions} className="w-full object-contain" alt="Expresiones" />
                             <div className="flex items-center justify-between px-3 py-2" style={{ background: 'rgba(255,107,157,.04)' }}>
                               <span className="text-[10px] font-mono" style={{ color: 'var(--joi-text-3)' }}>
-                                {sheetResults.expressionsUltra ? '\u2728 Ultra Enhanced' : 'Expressions'}
+                                {sheetResults.expressionsUltra ? '\u2728 Ultra Mejorado' : 'Expresiones'}
                               </span>
                               {!sheetResults.expressionsUltra && (
                                 <button
@@ -1067,7 +1067,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                         {sheetGenerating === null && (
                           <button onClick={handleSave}
                             className="joi-btn-solid w-full py-3 text-sm joi-breathe">
-                            {'\u2726'} Save Character
+                            {'\u2726'} Guardar Personaje
                           </button>
                         )}
                       </div>
@@ -1076,9 +1076,9 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                     {characterSaved && onNav && (
                       <div className="space-y-2">
                         <div className="text-center text-[12px] font-medium" style={{ color: 'var(--joi-mint, var(--joi-pink))' }}>
-                          {'\u2713'} Character saved!
+                          {'\u2713'} Personaje guardado!
                         </div>
-                        <PipelineCTA label="Create Hero Shot in Director" targetPage="director" onNav={onNav} icon="\u{1F3AC}" />
+                        <PipelineCTA label="Crear Foto Principal en Director" targetPage="director" onNav={onNav} icon="\u{1F3AC}" />
                       </div>
                     )}
                   </div>
@@ -1091,19 +1091,19 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               <button onClick={() => setStep(Math.max(0, step - 1))}
                 className="joi-btn-ghost px-5 py-2.5 text-sm"
                 style={{ opacity: step === 0 ? .3 : 1 }} disabled={step === 0}>
-                {'\u2190'} Back
+                {'\u2190'} Atrás
               </button>
               {step < 2 ? (
                 <div className="flex items-center gap-3">
                   {missingFields.length > 0 && (
                     <span className="text-[10px]" style={{ color: 'var(--joi-text-3)' }}>
-                      Fill: {missingFields.join(', ')}
+                      Falta: {missingFields.join(', ')}
                     </span>
                   )}
                   <button onClick={() => setStep(step + 1)}
                     className="joi-btn-solid px-6 py-2.5 text-sm"
                     disabled={!canAdvance(step)}>
-                    Next {'\u2192'}
+                    Siguiente {'\u2192'}
                   </button>
                 </div>
               ) : (
@@ -1111,7 +1111,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                   <button onClick={handleGenerate}
                     className={`joi-btn-solid px-6 py-2.5 text-sm${!generating ? ' joi-breathe' : ''}`}
                     disabled={generating}>
-                    {generating ? '\u21BB Generating...' : `\u2726 Generate Character (3 variants, ${costPerVariant * 3}cr)`}
+                    {generating ? '\u21BB Generando...' : `\u2726 Generar Personaje (3 variantes, ${costPerVariant * 3}cr)`}
                   </button>
                 )
               )}
@@ -1122,7 +1122,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
           <div className="w-[320px] shrink-0">
             <div className="p-5 sticky top-8 rounded-xl joi-glass">
               <div className="flex items-center justify-between mb-3">
-                <div className="joi-label">Preview</div>
+                <div className="joi-label">Vista Previa</div>
                 <span className="text-[8px] font-mono font-bold px-2 py-0.5 rounded-lg"
                   style={{ background: 'linear-gradient(135deg, rgba(255,107,157,.15), rgba(208,72,176,.15))', color: 'var(--joi-pink)' }}>
                   {renderStyles[selRenderStyle]?.label.toUpperCase()}
@@ -1161,12 +1161,12 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                   </div>
                 )}
                 <div className="absolute bottom-0 left-0 right-0 p-3" style={{ background: 'linear-gradient(transparent, rgba(0,0,0,.7))' }}>
-                  <div className="text-sm font-bold text-white">{name || 'Unnamed'}</div>
+                  <div className="text-sm font-bold text-white">{name || 'Sin nombre'}</div>
                   <div className="text-[9px] font-mono" style={{ color: 'var(--joi-pink)' }}>
                     {[
                       GENDERS.find(g => g.id === selGender)?.label,
                       AGE_RANGES.find(a => a.id === selAge)?.label,
-                    ].filter(Boolean).join(' · ') || 'Configure in Step 1'}
+                    ].filter(Boolean).join(' · ') || 'Configura en el Paso 1'}
                   </div>
                 </div>
               </div>
@@ -1187,7 +1187,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               {generating && (
                 <div className="mt-3 text-center">
                   <div className="text-[11px] font-medium" style={{ color: 'var(--joi-pink)' }}>
-                    {'\u21BB'} Generating{generationPhase === 'sheet' ? ' character sheet' : ' variants'}...
+                    {'\u21BB'} Generando{generationPhase === 'sheet' ? ' hoja de personaje' : ' variantes'}...
                   </div>
                   <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: 'var(--joi-bg-3)' }}>
                     <div className="h-full rounded-full shimmer" style={{ width: '60%', background: 'linear-gradient(90deg, var(--joi-pink), var(--joi-magenta))' }} />
@@ -1214,7 +1214,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               overflow: 'hidden',
             }}>
             <div className="overflow-y-auto p-4 pb-2 space-y-1 flex-1 min-h-0 joi-scroll">
-              <div className="joi-label mb-2 px-1">Generation Engine</div>
+              <div className="joi-label mb-2 px-1">Motor de Generación</div>
 
               <button onClick={() => { setSelectedEngine('auto'); setShowEngineModal(false) }}
                 className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-left transition-all"
@@ -1225,14 +1225,14 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                 <span className="text-base">{'\u2728'}</span>
                 <div className="flex-1 min-w-0">
                   <div className="text-[11px] font-medium" style={{ color: selectedEngine === 'auto' ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>Auto</div>
-                  <div className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>Best engine automatically</div>
+                  <div className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>Mejor motor automáticamente</div>
                 </div>
               </button>
 
               <div className="h-px my-1 joi-divider" />
 
               {/* Recommended engines for character creation */}
-              <div className="joi-label mb-1 mt-2 px-1 text-[9px]" style={{ color: 'var(--joi-text-3)' }}>Best for Characters</div>
+              <div className="joi-label mb-1 mt-2 px-1 text-[9px]" style={{ color: 'var(--joi-text-3)' }}>Mejor para Personajes</div>
               {CHARACTER_ENGINES.map(ce => {
                 const meta = ENGINE_METADATA.find(e => e.key === ce.id);
                 return (
@@ -1270,7 +1270,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               <div className="h-px my-1 joi-divider" />
 
               {/* All engines */}
-              <div className="joi-label mb-1 mt-2 px-1 text-[9px]" style={{ color: 'var(--joi-text-3)' }}>All Engines</div>
+              <div className="joi-label mb-1 mt-2 px-1 text-[9px]" style={{ color: 'var(--joi-text-3)' }}>Todos los Motores</div>
               {ENGINE_METADATA.filter(e => !CHARACTER_ENGINES.some(ce => ce.id === e.key)).map(engine => (
                 <button key={engine.key}
                   onClick={() => { setSelectedEngine(engine.key); setShowEngineModal(false) }}
@@ -1293,7 +1293,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
             </div>
 
             <div className="shrink-0 px-4 pb-4 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,.04)' }}>
-              <div className="joi-label mb-2 px-1">Resolution</div>
+              <div className="joi-label mb-2 px-1">Resolución</div>
               <div className="flex gap-2">
                 {[
                   { id: '1k', label: '1K', desc: '1024px' },

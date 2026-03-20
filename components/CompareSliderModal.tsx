@@ -51,8 +51,8 @@ const CompareSliderModal: React.FC<CompareSliderModalProps> = ({ itemA, itemB, o
     }
   }, [isDragging, onMouseMove]);
 
-  const labelA = itemA.tags?.includes('uploaded') ? 'Photo A' : `${itemA.type === 'edit' ? 'Edited' : itemA.type === 'video' ? 'Video' : 'Created'} A`;
-  const labelB = itemB.tags?.includes('uploaded') ? 'Photo B' : `${itemB.type === 'edit' ? 'Edited' : itemB.type === 'video' ? 'Video' : 'Created'} B`;
+  const labelA = itemA.tags?.includes('uploaded') ? 'Foto A' : `${itemA.type === 'edit' ? 'Editada' : itemA.type === 'video' ? 'Video' : 'Creada'} A`;
+  const labelB = itemB.tags?.includes('uploaded') ? 'Foto B' : `${itemB.type === 'edit' ? 'Editada' : itemB.type === 'video' ? 'Video' : 'Creada'} B`;
 
   return (
     <div className="fixed inset-0 z-[90] flex flex-col" style={{ background: '#08070C' }}>
@@ -76,10 +76,10 @@ const CompareSliderModal: React.FC<CompareSliderModalProps> = ({ itemA, itemB, o
             }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5" /><path d="m12 19-7-7 7-7" /></svg>
-            Back
+            Volver
           </button>
-          <h2 className="text-sm font-semibold text-white">Compare</h2>
-          <span className="text-[11px]" style={{ color: 'var(--joi-text-3)' }}>Drag slider {'\u00B7'} Arrow keys</span>
+          <h2 className="text-sm font-semibold text-white">Comparar</h2>
+          <span className="text-[11px]" style={{ color: 'var(--joi-text-3)' }}>Arrastra el deslizador {'\u00B7'} Teclas de flecha</span>
         </div>
         <div className="flex items-center gap-2 text-[11px]" style={{ color: 'var(--joi-text-3)' }}>
           <span style={{ color: '#A78BFA' }} className="font-medium">{Math.round(sliderPos)}%</span>

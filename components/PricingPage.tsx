@@ -50,78 +50,78 @@ const V = {
 const PLANS: Plan[] = [
   {
     id: 'starter', name: 'Starter', monthlyPrice: 0, annualPrice: 0,
-    description: 'Explore the studio, no commitment.',
-    cta: 'Get Started', ctaStyle: 'ghost',
-    credits: '150 credits / mo',
+    description: 'Explora el estudio, sin compromiso.',
+    cta: 'Comenzar', ctaStyle: 'ghost',
+    credits: '150 créditos / mes',
     monthlyVariantId: '', annualVariantId: '',
     limits: [
-      { label: 'Credits / mo',        value: '150' },
-      { label: 'Characters',          value: '3' },
-      { label: 'Max resolution',      value: '1K' },
+      { label: 'Créditos / mes',      value: '150' },
+      { label: 'Personajes',          value: '3' },
+      { label: 'Resolución máx.',     value: '1K' },
     ],
     features: [
-      { label: '150 monthly credits' },
-      { label: '3 characters' },
-      { label: 'Up to 1K resolution' },
-      { label: 'Basic engines (Imagen 4 Fast, NB2)' },
+      { label: '150 créditos mensuales' },
+      { label: '3 personajes' },
+      { label: 'Hasta 1K de resolución' },
+      { label: 'Motores básicos (Imagen 4 Fast, NB2)' },
     ],
   },
   {
     id: 'pro', name: 'Pro', monthlyPrice: 9.99, annualPrice: 7.99,
-    description: 'For serious creators who want full engine access.',
-    badge: 'Popular',
-    cta: 'Go Pro', ctaStyle: 'coral',
-    credits: '1,000 credits / mo',
+    description: 'Para creadores serios que quieren acceso completo a todos los motores.',
+    badge: 'Más Popular',
+    cta: 'Ir a Pro', ctaStyle: 'coral',
+    credits: '1,000 créditos / mes',
     monthlyVariantId: V.proMonthly,
     annualVariantId:  V.proAnnual,
     limits: [
-      { label: 'Credits / mo',        value: '1,000' },
-      { label: 'Characters',          value: '10' },
-      { label: 'Max resolution',      value: '2K' },
+      { label: 'Créditos / mes',      value: '1,000' },
+      { label: 'Personajes',          value: '10' },
+      { label: 'Resolución máx.',     value: '2K' },
     ],
     features: [
-      { label: '1,000 monthly credits' },
-      { label: '10 characters' },
-      { label: 'Up to 2K resolution' },
-      { label: 'All engines + video' },
+      { label: '1,000 créditos mensuales' },
+      { label: '10 personajes' },
+      { label: 'Hasta 2K de resolución' },
+      { label: 'Todos los motores + video' },
     ],
   },
   {
     id: 'studio', name: 'Studio', monthlyPrice: 29.99, annualPrice: 24.99,
-    description: 'Unlimited characters, max quality, LoRA training.',
-    cta: 'Go Studio', ctaStyle: 'white',
-    credits: '4,000 credits / mo',
+    description: 'Personajes ilimitados, máxima calidad, entrenamiento LoRA.',
+    cta: 'Ir a Studio', ctaStyle: 'white',
+    credits: '4,000 créditos / mes',
     monthlyVariantId: V.studioMonthly,
     annualVariantId:  V.studioAnnual,
     limits: [
-      { label: 'Credits / mo',        value: '4,000' },
-      { label: 'Characters',          value: 'Unlimited' },
-      { label: 'Max resolution',      value: '4K' },
+      { label: 'Créditos / mes',      value: '4,000' },
+      { label: 'Personajes',          value: 'Ilimitados' },
+      { label: 'Resolución máx.',     value: '4K' },
     ],
     features: [
-      { label: '4,000 monthly credits' },
-      { label: 'Unlimited characters' },
-      { label: 'Up to 4K resolution' },
-      { label: 'All engines + LoRA training' },
+      { label: '4,000 créditos mensuales' },
+      { label: 'Personajes ilimitados' },
+      { label: 'Hasta 4K de resolución' },
+      { label: 'Todos los motores + entrenamiento LoRA' },
     ],
   },
   {
     id: 'brand', name: 'Brand', monthlyPrice: 99.99, annualPrice: 84.99,
-    description: 'Scale your virtual brand with priority access.',
-    cta: 'Go Brand', ctaStyle: 'gold',
-    credits: '15,000 credits / mo',
+    description: 'Escala tu marca virtual con acceso prioritario.',
+    cta: 'Ir a Brand', ctaStyle: 'gold',
+    credits: '15,000 créditos / mes',
     monthlyVariantId: V.brandMonthly,
     annualVariantId:  V.brandAnnual,
     limits: [
-      { label: 'Credits / mo',        value: '15,000' },
-      { label: 'Characters',          value: 'Unlimited' },
-      { label: 'Max resolution',      value: '4K' },
+      { label: 'Créditos / mes',      value: '15,000' },
+      { label: 'Personajes',          value: 'Ilimitados' },
+      { label: 'Resolución máx.',     value: '4K' },
     ],
     features: [
-      { label: '15,000 monthly credits' },
-      { label: 'Unlimited everything' },
-      { label: '4K resolution' },
-      { label: 'Priority queue' },
+      { label: '15,000 créditos mensuales' },
+      { label: 'Todo ilimitado' },
+      { label: 'Resolución 4K' },
+      { label: 'Cola prioritaria' },
     ],
   },
 ];
@@ -129,17 +129,17 @@ const PLANS: Plan[] = [
 const CREDIT_PACKS = [
   { credits: 200,   price: 3,  perCredit: '1.5¢', variantId: V.credits200 },
   { credits: 800,   price: 10, perCredit: '1.25¢', variantId: V.credits800 },
-  { credits: 3000,  price: 30, perCredit: '1.0¢', badge: 'Best value', variantId: V.credits3000 },
+  { credits: 3000,  price: 30, perCredit: '1.0¢', badge: 'Mejor valor', variantId: V.credits3000 },
 ];
 
 const FAQ_ITEMS = [
-  { q: 'What is a credit?', a: 'One credit = one generation step. Fast models like Gemini Flash cost 2 credits; premium models like GPT Image 1.5 cost 20. Video clips cost 80–100 credits each.' },
-  { q: 'Do credits expire?', a: "Monthly plan credits reset on your billing date and don't roll over. Credit packs never expire — use them at your own pace." },
-  { q: 'Can I stack packs on top of my plan?', a: 'Yes! Credit packs add on top of your monthly plan credits. They are consumed after your monthly credits run out.' },
-  { q: 'Can I switch plans at any time?', a: 'Yes — upgrade or downgrade any time. Upgrades take effect immediately; downgrades apply at the next billing cycle.' },
-  { q: 'What is annual billing?', a: 'Annual billing locks in a discounted rate (≈2 months free) and is charged as a single payment at the start of each year.' },
-  { q: 'Which AI engines are included?', a: 'All plans include Gemini, FLUX, GPT Image, Grok Imagine, and Ideogram. NSFW engine (ModelsLab) is Studio and Brand only.' },
-  { q: 'Is there a free trial?', a: 'Pro and Studio include a 7-day free trial. No credit card required to start on Starter.' },
+  { q: '¿Qué es un crédito?', a: 'Un crédito = un paso de generación. Los modelos rápidos como Gemini Flash cuestan 2 créditos; los modelos premium como GPT Image 1.5 cuestan 20. Los clips de video cuestan 80–100 créditos cada uno.' },
+  { q: '¿Los créditos expiran?', a: 'Los créditos del plan mensual se reinician en tu fecha de cobro y no se acumulan. Los paquetes de créditos nunca expiran — úsalos a tu ritmo.' },
+  { q: '¿Puedo combinar paquetes con mi plan?', a: '¡Sí! Los paquetes de créditos se suman a los créditos de tu plan mensual. Se consumen después de que se agoten tus créditos mensuales.' },
+  { q: '¿Puedo cambiar de plan en cualquier momento?', a: 'Sí — mejora o baja de plan cuando quieras. Las mejoras aplican de inmediato; las bajas se aplican en el siguiente ciclo de cobro.' },
+  { q: '¿Qué es la facturación anual?', a: 'La facturación anual fija una tarifa con descuento (≈2 meses gratis) y se cobra como un solo pago al inicio de cada año.' },
+  { q: '¿Qué motores de IA están incluidos?', a: 'Todos los planes incluyen Gemini, FLUX, GPT Image, Grok Imagine e Ideogram. El motor NSFW (ModelsLab) es exclusivo de Studio y Brand.' },
+  { q: '¿Hay prueba gratuita?', a: 'Pro y Studio incluyen 7 días de prueba gratis. No se necesita tarjeta de crédito para empezar con Starter.' },
 ];
 
 // ─────────────────────────────────────────────
@@ -196,7 +196,7 @@ const PricingPage: React.FC = () => {
         createCheckoutSession(intent.variantId)
           .then(url => { window.location.href = url; })
           .catch(err => {
-            setCheckoutError(err instanceof Error ? err.message : 'Checkout failed.');
+            setCheckoutError(err instanceof Error ? err.message : 'Error en el pago.');
             setCheckoutLoading(null);
           });
       }
@@ -210,7 +210,7 @@ const PricingPage: React.FC = () => {
       const url = await createCheckoutSession(variantId);
       window.location.href = url;
     } catch (err) {
-      setCheckoutError(err instanceof Error ? err.message : 'Checkout failed. Please try again.');
+      setCheckoutError(err instanceof Error ? err.message : 'Error en el pago. Inténtalo de nuevo.');
       setCheckoutLoading(null);
     }
   };
@@ -238,13 +238,13 @@ const PricingPage: React.FC = () => {
 
         {/* ── Header ── */}
         <div className="section-header">
-          <div className="section-label">Plans</div>
+          <div className="section-label">Planes</div>
           <h2 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 48, lineHeight: 1.1, marginBottom: 16 }}>
-            Start free.<br/>
-            <span style={{ fontStyle: 'italic' }}>Scale without limits.</span>
+            Empieza gratis.<br/>
+            <span style={{ fontStyle: 'italic' }}>Escala sin límites.</span>
           </h2>
           <p className="text-[15px] max-w-md mx-auto mb-8" style={{ color: 'var(--joi-text-2)' }}>
-            Pay as you grow. Credits reset monthly. No surprises.
+            Paga a medida que creces. Los créditos se reinician cada mes. Sin sorpresas.
           </p>
 
           {/* Billing toggle */}
@@ -256,7 +256,7 @@ const PricingPage: React.FC = () => {
                 ? { background: 'var(--joi-pink)', color: '#fff' }
                 : { background: 'transparent', color: 'var(--joi-text-3)' }
               }>
-              Monthly
+              Mensual
             </button>
             <button onClick={() => setAnnual(true)}
               className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[12px] font-medium transition-all"
@@ -264,9 +264,9 @@ const PricingPage: React.FC = () => {
                 ? { background: 'var(--joi-pink)', color: '#fff' }
                 : { background: 'transparent', color: 'var(--joi-text-3)' }
               }>
-              Annual
+              Anual
               <span className="text-[9px] px-1.5 py-0.5 rounded-full font-jet font-bold"
-                style={{ background: 'rgba(255,107,157,0.15)', color: 'var(--joi-pink)' }}>2 months free</span>
+                style={{ background: 'rgba(255,107,157,0.15)', color: 'var(--joi-pink)' }}>2 meses gratis</span>
             </button>
           </div>
         </div>
@@ -281,16 +281,16 @@ const PricingPage: React.FC = () => {
             }}
           >
             <span className="text-[13px] font-medium" style={{ color: 'var(--joi-text-2)' }}>
-              Annual billing saves you up to
+              La facturación anual te ahorra hasta
             </span>
             <span
               className="text-[14px] font-bold font-jet px-2.5 py-0.5 rounded-full"
               style={{ background: 'rgba(255,107,157,0.12)', color: 'var(--joi-pink)' }}
             >
-              ${(PLANS[3].monthlyPrice - PLANS[3].annualPrice) * 12}/yr
+              ${(PLANS[3].monthlyPrice - PLANS[3].annualPrice) * 12}/año
             </span>
             <span className="text-[13px] font-medium" style={{ color: 'var(--joi-text-2)' }}>
-              on the Brand plan
+              en el plan Brand
             </span>
           </div>
         )}
@@ -301,16 +301,16 @@ const PricingPage: React.FC = () => {
             style={{ background: 'rgba(255,107,157,0.06)', border: '1px solid rgba(255,107,157,0.2)' }}>
             <div>
               <p className="text-[13px] font-semibold" style={{ color: 'var(--joi-text-1)' }}>
-                Create a free account to subscribe
+                Crea una cuenta gratis para suscribirte
               </p>
               <p className="text-[11px] mt-0.5" style={{ color: 'var(--joi-text-2)' }}>
-                Sign up in seconds -- you'll be redirected to checkout automatically.
+                Regístrate en segundos — serás redirigido al pago automáticamente.
               </p>
             </div>
             <button
               onClick={() => navigate('/studio')}
               className="btn-primary px-5 py-2.5 text-sm font-bold shrink-0">
-              Sign up free
+              Registrarse gratis
             </button>
           </div>
         )}
@@ -329,7 +329,7 @@ const PricingPage: React.FC = () => {
             const price = annual ? plan.annualPrice : plan.monthlyPrice;
             const isCurrent = currentPlan === plan.id || (currentPlan === 'starter' && plan.id === 'starter');
             const isFree = plan.id === 'starter';
-            const isFeatured = plan.badge === 'Popular';
+            const isFeatured = plan.badge === 'Más Popular';
 
             return (
               <div key={plan.id}
@@ -353,13 +353,13 @@ const PricingPage: React.FC = () => {
                     <span className="font-display text-[42px] leading-none" style={{ color: 'var(--joi-text-1)' }}>${price}</span>
                     {!isFree && (
                       <span className="text-base font-body pb-1.5" style={{ color: 'var(--joi-text-3)' }}>
-                        /mo{annual && <span className="ml-1 text-[10px]">billed annually</span>}
+                        /mes{annual && <span className="ml-1 text-[10px]">facturado anualmente</span>}
                       </span>
                     )}
                   </div>
                   {!isFree && annual && (
                     <p className="text-[11px] mt-1 font-jet" style={{ color: 'var(--joi-pink)' }}>
-                      Save ${(plan.monthlyPrice - plan.annualPrice) * 12}/yr
+                      Ahorra ${(plan.monthlyPrice - plan.annualPrice) * 12}/año
                     </p>
                   )}
                   {/* Credits badge */}
@@ -373,7 +373,7 @@ const PricingPage: React.FC = () => {
                 {isCurrent ? (
                   <div className="w-full py-3 rounded-xl text-[13px] font-semibold mb-5 text-center"
                     style={{ background: 'var(--joi-bg-3)', color: 'var(--joi-text-3)', border: '1px solid rgba(255,255,255,.04)' }}>
-                    Current plan
+                    Plan actual
                   </div>
                 ) : isFree ? (
                   <button onClick={() => navigate('/studio')}
@@ -385,7 +385,7 @@ const PricingPage: React.FC = () => {
                     disabled={checkoutLoading !== null}
                     className="btn-primary px-4 py-3 w-full justify-center text-[13px] font-semibold mb-5 disabled:opacity-60">
                     {checkoutLoading === plan.id
-                      ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Redirecting...</>
+                      ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Redirigiendo...</>
                       : plan.cta}
                   </button>
                 ) : (
@@ -393,7 +393,7 @@ const PricingPage: React.FC = () => {
                     disabled={checkoutLoading !== null}
                     className="btn-ghost px-4 py-3 w-full justify-center text-[13px] font-semibold mb-5 disabled:opacity-60">
                     {checkoutLoading === plan.id
-                      ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Redirecting...</>
+                      ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Redirigiendo...</>
                       : plan.cta}
                   </button>
                 )}
@@ -433,7 +433,7 @@ const PricingPage: React.FC = () => {
         {/* ── Credit cost reference ── */}
         <div className="mb-20 rounded-2xl p-6" style={{ background: 'var(--joi-bg-1)', border: '1px solid rgba(255,255,255,.04)' }}>
           <p className="text-[11px] font-jet uppercase tracking-widest mb-5 text-center" style={{ color: 'var(--joi-text-3)' }}>
-            Credit cost per action
+            Costo en créditos por acción
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {[
@@ -460,12 +460,12 @@ const PricingPage: React.FC = () => {
         {/* ── Credit Packs ── */}
         <div className="mb-20">
           <div className="section-header" style={{ marginBottom: 32 }}>
-            <div className="section-label">Need more?</div>
+            <div className="section-label">¿Necesitas más?</div>
             <h2 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 32, lineHeight: 1.2, marginBottom: 8 }}>
-              Credit Packs
+              Paquetes de Créditos
             </h2>
             <p className="text-[13px]" style={{ color: 'var(--joi-text-2)' }}>
-              One-time purchase. Never expires. Stacks with your plan.
+              Compra única. Nunca expiran. Se suman a tu plan.
             </p>
           </div>
 
@@ -485,9 +485,9 @@ const PricingPage: React.FC = () => {
                   <div className="font-display text-[32px] mb-1" style={{ color: 'var(--joi-text-1)' }}>
                     {pack.credits.toLocaleString('en-US')}
                   </div>
-                  <div className="text-[11px] font-jet mb-3" style={{ color: 'var(--gold)' }}>credits</div>
+                  <div className="text-[11px] font-jet mb-3" style={{ color: 'var(--gold)' }}>créditos</div>
                   <div className="font-display text-[24px] mb-1" style={{ color: 'var(--joi-text-1)' }}>${pack.price}</div>
-                  <div className="text-[11px] font-jet mb-5" style={{ color: 'var(--joi-text-3)' }}>{pack.perCredit} / credit</div>
+                  <div className="text-[11px] font-jet mb-5" style={{ color: 'var(--joi-text-3)' }}>{pack.perCredit} / crédito</div>
                   <button
                     onClick={async () => {
                       if (!pack.variantId) { setCheckoutError('Credit pack variant ID not configured.'); return; }
@@ -502,8 +502,8 @@ const PricingPage: React.FC = () => {
                     className={`${isBestValue ? 'btn-primary' : 'btn-ghost'} px-4 py-3 w-full justify-center text-[13px] font-semibold disabled:opacity-60`}
                   >
                     {checkoutLoading === `pack-${pack.credits}`
-                      ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Redirecting...</>
-                      : `Buy ${pack.credits.toLocaleString('en-US')} credits`}
+                      ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Redirigiendo...</>
+                      : `Comprar ${pack.credits.toLocaleString('en-US')} créditos`}
                   </button>
                 </div>
               );
@@ -513,7 +513,7 @@ const PricingPage: React.FC = () => {
 
         {/* ── FAQ ── */}
         <div className="max-w-2xl mx-auto">
-          <p className="text-[11px] font-jet uppercase tracking-widest mb-6 text-center" style={{ color: 'var(--joi-text-3)' }}>FAQ</p>
+          <p className="text-[11px] font-jet uppercase tracking-widest mb-6 text-center" style={{ color: 'var(--joi-text-3)' }}>Preguntas Frecuentes</p>
           {FAQ_ITEMS.map(item => <FaqItem key={item.q} {...item} />)}
         </div>
 

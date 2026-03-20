@@ -68,7 +68,7 @@ export function StoryboardView() {
 
   const handleClearAll = () => {
     clearStoryboard();
-    addToast('Storyboard cleared', 'info');
+    addToast('Storyboard limpiado', 'info');
   };
 
   // ─── Grid export ─────────────────────────────
@@ -124,7 +124,7 @@ export function StoryboardView() {
           ctx.font = 'bold 12px system-ui, sans-serif';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(`Frame ${i + 1}`, x + cellSize / 2, y + cellSize + labelH / 2);
+          ctx.fillText(`Cuadro ${i + 1}`, x + cellSize / 2, y + cellSize + labelH / 2);
         }),
       );
 
@@ -139,10 +139,10 @@ export function StoryboardView() {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        addToast('Storyboard exported as PNG', 'success');
+        addToast('Storyboard exportado como PNG', 'success');
       }, 'image/png');
     } catch (err: any) {
-      addToast('Export failed: ' + (err?.message || ''), 'error');
+      addToast('Error al exportar: ' + (err?.message || ''), 'error');
     } finally {
       setExportingGrid(false);
     }
@@ -180,10 +180,10 @@ export function StoryboardView() {
           {/* Copy */}
           <div className="space-y-3 mb-4">
             <h3 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--joi-text-1)' }}>
-              Your Storyboard is empty
+              Tu Storyboard está vacío
             </h3>
             <p className="text-sm max-w-lg mx-auto" style={{ color: 'var(--joi-text-3)' }}>
-              Collect your best creations here to build sequences, visual references, or export as a grid.
+              Reúne tus mejores creaciones aquí para armar secuencias, referencias visuales o exportar como cuadrícula.
             </p>
           </div>
 
@@ -203,17 +203,17 @@ export function StoryboardView() {
               </svg>
             </div>
             <div>
-              <p className="text-xs font-medium mb-1" style={{ color: 'var(--joi-text-1)' }}>How to add frames</p>
+              <p className="text-xs font-medium mb-1" style={{ color: 'var(--joi-text-1)' }}>Cómo agregar cuadros</p>
               <p className="text-xs leading-relaxed" style={{ color: 'var(--joi-text-3)' }}>
-                Go to the <strong style={{ color: 'var(--joi-text-2)' }}>Gallery</strong>, hover any image, and click
-                the{' '}
+                Ve a la <strong style={{ color: 'var(--joi-text-2)' }}>Galería</strong>, pasa el cursor sobre cualquier imagen y haz clic en
+                el{' '}
                 <span
                   className="inline-flex items-center justify-center w-5 h-5 rounded-md text-[9px] font-bold mx-0.5"
                   style={{ background: 'var(--joi-bg-3)', border: '1px solid rgba(255,255,255,.06)', color: 'var(--joi-text-1)' }}
                 >
                   +
                 </span>{' '}
-                button to add it to your storyboard.
+                botón para agregarlo a tu storyboard.
               </p>
             </div>
           </div>
@@ -232,7 +232,7 @@ export function StoryboardView() {
           <span className="font-semibold font-mono" style={{ color: 'var(--joi-text-1)' }}>
             {storyboardItems.length}
           </span>{' '}
-          frames — drag to reorder
+          cuadros — arrastra para reordenar
         </p>
         <div className="flex gap-2">
           <button
@@ -258,7 +258,7 @@ export function StoryboardView() {
                 <rect x="3" y="14" width="7" height="7" />
               </svg>
             )}
-            Export Grid
+            Exportar Cuadrícula
           </button>
           <button
             onClick={handleClearAll}
@@ -273,7 +273,7 @@ export function StoryboardView() {
               <polyline points="3 6 5 6 21 6" />
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
             </svg>
-            Clear
+            Limpiar
           </button>
         </div>
       </div>
@@ -300,7 +300,7 @@ export function StoryboardView() {
               {item.type === 'video' ? (
                 <video src={item.url} className="w-full h-full object-cover" loop muted />
               ) : (
-                <img src={item.url} alt={`Frame ${index + 1}`} className="w-full h-full object-cover" />
+                <img src={item.url} alt={`Cuadro ${index + 1}`} className="w-full h-full object-cover" />
               )}
 
               {/* Frame number badge */}
@@ -318,7 +318,7 @@ export function StoryboardView() {
                   <button
                     onClick={(e) => { e.stopPropagation(); handleMove(index, index - 1); }}
                     disabled={index === 0}
-                    aria-label="Move left"
+                    aria-label="Mover a la izquierda"
                     className="p-1.5 rounded-lg transition-all hover:scale-110 disabled:opacity-30"
                     style={{ background: 'var(--joi-bg-3)', color: 'var(--joi-text-1)' }}
                   >
@@ -329,7 +329,7 @@ export function StoryboardView() {
                   <button
                     onClick={(e) => { e.stopPropagation(); handleMove(index, index + 1); }}
                     disabled={index === storyboardItems.length - 1}
-                    aria-label="Move right"
+                    aria-label="Mover a la derecha"
                     className="p-1.5 rounded-lg transition-all hover:scale-110 disabled:opacity-30"
                     style={{ background: 'var(--joi-bg-3)', color: 'var(--joi-text-1)' }}
                   >
@@ -342,11 +342,11 @@ export function StoryboardView() {
                 {/* Remove button */}
                 <button
                   onClick={(e) => { e.stopPropagation(); removeFromStoryboard(item.id); }}
-                  aria-label="Remove from storyboard"
+                  aria-label="Eliminar del storyboard"
                   className="px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all hover:scale-105"
                   style={{ background: 'rgba(255,60,60,.15)', color: '#e05050', border: '1px solid rgba(255,60,60,.2)' }}
                 >
-                  Remove
+                  Eliminar
                 </button>
               </div>
             </div>

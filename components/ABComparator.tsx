@@ -58,8 +58,8 @@ const ABComparator: React.FC<ABComparatorProps> = ({ itemA, itemB, onClose }) =>
     if (e.target === e.currentTarget) onClose();
   };
 
-  const labelA = itemA.tags?.includes('uploaded') ? 'Photo A' : `${itemA.type === 'edit' ? 'Edited' : itemA.type === 'video' ? 'Video' : 'Created'} A`;
-  const labelB = itemB.tags?.includes('uploaded') ? 'Photo B' : `${itemB.type === 'edit' ? 'Edited' : itemB.type === 'video' ? 'Video' : 'Created'} B`;
+  const labelA = itemA.tags?.includes('uploaded') ? 'Foto A' : `${itemA.type === 'edit' ? 'Editada' : itemA.type === 'video' ? 'Video' : 'Creada'} A`;
+  const labelB = itemB.tags?.includes('uploaded') ? 'Foto B' : `${itemB.type === 'edit' ? 'Editada' : itemB.type === 'video' ? 'Video' : 'Creada'} B`;
 
   return (
     <div
@@ -70,17 +70,17 @@ const ABComparator: React.FC<ABComparatorProps> = ({ itemA, itemB, onClose }) =>
       {/* Header */}
       <div className="w-full max-w-5xl flex items-center justify-between mb-3 shrink-0">
         <div className="flex items-center gap-3">
-          <span className="text-white font-semibold text-sm">A/B Comparison</span>
+          <span className="text-white font-semibold text-sm">Comparación A/B</span>
           <span
             className="text-[10px] px-2 py-0.5 rounded"
             style={{ color: 'var(--joi-text-3)', background: 'var(--joi-bg-2)', border: '1px solid var(--joi-border)' }}
           >
-            Drag the divider to compare
+            Arrastra el divisor para comparar
           </span>
         </div>
         <button
           onClick={onClose}
-          aria-label="Close comparator"
+          aria-label="Cerrar comparador"
           className="p-2 rounded-full transition-colors"
           style={{ background: 'var(--joi-bg-3)', color: 'var(--joi-text-2)' }}
         >

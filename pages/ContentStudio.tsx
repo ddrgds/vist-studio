@@ -38,22 +38,22 @@ type AngleMode = 'face' | 'body' | 'expressions'
 type AngleQuality = 'standard' | 'ultra'
 
 const EDIT_TOOLS: { id: EditToolId; icon: string; label: string }[] = [
-  { id: 'scene', icon: '\u{1F303}', label: 'Scene' },
+  { id: 'scene', icon: '\u{1F303}', label: 'Escena' },
   { id: 'outfit', icon: '\u{1F457}', label: 'Outfit' },
-  { id: 'relight', icon: '\u{1F4A1}', label: 'Relight' },
+  { id: 'relight', icon: '\u{1F4A1}', label: 'Iluminación' },
   { id: 'face-swap', icon: '\u{1F504}', label: 'Face Swap' },
-  { id: 'realistic-skin', icon: '\u{1F9F4}', label: 'Skin' },
-  { id: 'style-transfer', icon: '\u{1F3A8}', label: 'Style' },
+  { id: 'realistic-skin', icon: '\u{1F9F4}', label: 'Piel' },
+  { id: 'style-transfer', icon: '\u{1F3A8}', label: 'Estilo' },
   { id: 'upscale', icon: '\u2B06\uFE0F', label: 'Upscale' },
-  { id: 'angles', icon: '\u{1F4D0}', label: 'Angles' },
-  { id: 'ai-edit', icon: '\u270F\uFE0F', label: 'AI Edit' },
+  { id: 'angles', icon: '\u{1F4D0}', label: 'Ángulos' },
+  { id: 'ai-edit', icon: '\u270F\uFE0F', label: 'Edición AI' },
 ]
 
 const CAMERA_OPTIONS: { id: CameraOption; label: string; prompt: string }[] = [
-  { id: 'portrait', label: 'Portrait', prompt: 'upper body portrait shot, waist up' },
-  { id: 'full-body', label: 'Full Body', prompt: 'full body shot from head to toes' },
-  { id: 'close-up', label: 'Close-up', prompt: 'close-up face shot, head and shoulders' },
-  { id: 'wide', label: 'Wide', prompt: 'wide angle environmental shot showing full surroundings' },
+  { id: 'portrait', label: 'Retrato', prompt: 'upper body portrait shot, waist up' },
+  { id: 'full-body', label: 'Cuerpo Completo', prompt: 'full body shot from head to toes' },
+  { id: 'close-up', label: 'Primer Plano', prompt: 'close-up face shot, head and shoulders' },
+  { id: 'wide', label: 'Gran Angular', prompt: 'wide angle environmental shot showing full surroundings' },
 ]
 
 const ASPECT_RATIOS: { value: AspectRatio; label: string }[] = [
@@ -139,7 +139,7 @@ const BigButton: React.FC<{
     {loading ? (
       <>
         <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-        Generating...
+        Generando...
       </>
     ) : children}
   </button>
@@ -167,7 +167,7 @@ const CharacterSelector: React.FC<{
   if (characters.length === 0) {
     return (
       <div className="px-3 py-2.5 rounded-lg text-[12px]" style={{ ...cardBg, color: 'var(--joi-text-3)' }}>
-        No characters yet. Create one first.
+        Aún no hay personajes. Crea uno primero.
       </div>
     )
   }
@@ -184,7 +184,7 @@ const CharacterSelector: React.FC<{
             <span className="text-[12px] font-medium flex-1 truncate">{selected.name}</span>
           </>
         ) : (
-          <span className="text-[12px] flex-1" style={{ color: 'var(--joi-text-3)' }}>Select character...</span>
+          <span className="text-[12px] flex-1" style={{ color: 'var(--joi-text-3)' }}>Seleccionar personaje...</span>
         )}
         <ChevronDown size={13} style={{ color: 'var(--joi-text-3)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
       </button>
@@ -293,15 +293,15 @@ const CreatePanel: React.FC<{
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5" style={{ scrollbarWidth: 'thin' }}>
         {/* Character */}
         <div>
-          <Label>Character</Label>
+          <Label>Personaje</Label>
           <CharacterSelector characters={characters} selectedId={selectedCharId} onSelect={onSelectChar} />
         </div>
 
         {/* Scene */}
         <div>
-          <Label>Scene</Label>
+          <Label>Escena</Label>
           <PresetGrid presets={SCENE_PRESETS} selected={scenePreset} onSelect={handleSceneSelect} />
-          <input type="text" placeholder="Or describe a custom scene..."
+          <input type="text" placeholder="O describe una escena personalizada..."
             value={sceneCustom}
             onChange={e => { setSceneCustom(e.target.value); if (e.target.value) setScenePreset(null) }}
             className="mt-2"
@@ -314,7 +314,7 @@ const CreatePanel: React.FC<{
         {/* Outfit */}
         <div>
           <Label>Outfit</Label>
-          <input type="text" placeholder="e.g. elegant black evening dress, red sneakers..."
+          <input type="text" placeholder="ej. vestido negro elegante de noche, tenis rojos..."
             value={outfit} onChange={e => setOutfit(e.target.value)}
             style={inputStyle}
             onFocus={e => e.currentTarget.style.borderColor = 'rgba(255,107,157,.35)'}
@@ -325,7 +325,7 @@ const CreatePanel: React.FC<{
         {/* Pose */}
         <div>
           <Label>Pose</Label>
-          <input type="text" placeholder="e.g. sitting on a chair, arms crossed, walking..."
+          <input type="text" placeholder="ej. sentado en una silla, brazos cruzados, caminando..."
             value={pose} onChange={e => setPose(e.target.value)}
             style={inputStyle}
             onFocus={e => e.currentTarget.style.borderColor = 'rgba(255,107,157,.35)'}
@@ -335,7 +335,7 @@ const CreatePanel: React.FC<{
 
         {/* Camera */}
         <div>
-          <Label>Camera</Label>
+          <Label>Cámara</Label>
           <div className="grid grid-cols-2 gap-1.5">
             {CAMERA_OPTIONS.map(opt => (
               <button key={opt.id} onClick={() => setCamera(opt.id)}
@@ -349,13 +349,13 @@ const CreatePanel: React.FC<{
 
         {/* Lighting */}
         <div>
-          <Label>Lighting</Label>
+          <Label>Iluminación</Label>
           <PresetGrid presets={RELIGHT_PRESETS} selected={lightPreset} onSelect={handleLightSelect} />
         </div>
 
         {/* Aspect Ratio */}
         <div>
-          <Label>Format</Label>
+          <Label>Formato</Label>
           <div className="flex gap-1.5">
             {ASPECT_RATIOS.map(ar => (
               <button key={ar.value} onClick={() => setAspectRatio(ar.value)}
@@ -373,7 +373,7 @@ const CreatePanel: React.FC<{
         <BigButton onClick={() => onGenerate({ scene: scenePrompt, outfit, pose, camera, lighting: lightingPrompt, aspectRatio })}
           disabled={!canGenerate} loading={generating}>
           <Sparkles size={15} />
-          Generate Scene
+          Generar Escena
         </BigButton>
       </div>
     </div>
@@ -423,7 +423,7 @@ const EditPanel: React.FC<{
   const renderToolInput = () => {
     if (!activeTool) return (
       <div className="flex items-center justify-center h-24 text-[11px]" style={{ color: 'var(--joi-text-3)' }}>
-        Select a tool to begin editing
+        Selecciona una herramienta para empezar a editar
       </div>
     )
 
@@ -432,7 +432,7 @@ const EditPanel: React.FC<{
         return (
           <div className="space-y-2">
             <PresetGrid presets={SCENE_PRESETS} selected={presetId} onSelect={handlePresetSelect} />
-            <input type="text" placeholder="Or describe a custom scene..."
+            <input type="text" placeholder="O describe una escena personalizada..."
               value={presetId ? '' : toolInput}
               onChange={e => { setToolInput(e.target.value); setPresetId(null) }}
               style={inputStyle}
@@ -446,7 +446,7 @@ const EditPanel: React.FC<{
         return (
           <div className="space-y-2">
             <PresetGrid presets={RELIGHT_PRESETS} selected={presetId} onSelect={handlePresetSelect} />
-            <input type="text" placeholder="Or describe custom lighting..."
+            <input type="text" placeholder="O describe una iluminación personalizada..."
               value={presetId ? '' : toolInput}
               onChange={e => { setToolInput(e.target.value); setPresetId(null) }}
               style={inputStyle}
@@ -460,7 +460,7 @@ const EditPanel: React.FC<{
         return (
           <div className="space-y-2">
             <PresetGrid presets={STYLE_PRESETS} selected={presetId} onSelect={handlePresetSelect} />
-            <input type="text" placeholder="Or describe a custom style..."
+            <input type="text" placeholder="O describe un estilo personalizado..."
               value={presetId ? '' : toolInput}
               onChange={e => { setToolInput(e.target.value); setPresetId(null) }}
               style={inputStyle}
@@ -475,7 +475,7 @@ const EditPanel: React.FC<{
         return (
           <div className="space-y-2">
             <input type="text"
-              placeholder={activeTool === 'outfit' ? 'Describe the outfit...' : 'Describe the edit...'}
+              placeholder={activeTool === 'outfit' ? 'Describe el outfit...' : 'Describe la edición...'}
               value={toolInput} onChange={e => setToolInput(e.target.value)}
               style={inputStyle}
               onFocus={e => e.currentTarget.style.borderColor = 'rgba(255,107,157,.35)'}
@@ -495,7 +495,7 @@ const EditPanel: React.FC<{
               style={cardBg}>
               <Upload size={14} style={{ color: 'var(--joi-pink)' }} />
               <span style={{ color: faceFile ? 'var(--joi-text-1)' : 'var(--joi-text-3)' }}>
-                {faceFile ? faceFile.name : 'Upload source face image'}
+                {faceFile ? faceFile.name : 'Subir imagen de rostro'}
               </span>
             </button>
             {faceFile && (
@@ -516,8 +516,8 @@ const EditPanel: React.FC<{
         return (
           <div className="text-[11px] py-2" style={{ color: 'var(--joi-text-3)' }}>
             {activeTool === 'realistic-skin'
-              ? 'Adds natural skin texture, pores, and subtle imperfections for a more photorealistic result.'
-              : 'Increases image resolution by 2x using AI upscaling.'}
+              ? 'Agrega textura de piel natural, poros e imperfecciones sutiles para un resultado más fotorrealista.'
+              : 'Aumenta la resolución de la imagen 2x usando upscaling con AI.'}
           </div>
         )
 
@@ -525,7 +525,7 @@ const EditPanel: React.FC<{
         return (
           <div className="space-y-3">
             <div>
-              <Label>Mode</Label>
+              <Label>Modo</Label>
               <div className="grid grid-cols-3 gap-1.5">
                 {(['face', 'body', 'expressions'] as AngleMode[]).map(m => (
                   <button key={m} onClick={() => setAngleMode(m)}
@@ -537,7 +537,7 @@ const EditPanel: React.FC<{
               </div>
             </div>
             <div>
-              <Label>Quality</Label>
+              <Label>Calidad</Label>
               <div className="grid grid-cols-2 gap-1.5">
                 {(['standard', 'ultra'] as AngleQuality[]).map(q => (
                   <button key={q} onClick={() => setAngleQuality(q)}
@@ -577,7 +577,7 @@ const EditPanel: React.FC<{
     <div className="flex flex-col h-full">
       {/* Tool Grid */}
       <div className="shrink-0 px-4 pt-4 pb-3">
-        <Label>Tools</Label>
+        <Label>Herramientas</Label>
         <div className="grid grid-cols-3 gap-1.5">
           {EDIT_TOOLS.map(tool => (
             <button key={tool.id} onClick={() => onSelectTool(tool.id)}
@@ -607,7 +607,7 @@ const EditPanel: React.FC<{
       {activeTool && (
         <div className="shrink-0 px-4 py-3 pb-20 lg:pb-3" style={{ borderTop: '1px solid rgba(255,255,255,.04)' }}>
           <BigButton onClick={handleApply} disabled={!canApply()} loading={generating}>
-            Apply {EDIT_TOOLS.find(t => t.id === activeTool)?.label}
+            Aplicar {EDIT_TOOLS.find(t => t.id === activeTool)?.label}
           </BigButton>
         </div>
       )}
@@ -620,9 +620,9 @@ const EditPanel: React.FC<{
 // ═════════════════════════════════════════════════════════
 
 const MODES: { id: StudioMode; label: string; icon: React.ReactNode; desc: string }[] = [
-  { id: 'photo', label: 'Photo', icon: <Camera size={15} />, desc: 'Generate photos & scenes' },
-  { id: 'session', label: 'Batch Shoot', icon: <Images size={15} />, desc: 'Multi-vibe photo session' },
-  { id: 'video', label: 'Video & Reels', icon: <Film size={15} />, desc: 'Motion control \u00B7 Lip sync \u00B7 Animate' },
+  { id: 'photo', label: 'Foto', icon: <Camera size={15} />, desc: 'Genera fotos y escenas' },
+  { id: 'session', label: 'Lote de Fotos', icon: <Images size={15} />, desc: 'Sesión de fotos multi-vibe' },
+  { id: 'video', label: 'Video y Reels', icon: <Film size={15} />, desc: 'Control de movimiento \u00B7 Lip sync \u00B7 Animar' },
 ]
 
 export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
@@ -713,7 +713,7 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
     scene: string; outfit: string; pose: string; camera: CameraOption; lighting: string; aspectRatio: AspectRatio
   }) => {
     const char = characters.find(c => c.id === selectedCharId)
-    if (!char) { toast.error('Select a character first'); return }
+    if (!char) { toast.error('Selecciona un personaje primero'); return }
 
     setGenerating(true)
 
@@ -758,14 +758,14 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
         setCurrentImageUrl(imageUrl)
         setFilmstrip([{ url: imageUrl, label: 'Original', tool: 'generate' }])
         setFilmstripIndex(0)
-        toast.success('Scene generated successfully')
+        toast.success('Escena generada exitosamente')
         setGenerating(false)
         return
       }
       throw new Error('No image returned')
     } catch (err: any) {
       console.warn('Gemini NB2 failed, falling back to Grok...', err?.message)
-      toast.info('Gemini blocked this prompt. Trying Grok...')
+      toast.info('Gemini bloqueó este prompt. Intentando con Grok...')
 
       // Step 2: Fallback to Grok via changeScene with a placeholder
       // We need an existing image to edit — for the fallback, generate text-to-image via Grok
@@ -780,7 +780,7 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
           setCurrentImageUrl(result.url)
           setFilmstrip([{ url: result.url, label: 'Original', tool: 'generate' }])
           setFilmstripIndex(0)
-          toast.success('Generated with Grok (fallback)')
+          toast.success('Generado con Grok (respaldo)')
         } else {
           throw new Error('Grok returned no image')
         }
@@ -816,7 +816,7 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
           result = await relight(currentImageUrl, input)
           break
         case 'face-swap': {
-          if (!extra?.faceFile) { toast.error('Upload a face image first'); setGenerating(false); return }
+          if (!extra?.faceFile) { toast.error('Sube una imagen de rostro primero'); setGenerating(false); return }
           const faceUrl = await uploadToFal(extra.faceFile)
           result = await faceSwap(currentImageUrl, faceUrl)
           break
@@ -868,7 +868,7 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
             }
           } catch (angleErr) {
             console.error('Angle generation failed:', angleErr)
-            toast.error('Angle generation failed')
+            toast.error('La generación de ángulos falló')
             setGenerating(false)
             return
           }
@@ -889,7 +889,7 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
         setFilmstripIndex(newFilmstrip.length - 1)
         toast.success(`${label} applied`)
       } else {
-        toast.error('Tool returned no result')
+        toast.error('La herramienta no devolvió resultado')
       }
     } catch (err: any) {
       console.error(`Tool ${tool} failed:`, err)
@@ -912,7 +912,7 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
       characterId: selectedCharId || undefined,
     }
     addGalleryItems([item])
-    toast.success('Saved to Gallery')
+    toast.success('Guardado en Galería')
   }, [currentImageUrl, filmstrip, selectedCharId, addGalleryItems, toast])
 
   // ═══════════════════════════════════════════════
@@ -927,7 +927,7 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
       {/* Mode switcher bar */}
       <div className="shrink-0 flex items-center gap-2 px-5 py-2.5"
         style={{ borderBottom: '1px solid rgba(255,255,255,.03)', background: 'var(--joi-bg-1)' }}>
-        <span className="text-xs font-semibold mr-2" style={{ color: 'var(--joi-text-3)' }}>MODE</span>
+        <span className="text-xs font-semibold mr-2" style={{ color: 'var(--joi-text-3)' }}>MODO</span>
         <div className="flex gap-1 p-0.5 rounded-lg" style={{ background: 'rgba(255,255,255,.02)' }}>
           {MODES.map(m => (
             <button key={m.id} onClick={() => setMode(m.id)}
@@ -957,7 +957,7 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
             }}
           >
             <Lightbulb size={13} />
-            Inspiration
+            Inspiración
           </button>
         </div>
       </div>
@@ -966,7 +966,7 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
       <div className="flex-1 overflow-hidden">
         <Suspense fallback={
           <div className="h-full flex items-center justify-center" style={{ color: 'var(--joi-text-3)' }}>
-            Loading...
+            Cargando...
           </div>
         }>
           {mode === 'photo' && (
@@ -983,10 +983,10 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
                     <ImagePlus size={22} style={{ color: '#A78BFA', opacity: 0.7, flexShrink: 0 }} />
                     <div className="flex-1 min-w-0">
                       <p className="text-[13px] font-medium" style={{ color: 'var(--joi-text-1)' }}>
-                        No character? No problem.
+                        ¿Sin personaje? No hay problema.
                       </p>
                       <p className="text-[11px] mt-0.5" style={{ color: 'var(--joi-text-3)' }}>
-                        Upload a photo and start editing directly with AI tools.
+                        Sube una foto y empieza a editar directamente con herramientas AI.
                       </p>
                     </div>
                     <label className="shrink-0 cursor-pointer px-4 py-2 rounded-lg text-[12px] font-semibold transition-all"
@@ -995,7 +995,7 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
                         color: 'white',
                         boxShadow: '0 4px 16px rgba(255,107,157,.2)',
                       }}>
-                      Upload
+                      Subir
                       <input type="file" accept="image/*" className="hidden" onChange={handleBYOUpload} />
                     </label>
                   </div>
@@ -1047,7 +1047,7 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
                             style={{ background: 'rgba(8,7,12,.6)', backdropFilter: 'blur(4px)' }}>
                             <div className="flex flex-col items-center gap-3">
                               <span className="inline-block w-8 h-8 border-2 border-white/20 border-t-[var(--joi-pink)] rounded-full animate-spin" />
-                              <span className="text-xs font-medium" style={{ color: 'var(--joi-text-2)' }}>Processing...</span>
+                              <span className="text-xs font-medium" style={{ color: 'var(--joi-text-2)' }}>Procesando...</span>
                             </div>
                           </div>
                         )}
@@ -1062,26 +1062,26 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
                       <button onClick={handleSaveToGallery}
                         className="flex items-center gap-2 px-4 py-2 rounded-lg text-[12px] font-medium transition-all hover:bg-white/[.06]"
                         style={cardBg}>
-                        <span style={{ color: 'var(--joi-text-2)' }}>Save to Gallery</span>
+                        <span style={{ color: 'var(--joi-text-2)' }}>Guardar en Galería</span>
                       </button>
                       {onExportImage && (
                         <button onClick={() => onExportImage(currentImageUrl)}
                           className="flex items-center gap-2 px-4 py-2 rounded-lg text-[12px] font-medium transition-all hover:bg-white/[.06]"
                           style={cardBg}>
-                          <span style={{ color: 'var(--joi-text-2)' }}>Export</span>
+                          <span style={{ color: 'var(--joi-text-2)' }}>Exportar</span>
                         </button>
                       )}
                       {onEditImage && (
                         <button onClick={() => onEditImage(currentImageUrl)}
                           className="flex items-center gap-2 px-4 py-2 rounded-lg text-[12px] font-medium transition-all hover:bg-white/[.06]"
                           style={cardBg}>
-                          <span style={{ color: 'var(--joi-text-2)' }}>Open in Editor</span>
+                          <span style={{ color: 'var(--joi-text-2)' }}>Abrir en Editor</span>
                         </button>
                       )}
                       <button onClick={() => { setPhase('create'); setCurrentImageUrl(null); setFilmstrip([]); setFilmstripIndex(0); setActiveTool(null) }}
                         className="flex items-center gap-2 px-4 py-2 rounded-lg text-[12px] font-medium transition-all hover:bg-white/[.06]"
                         style={cardBg}>
-                        <span style={{ color: 'var(--joi-text-3)' }}>New Scene</span>
+                        <span style={{ color: 'var(--joi-text-3)' }}>Nueva Escena</span>
                       </button>
                     </div>
                   )}
