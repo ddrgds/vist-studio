@@ -19,6 +19,8 @@ import { PipelineCTA } from '../components/PipelineCTA'
 import { PresetManager } from '../components/PresetManager'
 import type { CustomPreset } from '../stores/presetStore'
 import { compilePrompt } from '../services/promptCompiler'
+import { fal } from '@fal-ai/client'
+import { runControlNet } from '../services/controlNetService'
 
 // ─── Accordion Section (Joi style) ─────────────────────
 const AccordionSection: React.FC<{
@@ -434,6 +436,33 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
 
       params.scenario = compiledScenario
 
+      // ── Stage 0: ControlNet pose conditioning (optional, +5cr) ──
+      const POSE_COST = 5
+      let controlNetUrl: string | undefined
+      if (poseRef) {
+        const okPose = await decrementCredits(POSE_COST)
+        if (!okPose) {
+          toast.error('Créditos insuficientes para conditioning de pose (+5cr)')
+          restoreCredits(totalCost)
+          setGenerating(false)
+          return
+        }
+        toast.info('Procesando referencia de pose...')
+        try {
+          const poseStorageUrl = await fal.storage.upload(poseRef.file)
+          controlNetUrl = await runControlNet(poseStorageUrl, params.scenario || 'professional portrait photo')
+        } catch (e) {
+          console.warn('ControlNet failed, continuing without pose conditioning:', e)
+          toast.warning('Referencia de pose no disponible — generando sin conditioning')
+          restoreCredits(POSE_COST)
+          controlNetUrl = undefined
+        }
+      }
+
+      if (controlNetUrl) {
+        params.scenario = `${params.scenario} [POSE_REF: ${controlNetUrl}]`
+      }
+
       let results: string[]
       if (eng?.provider === AIProvider.Higgsfield) {
         results = await generateWithSoul(params, (p) => setProgress(p), abortRef.current.signal)
@@ -795,13 +824,28 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
           <AccordionSection title="Pose" icon="🧍" isOpen={!!openSections.pose} onToggle={() => toggleSection('pose')}>
             <div className="space-y-3">
               <div className="flex gap-3 items-start">
-                <ImageSlot
-                  label="Pose"
-                  file={poseRef?.file || null}
-                  preview={poseRef?.preview || null}
-                  onUpload={f => setPoseRef({ file: f, preview: URL.createObjectURL(f) })}
-                  onRemove={() => { if (poseRef) URL.revokeObjectURL(poseRef.preview); setPoseRef(null) }}
-                />
+                <div className="flex flex-col gap-1.5">
+                  <ImageSlot
+                    label="Pose"
+                    file={poseRef?.file || null}
+                    preview={poseRef?.preview || null}
+                    onUpload={f => setPoseRef({ file: f, preview: URL.createObjectURL(f) })}
+                    onRemove={() => { if (poseRef) URL.revokeObjectURL(poseRef.preview); setPoseRef(null) }}
+                  />
+                  {poseRef && (
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <span className="text-[9px] font-mono px-2 py-0.5 rounded-md"
+                        style={{
+                          background: 'rgba(255,107,157,.08)',
+                          color: 'var(--joi-pink)',
+                          border: '1px solid rgba(255,107,157,.12)',
+                        }}>
+                        +5cr · ControlNet
+                      </span>
+                      <span className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>conditioning de pose activo</span>
+                    </div>
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex gap-2 flex-wrap">
                     {POSE_OPTIONS.map(p => (
