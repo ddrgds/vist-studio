@@ -419,7 +419,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
 
       const rawIntent = [
         params.scenario,
-        outfitDescription && `Outfit: ${outfitDescription}`,
+        outfitDescription ? `Outfit: ${outfitDescription}` : outfitRef ? 'Outfit from reference image' : null,
         objectText?.trim() && `With: ${objectText.trim()}`,
       ].filter(Boolean).join('. ')
 
