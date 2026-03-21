@@ -190,6 +190,7 @@ async function seedreamEdit(imageUrl: string, prompt: string): Promise<string> {
       image_urls: [imageUrl],
       prompt: compiled,
       num_images: 1,
+      enable_safety_checker: false,
     },
     timeout: 120000,
   }) as any;

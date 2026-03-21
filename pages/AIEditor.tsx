@@ -190,6 +190,8 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
   const [selectedEngine, setSelectedEngine] = useState<string>('auto')
   const [selectedResolution, setSelectedResolution] = useState('1k')
   const [showEngineModal, setShowEngineModal] = useState(false)
+  const engineButtonRef = useRef<HTMLButtonElement>(null)
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null)
 
   // Functional state
   const [inputImage, setInputImage] = useState<string | null>(null)
@@ -273,6 +275,18 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         .catch(() => setInputFile(null))
     }
   }, [pipelineHeroUrl])
+
+  // Close engine dropdown on scroll or resize
+  useEffect(() => {
+    if (!showEngineModal) return
+    const close = () => setShowEngineModal(false)
+    window.addEventListener('scroll', close, true)
+    window.addEventListener('resize', close)
+    return () => {
+      window.removeEventListener('scroll', close, true)
+      window.removeEventListener('resize', close)
+    }
+  }, [showEngineModal])
 
   const handleApply = async () => {
     if (!inputImage) { toast.error('Sube una imagen primero'); return }
@@ -536,7 +550,17 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
               const fd = fk ? FEATURE_ENGINES[fk] : null
               const hasMultiple = fd ? fd.keys.length > 1 : true
               if (!hasMultiple) return null
-              return <button onClick={() => setShowEngineModal(v => !v)}
+              return <button ref={engineButtonRef} onClick={() => {
+                if (engineButtonRef.current) {
+                  const rect = engineButtonRef.current.getBoundingClientRect()
+                  setDropdownPos({
+                    top: rect.bottom + window.scrollY + 4,
+                    left: rect.left + window.scrollX,
+                    width: Math.max(rect.width, 300),
+                  })
+                }
+                setShowEngineModal(v => !v)
+              }}
               className="w-8 h-8 rounded-xl flex items-center justify-center text-sm transition-all hover:scale-105 relative"
               style={{
                 background: selectedEngine !== 'auto' ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)',
@@ -549,68 +573,87 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
               )}
             </button>
             })()}
-            {showEngineModal && (
-              <div className="absolute top-full right-0 mt-2 z-50 w-[300px] max-h-[60vh] flex flex-col rounded-xl"
-                style={{
-                  background: 'rgba(14,12,22,.96)',
-                  backdropFilter: 'blur(24px)',
-                  border: '1px solid rgba(255,255,255,.06)',
-                  boxShadow: '0 20px 60px rgba(0,0,0,.6), 0 0 40px rgba(255,107,157,.05)',
-                  overflow: 'hidden',
-                }}>
-                <div className="overflow-y-auto p-3 pb-2 space-y-1 flex-1 min-h-0 joi-scroll">
-                  <div className="joi-label mb-2 px-1">Motor</div>
-                  {(() => {
-                    const featureKey = TOOL_TO_FEATURE[activeTool]
-                    const featureDef = featureKey ? FEATURE_ENGINES[featureKey] : null
-                    const allowedKeys = featureDef ? featureDef.keys : null
-                    const filteredEngines = allowedKeys ? ENGINE_METADATA.filter(e => allowedKeys.includes(e.key)) : ENGINE_METADATA
-                    return <>
-                      {!allowedKeys && <>
-                        <button onClick={() => { setSelectedEngine('auto'); setShowEngineModal(false) }}
-                          className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all"
-                          style={{ background: selectedEngine === 'auto' ? 'rgba(255,107,157,.08)' : 'transparent', border: `1px solid ${selectedEngine === 'auto' ? 'rgba(255,107,157,.2)' : 'transparent'}` }}>
-                          <span className="text-base">{'\u2728'}</span>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-[11px] font-medium" style={{ color: selectedEngine === 'auto' ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>Auto</div>
-                            <div className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>Mejor motor automáticamente</div>
-                          </div>
-                        </button>
-                        <div className="joi-divider my-1" />
-                      </>}
-                      {filteredEngines.map(eng => (
-                        <button key={eng.key} onClick={() => { setSelectedEngine(eng.key); setShowEngineModal(false) }}
-                          className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all"
-                          style={{ background: selectedEngine === eng.key ? 'rgba(255,107,157,.08)' : 'transparent', border: `1px solid ${selectedEngine === eng.key ? 'rgba(255,107,157,.2)' : 'transparent'}` }}>
-                          <span className="text-sm" style={{ color: 'var(--joi-text-3)' }}>{'\u2699'}</span>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-[11px] font-medium" style={{ color: selectedEngine === eng.key ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{eng.userFriendlyName}</div>
-                            <div className="text-[8px]" style={{ color: 'var(--joi-text-3)' }}>{eng.description}</div>
-                            {eng.bestFor && <div className="text-[7px] mt-0.5" style={{ color: 'var(--joi-pink)', opacity: 0.7 }}>Bueno para: {eng.bestFor}</div>}
-                          </div>
-                          <div className="shrink-0 text-right">
-                            <div className="text-[9px] font-mono" style={{ color: 'var(--joi-pink)' }}>{eng.creditCost}cr</div>
-                            <div className="text-[8px] font-mono" style={{ color: 'var(--joi-text-3)' }}>{eng.estimatedTime}</div>
-                          </div>
+            {showEngineModal && dropdownPos && createPortal(
+              <>
+                {/* Backdrop — closes dropdown on outside click */}
+                <div
+                  className="fixed inset-0"
+                  style={{ zIndex: 9998 }}
+                  onClick={() => setShowEngineModal(false)}
+                />
+                {/* Dropdown — portaled to document.body, escapes overflow:hidden */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: dropdownPos.top,
+                    left: dropdownPos.left,
+                    width: dropdownPos.width,
+                    zIndex: 9999,
+                    maxHeight: '60vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    borderRadius: '0.75rem',
+                    background: 'rgba(14,12,22,.96)',
+                    backdropFilter: 'blur(24px)',
+                    border: '1px solid rgba(255,255,255,.06)',
+                    boxShadow: '0 20px 60px rgba(0,0,0,.6), 0 0 40px rgba(255,107,157,.05)',
+                    overflow: 'hidden',
+                  }}>
+                  <div className="overflow-y-auto p-3 pb-2 space-y-1 flex-1 min-h-0 joi-scroll">
+                    <div className="joi-label mb-2 px-1">Motor</div>
+                    {(() => {
+                      const featureKey = TOOL_TO_FEATURE[activeTool]
+                      const featureDef = featureKey ? FEATURE_ENGINES[featureKey] : null
+                      const allowedKeys = featureDef ? featureDef.keys : null
+                      const filteredEngines = allowedKeys ? ENGINE_METADATA.filter(e => allowedKeys.includes(e.key)) : ENGINE_METADATA
+                      return <>
+                        {!allowedKeys && <>
+                          <button onClick={() => { setSelectedEngine('auto'); setShowEngineModal(false) }}
+                            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all"
+                            style={{ background: selectedEngine === 'auto' ? 'rgba(255,107,157,.08)' : 'transparent', border: `1px solid ${selectedEngine === 'auto' ? 'rgba(255,107,157,.2)' : 'transparent'}` }}>
+                            <span className="text-base">{'\u2728'}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[11px] font-medium" style={{ color: selectedEngine === 'auto' ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>Auto</div>
+                              <div className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>Mejor motor automáticamente</div>
+                            </div>
+                          </button>
+                          <div className="joi-divider my-1" />
+                        </>}
+                        {filteredEngines.map(eng => (
+                          <button key={eng.key} onClick={() => { setSelectedEngine(eng.key); setShowEngineModal(false) }}
+                            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all"
+                            style={{ background: selectedEngine === eng.key ? 'rgba(255,107,157,.08)' : 'transparent', border: `1px solid ${selectedEngine === eng.key ? 'rgba(255,107,157,.2)' : 'transparent'}` }}>
+                            <span className="text-sm" style={{ color: 'var(--joi-text-3)' }}>{'\u2699'}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[11px] font-medium" style={{ color: selectedEngine === eng.key ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{eng.userFriendlyName}</div>
+                              <div className="text-[8px]" style={{ color: 'var(--joi-text-3)' }}>{eng.description}</div>
+                              {eng.bestFor && <div className="text-[7px] mt-0.5" style={{ color: 'var(--joi-pink)', opacity: 0.7 }}>Bueno para: {eng.bestFor}</div>}
+                            </div>
+                            <div className="shrink-0 text-right">
+                              <div className="text-[9px] font-mono" style={{ color: 'var(--joi-pink)' }}>{eng.creditCost}cr</div>
+                              <div className="text-[8px] font-mono" style={{ color: 'var(--joi-text-3)' }}>{eng.estimatedTime}</div>
+                            </div>
+                          </button>
+                        ))}
+                      </>
+                    })()}
+                  </div>
+                  <div className="shrink-0 px-3 pb-3 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,.04)' }}>
+                    <div className="joi-label mb-2 px-1">Resolución</div>
+                    <div className="flex gap-2">
+                      {[{ id: '1k', label: '1K', desc: '1024px' }, { id: '2k', label: '2K', desc: '2048px' }, { id: '4k', label: '4K', desc: '4096px' }].map(r => (
+                        <button key={r.id} onClick={() => setSelectedResolution(r.id)}
+                          className="flex-1 px-3 py-2 rounded-lg text-center transition-all"
+                          style={{ background: selectedResolution === r.id ? 'rgba(255,107,157,.08)' : 'rgba(255,255,255,.02)', border: `1px solid ${selectedResolution === r.id ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}` }}>
+                          <div className="text-[11px] font-mono font-bold" style={{ color: selectedResolution === r.id ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{r.label}</div>
+                          <div className="text-[8px] font-mono" style={{ color: 'var(--joi-text-3)' }}>{r.desc}</div>
                         </button>
                       ))}
-                    </>
-                  })()}
-                </div>
-                <div className="shrink-0 px-3 pb-3 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,.04)' }}>
-                  <div className="joi-label mb-2 px-1">Resolución</div>
-                  <div className="flex gap-2">
-                    {[{ id: '1k', label: '1K', desc: '1024px' }, { id: '2k', label: '2K', desc: '2048px' }, { id: '4k', label: '4K', desc: '4096px' }].map(r => (
-                      <button key={r.id} onClick={() => setSelectedResolution(r.id)}
-                        className="flex-1 px-3 py-2 rounded-lg text-center transition-all"
-                        style={{ background: selectedResolution === r.id ? 'rgba(255,107,157,.08)' : 'rgba(255,255,255,.02)', border: `1px solid ${selectedResolution === r.id ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}` }}>
-                        <div className="text-[11px] font-mono font-bold" style={{ color: selectedResolution === r.id ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{r.label}</div>
-                        <div className="text-[8px] font-mono" style={{ color: 'var(--joi-text-3)' }}>{r.desc}</div>
-                      </button>
-                    ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+              </>,
+              document.body
             )}
           </div>
         </div>
@@ -1359,9 +1402,6 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           />
         )}
       </Suspense>
-
-      {/* Click-outside handler for engine dropdown */}
-      {showEngineModal && <div className="fixed inset-0 z-30" onClick={() => setShowEngineModal(false)} />}
 
       {/* Basic Image Editor overlay */}
       {showBasicEditor && inputImage && (
