@@ -1135,6 +1135,172 @@ export const editImageWithFlux2Pro = async (
 };
 
 // ─────────────────────────────────────────────
+// PuLID v2 — face-locked photo-realistic identity generation
+// Accepts a face reference image via face_image_url
+// ─────────────────────────────────────────────
+export const generateWithPulidV2 = async (
+  params: InfluencerParams,
+  onProgress?: (percent: number) => void,
+  abortSignal?: AbortSignal
+): Promise<string[]> => {
+  if (abortSignal?.aborted) throw new Error('Cancelado');
+  const character = params.characters[0];
+  if (onProgress) onProgress(10);
+
+  let faceUrl: string | undefined;
+  if (character.modelImages && character.modelImages.length > 0) {
+    faceUrl = await uploadToFalStorage(character.modelImages[0]);
+  }
+  if (onProgress) onProgress(30);
+
+  let prompt = 'Ultra-photorealistic editorial photograph of the exact person shown in the face reference.';
+  if (character.characteristics) prompt += ` The person is described as: ${character.characteristics}.`;
+  if (character.outfitDescription) {
+    prompt += ` Wearing: ${character.outfitDescription}.`;
+  } else if (character.outfitImages && character.outfitImages.length > 0) {
+    prompt += ` Wearing a high-fashion editorial outfit, impeccably styled.`;
+  }
+  if (character.pose) {
+    prompt += ` ${character.pose}.`;
+  } else {
+    prompt += ` Natural, confident editorial stance.`;
+  }
+  if (character.accessory) prompt += ` Holding: ${character.accessory}.`;
+  if (params.scenario) prompt += ` Setting: ${params.scenario}.`;
+  if (params.lighting) {
+    prompt += ` Lighting: ${params.lighting}.`;
+  } else {
+    prompt += ` Lighting: soft directional studio light, slight rim highlight, natural skin tones.`;
+  }
+  if (params.imageBoost) prompt += ` ${params.imageBoost}.`;
+  prompt += ' Sharp detail, visible skin texture, no artifacts.';
+
+  const count = params.numberOfImages || 1;
+  const results: string[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const result = await fal.subscribe(FalModel.PulidV2, {
+      input: {
+        ...(faceUrl ? { face_image_url: faceUrl } : {}),
+        prompt,
+        image_size: toFalImageSize(params.aspectRatio),
+        num_images: 1,
+        enable_safety_checker: false,
+        ...(params.guidanceScale !== undefined && { guidance_scale: params.guidanceScale }),
+        ...(params.seed !== undefined && { seed: params.seed }),
+      },
+      onQueueUpdate: (update: any) => {
+        if (update.status === 'IN_PROGRESS' && onProgress) {
+          const base = 30 + (i / count) * 60;
+          onProgress(Math.min(90, base + Math.random() * 8));
+        }
+      },
+    }) as any;
+
+    const r = unwrap(result);
+    const imageUrl: string = r?.images?.[0]?.url;
+    if (imageUrl) {
+      const resp = await fetch(imageUrl);
+      if (!resp.ok) throw new Error(`Error downloading PuLID v2 image (${resp.status}).`);
+      const blob = await resp.blob();
+      const dataUrl = await new Promise<string>((res) => {
+        const reader = new FileReader();
+        reader.onloadend = () => res(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+      results.push(dataUrl);
+    }
+  }
+
+  if (results.length === 0) throw new Error('PuLID v2 did not return any images.');
+  if (onProgress) onProgress(100);
+  return results;
+};
+
+// ─────────────────────────────────────────────
+// FLUX Pro — state-of-the-art reference-guided generation
+// Accepts a reference image via image_url
+// ─────────────────────────────────────────────
+export const generateWithFluxPro = async (
+  params: InfluencerParams,
+  onProgress?: (percent: number) => void,
+  abortSignal?: AbortSignal
+): Promise<string[]> => {
+  if (abortSignal?.aborted) throw new Error('Cancelado');
+  const character = params.characters[0];
+  if (onProgress) onProgress(10);
+
+  let refUrl: string | undefined;
+  if (character.modelImages && character.modelImages.length > 0) {
+    refUrl = await uploadToFalStorage(character.modelImages[0]);
+  }
+  if (onProgress) onProgress(30);
+
+  let prompt = 'Ultra-photorealistic editorial photograph. Preserve the exact identity, facial features, and skin tone from the reference image.';
+  if (character.characteristics) prompt += ` The person is described as: ${character.characteristics}.`;
+  if (character.outfitDescription) {
+    prompt += ` Wearing: ${character.outfitDescription}.`;
+  } else if (character.outfitImages && character.outfitImages.length > 0) {
+    prompt += ` Wearing a high-fashion editorial outfit, impeccably styled.`;
+  }
+  if (character.pose) {
+    prompt += ` ${character.pose}.`;
+  } else {
+    prompt += ` Natural, confident editorial stance.`;
+  }
+  if (character.accessory) prompt += ` Holding: ${character.accessory}.`;
+  if (params.scenario) prompt += ` Setting: ${params.scenario}.`;
+  if (params.lighting) {
+    prompt += ` Lighting: ${params.lighting}.`;
+  } else {
+    prompt += ` Lighting: soft directional studio light, slight rim highlight, natural skin tones.`;
+  }
+  if (params.imageBoost) prompt += ` ${params.imageBoost}.`;
+  prompt += ' Shot on Sony A7R V, 85mm f/1.4. Sharp detail, visible skin texture, no artifacts.';
+
+  const count = params.numberOfImages || 1;
+  const results: string[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const result = await fal.subscribe(FalModel.FluxPro, {
+      input: {
+        ...(refUrl ? { image_url: refUrl } : {}),
+        prompt,
+        image_size: toFalImageSize(params.aspectRatio),
+        num_images: 1,
+        enable_safety_checker: false,
+        ...(params.guidanceScale !== undefined && { guidance_scale: params.guidanceScale }),
+        ...(params.seed !== undefined && { seed: params.seed }),
+      },
+      onQueueUpdate: (update: any) => {
+        if (update.status === 'IN_PROGRESS' && onProgress) {
+          const base = 30 + (i / count) * 60;
+          onProgress(Math.min(90, base + Math.random() * 8));
+        }
+      },
+    }) as any;
+
+    const r = unwrap(result);
+    const imageUrl: string = r?.images?.[0]?.url;
+    if (imageUrl) {
+      const resp = await fetch(imageUrl);
+      if (!resp.ok) throw new Error(`Error downloading FLUX Pro image (${resp.status}).`);
+      const blob = await resp.blob();
+      const dataUrl = await new Promise<string>((res) => {
+        const reader = new FileReader();
+        reader.onloadend = () => res(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+      results.push(dataUrl);
+    }
+  }
+
+  if (results.length === 0) throw new Error('FLUX Pro did not return any images.');
+  if (onProgress) onProgress(100);
+  return results;
+};
+
+// ─────────────────────────────────────────────
 // Main router — selects the fal model based on configuration
 // ─────────────────────────────────────────────
 export const generateWithFal = async (
@@ -1156,6 +1322,10 @@ export const generateWithFal = async (
       return generateWithSeedream45(params, onProgress);
     case FalModel.Seedream50:
       return generateWithSeedream50(params, onProgress);
+    case FalModel.PulidV2:
+      return generateWithPulidV2(params, onProgress, abortSignal);
+    case FalModel.FluxPro:
+      return generateWithFluxPro(params, onProgress, abortSignal);
     default:
       return generateWithKontextMulti(params, FalModel.KontextMulti, onProgress);
   }

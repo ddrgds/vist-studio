@@ -278,6 +278,9 @@ export enum FalModel {
   Seedream45 = 'fal-ai/bytedance/seedream/v4.5/text-to-image',   // ByteDance — photorealism 4K
   Seedream50 = 'fal-ai/bytedance/seedream/v5/lite/text-to-image', // ByteDance — web search + reasoning
   ZImageTurbo = 'fal-ai/z-image/turbo',                  // Alibaba Tongyi-MAI 6B — uncensored, $0.005/mp · 2025
+  // ── Identity-locked generation ──
+  PulidV2 = 'fal-ai/pulid/v2',                           // PuLID v2 — face-locked photo-realistic identity
+  FluxPro = 'fal-ai/flux-pro',                            // FLUX Pro — state-of-the-art, reference-guided
   // ── Editing (image-to-image) ──
   QwenEdit = 'fal-ai/qwen-image-2/pro/edit',             // Alibaba Qwen — spatial reasoning, style & light
   FireRedEdit = 'fal-ai/firered-image-edit-v1.1',        // FireRed — portrait editing, try-on, makeup
@@ -339,6 +342,8 @@ export const FAL_MODEL_LABELS: Record<FalModel, { name: string; description: str
   [FalModel.Seedream45]: { name: 'Seedream 4.5', description: 'ByteDance — exceptional photorealism, 4K' },
   [FalModel.Seedream50]: { name: 'Seedream 5.0', description: 'ByteDance — web search + reasoning, 2K' },
   [FalModel.ZImageTurbo]: { name: 'Z-Image Turbo', description: 'Alibaba — uncensored · 8 steps · $0.005/mp' },
+  [FalModel.PulidV2]: { name: 'PuLID v2', description: 'Face-locked photo-realistic identity generation' },
+  [FalModel.FluxPro]: { name: 'FLUX Pro', description: 'State-of-the-art reference-guided generation' },
   [FalModel.QwenEdit]: { name: 'Qwen Image 2 Pro', description: 'Alibaba — spatial reasoning, style & light editing' },
   [FalModel.FireRedEdit]: { name: 'FireRed v1.1', description: 'Portrait editing, try-on, makeup · 2026' },
   [FalModel.OneReward]: { name: 'OneReward', description: 'Mask-based inpainting & outpainting · FLUX Fill' },
@@ -447,6 +452,8 @@ export const CREDIT_COSTS: Record<string, number> = {
   [FalModel.Seedream45]:       8,
   [FalModel.Seedream50]:       8,
   [FalModel.ZImageTurbo]:      8,
+  [FalModel.PulidV2]:          12,   // PuLID v2 — face-locked generation
+  [FalModel.FluxPro]:          10,   // FLUX Pro — reference-guided generation
   [FalModel.QwenEdit]:         12,
   [FalModel.FireRedEdit]:      8,
   [FalModel.OneReward]:        8,
@@ -667,6 +674,28 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     provider: AIProvider.Fal,
     falModel: FalModel.ZImageTurbo,
   },
+  {
+    key: 'fal:pulid',
+    userFriendlyName: 'PuLID v2',
+    description: 'Face-locked photo-realistic ID',
+    tags: ['face', 'quality', 'photorealism'],
+    requiresFaceRef: true,
+    estimatedTime: '~20s',
+    creditCost: CREDIT_COSTS[FalModel.PulidV2],
+    provider: AIProvider.Fal,
+    falModel: FalModel.PulidV2,
+  },
+  {
+    key: 'fal:flux-pro',
+    userFriendlyName: 'FLUX Pro',
+    description: 'State-of-the-art image generation',
+    tags: ['quality', 'photorealism'],
+    requiresFaceRef: true,
+    estimatedTime: '~15s',
+    creditCost: CREDIT_COSTS[FalModel.FluxPro],
+    provider: AIProvider.Fal,
+    falModel: FalModel.FluxPro,
+  },
   // ── Replicate ──
   {
     key: 'replicate:grok',
@@ -793,7 +822,7 @@ export const FEATURE_ENGINES: Record<string, { default: string; keys: string[] }
   // ── Creation ──
   'director': {
     default: 'gemini:nb2',
-    keys: ['gemini:nb2', 'gemini:pro', 'gemini:imagen4', 'openai:gpt15', 'openai:gpt-mini', 'fal:seedream50', 'fal:seedream45', 'replicate:grok', 'fal:kontext-multi', 'fal:kontext-max', 'fal:zimage-turbo', 'higgsfield:soul'],
+    keys: ['gemini:nb2', 'replicate:grok', 'fal:seedream50', 'fal:kontext-multi', 'fal:pulid', 'fal:flux-pro'],
   },
   // ── Editing (aligned with benchmarking 2026-03-17) ──
   'photo-session': {
