@@ -28,9 +28,39 @@ dist-ssr
 *.sw?
 
 # Test / scratch files
-test-fal*.mjs
-test-fal*.ts
+test-*.ts
+test-*.mjs
 testGemini*.ts
+test-results/
+models.json
+
+# Supabase CLI temp files
+supabase/.temp/
+
+# Dev tool caches
+.playwright-mcp/
+.superpowers/
+
+# QA / screenshot noise (root-level only)
+/*.png
+/*.jpg
+/*.jfif
+/*.jpeg
+qa-audit/
+
+# Archives and source dumps
+vertex-studio-source/
+*.zip
+
+# Figma assets / design exports
+figma shoots/
+
+# Documents
+*.docx
+*.docx.pdf
+
+# Prototype HTML
+stitch-v2.html
 
 # Claude Code session data
 .claude/

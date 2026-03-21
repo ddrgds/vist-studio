@@ -1,0 +1,1087 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - heading "VIST Studio" [level=1] [ref=e6]:
+        - generic [ref=e7]: VIST
+        - generic [ref=e8]: Studio
+      - navigation [ref=e9]:
+        - link "Explore Home & overview" [ref=e10] [cursor=pointer]:
+          - /url: /
+          - text: Explore
+          - generic: Home & overview
+        - link "Freestyle Freestyle generation" [ref=e11] [cursor=pointer]:
+          - /url: /generate
+          - text: Freestyle
+          - generic: Freestyle generation
+        - link "Director Character studio" [ref=e12] [cursor=pointer]:
+          - /url: /director
+          - text: Director
+          - generic: Character studio
+        - link "Library Character library" [ref=e14] [cursor=pointer]:
+          - /url: /characters
+          - text: Library
+          - generic: Character library
+        - link "Storyboard Content planner" [ref=e15] [cursor=pointer]:
+          - /url: /storyboard
+          - text: Storyboard
+          - generic: Content planner
+        - link "Pricing Plans & features" [ref=e16] [cursor=pointer]:
+          - /url: /pricing
+          - text: Pricing
+          - generic: Plans & features
+    - generic [ref=e17]:
+      - generic [ref=e18] [cursor=pointer]:
+        - generic [ref=e19]: ⚡
+        - generic [ref=e20]: "1.968"
+        - generic:
+          - generic:
+            - generic: 1.968 credits available
+            - generic: 8,000 credits/mo included in Brand
+          - generic:
+            - generic: + Buy credits
+      - button "Upgrade" [ref=e21]
+      - generic [ref=e22]:
+        - button "D" [ref=e34]:
+          - generic [ref=e24]: D
+        - generic:
+          - button "My profile"
+          - button "Plans & billing"
+          - button "Sign out"
+  - generic [ref=e36]:
+    - complementary [ref=e37]:
+      - generic [ref=e38]:
+        - generic [ref=e39]:
+          - generic [ref=e40]:
+            - generic [ref=e41]: Library
+            - button "🎲 Surprise" [ref=e42]
+          - generic [ref=e44]:
+            - button "Cass Cass" [ref=e46]:
+              - img "Cass" [ref=e48]
+              - generic [ref=e49]: Cass
+            - button "Save current character" [ref=e50]:
+              - img [ref=e51]
+        - generic [ref=e53]:
+          - button "Identity" [ref=e54]:
+            - generic [ref=e56]: Identity
+            - img [ref=e57]
+          - generic [ref=e59]:
+            - generic [ref=e60]:
+              - generic [ref=e61]:
+                - button "Face 1" [ref=e62]:
+                  - generic [ref=e63]:
+                    - img [ref=e64]
+                    - generic [ref=e65]: Face 1
+                - button "Face 2" [ref=e66]:
+                  - generic [ref=e67]:
+                    - img [ref=e68]
+                    - generic [ref=e69]: Face 2
+                - button "Face 3" [ref=e70]:
+                  - generic [ref=e71]:
+                    - img [ref=e72]
+                    - generic [ref=e73]: Face 3
+              - paragraph [ref=e74]: Upload 1–3 reference photos for identity
+            - generic [ref=e76]:
+              - textbox "Age, ethnicity, features... e.g. 25yo, Asian, almond eyes" [ref=e77]
+              - generic [ref=e78]:
+                - button "👁 Face" [ref=e79]:
+                  - generic [ref=e80]: 👁
+                  - text: Face
+                - button "💇 Hair" [ref=e81]:
+                  - generic [ref=e82]: 💇
+                  - text: Hair
+                - button "🧍 Body" [ref=e83]:
+                  - generic [ref=e84]: 🧍
+                  - text: Body
+                - button "💄 Makeup" [ref=e85]:
+                  - generic [ref=e86]: 💄
+                  - text: Makeup
+                - button "✨ Style" [ref=e87]:
+                  - generic [ref=e88]: ✨
+                  - text: Style
+              - generic [ref=e89]:
+                - button "+ Blue eyes" [ref=e90]
+                - button "+ Green eyes" [ref=e91]
+                - button "+ Brown eyes" [ref=e92]
+                - button "+ Hazel eyes" [ref=e93]
+                - button "+ Freckles" [ref=e94]
+                - button "+ Full lips" [ref=e95]
+                - button "+ Strong jaw" [ref=e96]
+                - button "+ Soft smile" [ref=e97]
+                - button "+ Intense gaze" [ref=e98]
+                - button "+ Tanned" [ref=e99]
+                - button "+ Fair skin" [ref=e100]
+                - button "+ Dark skin" [ref=e101]
+        - generic [ref=e103]: Upload a face photo first
+        - generic:
+          - generic:
+            - button "Engine 1/1":
+              - generic:
+                - generic: Engine
+                - generic: 1/1
+              - img
+          - generic:
+            - button "Costume":
+              - generic:
+                - generic: Costume
+              - img
+          - generic:
+            - button "Pose":
+              - generic:
+                - generic: Pose
+              - img
+        - button "+ Character 2 ▼" [ref=e106]:
+          - generic [ref=e107]: + Character 2
+          - generic [ref=e108]: ▼
+    - generic [ref=e109]:
+      - generic [ref=e110]:
+        - button "✦ Create" [ref=e111]
+        - button "🎭 Poses" [ref=e112]
+        - button "✨ AI Edit" [ref=e113]
+        - button "📷 Photo Session" [ref=e114]
+        - generic [ref=e115]:
+          - button "Gallery" [ref=e116]
+          - button "Assets" [ref=e117]
+      - generic [ref=e119]:
+        - generic [ref=e120]:
+          - button "All" [ref=e121]
+          - button "Images" [ref=e122]
+          - button "Edited" [ref=e123]
+          - button "Video" [ref=e124]
+          - button "★ Saved" [ref=e125]
+          - button "All sources" [ref=e127]
+          - button "Freestyle" [ref=e128]
+          - button "Director" [ref=e129]
+          - button "↓ Newest" [ref=e130]
+          - generic [ref=e131]: "35"
+        - generic [ref=e132]:
+          - generic [ref=e133]:
+            - img "Generated image" [ref=e135] [cursor=pointer]
+            - generic [ref=e136]:
+              - generic [ref=e137]:
+                - button "Download" [ref=e138]:
+                  - img [ref=e139]
+                - button "Edit image" [ref=e142]:
+                  - img [ref=e143]
+                - button "Change pose" [ref=e145]:
+                  - img [ref=e146]
+                - button "Reuse parameters" [ref=e153]:
+                  - img [ref=e154]
+                - button "Upscale 4×" [ref=e159]:
+                  - img [ref=e160]
+                - button "More options" [ref=e162]:
+                  - img [ref=e163]
+              - generic [ref=e167]:
+                - paragraph [ref=e168]: "Characters: 2"
+                - paragraph [ref=e169]: "Scene: N/A"
+            - button "Mark as favorite" [ref=e170]:
+              - img [ref=e171]
+            - button "Select" [ref=e174]
+            - button "Delete image" [ref=e177] [cursor=pointer]:
+              - img [ref=e178]
+          - generic [ref=e180]:
+            - img "Generated image" [ref=e182] [cursor=pointer]
+            - generic [ref=e183]:
+              - generic [ref=e184]:
+                - button "Download" [ref=e185]:
+                  - img [ref=e186]
+                - button "Edit image" [ref=e189]:
+                  - img [ref=e190]
+                - button "Change pose" [ref=e192]:
+                  - img [ref=e193]
+                - button "Reuse parameters" [ref=e200]:
+                  - img [ref=e201]
+                - button "Upscale 4×" [ref=e206]:
+                  - img [ref=e207]
+                - button "More options" [ref=e209]:
+                  - img [ref=e210]
+              - generic [ref=e214]:
+                - paragraph [ref=e215]: "Characters: 2"
+                - paragraph [ref=e216]: "Scene: N/A"
+            - button "Mark as favorite" [ref=e217]:
+              - img [ref=e218]
+            - button "Select" [ref=e221]
+            - button "Delete image" [ref=e224] [cursor=pointer]:
+              - img [ref=e225]
+          - generic [ref=e227]:
+            - img "Generated image" [ref=e229] [cursor=pointer]
+            - generic [ref=e230]:
+              - generic [ref=e231]:
+                - button "Download" [ref=e232]:
+                  - img [ref=e233]
+                - button "Edit image" [ref=e236]:
+                  - img [ref=e237]
+                - button "Change pose" [ref=e239]:
+                  - img [ref=e240]
+                - button "Reuse parameters" [ref=e247]:
+                  - img [ref=e248]
+                - button "Upscale 4×" [ref=e253]:
+                  - img [ref=e254]
+                - button "More options" [ref=e256]:
+                  - img [ref=e257]
+              - generic [ref=e261]:
+                - paragraph [ref=e262]: "Characters: 1"
+                - paragraph [ref=e263]: "Scene: N/A"
+            - button "Mark as favorite" [ref=e264]:
+              - img [ref=e265]
+            - button "Select" [ref=e268]
+            - button "Delete image" [ref=e271] [cursor=pointer]:
+              - img [ref=e272]
+          - generic [ref=e274]:
+            - img "Generated image" [ref=e276] [cursor=pointer]
+            - generic [ref=e277]:
+              - generic [ref=e278]:
+                - button "Download" [ref=e279]:
+                  - img [ref=e280]
+                - button "Edit image" [ref=e283]:
+                  - img [ref=e284]
+                - button "Change pose" [ref=e286]:
+                  - img [ref=e287]
+                - button "Reuse parameters" [ref=e294]:
+                  - img [ref=e295]
+                - button "Upscale 4×" [ref=e300]:
+                  - img [ref=e301]
+                - button "More options" [ref=e303]:
+                  - img [ref=e304]
+              - generic [ref=e308]:
+                - paragraph [ref=e309]: "Characters: 1"
+                - paragraph [ref=e310]: "Scene: N/A"
+            - button "Mark as favorite" [ref=e311]:
+              - img [ref=e312]
+            - button "Select" [ref=e315]
+            - button "Delete image" [ref=e318] [cursor=pointer]:
+              - img [ref=e319]
+          - generic [ref=e321]:
+            - img "Generated image" [ref=e323] [cursor=pointer]
+            - generic [ref=e324]:
+              - generic [ref=e325]:
+                - button "Download" [ref=e326]:
+                  - img [ref=e327]
+                - button "Edit image" [ref=e330]:
+                  - img [ref=e331]
+                - button "Change pose" [ref=e333]:
+                  - img [ref=e334]
+                - button "Reuse parameters" [ref=e341]:
+                  - img [ref=e342]
+                - button "Upscale 4×" [ref=e347]:
+                  - img [ref=e348]
+                - button "More options" [ref=e350]:
+                  - img [ref=e351]
+              - generic [ref=e355]:
+                - paragraph [ref=e356]: "Characters: 1"
+                - paragraph [ref=e357]: "Scene: N/A"
+            - button "Mark as favorite" [ref=e358]:
+              - img [ref=e359]
+            - button "Select" [ref=e362]
+            - button "Delete image" [ref=e365] [cursor=pointer]:
+              - img [ref=e366]
+          - generic [ref=e368]:
+            - img "Generated image" [ref=e370] [cursor=pointer]
+            - generic [ref=e371]:
+              - generic [ref=e372]:
+                - button "Download" [ref=e373]:
+                  - img [ref=e374]
+                - button "Edit image" [ref=e377]:
+                  - img [ref=e378]
+                - button "Change pose" [ref=e380]:
+                  - img [ref=e381]
+                - button "Reuse parameters" [ref=e388]:
+                  - img [ref=e389]
+                - button "Upscale 4×" [ref=e394]:
+                  - img [ref=e395]
+                - button "More options" [ref=e397]:
+                  - img [ref=e398]
+              - generic [ref=e402]:
+                - paragraph [ref=e403]: "Characters: 2"
+                - paragraph [ref=e404]: "Scene: N/A"
+            - button "Mark as favorite" [ref=e405]:
+              - img [ref=e406]
+            - button "Select" [ref=e409]
+            - button "Delete image" [ref=e412] [cursor=pointer]:
+              - img [ref=e413]
+          - generic [ref=e415]:
+            - img "Generated image" [ref=e417] [cursor=pointer]
+            - generic [ref=e418]:
+              - generic [ref=e419]:
+                - button "Download" [ref=e420]:
+                  - img [ref=e421]
+                - button "Edit image" [ref=e424]:
+                  - img [ref=e425]
+                - button "Change pose" [ref=e427]:
+                  - img [ref=e428]
+                - button "Reuse parameters" [ref=e435]:
+                  - img [ref=e436]
+                - button "Upscale 4×" [ref=e441]:
+                  - img [ref=e442]
+                - button "More options" [ref=e444]:
+                  - img [ref=e445]
+              - generic [ref=e449]:
+                - paragraph [ref=e450]: "Characters: 1"
+                - paragraph [ref=e451]: "Scene: N/A"
+            - button "Mark as favorite" [ref=e452]:
+              - img [ref=e453]
+            - button "Select" [ref=e456]
+            - button "Delete image" [ref=e459] [cursor=pointer]:
+              - img [ref=e460]
+          - generic [ref=e462]:
+            - img "Generated image" [ref=e464] [cursor=pointer]
+            - generic [ref=e465]:
+              - generic [ref=e466]:
+                - button "Download" [ref=e467]:
+                  - img [ref=e468]
+                - button "Edit image" [ref=e471]:
+                  - img [ref=e472]
+                - button "Change pose" [ref=e474]:
+                  - img [ref=e475]
+                - button "Reuse parameters" [ref=e482]:
+                  - img [ref=e483]
+                - button "Upscale 4×" [ref=e488]:
+                  - img [ref=e489]
+                - button "More options" [ref=e491]:
+                  - img [ref=e492]
+              - generic [ref=e496]:
+                - paragraph [ref=e497]: "Characters: 1"
+                - paragraph [ref=e498]: "Scene: N/A"
+            - button "Mark as favorite" [ref=e499]:
+              - img [ref=e500]
+            - button "Select" [ref=e503]
+            - button "Delete image" [ref=e506] [cursor=pointer]:
+              - img [ref=e507]
+          - generic [ref=e509]:
+            - img "Edited image" [ref=e511] [cursor=pointer]
+            - generic [ref=e512]:
+              - generic [ref=e513]:
+                - button "Download" [ref=e514]:
+                  - img [ref=e515]
+                - button "Edit image" [ref=e518]:
+                  - img [ref=e519]
+                - button "Change pose" [ref=e521]:
+                  - img [ref=e522]
+                - button "Reuse parameters" [ref=e529]:
+                  - img [ref=e530]
+                - button "Upscale 4×" [ref=e535]:
+                  - img [ref=e536]
+                - button "More options" [ref=e538]:
+                  - img [ref=e539]
+              - paragraph [ref=e544]: "Pose: N/A"
+            - generic "Edited":
+              - img
+            - button "Mark as favorite" [ref=e545]:
+              - img [ref=e546]
+            - button "Select" [ref=e549]
+            - button "Delete image" [ref=e552] [cursor=pointer]:
+              - img [ref=e553]
+          - generic [ref=e555]:
+            - img "Generated image" [ref=e557] [cursor=pointer]
+            - generic [ref=e558]:
+              - generic [ref=e559]:
+                - button "Download" [ref=e560]:
+                  - img [ref=e561]
+                - button "Edit image" [ref=e564]:
+                  - img [ref=e565]
+                - button "Change pose" [ref=e567]:
+                  - img [ref=e568]
+                - button "Reuse parameters" [ref=e575]:
+                  - img [ref=e576]
+                - button "Upscale 4×" [ref=e581]:
+                  - img [ref=e582]
+                - button "More options" [ref=e584]:
+                  - img [ref=e585]
+              - generic [ref=e589]:
+                - paragraph [ref=e590]: "Characters: 2"
+                - paragraph [ref=e591]: "Scene: Ancient temple ruins surrounded by tropical jungle at dusk"
+            - button "Mark as favorite" [ref=e592]:
+              - img [ref=e593]
+            - button "Select" [ref=e596]
+            - button "Delete image" [ref=e599] [cursor=pointer]:
+              - img [ref=e600]
+          - generic [ref=e602]:
+            - img "Generated image" [ref=e604] [cursor=pointer]
+            - generic [ref=e605]:
+              - generic [ref=e606]:
+                - button "Download" [ref=e607]:
+                  - img [ref=e608]
+                - button "Edit image" [ref=e611]:
+                  - img [ref=e612]
+                - button "Change pose" [ref=e614]:
+                  - img [ref=e615]
+                - button "Reuse parameters" [ref=e622]:
+                  - img [ref=e623]
+                - button "Upscale 4×" [ref=e628]:
+                  - img [ref=e629]
+                - button "More options" [ref=e631]:
+                  - img [ref=e632]
+              - generic [ref=e636]:
+                - paragraph [ref=e637]: "Characters: 1"
+                - paragraph [ref=e638]: "Scene: N/A"
+            - button "Mark as favorite" [ref=e639]:
+              - img [ref=e640]
+            - button "Select" [ref=e643]
+            - button "Delete image" [ref=e646] [cursor=pointer]:
+              - img [ref=e647]
+          - generic [ref=e649]:
+            - img "Generated image" [ref=e651] [cursor=pointer]
+            - generic [ref=e652]:
+              - generic [ref=e653]:
+                - button "Download" [ref=e654]:
+                  - img [ref=e655]
+                - button "Edit image" [ref=e658]:
+                  - img [ref=e659]
+                - button "Change pose" [ref=e661]:
+                  - img [ref=e662]
+                - button "Reuse parameters" [ref=e669]:
+                  - img [ref=e670]
+                - button "Upscale 4×" [ref=e675]:
+                  - img [ref=e676]
+                - button "More options" [ref=e678]:
+                  - img [ref=e679]
+              - generic [ref=e683]:
+                - paragraph [ref=e684]: "Characters: 2"
+                - paragraph [ref=e685]: "Scene: N/A"
+            - button "Mark as favorite" [ref=e686]:
+              - img [ref=e687]
+            - button "Select" [ref=e690]
+            - button "Delete image" [ref=e693] [cursor=pointer]:
+              - img [ref=e694]
+          - generic [ref=e696]:
+            - img "Generated image" [ref=e698] [cursor=pointer]
+            - generic [ref=e699]:
+              - generic [ref=e700]:
+                - button "Download" [ref=e701]:
+                  - img [ref=e702]
+                - button "Edit image" [ref=e705]:
+                  - img [ref=e706]
+                - button "Change pose" [ref=e708]:
+                  - img [ref=e709]
+                - button "Reuse parameters" [ref=e716]:
+                  - img [ref=e717]
+                - button "Upscale 4×" [ref=e722]:
+                  - img [ref=e723]
+                - button "More options" [ref=e725]:
+                  - img [ref=e726]
+              - generic [ref=e730]:
+                - paragraph [ref=e731]: "Characters: 2"
+                - paragraph [ref=e732]: "Scene: Marrakech riad with turquoise pool, mosaic tiles, rose petals"
+            - button "Mark as favorite" [ref=e733]:
+              - img [ref=e734]
+            - button "Select" [ref=e737]
+            - button "Delete image" [ref=e740] [cursor=pointer]:
+              - img [ref=e741]
+          - generic [ref=e743]:
+            - img "Generated image" [ref=e745] [cursor=pointer]
+            - generic [ref=e746]:
+              - generic [ref=e747]:
+                - button "Download" [ref=e748]:
+                  - img [ref=e749]
+                - button "Edit image" [ref=e752]:
+                  - img [ref=e753]
+                - button "Change pose" [ref=e755]:
+                  - img [ref=e756]
+                - button "Reuse parameters" [ref=e763]:
+                  - img [ref=e764]
+                - button "Upscale 4×" [ref=e769]:
+                  - img [ref=e770]
+                - button "More options" [ref=e772]:
+                  - img [ref=e773]
+              - generic [ref=e777]:
+                - paragraph [ref=e778]: "Characters: 1"
+                - paragraph [ref=e779]: "Scene: N/A"
+            - button "Mark as favorite" [ref=e780]:
+              - img [ref=e781]
+            - button "Select" [ref=e784]
+            - button "Delete image" [ref=e787] [cursor=pointer]:
+              - img [ref=e788]
+          - generic [ref=e790]:
+            - img "Generated image" [ref=e792] [cursor=pointer]
+            - generic [ref=e793]:
+              - generic [ref=e794]:
+                - button "Download" [ref=e795]:
+                  - img [ref=e796]
+                - button "Edit image" [ref=e799]:
+                  - img [ref=e800]
+                - button "Change pose" [ref=e802]:
+                  - img [ref=e803]
+                - button "Reuse parameters" [ref=e810]:
+                  - img [ref=e811]
+                - button "Upscale 4×" [ref=e816]:
+                  - img [ref=e817]
+                - button "More options" [ref=e819]:
+                  - img [ref=e820]
+              - generic [ref=e824]:
+                - paragraph [ref=e825]: "Characters: 1"
+                - paragraph [ref=e826]: "Scene: N/A"
+            - button "Mark as favorite" [ref=e827]:
+              - img [ref=e828]
+            - button "Select" [ref=e831]
+            - button "Delete image" [ref=e834] [cursor=pointer]:
+              - img [ref=e835]
+          - generic [ref=e837]:
+            - img "Edited image" [ref=e839] [cursor=pointer]
+            - generic [ref=e840]:
+              - generic [ref=e841]:
+                - button "Download" [ref=e842]:
+                  - img [ref=e843]
+                - button "Edit image" [ref=e846]:
+                  - img [ref=e847]
+                - button "Change pose" [ref=e849]:
+                  - img [ref=e850]
+                - button "Reuse parameters" [ref=e857]:
+                  - img [ref=e858]
+                - button "Upscale 4×" [ref=e863]:
+                  - img [ref=e864]
+                - button "More options" [ref=e866]:
+                  - img [ref=e867]
+              - paragraph [ref=e872]: "Pose: N/A"
+            - generic "Edited":
+              - img
+            - button "Mark as favorite" [ref=e873]:
+              - img [ref=e874]
+            - button "Select" [ref=e877]
+            - button "Delete image" [ref=e880] [cursor=pointer]:
+              - img [ref=e881]
+          - generic [ref=e883]:
+            - img "Edited image" [ref=e885] [cursor=pointer]
+            - generic [ref=e886]:
+              - generic [ref=e887]:
+                - button "Download" [ref=e888]:
+                  - img [ref=e889]
+                - button "Edit image" [ref=e892]:
+                  - img [ref=e893]
+                - button "Change pose" [ref=e895]:
+                  - img [ref=e896]
+                - button "Reuse parameters" [ref=e903]:
+                  - img [ref=e904]
+                - button "Upscale 4×" [ref=e909]:
+                  - img [ref=e910]
+                - button "More options" [ref=e912]:
+                  - img [ref=e913]
+              - paragraph [ref=e918]: "Pose: N/A"
+            - generic "Edited":
+              - img
+            - button "Mark as favorite" [ref=e919]:
+              - img [ref=e920]
+            - button "Select" [ref=e923]
+            - button "Delete image" [ref=e926] [cursor=pointer]:
+              - img [ref=e927]
+          - generic [ref=e929]:
+            - img "Edited image" [ref=e931] [cursor=pointer]
+            - generic [ref=e932]:
+              - generic [ref=e933]:
+                - button "Download" [ref=e934]:
+                  - img [ref=e935]
+                - button "Edit image" [ref=e938]:
+                  - img [ref=e939]
+                - button "Change pose" [ref=e941]:
+                  - img [ref=e942]
+                - button "Reuse parameters" [ref=e949]:
+                  - img [ref=e950]
+                - button "Upscale 4×" [ref=e955]:
+                  - img [ref=e956]
+                - button "More options" [ref=e958]:
+                  - img [ref=e959]
+              - paragraph [ref=e964]: "Pose: N/A"
+            - generic "Edited":
+              - img
+            - button "Mark as favorite" [ref=e965]:
+              - img [ref=e966]
+            - button "Select" [ref=e969]
+            - button "Delete image" [ref=e972] [cursor=pointer]:
+              - img [ref=e973]
+          - generic [ref=e975]:
+            - img "Edited image" [ref=e977] [cursor=pointer]
+            - generic [ref=e978]:
+              - generic [ref=e979]:
+                - button "Download" [ref=e980]:
+                  - img [ref=e981]
+                - button "Edit image" [ref=e984]:
+                  - img [ref=e985]
+                - button "Change pose" [ref=e987]:
+                  - img [ref=e988]
+                - button "Reuse parameters" [ref=e995]:
+                  - img [ref=e996]
+                - button "Upscale 4×" [ref=e1001]:
+                  - img [ref=e1002]
+                - button "More options" [ref=e1004]:
+                  - img [ref=e1005]
+              - paragraph [ref=e1010]: "Pose: N/A"
+            - generic "Edited":
+              - img
+            - button "Mark as favorite" [ref=e1011]:
+              - img [ref=e1012]
+            - button "Select" [ref=e1015]
+            - button "Delete image" [ref=e1018] [cursor=pointer]:
+              - img [ref=e1019]
+          - generic [ref=e1021]:
+            - img "Edited image" [ref=e1023] [cursor=pointer]
+            - generic [ref=e1024]:
+              - generic [ref=e1025]:
+                - button "Download" [ref=e1026]:
+                  - img [ref=e1027]
+                - button "Edit image" [ref=e1030]:
+                  - img [ref=e1031]
+                - button "Change pose" [ref=e1033]:
+                  - img [ref=e1034]
+                - button "Reuse parameters" [ref=e1041]:
+                  - img [ref=e1042]
+                - button "Upscale 4×" [ref=e1047]:
+                  - img [ref=e1048]
+                - button "More options" [ref=e1050]:
+                  - img [ref=e1051]
+              - paragraph [ref=e1056]: "Pose: N/A"
+            - generic "Edited":
+              - img
+            - button "Mark as favorite" [ref=e1057]:
+              - img [ref=e1058]
+            - button "Select" [ref=e1061]
+            - button "Delete image" [ref=e1064] [cursor=pointer]:
+              - img [ref=e1065]
+          - generic [ref=e1067]:
+            - img "Edited image" [ref=e1069] [cursor=pointer]
+            - generic [ref=e1070]:
+              - generic [ref=e1071]:
+                - button "Download" [ref=e1072]:
+                  - img [ref=e1073]
+                - button "Edit image" [ref=e1076]:
+                  - img [ref=e1077]
+                - button "Change pose" [ref=e1079]:
+                  - img [ref=e1080]
+                - button "Reuse parameters" [ref=e1087]:
+                  - img [ref=e1088]
+                - button "Upscale 4×" [ref=e1093]:
+                  - img [ref=e1094]
+                - button "More options" [ref=e1096]:
+                  - img [ref=e1097]
+              - paragraph [ref=e1102]: "Pose: N/A"
+            - generic "Edited":
+              - img
+            - button "Mark as favorite" [ref=e1103]:
+              - img [ref=e1104]
+            - button "Select" [ref=e1107]
+            - button "Delete image" [ref=e1110] [cursor=pointer]:
+              - img [ref=e1111]
+          - generic [ref=e1113]:
+            - img "Edited image" [ref=e1115] [cursor=pointer]
+            - generic [ref=e1116]:
+              - generic [ref=e1117]:
+                - button "Download" [ref=e1118]:
+                  - img [ref=e1119]
+                - button "Edit image" [ref=e1122]:
+                  - img [ref=e1123]
+                - button "Change pose" [ref=e1125]:
+                  - img [ref=e1126]
+                - button "Reuse parameters" [ref=e1133]:
+                  - img [ref=e1134]
+                - button "Upscale 4×" [ref=e1139]:
+                  - img [ref=e1140]
+                - button "More options" [ref=e1142]:
+                  - img [ref=e1143]
+              - paragraph [ref=e1148]: "Pose: N/A"
+            - generic "Edited":
+              - img
+            - button "Mark as favorite" [ref=e1149]:
+              - img [ref=e1150]
+            - button "Select" [ref=e1153]
+            - button "Delete image" [ref=e1156] [cursor=pointer]:
+              - img [ref=e1157]
+          - generic [ref=e1159]:
+            - img "Edited image" [ref=e1161] [cursor=pointer]
+            - generic [ref=e1162]:
+              - generic [ref=e1163]:
+                - button "Download" [ref=e1164]:
+                  - img [ref=e1165]
+                - button "Edit image" [ref=e1168]:
+                  - img [ref=e1169]
+                - button "Change pose" [ref=e1171]:
+                  - img [ref=e1172]
+                - button "Reuse parameters" [ref=e1179]:
+                  - img [ref=e1180]
+                - button "Upscale 4×" [ref=e1185]:
+                  - img [ref=e1186]
+                - button "More options" [ref=e1188]:
+                  - img [ref=e1189]
+              - paragraph [ref=e1194]: "Pose: N/A"
+            - generic "Edited":
+              - img
+            - button "Mark as favorite" [ref=e1195]:
+              - img [ref=e1196]
+            - button "Select" [ref=e1199]
+            - button "Delete image" [ref=e1202] [cursor=pointer]:
+              - img [ref=e1203]
+          - generic [ref=e1205]:
+            - img "Edited image" [ref=e1207] [cursor=pointer]
+            - generic [ref=e1208]:
+              - generic [ref=e1209]:
+                - button "Download" [ref=e1210]:
+                  - img [ref=e1211]
+                - button "Edit image" [ref=e1214]:
+                  - img [ref=e1215]
+                - button "Change pose" [ref=e1217]:
+                  - img [ref=e1218]
+                - button "Reuse parameters" [ref=e1225]:
+                  - img [ref=e1226]
+                - button "Upscale 4×" [ref=e1231]:
+                  - img [ref=e1232]
+                - button "More options" [ref=e1234]:
+                  - img [ref=e1235]
+              - paragraph [ref=e1240]: "Pose: N/A"
+            - generic "Edited":
+              - img
+            - button "Mark as favorite" [ref=e1241]:
+              - img [ref=e1242]
+            - button "Select" [ref=e1245]
+            - button "Delete image" [ref=e1248] [cursor=pointer]:
+              - img [ref=e1249]
+          - generic [ref=e1251]:
+            - img "Edited image" [ref=e1253] [cursor=pointer]
+            - generic [ref=e1254]:
+              - generic [ref=e1255]:
+                - button "Download" [ref=e1256]:
+                  - img [ref=e1257]
+                - button "Edit image" [ref=e1260]:
+                  - img [ref=e1261]
+                - button "Change pose" [ref=e1263]:
+                  - img [ref=e1264]
+                - button "Reuse parameters" [ref=e1271]:
+                  - img [ref=e1272]
+                - button "Upscale 4×" [ref=e1277]:
+                  - img [ref=e1278]
+                - button "More options" [ref=e1280]:
+                  - img [ref=e1281]
+              - paragraph [ref=e1286]: "Pose: N/A"
+            - generic "Edited":
+              - img
+            - button "Mark as favorite" [ref=e1287]:
+              - img [ref=e1288]
+            - button "Select" [ref=e1291]
+            - button "Delete image" [ref=e1294] [cursor=pointer]:
+              - img [ref=e1295]
+          - generic [ref=e1297]:
+            - img "Edited image" [ref=e1299] [cursor=pointer]
+            - generic [ref=e1300]:
+              - generic [ref=e1301]:
+                - button "Download" [ref=e1302]:
+                  - img [ref=e1303]
+                - button "Edit image" [ref=e1306]:
+                  - img [ref=e1307]
+                - button "Change pose" [ref=e1309]:
+                  - img [ref=e1310]
+                - button "Reuse parameters" [ref=e1317]:
+                  - img [ref=e1318]
+                - button "Upscale 4×" [ref=e1323]:
+                  - img [ref=e1324]
+                - button "More options" [ref=e1326]:
+                  - img [ref=e1327]
+              - paragraph [ref=e1332]: "Pose: N/A"
+            - generic "Edited":
+              - img
+            - button "Mark as favorite" [ref=e1333]:
+              - img [ref=e1334]
+            - button "Select" [ref=e1337]
+            - button "Delete image" [ref=e1340] [cursor=pointer]:
+              - img [ref=e1341]
+          - generic [ref=e1343]:
+            - img "Edited image" [ref=e1345] [cursor=pointer]
+            - generic [ref=e1346]:
+              - generic [ref=e1347]:
+                - button "Download" [ref=e1348]:
+                  - img [ref=e1349]
+                - button "Edit image" [ref=e1352]:
+                  - img [ref=e1353]
+                - button "Change pose" [ref=e1355]:
+                  - img [ref=e1356]
+                - button "Reuse parameters" [ref=e1363]:
+                  - img [ref=e1364]
+                - button "Upscale 4×" [ref=e1369]:
+                  - img [ref=e1370]
+                - button "More options" [ref=e1372]:
+                  - img [ref=e1373]
+              - paragraph [ref=e1378]: "Pose: N/A"
+            - generic "Edited":
+              - img
+            - button "Mark as favorite" [ref=e1379]:
+              - img [ref=e1380]
+            - button "Select" [ref=e1383]
+            - button "Delete image" [ref=e1386] [cursor=pointer]:
+              - img [ref=e1387]
+          - generic [ref=e1389]:
+            - img "Edited image" [ref=e1391] [cursor=pointer]
+            - generic [ref=e1392]:
+              - generic [ref=e1393]:
+                - button "Download" [ref=e1394]:
+                  - img [ref=e1395]
+                - button "Edit image" [ref=e1398]:
+                  - img [ref=e1399]
+                - button "Change pose" [ref=e1401]:
+                  - img [ref=e1402]
+                - button "Reuse parameters" [ref=e1409]:
+                  - img [ref=e1410]
+                - button "Upscale 4×" [ref=e1415]:
+                  - img [ref=e1416]
+                - button "More options" [ref=e1418]:
+                  - img [ref=e1419]
+              - paragraph [ref=e1424]: "Pose: N/A"
+            - generic "Edited":
+              - img
+            - button "Mark as favorite" [ref=e1425]:
+              - img [ref=e1426]
+            - button "Select" [ref=e1429]
+            - button "Delete image" [ref=e1432] [cursor=pointer]:
+              - img [ref=e1433]
+          - generic [ref=e1435]:
+            - img "Edited image" [ref=e1437] [cursor=pointer]
+            - generic [ref=e1438]:
+              - generic [ref=e1439]:
+                - button "Download" [ref=e1440]:
+                  - img [ref=e1441]
+                - button "Edit image" [ref=e1444]:
+                  - img [ref=e1445]
+                - button "Change pose" [ref=e1447]:
+                  - img [ref=e1448]
+                - button "Reuse parameters" [ref=e1455]:
+                  - img [ref=e1456]
+                - button "Upscale 4×" [ref=e1461]:
+                  - img [ref=e1462]
+                - button "More options" [ref=e1464]:
+                  - img [ref=e1465]
+              - paragraph [ref=e1470]: "Pose: N/A"
+            - generic "Edited":
+              - img
+            - button "Mark as favorite" [ref=e1471]:
+              - img [ref=e1472]
+            - button "Select" [ref=e1475]
+            - button "Delete image" [ref=e1478] [cursor=pointer]:
+              - img [ref=e1479]
+          - generic [ref=e1481]:
+            - img "Edited image" [ref=e1483] [cursor=pointer]
+            - generic [ref=e1484]:
+              - generic [ref=e1485]:
+                - button "Download" [ref=e1486]:
+                  - img [ref=e1487]
+                - button "Edit image" [ref=e1490]:
+                  - img [ref=e1491]
+                - button "Change pose" [ref=e1493]:
+                  - img [ref=e1494]
+                - button "Reuse parameters" [ref=e1501]:
+                  - img [ref=e1502]
+                - button "Upscale 4×" [ref=e1507]:
+                  - img [ref=e1508]
+                - button "More options" [ref=e1510]:
+                  - img [ref=e1511]
+              - paragraph [ref=e1516]: "Pose: N/A"
+            - generic "Edited":
+              - img
+            - button "Mark as favorite" [ref=e1517]:
+              - img [ref=e1518]
+            - button "Select" [ref=e1521]
+            - button "Delete image" [ref=e1524] [cursor=pointer]:
+              - img [ref=e1525]
+          - generic [ref=e1527]:
+            - img "Edited image" [ref=e1529] [cursor=pointer]
+            - generic [ref=e1530]:
+              - generic [ref=e1531]:
+                - button "Download" [ref=e1532]:
+                  - img [ref=e1533]
+                - button "Edit image" [ref=e1536]:
+                  - img [ref=e1537]
+                - button "Change pose" [ref=e1539]:
+                  - img [ref=e1540]
+                - button "Reuse parameters" [ref=e1547]:
+                  - img [ref=e1548]
+                - button "Upscale 4×" [ref=e1553]:
+                  - img [ref=e1554]
+                - button "More options" [ref=e1556]:
+                  - img [ref=e1557]
+              - paragraph [ref=e1562]: "Pose: N/A"
+            - generic "Edited":
+              - img
+            - button "Mark as favorite" [ref=e1563]:
+              - img [ref=e1564]
+            - button "Select" [ref=e1567]
+            - button "Delete image" [ref=e1570] [cursor=pointer]:
+              - img [ref=e1571]
+          - generic [ref=e1573]:
+            - img "Edited image" [ref=e1575] [cursor=pointer]
+            - generic [ref=e1576]:
+              - generic [ref=e1577]:
+                - button "Download" [ref=e1578]:
+                  - img [ref=e1579]
+                - button "Edit image" [ref=e1582]:
+                  - img [ref=e1583]
+                - button "Change pose" [ref=e1585]:
+                  - img [ref=e1586]
+                - button "Reuse parameters" [ref=e1593]:
+                  - img [ref=e1594]
+                - button "Upscale 4×" [ref=e1599]:
+                  - img [ref=e1600]
+                - button "More options" [ref=e1602]:
+                  - img [ref=e1603]
+              - paragraph [ref=e1608]: "Pose: N/A"
+            - generic "Edited":
+              - img
+            - button "Mark as favorite" [ref=e1609]:
+              - img [ref=e1610]
+            - button "Select" [ref=e1613]
+            - button "Delete image" [ref=e1616] [cursor=pointer]:
+              - img [ref=e1617]
+          - generic [ref=e1619]:
+            - img "Edited image" [ref=e1621] [cursor=pointer]
+            - generic [ref=e1622]:
+              - generic [ref=e1623]:
+                - button "Download" [ref=e1624]:
+                  - img [ref=e1625]
+                - button "Edit image" [ref=e1628]:
+                  - img [ref=e1629]
+                - button "Change pose" [ref=e1631]:
+                  - img [ref=e1632]
+                - button "Reuse parameters" [ref=e1639]:
+                  - img [ref=e1640]
+                - button "Upscale 4×" [ref=e1645]:
+                  - img [ref=e1646]
+                - button "More options" [ref=e1648]:
+                  - img [ref=e1649]
+              - paragraph [ref=e1654]: "Pose: N/A"
+            - generic "Edited":
+              - img
+            - button "Mark as favorite" [ref=e1655]:
+              - img [ref=e1656]
+            - button "Select" [ref=e1659]
+            - button "Delete image" [ref=e1662] [cursor=pointer]:
+              - img [ref=e1663]
+          - generic [ref=e1665]:
+            - img "Generated image" [ref=e1667] [cursor=pointer]
+            - generic [ref=e1668]:
+              - generic [ref=e1669]:
+                - button "Download" [ref=e1670]:
+                  - img [ref=e1671]
+                - button "Edit image" [ref=e1674]:
+                  - img [ref=e1675]
+                - button "Change pose" [ref=e1677]:
+                  - img [ref=e1678]
+                - button "Reuse parameters" [ref=e1685]:
+                  - img [ref=e1686]
+                - button "Upscale 4×" [ref=e1691]:
+                  - img [ref=e1692]
+                - button "More options" [ref=e1694]:
+                  - img [ref=e1695]
+              - generic [ref=e1699]:
+                - paragraph [ref=e1700]: "Characters: 1"
+                - paragraph [ref=e1701]: "Scene: N/A"
+            - button "Mark as favorite" [ref=e1702]:
+              - img [ref=e1703]
+            - button "Select" [ref=e1706]
+            - button "Delete image" [ref=e1709] [cursor=pointer]:
+              - img [ref=e1710]
+          - generic [ref=e1712]:
+            - img "Edited image" [ref=e1714] [cursor=pointer]
+            - generic [ref=e1715]:
+              - generic [ref=e1716]:
+                - button "Download" [ref=e1717]:
+                  - img [ref=e1718]
+                - button "Edit image" [ref=e1721]:
+                  - img [ref=e1722]
+                - button "Change pose" [ref=e1724]:
+                  - img [ref=e1725]
+                - button "Reuse parameters" [ref=e1732]:
+                  - img [ref=e1733]
+                - button "Upscale 4×" [ref=e1738]:
+                  - img [ref=e1739]
+                - button "More options" [ref=e1741]:
+                  - img [ref=e1742]
+              - paragraph [ref=e1747]: "Pose: [1 Imgs]"
+            - generic "Edited":
+              - img
+            - button "Mark as favorite" [ref=e1748]:
+              - img [ref=e1749]
+            - button "Select" [ref=e1752]
+            - button "Delete image" [ref=e1755] [cursor=pointer]:
+              - img [ref=e1756]
+        - button "Upload Photo" [ref=e1758]:
+          - img [ref=e1759]
+          - text: Upload Photo
+    - complementary [ref=e1762]:
+      - generic [ref=e1763]: Lighting
+      - generic [ref=e1764]:
+        - button "☀️ Natural" [ref=e1765]:
+          - generic [ref=e1766]: ☀️
+          - generic [ref=e1767]: Natural
+        - button "💡 Studio" [ref=e1768]:
+          - generic [ref=e1769]: 💡
+          - generic [ref=e1770]: Studio
+        - button "🌅 Golden" [ref=e1771]:
+          - generic [ref=e1772]: 🌅
+          - generic [ref=e1773]: Golden
+        - button "🌆 Neon" [ref=e1774]:
+          - generic [ref=e1775]: 🌆
+          - generic [ref=e1776]: Neon
+        - button "🎭 Dramatic" [ref=e1777]:
+          - generic [ref=e1778]: 🎭
+          - generic [ref=e1779]: Dramatic
+        - button "🌙 Dark" [ref=e1780]:
+          - generic [ref=e1781]: 🌙
+          - generic [ref=e1782]: Dark
+      - textbox "Custom lighting..." [ref=e1784]
+      - generic [ref=e1786]: Camera
+      - generic [ref=e1787]:
+        - button "📷 Portrait" [ref=e1788]:
+          - generic [ref=e1789]: 📷
+          - generic [ref=e1790]: Portrait
+        - button "🔭 Wide" [ref=e1791]:
+          - generic [ref=e1792]: 🔭
+          - generic [ref=e1793]: Wide
+        - button "🔬 Macro" [ref=e1794]:
+          - generic [ref=e1795]: 🔬
+          - generic [ref=e1796]: Macro
+        - button "🎬 Cinema" [ref=e1797]:
+          - generic [ref=e1798]: 🎬
+          - generic [ref=e1799]: Cinema
+        - button "📸 Polaroid" [ref=e1800]:
+          - generic [ref=e1801]: 📸
+          - generic [ref=e1802]: Polaroid
+        - button "🎞️ Vintage" [ref=e1803]:
+          - generic [ref=e1804]: 🎞️
+          - generic [ref=e1805]: Vintage
+      - textbox "Custom camera / lens..." [ref=e1807]
+      - generic [ref=e1809]: Format
+      - generic [ref=e1810]:
+        - paragraph [ref=e1811]: Aspect Ratio
+        - generic [ref=e1812]:
+          - button "3:4 Portrait" [ref=e1813]:
+            - generic [ref=e1814]: 3:4
+            - generic [ref=e1815]: Portrait
+          - button "1:1 Square" [ref=e1816]:
+            - generic [ref=e1817]: 1:1
+            - generic [ref=e1818]: Square
+          - button "4:3 Landscape" [ref=e1819]:
+            - generic [ref=e1820]: 4:3
+            - generic [ref=e1821]: Landscape
+          - button "16:9 Wide" [ref=e1822]:
+            - generic [ref=e1823]: 16:9
+            - generic [ref=e1824]: Wide
+          - button "9:16 Story" [ref=e1825]:
+            - generic [ref=e1826]: 9:16
+            - generic [ref=e1827]: Story
+      - generic [ref=e1828]:
+        - paragraph [ref=e1829]: Resolution
+        - generic [ref=e1830]:
+          - button "1K" [ref=e1831]
+          - button "2K" [ref=e1832]
+          - button "4K" [ref=e1833]
+      - generic [ref=e1835]: Scene
+      - textbox "Location, atmosphere, context... e.g. rooftop Tokyo, night" [ref=e1837]
+      - generic [ref=e1838]:
+        - generic [ref=e1839]: Variations
+        - generic [ref=e1840]:
+          - button [ref=e1841]:
+            - img [ref=e1842]
+          - generic [ref=e1843]: "1"
+          - button [ref=e1844]:
+            - img [ref=e1845]
+      - generic [ref=e1846]:
+        - generic [ref=e1847]:
+          - generic [ref=e1848]: ⚡ 2 credits
+          - generic [ref=e1849]: ·
+          - generic [ref=e1850]: 1.968 remaining
+        - button "Direct →" [ref=e1851]:
+          - img [ref=e1852]
+          - text: Direct →
+  - button [ref=e31]:
+    - img [ref=e32]
