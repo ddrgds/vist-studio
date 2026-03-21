@@ -29,8 +29,12 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
 
   const storeCharacters = useCharacterStore(s => s.characters)
   const trainLoRA = useCharacterStore(s => s.trainLoRA)
+  const updateCharacter = useCharacterStore(s => s.updateCharacter)
   const galleryItems = useGalleryStore(s => s.items)
   const toast = useToast()
+
+  const [refSelectMode, setRefSelectMode] = useState(false)
+  const [pendingRefs, setPendingRefs] = useState<string[]>([])
 
   const characters = useMemo(() => storeCharacters.map((c, idx) => {
     const charItems = galleryItems.filter(i => i.characterId === c.id)
@@ -58,6 +62,12 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
       setSelectedChar(null)
     }
   }, [storeCharacters, selectedChar])
+
+  // Reset ref select mode when switching characters
+  useEffect(() => {
+    setRefSelectMode(false)
+    setPendingRefs([])
+  }, [selectedChar])
 
   const totalPhotos = characters.reduce((sum, c) => sum + c.photos, 0)
   const totalEdits = characters.reduce((sum, c) => sum + c.edits, 0)
@@ -356,19 +366,115 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                   </div>
                 )}
                 {detailTab === 'Fotos' && (
-                  <div className="grid grid-cols-4 gap-2">
-                    {charPhotoItems.length > 0
-                      ? charPhotoItems.map(item => (
-                          <div key={item.id} className="aspect-[3/4] rounded-lg overflow-hidden cursor-pointer hover:scale-[1.03] transition-transform"
-                            style={{ border:'1px solid rgba(255,255,255,.04)' }}>
-                            <img src={item.url} className="w-full h-full object-cover" />
-                          </div>
-                        ))
-                      : Array.from({length:16},(_,i)=>(
-                          <div key={i} className="aspect-[3/4] rounded-lg shimmer cursor-pointer hover:scale-[1.03] transition-transform"
-                            style={{ border:'1px solid rgba(255,255,255,.04)' }} />
-                        ))
-                    }
+                  <div>
+                    {/* Header row */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-[11px]" style={{ color: 'var(--joi-text-3)' }}>
+                        {charPhotoItems.length} fotos
+                      </span>
+                      {!refSelectMode ? (
+                        <button
+                          onClick={() => {
+                            const sc = selectedChar !== null ? storeCharacters[selectedChar] : null
+                            setPendingRefs(sc?.referencePhotoUrls ?? [])
+                            setRefSelectMode(true)
+                          }}
+                          className="text-[11px] px-3 py-1 rounded-lg transition-colors"
+                          style={{
+                            background: 'rgba(255,107,157,0.08)',
+                            color: 'var(--joi-pink)',
+                            border: '1px solid rgba(255,107,157,0.15)',
+                          }}
+                        >
+                          Gestionar Referencias
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono" style={{ color: 'var(--joi-text-3)' }}>
+                            {pendingRefs.length}/20
+                          </span>
+                          <button
+                            onClick={() => setRefSelectMode(false)}
+                            className="text-[10px] px-2 py-1 rounded"
+                            style={{ color: 'var(--joi-text-3)' }}
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            onClick={() => {
+                              const sc = selectedChar !== null ? storeCharacters[selectedChar] : null
+                              if (!sc) return
+                              updateCharacter(sc.id, { referencePhotoUrls: pendingRefs })
+                              setRefSelectMode(false)
+                              toast.success(`${pendingRefs.length} referencias guardadas`)
+                            }}
+                            className="text-[11px] px-3 py-1 rounded-lg font-medium"
+                            style={{ background: 'var(--joi-pink)', color: '#fff' }}
+                          >
+                            Guardar
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    {/* Photo grid */}
+                    <div className="grid grid-cols-4 gap-2">
+                      {charPhotoItems.length > 0
+                        ? charPhotoItems.map(item => {
+                            const sc = selectedChar !== null ? storeCharacters[selectedChar] : null
+                            const isRef = refSelectMode
+                              ? pendingRefs.includes(item.url)
+                              : sc?.referencePhotoUrls?.includes(item.url) ?? false
+                            return (
+                              <div
+                                key={item.id}
+                                className="relative aspect-[3/4] rounded-lg overflow-hidden cursor-pointer hover:scale-[1.03] transition-transform"
+                                style={{ border: `1px solid ${isRef && refSelectMode ? 'rgba(255,107,157,.35)' : 'rgba(255,255,255,.04)'}` }}
+                                onClick={() => {
+                                  if (!refSelectMode) return
+                                  if (isRef) {
+                                    setPendingRefs(prev => prev.filter(u => u !== item.url))
+                                  } else if (pendingRefs.length < 20) {
+                                    setPendingRefs(prev => [...prev, item.url])
+                                  }
+                                }}
+                              >
+                                <img src={item.url} className="w-full h-full object-cover" />
+                                {/* Pink overlay when selected in select mode */}
+                                {refSelectMode && (
+                                  <div
+                                    className="absolute inset-0 transition-colors"
+                                    style={{ background: isRef ? 'rgba(255,107,157,0.25)' : 'transparent' }}
+                                  />
+                                )}
+                                {/* Checkbox badge in select mode */}
+                                {refSelectMode && (
+                                  <div
+                                    className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
+                                    style={{
+                                      background: isRef ? 'var(--joi-pink)' : 'rgba(0,0,0,0.5)',
+                                      border: '2px solid white',
+                                      color: 'white',
+                                    }}
+                                  >
+                                    {isRef ? '✓' : ''}
+                                  </div>
+                                )}
+                                {/* Pink dot badge when not in select mode but photo is a reference */}
+                                {!refSelectMode && isRef && (
+                                  <div
+                                    className="absolute top-1 right-1 w-2 h-2 rounded-full"
+                                    style={{ background: 'var(--joi-pink)' }}
+                                  />
+                                )}
+                              </div>
+                            )
+                          })
+                        : Array.from({length:16},(_,i)=>(
+                            <div key={i} className="aspect-[3/4] rounded-lg shimmer cursor-pointer hover:scale-[1.03] transition-transform"
+                              style={{ border:'1px solid rgba(255,255,255,.04)' }} />
+                          ))
+                      }
+                    </div>
                   </div>
                 )}
                 {detailTab === 'Ediciones AI' && (

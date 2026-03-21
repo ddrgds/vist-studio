@@ -66,6 +66,8 @@ export const uploadCharacterToCloud = async (
     created_at: char.createdAt,
     updated_at: char.updatedAt,
     usage_count: char.usageCount,
+    // DB: ALTER TABLE characters ADD COLUMN IF NOT EXISTS reference_photo_urls text[] DEFAULT '{}';
+    reference_photo_urls: char.referencePhotoUrls ?? [],
   });
 
   if (error) throw new Error(`characters upsert failed: ${error.message}`);
@@ -96,6 +98,7 @@ export const updateCharacterInCloud = async (
       lora_trained_at: char.loraTrainedAt ?? null,
       updated_at: char.updatedAt,
       usage_count: char.usageCount,
+      reference_photo_urls: char.referencePhotoUrls ?? [],
     })
     .eq('id', char.id)
     .eq('user_id', userId);
@@ -154,6 +157,7 @@ export const loadCharactersFromCloud = async (userId: string): Promise<SavedChar
       createdAt: row.created_at as number,
       updatedAt: row.updated_at as number,
       usageCount: (row.usage_count as number) ?? 0,
+      referencePhotoUrls: (row.reference_photo_urls as string[]) ?? [],
     } satisfies SavedCharacter;
   }));
 

@@ -31,6 +31,8 @@ export interface SavedCharacter {
   renderStyle?: string           // 'photorealistic' | 'anime' | '3d-render' | 'illustration' | 'stylized' | 'pixel-art'
   soulStyleId?: string           // UUID if Soul Style was chosen
   personalityTraits?: string[]   // e.g. ['bold', 'mysterious', 'playful']
+  // Reference photos — user-curated face refs (max 20) used in Director
+  referencePhotoUrls?: string[]
 }
 
 interface CharacterState {

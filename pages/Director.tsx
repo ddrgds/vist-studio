@@ -118,6 +118,16 @@ const ImageSlot: React.FC<{
   )
 }
 
+/** Max face reference images accepted per engine */
+const DIRECTOR_REF_MAX: Record<string, number> = {
+  'fal:seedream50': 5,
+  'replicate:grok': 3,
+  'fal:pulid': 5,
+  'gemini:nb2': 10,
+  'fal:kontext-multi': 1,
+  'fal:flux-pro': 1,
+}
+
 // Input style helper
 const joiInputStyle = (hasValue: boolean) => ({
   background: 'var(--joi-bg-2)',
@@ -175,6 +185,8 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
 
   // ── Reference images ──
   const [faceRefs, setFaceRefs] = useState<{ file: File; preview: string }[]>([])
+  // Auto-populated character reference URLs (string URLs, not File uploads)
+  const [charRefUrls, setCharRefUrls] = useState<string[]>([])
   const [outfitRef, setOutfitRef] = useState<{ file: File; preview: string } | null>(null)
   const [poseRef, setPoseRef] = useState<{ file: File; preview: string } | null>(null)
   const [scenarioRef, setScenarioRef] = useState<{ file: File; preview: string } | null>(null)
@@ -274,6 +286,13 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
       setFaceRefs(prev => [...prev, { file, preview: URL.createObjectURL(file) }])
     }
     e.target.value = ''
+  }
+
+  const handleSelectCharacter = (id: string) => {
+    setSelectedCharId(id)
+    const char = characters.find(c => c.id === id)
+    const maxRefs = DIRECTOR_REF_MAX[selectedEngine] ?? 3
+    setCharRefUrls(char?.referencePhotoUrls?.slice(0, maxRefs) ?? [])
   }
 
   // ── Build params ──
@@ -588,7 +607,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                     </div>
                   ) : (
                     characters.slice(0, 6).map(c => (
-                      <button key={c.id} onClick={() => setSelectedCharId(c.id)}
+                      <button key={c.id} onClick={() => handleSelectCharacter(c.id)}
                         className="px-3.5 py-2.5 rounded-xl text-[12px] font-medium flex items-center gap-2 transition-all"
                         style={{
                           background: selectedCharId === c.id ? 'rgba(255,107,157,.10)' : 'rgba(255,255,255,.02)',
@@ -617,6 +636,19 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                   Referencias de Rostro <span className="font-mono" style={{ opacity: 0.4 }}>({faceRefs.length}/3)</span>
                   <span title="Sube fotos de referencia para mantener consistencia facial entre generaciones. Opcional si ya seleccionaste un personaje." className="cursor-help ml-1" style={{ opacity: 0.5 }}>ℹ️</span>
                 </div>
+                {/* Auto-populated character reference thumbnails */}
+                {charRefUrls.length > 0 && (
+                  <div className="flex gap-2 flex-wrap mb-2">
+                    {charRefUrls.map((url, i) => (
+                      <div key={i} className="relative w-14 h-14 rounded-xl overflow-hidden"
+                        style={{ border: '1px solid rgba(255,107,157,.2)', opacity: 0.8 }}>
+                        <img src={url} className="w-full h-full object-cover" alt="" />
+                        <div className="absolute bottom-0 left-0 right-0 text-center text-[7px] py-0.5"
+                          style={{ background: 'rgba(0,0,0,.6)', color: 'var(--joi-pink)' }}>ref</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className="flex gap-2.5">
                   {faceRefs.map((ref, i) => (
                     <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden group"
