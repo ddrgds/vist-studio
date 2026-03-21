@@ -173,6 +173,7 @@ export interface GeneratedContent {
   openaiModel?: OpenAIModel;
   ideogramModel?: IdeogramModel;
   higgsfieldModel?: HiggsfieldModel;
+  characterId?: string;
 }
 
 export interface AIStudioClient {
@@ -235,6 +236,8 @@ export interface SavedCharacter {
   loraUrl?: string;            // FAL storage URL of trained LoRA weights
   loraTrainingStatus?: 'idle' | 'training' | 'ready' | 'failed';
   loraTrainedAt?: number;
+  // Reference photos — user-curated face refs (max 20) used in Director
+  referencePhotoUrls?: string[];
 }
 
 export interface BatchOutfitItem {

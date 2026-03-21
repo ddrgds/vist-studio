@@ -91,6 +91,7 @@ export const saveGalleryItem = async (item: GeneratedContent, userId: string): P
       params: serializeParams(item.params),
       timestamp: item.timestamp,
       source: item.source ?? 'director',
+      character_id: item.characterId ?? null,  // column: ALTER TABLE gallery_items ADD COLUMN IF NOT EXISTS character_id uuid REFERENCES characters(id) ON DELETE SET NULL;
     });
 
     if (error) throw new Error(`DB upsert failed: ${error.message}`);
@@ -120,6 +121,7 @@ export const loadGalleryItems = async (userId: string): Promise<GeneratedContent
     timestamp: row.timestamp,
     favorite: row.favorite ?? false,
     source: (row.source as 'generate' | 'director') ?? 'director',
+    characterId: row.character_id ?? undefined,
   }));
 };
 

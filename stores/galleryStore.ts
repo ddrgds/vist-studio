@@ -64,6 +64,7 @@ const toGeneratedContent = (item: GalleryItem): GeneratedContent => ({
   replicateModel: item.replicateModel,
   openaiModel: item.openaiModel,
   ideogramModel: item.ideogramModel,
+  characterId: item.characterId,
 });
 
 /** Convert GeneratedContent → GalleryItem when loading from storage. */
@@ -81,6 +82,7 @@ const fromGeneratedContent = (gc: GeneratedContent): GalleryItem => ({
   replicateModel: gc.replicateModel,
   openaiModel: gc.openaiModel,
   ideogramModel: gc.ideogramModel,
+  characterId: gc.characterId,
 });
 
 // ─────────────────────────────────────────────
