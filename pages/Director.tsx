@@ -21,7 +21,6 @@ import type { CustomPreset } from '../stores/presetStore'
 import { compilePrompt } from '../services/promptCompiler'
 import { fal } from '@fal-ai/client'
 import { runControlNet } from '../services/controlNetService'
-import { runTryOn } from '../services/tryOnService'
 
 // ─── Accordion Section (Joi style) ─────────────────────
 const AccordionSection: React.FC<{
@@ -361,9 +360,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
       characters: [{
         id: selectedChar?.id || 'director-char',
         characteristics: characteristics || selectedChar?.characteristics || '',
-        outfitDescription: outfitRef
-          ? '[OUTFIT FROM REFERENCE IMAGE] Extract garment only from the outfit reference, apply to character. Ignore person in outfit photo.'
-          : (outfitDescription || selectedChar?.outfitDescription || ''),
+        outfitDescription: outfitDescription || selectedChar?.outfitDescription || '',
         pose: poseValue,
         accessory: selectedChar?.accessory || '',
         modelImages,
@@ -478,37 +475,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
         results = await generateInfluencerImage(params, (p) => setProgress(p), abortRef.current.signal)
       }
 
-      // ── Stage 3: Virtual Try-On (optional post-processing, +10cr) ──
-      const TRYON_COST = 10
-      let finalResults = results
-      if (outfitRef && results.length > 0) {
-        const okTryOn = await decrementCredits(TRYON_COST)
-        if (okTryOn) {
-          toast.info('Aplicando outfit (virtual try-on)...')
-          try {
-            const garmentStorageUrl = await fal.storage.upload(outfitRef.file)
-            const tryOnSettled = await Promise.allSettled(
-              results.map(url => runTryOn(url, garmentStorageUrl))
-            )
-            finalResults = tryOnSettled.map((r, i) =>
-              r.status === 'fulfilled' ? r.value : results[i]
-            )
-            const failed = tryOnSettled.filter(r => r.status === 'rejected').length
-            if (failed > 0) {
-              toast.warning(`${failed} try-on${failed > 1 ? 's' : ''} fallaron — usando resultado original`)
-            }
-          } catch (e) {
-            console.error('Try-on stage failed:', e)
-            toast.error('Error en try-on — usando resultado de generación')
-            restoreCredits(TRYON_COST)
-            finalResults = results
-          }
-        } else {
-          toast.warning('Créditos insuficientes para try-on (+10cr) — usando resultado de generación')
-        }
-      }
-
-      setGeneratedImages(finalResults)
+      setGeneratedImages(results)
       setSelectedResult(0)
 
       let engineLabel = 'gemini-nb2'
@@ -517,7 +484,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
         if (eng) engineLabel = eng.userFriendlyName
       }
 
-      const items: GalleryItem[] = finalResults.map((url) => ({
+      const items: GalleryItem[] = results.map((url) => ({
         id: crypto.randomUUID(),
         url,
         prompt: scenario || 'Director hero shot',
@@ -542,8 +509,8 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
 
       useGalleryStore.getState().addItems(items)
       if (selectedChar) useCharacterStore.getState().incrementUsage(selectedChar.id)
-      if (finalResults.length > 0) pipelineSetHeroShot(finalResults[0])
-      toast.success(`${finalResults.length} hero shot${finalResults.length > 1 ? 's' : ''} generated`)
+      if (results.length > 0) pipelineSetHeroShot(results[0])
+      toast.success(`${results.length} hero shot${results.length > 1 ? 's' : ''} generated`)
 
     } catch (err: any) {
       if (err?.name !== 'AbortError') {
@@ -834,7 +801,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                       color: 'var(--joi-text-2)',
                       border: '1px solid rgba(255,107,157,.08)',
                     }}>
-                      La AI extraerá la prenda de la imagen y la aplicará al personaje
+                      Imagen de referencia de ropa — el modelo usará esta prenda como guía
                     </div>
                   ) : (
                     <textarea
@@ -848,19 +815,6 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                   )}
                 </div>
               </div>
-              {outfitRef && (
-                <div className="flex items-center gap-1.5 mt-1.5">
-                  <span className="text-[9px] font-mono px-2 py-0.5 rounded-md"
-                    style={{
-                      background: 'rgba(255,107,157,.08)',
-                      color: 'var(--joi-pink)',
-                      border: '1px solid rgba(255,107,157,.12)',
-                    }}>
-                    +10cr · Try-On
-                  </span>
-                  <span className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>virtual try-on activo</span>
-                </div>
-              )}
             </div>
           </AccordionSection>
 
