@@ -531,14 +531,17 @@ export async function expandWithBria(
 // Pruna P-Image-Edit — fallback edit engine
 // ─────────────────────────────────────────────
 export async function editWithPruna(
-  imageUrl: string,
+  imageInput: string | File,
   prompt: string,
   onProgress?: (p: number) => void,
   abortSignal?: AbortSignal,
 ): Promise<string> {
   onProgress?.(10);
+  const image = imageInput instanceof File
+    ? await fileToDataUri(imageInput)
+    : imageInput;
   const output = await replicate.run('prunaai/p-image-edit' as `${string}/${string}`, {
-    input: { image: imageUrl, prompt },
+    input: { image, prompt, disable_safety_checker: true },
   });
   onProgress?.(100);
   return typeof output === 'string' ? output : (output as string[])[0];

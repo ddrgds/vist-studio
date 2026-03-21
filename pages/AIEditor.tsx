@@ -8,6 +8,7 @@ import { editImageWithAI, faceSwapWithGemini } from '../services/geminiService'
 import { editImageWithFluxKontext, editImageWithSeedream5, editImageWithFlux2Pro, editImageWithGrokFal, editImageWithQwen, editImageWithFireRed, inpaintWithOneReward, editImageWithSeedream5Lite, removeBackground } from '../services/falService'
 import { editImageWithGPT } from '../services/openaiService'
 import { editWithSoulReference } from '../services/higgsfieldService'
+import { editWithPruna } from '../services/replicateService'
 import { ENGINE_METADATA, FEATURE_ENGINES, AIProvider, AspectRatio } from '../types'
 import { useNavigationStore } from '../stores/navigationStore'
 import { usePipelineStore } from '../stores/pipelineStore'
@@ -151,6 +152,11 @@ const routeEdit = async (
   if (engineKey === 'replicate:grok') {
     const refs = referenceImage ? [referenceImage] : []
     return editImageWithGrokFal(file, instruction, onProgress, abortSignal, refs)
+  }
+
+  // Pruna P-Image-Edit (fast, no safety filter)
+  if (engineKey === 'replicate:pruna') {
+    return editWithPruna(file, instruction, onProgress, abortSignal).then(r => [r])
   }
 
   // GPT Image

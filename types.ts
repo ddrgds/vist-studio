@@ -351,6 +351,8 @@ export const FAL_MODEL_LABELS: Record<FalModel, { name: string; description: str
   [FalModel.FireRedEdit]: { name: 'FireRed v1.1', description: 'Portrait editing, try-on, makeup · 2026' },
   [FalModel.OneReward]: { name: 'OneReward', description: 'Mask-based inpainting & outpainting · FLUX Fill' },
   [FalModel.Seedream5Edit]: { name: 'Seedream 5 Edit', description: 'ByteDance — intelligent editing, low hallucination' },
+  [FalModel.KontextPro]: { name: 'Kontext Pro', description: 'FLUX Kontext Pro — single-ref identity editing · 2026' },
+  [FalModel.KleinEditLoRA]: { name: 'Klein Edit+LoRA', description: 'FLUX 2 Klein 9B — edit with custom LoRA · 2026' },
 };
 
 export const POSE_ENGINE_LABELS: Record<PoseEngine, { name: string; icon: string; description: string }> = {
@@ -366,6 +368,11 @@ export const REPLICATE_MODEL_LABELS: Record<ReplicateModel, { name: string; desc
   [ReplicateModel.Gen4Image]: { name: 'Gen-4 Image', description: 'Runway — char + location · Jul 2025' },
   [ReplicateModel.IDMVTON]: { name: 'Virtual Try-On', description: 'Clothing try-on ⚠️ non-commercial' },
   [ReplicateModel.GrokImagine]: { name: 'Grok Imagine', description: 'xAI SOTA · ~4s · 13 aspect ratios · 2026' },
+  [ReplicateModel.RecraftCrispUpscale]: { name: 'Recraft Crisp', description: 'Clarity-preserving upscale · 2026' },
+  [ReplicateModel.BriaExpand]: { name: 'Bria Expand', description: 'Outpaint / expand borders · 2026' },
+  [ReplicateModel.Flux2Pro]: { name: 'FLUX 2 Pro', description: 'FLUX 2 Pro generation · Replicate · 2026' },
+  [ReplicateModel.Flux2Klein4B]: { name: 'FLUX 2 Klein 4B', description: 'Fast, economical generation · 2026' },
+  [ReplicateModel.PrunaImageEdit]: { name: 'P-Image Edit', description: 'Pruna — rápido, económico, sin filtros · 2026' },
 };
 
 // ─── ModelsLab ────────────────────────────────────────────────────────────────
@@ -681,6 +688,7 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     key: 'fal:pulid',
     userFriendlyName: 'PuLID v2',
     description: 'Face-locked photo-realistic ID',
+    bestFor: 'Identidad facial, fotos de referencia',
     tags: ['face', 'quality', 'photorealism'],
     requiresFaceRef: true,
     estimatedTime: '~20s',
@@ -692,6 +700,7 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     key: 'fal:flux-pro',
     userFriendlyName: 'FLUX Pro',
     description: 'State-of-the-art image generation',
+    bestFor: 'Generación guiada por referencia',
     tags: ['quality', 'photorealism'],
     requiresFaceRef: true,
     estimatedTime: '~15s',
@@ -711,6 +720,18 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     creditCost: CREDIT_COSTS[ReplicateModel.GrokImagine],
     provider: AIProvider.Replicate,
     replicateModel: ReplicateModel.GrokImagine,
+  },
+  {
+    key: 'replicate:pruna',
+    userFriendlyName: 'P-Image Edit',
+    description: 'Rápido, económico, sin filtros',
+    bestFor: 'Ediciones rápidas, moda, piel',
+    tags: ['fast', 'economical'],
+    requiresFaceRef: false,
+    estimatedTime: '~5s',
+    creditCost: CREDIT_COSTS[ReplicateModel.PrunaImageEdit],
+    provider: AIProvider.Replicate,
+    replicateModel: ReplicateModel.PrunaImageEdit,
   },
   // ── Higgsfield ──
   {
@@ -830,23 +851,23 @@ export const FEATURE_ENGINES: Record<string, { default: string; keys: string[] }
   // ── Editing (aligned with benchmarking 2026-03-17) ──
   'photo-session': {
     default: 'replicate:grok',
-    keys: ['replicate:grok', 'gemini:nb2', 'fal:seedream5-edit'],
+    keys: ['replicate:grok', 'gemini:nb2', 'fal:seedream5-edit', 'replicate:pruna'],
   },
   'relight': {
     default: 'replicate:grok',
-    keys: ['replicate:grok', 'gemini:nb2', 'fal:flux2pro'],
+    keys: ['replicate:grok', 'gemini:nb2', 'fal:flux2pro', 'replicate:pruna'],
   },
   'style-transfer': {
     default: 'replicate:grok',
-    keys: ['replicate:grok', 'fal:qwen-edit'],
+    keys: ['replicate:grok', 'fal:qwen-edit', 'replicate:pruna'],
   },
   'bg-swap': {
     default: 'replicate:grok',
-    keys: ['replicate:grok', 'fal:kontext-multi', 'fal:seedream5-edit'],
+    keys: ['replicate:grok', 'fal:kontext-multi', 'fal:seedream5-edit', 'replicate:pruna'],
   },
   'face-swap': {
     default: 'gemini:nb2',
-    keys: ['gemini:nb2', 'replicate:grok'],
+    keys: ['gemini:nb2', 'replicate:grok', 'replicate:pruna'],
   },
   'try-on': {
     default: 'replicate:grok',
@@ -862,7 +883,7 @@ export const FEATURE_ENGINES: Record<string, { default: string; keys: string[] }
   },
   'skin-enhancer': {
     default: 'gemini:nb2',
-    keys: ['gemini:nb2', 'replicate:grok', 'fal:firered-edit'],
+    keys: ['gemini:nb2', 'replicate:grok', 'fal:firered-edit', 'replicate:pruna'],
   },
   'angles': {
     default: 'gemini:nb2',
