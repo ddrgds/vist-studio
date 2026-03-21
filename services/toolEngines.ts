@@ -35,15 +35,15 @@ export interface ToolResult {
 // ─── Default engine per tool (from A/B testing) ──
 
 export const TOOL_ENGINE_DEFAULTS: Record<ToolId, EngineId> = {
-  'relight': 'grok',
-  'scene': 'grok',
-  'outfit': 'grok',
-  'face-swap': 'grok',
-  'realistic-skin': 'grok',
-  'style-transfer': 'grok',
+  'relight': 'grok',          // Precise lighting adjustments
+  'scene': 'seedream',        // Multi-ref preserves identity when changing scene
+  'outfit': 'seedream',       // Same — changes clothes without altering face
+  'face-swap': 'seedream',    // Multi-ref = more face context
+  'realistic-skin': 'grok',   // Fine-grained skin texture edit
+  'style-transfer': 'seedream', // Preserves identity better with refs
   'upscale': 'aura-sr',
   'angles': 'nb2',
-  'ai-edit': 'grok',
+  'ai-edit': 'seedream',      // General purpose with rich context
 };
 
 // ═════════════════════════════════════════════
@@ -178,12 +178,17 @@ async function kontextEdit(imageUrl: string, prompt: string): Promise<string> {
   return data.images?.[0]?.url || data.image?.url;
 }
 
-/** Seedream edit — image_urls array */
+/** Seedream v5 Lite edit — image_urls array, multi-ref capable */
 async function seedreamEdit(imageUrl: string, prompt: string): Promise<string> {
-  const result = await fal.subscribe('fal-ai/bytedance/seedream/v4/edit', {
+  const compiled = await compilePrompt({
+    subjectIntent: prompt,
+    targetModel: 'fal-ai/bytedance/seedream/v5/lite/edit',
+    isEdit: true,
+  });
+  const result = await fal.subscribe('fal-ai/bytedance/seedream/v5/lite/edit', {
     input: {
       image_urls: [imageUrl],
-      prompt,
+      prompt: compiled,
       num_images: 1,
     },
     timeout: 120000,
@@ -267,7 +272,7 @@ async function runEngine(engine: EngineId, imageUrl: string, prompt: string): Pr
 // Fallback triggers: HTTP 5xx, content policy rejection, or timeout >30s.
 // Failed attempts do NOT charge credits. Chain: Grok -> NB Pro -> Pruna.
 
-const EDIT_FALLBACK_CHAIN: EngineId[] = ['grok', 'nb-pro', 'pruna'];
+const EDIT_FALLBACK_CHAIN: EngineId[] = ['seedream', 'grok', 'nb-pro', 'pruna'];
 
 /** 30-second timeout wrapper -- works with any async function */
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -294,6 +299,7 @@ export async function runEditWithFallback(
     try {
       let engineCall: Promise<string>;
       switch (engine) {
+        case 'seedream': engineCall = seedreamEdit(imageUrl, getEnginePrompt(engine)); break;
         case 'grok': engineCall = grokEdit(imageUrl, getEnginePrompt(engine)); break;
         case 'nb-pro': engineCall = nbProEdit(imageUrl, getEnginePrompt(engine)); break;
         case 'pruna': engineCall = prunaEdit(imageUrl, prompt); break;

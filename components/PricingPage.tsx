@@ -39,7 +39,7 @@ const V = {
   brandMonthly:   import.meta.env.VITE_LS_BRAND_MONTHLY_VARIANT_ID   ?? '',
   brandAnnual:    import.meta.env.VITE_LS_BRAND_ANNUAL_VARIANT_ID    ?? '',
   credits200:     import.meta.env.VITE_LS_CREDITS_200_VARIANT_ID     ?? '',
-  credits800:     import.meta.env.VITE_LS_CREDITS_800_VARIANT_ID     ?? '',
+  credits750:     import.meta.env.VITE_LS_CREDITS_750_VARIANT_ID     ?? '',
   credits3000:    import.meta.env.VITE_LS_CREDITS_3000_VARIANT_ID    ?? '',
 };
 
@@ -128,7 +128,7 @@ const PLANS: Plan[] = [
 
 const CREDIT_PACKS = [
   { credits: 200,   price: 3,  perCredit: '1.5¢', variantId: V.credits200 },
-  { credits: 800,   price: 10, perCredit: '1.25¢', variantId: V.credits800 },
+  { credits: 750,   price: 10, perCredit: '1.33¢', variantId: V.credits750 },
   { credits: 3000,  price: 30, perCredit: '1.0¢', badge: 'Mejor valor', variantId: V.credits3000 },
 ];
 
