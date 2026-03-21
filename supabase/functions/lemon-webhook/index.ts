@@ -18,7 +18,7 @@ const PLAN_CREDITS: Record<string, number> = {
   brand:  999999, // treated as unlimited in frontend
 };
 
-// ── Map LS variant ID → plan name ─────────────────────────────────────────────
+// ── Map LS variant ID → plan name (subscriptions) ────────────────────────────
 const buildVariantMap = (): Record<string, string> => {
   const raw: Record<string, string> = {
     [Deno.env.get('LEMONSQUEEZY_PRO_MONTHLY_VARIANT_ID')    ?? '']: 'pro',
@@ -35,6 +35,20 @@ const buildVariantMap = (): Record<string, string> => {
   }
   if (Object.keys(filtered).length === 0) {
     console.error('lemon-webhook: variant map is empty — all LEMONSQUEEZY_*_VARIANT_ID env vars are missing');
+  }
+  return filtered;
+};
+
+// ── Map LS variant ID → credit pack amount (one-time purchases) ──────────────
+const buildCreditPackMap = (): Record<string, number> => {
+  const raw: Record<string, number> = {
+    [Deno.env.get('LEMONSQUEEZY_CREDITS_200_VARIANT_ID')  ?? '']: 200,
+    [Deno.env.get('LEMONSQUEEZY_CREDITS_750_VARIANT_ID')  ?? '']: 750,
+    [Deno.env.get('LEMONSQUEEZY_CREDITS_3000_VARIANT_ID') ?? '']: 3000,
+  };
+  const filtered: Record<string, number> = {};
+  for (const [k, v] of Object.entries(raw)) {
+    if (k) filtered[k] = v;
   }
   return filtered;
 };
@@ -86,7 +100,8 @@ Deno.serve(async (req) => {
   const { event_name, custom_data } = event.meta;
   const attrs    = event.data.attributes;
   const userId   = custom_data?.user_id;
-  const variantMap = buildVariantMap();
+  const variantMap    = buildVariantMap();
+  const creditPackMap = buildCreditPackMap();
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -119,26 +134,42 @@ Deno.serve(async (req) => {
   }
 
   // ── order_created / subscription_created ─────────────────────────────────
-  // Initial purchase — activate plan + assign credits.
   if (event_name === 'order_created' || event_name === 'subscription_created') {
     const variantId = String(attrs.variant_id ?? attrs.first_subscription_item?.variant_id ?? '');
-    const plan      = variantMap[variantId] ?? 'starter';
-    const credits   = PLAN_CREDITS[plan] ?? 100;
-    const renewsAt  = attrs.renews_at ?? null;
+    const creditPackAmount = creditPackMap[variantId];
 
-    const { error } = await supabase.from('profiles').update({
-      subscription_plan:              plan,
-      subscription_status:            'active',
-      lemon_squeezy_customer_id:      String(attrs.customer_id),
-      lemon_squeezy_subscription_id:  event.data.id,
-      credits_remaining:              credits,
-      subscription_renews_at:         renewsAt,
-    }).eq('id', userId);
+    if (creditPackAmount) {
+      // ── Credit pack (one-time purchase) — ADD credits to existing balance ──
+      const { error } = await supabase.rpc('add_credits', {
+        p_user_id: userId,
+        p_amount: creditPackAmount,
+        p_reason: `Credit pack purchase: ${creditPackAmount} credits`,
+      });
 
-    // BUG #3 — Return 500 on DB error so Lemon Squeezy retries
-    if (error) {
-      console.error('lemon-webhook: DB update failed for order/subscription_created', error);
-      return new Response('error: db update failed', { status: 500 });
+      if (error) {
+        console.error('lemon-webhook: add_credits failed for credit pack', error);
+        return new Response('error: credit pack failed', { status: 500 });
+      }
+    } else {
+      // ── Subscription purchase — activate plan + set credits ────────────────
+      const plan     = variantMap[variantId] ?? 'starter';
+      const credits  = PLAN_CREDITS[plan] ?? 100;
+      const renewsAt = attrs.renews_at ?? null;
+
+      const { error } = await supabase.from('profiles').update({
+        subscription_plan:              plan,
+        subscription_status:            'active',
+        lemon_squeezy_customer_id:      String(attrs.customer_id),
+        lemon_squeezy_subscription_id:  event.data.id,
+        credits_remaining:              credits,
+        subscription_renews_at:         renewsAt,
+      }).eq('id', userId);
+
+      // BUG #3 — Return 500 on DB error so Lemon Squeezy retries
+      if (error) {
+        console.error('lemon-webhook: DB update failed for order/subscription_created', error);
+        return new Response('error: db update failed', { status: 500 });
+      }
     }
   }
 

@@ -274,6 +274,21 @@ pnpm build
 
 ## Workflow & Reglas de Desarrollo
 
+### Persistencia de Sesión (OBLIGATORIO)
+
+Al final de cada sesión, o cuando el contexto esté por compactarse, **guardar un resumen de lo trabajado** en la memoria persistente (`~/.claude/projects/.../memory/`):
+
+1. **Actualizar `project_mvp_status.md`** — marcar qué se completó, qué quedó pendiente
+2. **Crear/actualizar memorias de proyecto** si se implementó algo nuevo (nuevo servicio, nueva integración, cambio de arquitectura)
+3. **Actualizar `MEMORY.md`** (índice) si se crearon archivos nuevos
+4. **Nunca perder contexto** — si se trabajó en algo, debe quedar registrado en memoria para la próxima sesión
+
+Formato del resumen en memoria:
+- Qué se hizo (lista concreta de cambios)
+- Qué archivos se tocaron
+- Qué quedó pendiente / siguiente paso
+- Decisiones tomadas y por qué
+
 ### Orquestación
 
 - **Planificar antes de ejecutar**: Para cualquier tarea no trivial (3+ pasos o decisiones de arquitectura), escribir el plan primero en `tasks/todo.md` con items checkeables. Verificar el plan antes de empezar a implementar.
@@ -530,40 +545,56 @@ runs rendering tests, validates responsive behavior.
 | Bug fix simple | Directo (sin subagent) |
 | Cambio de copy/texto | Directo (sin subagent) |
 
-## Active Workstream:  UX Roadmap
+## Active Workstream: v2 Architecture (as of 2026-03-17)
 
-The full roadmap is in `VIST_UX_ROADMAP.md` at the project root. READ IT at the start of every session.
+Full architecture spec in `ARCHITECTURE.md`. Current state tagged `v2-backup`.
 
-### Execution Rules
-1. Work one phase at a time, one sub-point at a time. Do not skip ahead.
-2. Before editing any component, read the current implementation first.
-3. Commit after each sub-point with format: `fix(ux): X.Y — description`
-4. Branch per phase: `ux/roadmap-fase-N`
-5. New UX components go in `src/components/ux/`
-6. Do not refactor existing features — only add/modify what the roadmap specifies.
-7. If a change requires data model updates, flag it and confirm before proceeding.
-8. Test that existing functionality is not broken after each change.
+### App Structure
+- **3 pages**: Create Persona, Content Studio, Gallery
+- **Content Studio** has 3 tabs: Photo (Director→Tools), Batch Shoot, Video & Reels
+- **Overlays**: AI Editor (global), Export Modal (global)
+- **Sidebar**: 4 items (Create Persona, Content Studio, Gallery, Characters)
 
-### Phase Priority (do NOT reorder)
-- **Phase 0**: Quick wins — branding, credits visibility, clean up jargon, tooltips
-- **Phase 1**: Empty states & onboarding — the #1 activation problem
-- **Phase 2**: Reduce friction — defaults, hide complexity, organize options
-- **Phase 3**: Navigation & pipeline — make the 1→2→3→4 flow obvious
-- **Phase 4**: Gallery polish & data integrity fixes
+### Content Studio Flow
+1. **Phase 1 (Create)**: Director component — scene/outfit/pose/camera/lighting/engine
+   - NB2 generates first (max safety tolerance)
+   - If NB2 rejects → Grok Imagine takes over automatically
+2. **Phase 2 (Edit)**: 9 tools with filmstrip progression
+   - Tools: Scene, Outfit, Relight, Face Swap, Skin, Style, Upscale, Angles, AI Edit
+   - All tools use Grok Imagine except Upscale (AuraSR) and Angles (NB2/NB2+Grok)
 
-### Current Progress
-- [x] Phase 0 — Quick Wins (branding, credits, jargon, tooltips, delete confirmation)
-- [x] Phase 1 — Empty States & Onboarding (dashboard, gallery, characters, director, editor)
-- [x] Phase 2 — Reduce Friction (smart defaults, simple/advanced director, collapsible tools, vibe categories)
-- [x] Phase 3 — Navigation & Pipeline (numbered pipeline, progress hints, ordered quick actions)
-- [x] Phase 4 — Gallery & Polish (info bar, delete confirmation, dynamic stats)
+### Tool → Engine Mapping (tested 2026-03-17)
+- Relight, Scene, Outfit, Face Swap, Skin, Style, AI Edit → `xai/grok-imagine-image/edit` via fal.ai
+- Upscale → `fal-ai/aura-sr`
+- Angles → `gemini-3.1-flash-image-preview` (standard) + Grok enhance (ultra)
+- Presets defined in `services/toolEngines.ts`
 
-Update the checkboxes as phases are completed.
+### Character Sheet Pipeline
+- Standard: NB2 generates face angles + body angles + expressions
+- Ultra: NB2 generates → Grok enhances (adds skin detail, pores)
+- Saved as `reference_urls` on characters table
 
-### Key Design Tokens (from existing design system)
-- Background: rgb(8, 7, 12)
-- Accent pink: rgb(232, 121, 168)
-- Secondary text: rgb(168, 152, 184)
-- Purple CTA: rgb(139, 92, 246)
-- Fonts: Playfair Display (headings), DM Sans (body)
-- Effects: glassmorphism panels
+### Key Services
+- `services/aiGateway.ts` — single AI entry point
+- `services/toolEngines.ts` — 9 tools with presets
+- `services/consistencyService.ts` — PuLID/InstantID
+- `services/falVideoService.ts` — video generation
+- `services/elevenLabsService.ts` — TTS
+- `services/supabaseGenerationService.ts` — DB CRUD
+
+### Design Tokens (unified palette)
+- Background: #08070C / var(--joi-bg-0)
+- Pink accent: #FF6B9D / var(--joi-pink)
+- Violet: #A78BFA / var(--joi-violet)
+- Text: #F0EAF4, #A898B8, #685880
+- Font: DM Sans (body + headings)
+- Effects: glassmorphism panels, backdrop-blur
+
+### Database (Supabase — migrated)
+- Tables: profiles, characters, generations, credit_transactions, webhook_events
+- Atomic credit functions: deduct_credits(), add_credits()
+- RLS enabled. Lemon Squeezy webhook deployed.
+
+### API Keys
+- All in `.env.local` (GEMINI, FAL, OPENAI, REPLICATE, IDEOGRAM, MODELSLAB, HIGGSFIELD)
+- Vite proxies in `vite.config.ts` for dev
