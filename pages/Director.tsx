@@ -406,16 +406,8 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
       const params = buildParams(charRefFiles)
       const eng = selectedEngine !== 'auto' ? ENGINE_METADATA.find(e => e.key === selectedEngine) : null
 
-      // Compile prompt per target engine
-      const engineToModelId: Record<string, string> = {
-        'fal:seedream50':    'fal-ai/bytedance/seedream/v5/lite',
-        'replicate:grok':    'xai/grok-imagine-image',
-        'fal:kontext-multi': 'fal-ai/flux-pro/kontext/multi',
-        'fal:pulid':         'fal-ai/pulid/v2',
-        'gemini:nb2':        'gemini-2.0-flash-exp',
-        'fal:flux-pro':      'fal-ai/flux-pro',
-      }
-      const targetModelId = engineToModelId[selectedEngine] ?? 'fal-ai/bytedance/seedream/v5/lite'
+      // Derive target model ID from ENGINE_METADATA — single source of truth
+      const targetModelId = eng?.falModel ?? eng?.replicateModel ?? 'fal-ai/bytedance/seedream/v5/lite'
 
       const rawIntent = [
         params.scenario,

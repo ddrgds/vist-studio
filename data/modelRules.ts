@@ -11,7 +11,8 @@ export type ModelFamily =
   | 'IDEOGRAM'
   | 'RUNWAY_GROK'
   | 'EDIT_INPAINT'
-  | 'SOUL_HIGGSFIELD';
+  | 'SOUL_HIGGSFIELD'
+  | 'PULID';
 
 export interface ModelRule {
   family: ModelFamily;
@@ -65,6 +66,11 @@ export const MODEL_RULES: Record<ModelFamily, ModelRule> = {
     rule: 'Write a concise scene description focusing on the person\'s pose and environment. Higgsfield preserves identity automatically via its internal model. Focus on action, setting, and mood. Do not describe facial features — the model handles identity.',
     realisticSuffix: 'natural candid moment, everyday setting, casual smartphone aesthetic.',
   },
+  PULID: {
+    family: 'PULID',
+    rule: 'Write a single descriptive paragraph. CRITICAL: DO NOT describe the face, skin tone, hair color, eye color, or any identity features — PuLID locks identity from the reference image automatically. Focus ONLY on: clothing, pose, environment, lighting, mood. Write as if the character is already known.',
+    realisticSuffix: 'shot on smartphone, natural skin texture, candid lifestyle photo, available light.',
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -82,10 +88,14 @@ const MODEL_FAMILY_MAP: Record<string, ModelFamily> = {
   'fal-ai/flux-lora-general':          'FLUX',
 
   // Seedream/Qwen — 3-sentence structure, anti-Wanghong
-  'fal-ai/bytedance/seedream/v4.5':    'SEEDREAM_QWEN',
-  'fal-ai/bytedance/seedream/v5':      'SEEDREAM_QWEN',
+  'fal-ai/bytedance/seedream/v4.5':                    'SEEDREAM_QWEN',
+  'fal-ai/bytedance/seedream/v5':                      'SEEDREAM_QWEN',
+  'fal-ai/bytedance/seedream/v5/lite':                 'SEEDREAM_QWEN',
+  'fal-ai/bytedance/seedream/v5/lite/text-to-image':   'SEEDREAM_QWEN',
+  'fal-ai/qwen-image-2/pro':                           'SEEDREAM_QWEN',
 
   // Gemini/Imagen — social media photo language, optics anchors
+  'gemini-2.0-flash-exp':              'GEMINI_IMAGEN',
   'gemini-2.5-flash-image':            'GEMINI_IMAGEN',
   'gemini-3.1-flash-image-preview':    'GEMINI_IMAGEN',
   'gemini-3-pro-image-preview':        'GEMINI_IMAGEN',
@@ -103,12 +113,16 @@ const MODEL_FAMILY_MAP: Record<string, ModelFamily> = {
   'ideogram-v3':                       'IDEOGRAM',
   'ideogram-v2a':                      'IDEOGRAM',
 
+  // PuLID — identity-locked, never describe face
+  'fal-ai/pulid/v2':                   'PULID',
+  'fal-ai/pulid':                      'PULID',
+
   // Edit models → always EDIT_INPAINT rules
   'fal-ai/flux-2-pro/edit':                   'EDIT_INPAINT',
   'fal-ai/flux-pro/inpainting':               'EDIT_INPAINT',
-  'xai/grok-imagine-image/edit':               'EDIT_INPAINT',
-  'fal-ai/bytedance/seedream/v5/lite/edit':    'EDIT_INPAINT',
-  'fal-ai/qwen-image-2/pro/edit':              'EDIT_INPAINT',
+  'xai/grok-imagine-image/edit':              'EDIT_INPAINT',
+  'fal-ai/bytedance/seedream/v5/lite/edit':   'EDIT_INPAINT',
+  'fal-ai/qwen-image-2/pro/edit':             'EDIT_INPAINT',
 
   // Higgsfield/Soul
   'higgsfield-soul':                   'SOUL_HIGGSFIELD',
