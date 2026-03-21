@@ -18,6 +18,7 @@ import { usePipelineStore } from '../stores/pipelineStore'
 import { PipelineCTA } from '../components/PipelineCTA'
 import { PresetManager } from '../components/PresetManager'
 import type { CustomPreset } from '../stores/presetStore'
+import { compilePrompt } from '../services/promptCompiler'
 
 // ─── Accordion Section (Joi style) ─────────────────────
 const AccordionSection: React.FC<{
@@ -118,6 +119,24 @@ const ImageSlot: React.FC<{
   )
 }
 
+/** Fetches image URLs and converts them to File objects. */
+async function fetchUrlsAsFiles(urls: string[]): Promise<File[]> {
+  const files: File[] = []
+  await Promise.allSettled(
+    urls.map(async (url, i) => {
+      try {
+        const res = await fetch(url)
+        const blob = await res.blob()
+        const ext = blob.type.includes('png') ? 'png' : 'jpg'
+        files.push(new File([blob], `char-ref-${i}.${ext}`, { type: blob.type }))
+      } catch (e) {
+        console.warn(`Could not fetch character ref ${i}:`, e)
+      }
+    })
+  )
+  return files
+}
+
 /** Max face reference images accepted per engine */
 const DIRECTOR_REF_MAX: Record<string, number> = {
   'fal:seedream50': 5,
@@ -212,6 +231,9 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
   // ── Outfit ──
   const [outfitDescription, setOutfitDescription] = useState('')
 
+  // ── Props / Objetos ──
+  const [objectText, setObjectText] = useState('')
+
   // ── Enhancers ──
   const [selectedEnhancers, setSelectedEnhancers] = useState<Set<string>>(new Set())
   const [customEnhancer, setCustomEnhancer] = useState('')
@@ -225,6 +247,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
   // ── Reuse Parameters (from Gallery) ──
   const reuseParams = useGalleryStore(s => s.reuseParams)
   const setReuseParams = useGalleryStore(s => s.setReuseParams)
+  const galleryItems = useGalleryStore(s => s.items)
 
   useEffect(() => {
     if (reuseParams && reuseParams.target === 'director') {
@@ -295,19 +318,29 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
     setCharRefUrls(char?.referencePhotoUrls?.slice(0, maxRefs) ?? [])
   }
 
+  const getCharacterReferenceUrls = (): string[] => {
+    if (!selectedChar) return []
+    // Priority 1: user-curated reference photos (from A2 task)
+    if (selectedChar.referencePhotoUrls?.length) {
+      return selectedChar.referencePhotoUrls.slice(0, 5)
+    }
+    // Priority 2: last 5 gallery items that belong to this character
+    const charItems = galleryItems
+      .filter(item => item.characterId === selectedChar.id && typeof item.url === 'string' && item.url.startsWith('http'))
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 5)
+    return charItems.map(item => item.url).filter(Boolean)
+  }
+
   // ── Build params ──
-  const buildParams = (): InfluencerParams => {
+  const buildParams = (charRefFiles: File[] = []): InfluencerParams => {
     const poseValue = customPose.trim() || POSE_OPTIONS.find(p => p.id === selectedPose)?.value || ''
     const cameraValue = customCamera.trim() || CAMERA_OPTIONS.find(c => c.id === selectedCamera)?.value || 'shot on 85mm lens, shallow depth of field'
     const lightingValue = customLighting.trim() || LIGHTING_OPTIONS.find(l => l.id === selectedLighting)?.value || 'soft natural light'
     const enhancerPrompt = buildEnhancerPrompt(selectedEnhancers, customEnhancer)
 
-    const modelImages: File[] = []
-    if (selectedChar && selectedChar.modelImageBlobs.length > 0) {
-      selectedChar.modelImageBlobs.forEach((blob, i) => {
-        modelImages.push(new File([blob], `face-ref-${i}.jpg`, { type: 'image/jpeg' }))
-      })
-    }
+    // charRefFiles pre-fetched from referencePhotoUrls/gallery in handleGenerate
+    const modelImages: File[] = [...charRefFiles]
     faceRefs.forEach(f => modelImages.push(f.file))
 
     const scenarioText = [scenario, enhancerPrompt].filter(Boolean).join('. ').trim()
@@ -366,8 +399,40 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
     abortRef.current = new AbortController()
 
     try {
-      const params = buildParams()
+      // Fetch character reference URLs as Files (AI chars store URLs, not Blobs)
+      const refUrls = getCharacterReferenceUrls()
+      const charRefFiles = refUrls.length > 0 ? await fetchUrlsAsFiles(refUrls) : []
+
+      const params = buildParams(charRefFiles)
       const eng = selectedEngine !== 'auto' ? ENGINE_METADATA.find(e => e.key === selectedEngine) : null
+
+      // Compile prompt per target engine
+      const engineToModelId: Record<string, string> = {
+        'fal:seedream50':    'fal-ai/bytedance/seedream/v5/lite',
+        'replicate:grok':    'xai/grok-imagine-image',
+        'fal:kontext-multi': 'fal-ai/flux-pro/kontext/multi',
+        'fal:pulid':         'fal-ai/pulid/v2',
+        'gemini:nb2':        'gemini-2.0-flash-exp',
+        'fal:flux-pro':      'fal-ai/flux-pro',
+      }
+      const targetModelId = engineToModelId[selectedEngine] ?? 'fal-ai/bytedance/seedream/v5/lite'
+
+      const rawIntent = [
+        params.scenario,
+        outfitDescription && `Outfit: ${outfitDescription}`,
+        objectText?.trim() && `With: ${objectText.trim()}`,
+      ].filter(Boolean).join('. ')
+
+      const compiledScenario = await compilePrompt({
+        subjectIntent: rawIntent,
+        poseLighting: [params.characters[0]?.pose, params.camera, params.lighting]
+          .filter(Boolean).join(', ') || undefined,
+        targetModel: targetModelId,
+        isEdit: false,
+        isRealistic: true,
+      }).catch(() => rawIntent)  // fallback to raw if compiler fails
+
+      params.scenario = compiledScenario
 
       let results: string[]
       if (eng?.provider === AIProvider.Higgsfield) {
@@ -860,6 +925,22 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                   onRemove={() => { if (scenarioRef) URL.revokeObjectURL(scenarioRef.preview); setScenarioRef(null) }}
                 />
                 <span className="text-[11px]" style={{ color: 'var(--joi-text-3)' }}>Referencia de escena (opcional)</span>
+              </div>
+
+              {/* Props / Objetos injection */}
+              <div>
+                <div className="text-[11px] font-medium mb-1.5 flex items-center gap-1.5" style={{ color: 'var(--joi-text-2)' }}>
+                  Props / Objetos
+                  <span className="text-[9px] font-mono" style={{ color: 'var(--joi-text-3)', opacity: 0.6 }}>opcional</span>
+                </div>
+                <input
+                  type="text"
+                  placeholder="ej: sosteniendo un iPhone, con gafas de sol..."
+                  className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none transition-colors"
+                  style={joiInputStyle(!!objectText)}
+                  value={objectText}
+                  onChange={e => setObjectText(e.target.value)}
+                />
               </div>
             </div>
           </AccordionSection>
