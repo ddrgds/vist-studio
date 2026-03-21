@@ -71,8 +71,9 @@ export async function compilePrompt(input: CompilerInput): Promise<string> {
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-lite',
-      contents: `${COMPILER_SYSTEM}\n\nINPUT:\n${JSON.stringify(payload, null, 2)}`,
+      contents: `INPUT:\n${JSON.stringify(payload, null, 2)}`,
       config: {
+        systemInstruction: COMPILER_SYSTEM,
         temperature: 0.1,
         maxOutputTokens: 512,
       },
