@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { type Page } from '../App'
 import { useAuth } from '../contexts/AuthContext'
 import { useProfile } from '../contexts/ProfileContext'
@@ -5,7 +6,7 @@ import { useCharacterStore } from '../stores/characterStore'
 import { useGalleryStore } from '../stores/galleryStore'
 import {
   Sparkles, Clapperboard, Images, Users,
-  CreditCard, PanelLeftClose, PanelLeftOpen, Wand2,
+  CreditCard, PanelLeftClose, PanelLeftOpen, Wand2, Film,
 } from 'lucide-react'
 import { type LucideIcon } from 'lucide-react'
 
@@ -14,7 +15,8 @@ const navSections: { title?: string; items: { id: Page; label: string; Icon: Luc
     title: 'CREAR',
     items: [
       { id: 'create', label: 'Crear Personaje', Icon: Sparkles, sub: 'Diseña un personaje AI' },
-      { id: 'studio', label: 'Estudio de Contenido', Icon: Clapperboard, sub: 'Fotos · Videos · Reels' },
+      { id: 'studio', label: 'Studio', Icon: Clapperboard, sub: 'Crear y sesión de fotos' },
+      { id: 'video', label: 'Video y Reels', Icon: Film, sub: 'Movimiento · Lip sync' },
       { id: 'editor', label: 'Editor AI', Icon: Wand2, sub: 'Edita cualquier foto' },
     ],
   },
@@ -44,6 +46,20 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
   const characters = useCharacterStore(s => s.characters)
   const galleryItems = useGalleryStore(s => s.items)
 
+  const [isDark, setIsDark] = useState(() => document.documentElement.getAttribute('data-theme') === 'dark')
+
+  const toggleTheme = () => {
+    const next = !isDark
+    setIsDark(next)
+    if (next) {
+      document.documentElement.setAttribute('data-theme', 'dark')
+      localStorage.setItem('theme', 'dark')
+    } else {
+      document.documentElement.removeAttribute('data-theme')
+      localStorage.setItem('theme', 'light')
+    }
+  }
+
   const displayName = profile?.displayName || user?.email?.split('@')[0] || 'User'
   const initial = displayName[0]?.toUpperCase() || 'U'
   const planLabels: Record<string, string> = { starter: 'Starter', pro: 'Pro', studio: 'Studio', brand: 'Brand' }
@@ -60,7 +76,7 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
 
   return (
     <aside
-      className="h-screen flex-col shrink-0 transition-all duration-300 hidden md:flex"
+      className="h-screen flex-col shrink-0 transition-all duration-300 hidden lg:flex"
       style={{
         width: collapsed ? 68 : 230,
         background: 'var(--joi-bg-1)',
@@ -106,7 +122,7 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
                     color: 'var(--joi-text-3)',
                   }}>{section.title}</span>
                 ) : (
-                  <div className="w-5 h-px mx-auto" style={{ background: 'rgba(255,107,157,.15)' }} />
+                  <div className="w-5 h-px mx-auto" style={{ background: 'rgba(99,102,241,.15)' }} />
                 )}
               </div>
             )}
@@ -120,8 +136,8 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
                     onClick={() => onNav(n.id)}
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all group relative"
                     style={{
-                      background: active ? 'rgba(255,107,157,0.06)' : 'transparent',
-                      border: active ? '1px solid rgba(255,107,157,0.10)' : '1px solid transparent',
+                      background: active ? 'rgba(99,102,241,0.06)' : 'transparent',
+                      border: active ? '1px solid rgba(99,102,241,0.10)' : '1px solid transparent',
                     }}
                   >
                     {active && (
@@ -130,7 +146,7 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
                         height: '16px',
                         background: 'var(--joi-pink)',
                         borderRadius: '1px',
-                        boxShadow: '0 0 8px rgba(255,107,157,0.4), 0 0 16px rgba(255,107,157,0.15)',
+                        boxShadow: '0 0 8px rgba(99,102,241,0.4), 0 0 16px rgba(99,102,241,0.15)',
                       }} />
                     )}
                     <span className="shrink-0 transition-transform group-hover:scale-110 flex items-center justify-center"
@@ -150,7 +166,7 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
                           {n.sub}
                           {hint && (
                             <span className="text-[8px] font-mono px-1.5 py-0.5 rounded"
-                              style={{ background: 'rgba(255,107,157,.08)', color: 'var(--joi-pink)', border: '1px solid rgba(255,107,157,.12)' }}>
+                              style={{ background: 'rgba(99,102,241,.08)', color: 'var(--joi-pink)', border: '1px solid rgba(99,102,241,.12)' }}>
                               {hint}
                             </span>
                           )}
@@ -167,6 +183,19 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
 
       {/* Bottom */}
       <div className="px-3 py-2" style={{ borderTop: '1px solid rgba(255,255,255,.03)' }}>
+        {/* Theme toggle */}
+        <button
+          onClick={toggleTheme}
+          className="flex items-center gap-2 px-3 py-2 rounded-xl w-full transition-all mb-1"
+          style={{ color: 'var(--joi-text-3)', background: 'transparent' }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'var(--joi-bg-3)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+        >
+          <span className="text-sm shrink-0">{isDark ? '☀️' : '🌙'}</span>
+          {!collapsed && (
+            <span className="text-xs">{isDark ? 'Modo claro' : 'Modo oscuro'}</span>
+          )}
+        </button>
         <div className="flex gap-1">
           <button onClick={() => onNav('pricing')} className="flex-1 py-1.5 rounded-lg text-[11px] transition-colors"
             style={{ color: 'var(--joi-text-3)', background: 'var(--joi-bg-2)' }}>
@@ -189,7 +218,7 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
             height: 32,
             borderRadius: '8px',
             background: 'linear-gradient(135deg, var(--joi-pink), var(--joi-magenta))',
-            boxShadow: '0 2px 8px rgba(255,107,157,.15)',
+            boxShadow: '0 2px 8px rgba(99,102,241,.15)',
           }}>{initial}</div>
         {!collapsed && (
           <div className="min-w-0 text-left">

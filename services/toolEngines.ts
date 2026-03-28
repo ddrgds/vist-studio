@@ -36,14 +36,14 @@ export interface ToolResult {
 
 export const TOOL_ENGINE_DEFAULTS: Record<ToolId, EngineId> = {
   'relight': 'grok',          // Precise lighting adjustments
-  'scene': 'seedream',        // Multi-ref preserves identity when changing scene
-  'outfit': 'seedream',       // Same — changes clothes without altering face
+  'scene': 'kontext',         // Kontext designed for background swap while preserving subject
+  'outfit': 'seedream',       // Multi-ref changes clothes without altering face
   'face-swap': 'seedream',    // Multi-ref = more face context
   'realistic-skin': 'grok',   // Fine-grained skin texture edit
   'style-transfer': 'seedream', // Preserves identity better with refs
   'upscale': 'aura-sr',
   'angles': 'nb2',
-  'ai-edit': 'seedream',      // General purpose with rich context
+  'ai-edit': 'grok',          // General purpose — Grok is more instruction-following
 };
 
 // ═════════════════════════════════════════════
@@ -55,24 +55,19 @@ type PromptBuilder = (input: string) => string;
 
 const PROMPTS: Partial<Record<ToolId, Partial<Record<EngineId, PromptBuilder>>>> = {
   relight: {
-    // Grok: short & direct (per xAI docs)
-    grok: (input) => `Change the lighting to ${input}, keeping the subject identical.`,
-    // Kontext: natural language with "while maintaining"
-    kontext: (input) => `Change the lighting to ${input} while maintaining the exact same person and composition.`,
-    // Seedream: multi-instruction style
-    seedream: (input) => `Apply new lighting: ${input}. Do not change the person, outfit, or background.`,
-    // Qwen: descriptive
-    qwen: (input) => `Change the lighting in this photo to ${input}. Keep the same person, pose, outfit, and background.`,
-    // NB2: detailed instruction for Gemini's structured prompt template
-    nb2: (input) => `Change ONLY the lighting to: ${input}. Do not alter the subject's face, body, pose, outfit, hair, or background. Only modify light direction, color temperature, shadows, and highlights.`,
+    grok: (input) => `Change ONLY the lighting to ${input}. Keep the subject, outfit, pose, background, and scene completely identical. Only modify light color, direction, shadows, and highlights — nothing else.`,
+    kontext: (input) => `Change the lighting to ${input} while keeping the subject, outfit, background, and scene completely identical. Only lighting changes.`,
+    seedream: (input) => `Apply new lighting: ${input}. Do not change the person, outfit, pose, background, or environment in any way. Only lighting and shadows may change.`,
+    qwen: (input) => `Change ONLY the lighting to ${input}. Keep the same person, pose, outfit, hair, background, and scene unchanged. Only modify light color, direction, and shadows.`,
+    nb2: (input) => `Change ONLY the lighting to: ${input}. Do not alter the subject's face, body, pose, outfit, hair, background, or scene. Only modify light direction, color temperature, shadows, and highlights.`,
   },
 
   scene: {
-    grok: (input) => `Change the background to ${input}, keeping the subject identical.`,
-    kontext: (input) => `Change the setting to ${input} while maintaining the exact same person, pose, and outfit.`,
-    seedream: (input) => `Change the background to ${input}. Keep the person, clothing, and pose identical.`,
-    qwen: (input) => `Replace the background with ${input}. Keep the same person, face, pose, and outfit unchanged.`,
-    nb2: (input) => `Replace the background/environment with: ${input}. Keep the subject's face, body, pose, outfit, and hair completely unchanged. Blend lighting to match the new scene naturally.`,
+    grok: (input) => `Change ONLY the background/setting to ${input}. The person must stay identical: same face, body, pose, outfit, and hair. Only the environment behind them changes.`,
+    kontext: (input) => `Replace the background with ${input} while keeping the person, their face, pose, outfit, and hair 100% identical. Only the environment changes.`,
+    seedream: (input) => `Change the background to ${input}. Keep the person, their face, clothing, pose, and hair completely unchanged. Only the environment changes.`,
+    qwen: (input) => `Replace ONLY the background with ${input}. Keep the same person, face, pose, outfit, and hair exactly as they are. Do not change anything about the person.`,
+    nb2: (input) => `Replace ONLY the background/environment with: ${input}. Keep the subject's face, body, pose, outfit, and hair completely identical. Blend lighting naturally with the new scene.`,
   },
 
   outfit: {
@@ -468,7 +463,7 @@ export async function generateAngles(
 export const ANGLE_PROMPTS = {
   face: 'A 360 turnaround view of the subject, Close up shot of face in 4 different angles on a 2x2 grid. Top-left: front view. Top-right: right profile. Bottom-left: left profile. Bottom-right: three-quarter view. All white background. High resolution, sharp detail.',
   body: 'A 360 turnaround full body view of the subject in 4 different angles side by side. Front view, half turn, side profile, back view. Full-body shots, all white background. High resolution, sharp detail.',
-  expressions: 'An expression sheet of the subject showing 9 different facial expressions in a 3x3 grid. Happy smile, Crying/sad, Surprised, Angry, Laughing, Serious, Flirty/wink, Disgusted, Peaceful/eyes closed. Close-up headshots, all white background. Same person in every frame.',
+  expressions: 'An expression sheet of the subject showing 9 different facial expressions in a 3x3 grid. Row 1: genuine happy smile, tears streaming down face looking sad, mouth open wide eyes shocked. Row 2: furrowed brows clenched jaw furious, head thrown back belly laughing, stern deadpan no emotion. Row 3: one eye closed playful smirk, nose scrunched up lip curled in disgust, eyes gently closed serene peaceful. Close-up headshots only, all white background, same person in every frame. DO NOT add any text, labels, captions, or words anywhere on the image.',
 };
 
 export const ANGLE_GROK_ENHANCE_PROMPTS = {

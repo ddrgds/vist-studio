@@ -66,8 +66,10 @@ export const uploadCharacterToCloud = async (
     created_at: char.createdAt,
     updated_at: char.updatedAt,
     usage_count: char.usageCount,
-    // DB: ALTER TABLE characters ADD COLUMN IF NOT EXISTS reference_photo_urls text[] DEFAULT '{}';
-    reference_photo_urls: char.referencePhotoUrls ?? [],
+    // Reference photos: use permanent cloud URLs if available, otherwise use whatever was set
+    reference_photo_urls: modelImageUrls.length > 0 ? modelImageUrls : (char.referencePhotoUrls ?? []),
+    // DB: ALTER TABLE characters ADD COLUMN IF NOT EXISTS render_style text;
+    render_style: char.renderStyle ?? null,
   });
 
   if (error) throw new Error(`characters upsert failed: ${error.message}`);
@@ -99,6 +101,7 @@ export const updateCharacterInCloud = async (
       updated_at: char.updatedAt,
       usage_count: char.usageCount,
       reference_photo_urls: char.referencePhotoUrls ?? [],
+      render_style: char.renderStyle ?? null,
     })
     .eq('id', char.id)
     .eq('user_id', userId);
@@ -111,8 +114,8 @@ export const updateCharacterInCloud = async (
 // ─────────────────────────────────────────────
 
 /**
- * Loads all characters from Supabase, downloading image blobs from Storage.
- * Returns SavedCharacter[] with populated Blob arrays (mirrors local IndexedDB shape).
+ * Loads all characters from Supabase — returns URLs only, no blob downloads.
+ * Blobs are fetched lazily at generation time from modelImageUrls.
  */
 export const loadCharactersFromCloud = async (userId: string): Promise<SavedCharacter[]> => {
   const { data, error } = await supabase
@@ -125,43 +128,25 @@ export const loadCharactersFromCloud = async (userId: string): Promise<SavedChar
 
   const rows = (data ?? []) as Record<string, unknown>[];
 
-  const characters = await Promise.all(rows.map(async (row) => {
-    // Download model image blobs from Storage URLs
-    const modelImageUrls = (row.model_image_urls as string[]) ?? [];
-    const modelImageBlobs: Blob[] = await Promise.all(
-      modelImageUrls.map(async (url) => {
-        const res = await fetch(url);
-        return res.blob();
-      })
-    );
-
-    // Download outfit blob (if any)
-    let outfitBlob: Blob | null = null;
-    if (row.outfit_url) {
-      const res = await fetch(row.outfit_url as string);
-      outfitBlob = await res.blob();
-    }
-
-    return {
-      id: row.id as string,
-      name: row.name as string,
-      thumbnail: row.thumbnail as string,
-      modelImageBlobs,
-      outfitBlob,
-      outfitDescription: (row.outfit_description as string) ?? '',
-      characteristics: (row.characteristics as string) ?? '',
-      accessory: (row.accessory as string) ?? '',
-      loraUrl: row.lora_url as string | undefined,
-      loraTrainingStatus: (row.lora_training_status as SavedCharacter['loraTrainingStatus']) ?? 'idle',
-      loraTrainedAt: row.lora_trained_at as number | undefined,
-      createdAt: row.created_at as number,
-      updatedAt: row.updated_at as number,
-      usageCount: (row.usage_count as number) ?? 0,
-      referencePhotoUrls: (row.reference_photo_urls as string[]) ?? [],
-    } satisfies SavedCharacter;
-  }));
-
-  return characters;
+  return rows.map((row) => ({
+    id: row.id as string,
+    name: row.name as string,
+    thumbnail: row.thumbnail as string,
+    modelImageBlobs: [],   // not downloaded — use modelImageUrls for lazy fetch
+    outfitBlob: null,      // not downloaded — outfit_url available if needed
+    modelImageUrls: (row.model_image_urls as string[]) ?? [],
+    outfitDescription: (row.outfit_description as string) ?? '',
+    characteristics: (row.characteristics as string) ?? '',
+    accessory: (row.accessory as string) ?? '',
+    loraUrl: row.lora_url as string | undefined,
+    loraTrainingStatus: (row.lora_training_status as SavedCharacter['loraTrainingStatus']) ?? 'idle',
+    loraTrainedAt: row.lora_trained_at as number | undefined,
+    createdAt: row.created_at as number,
+    updatedAt: row.updated_at as number,
+    usageCount: (row.usage_count as number) ?? 0,
+    referencePhotoUrls: (row.reference_photo_urls as string[]) ?? [],
+    renderStyle: (row.render_style as string) ?? undefined,
+  } satisfies SavedCharacter));
 };
 
 // ─────────────────────────────────────────────

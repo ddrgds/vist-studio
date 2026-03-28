@@ -24,6 +24,23 @@ Top-left: ${poses[0] || 'neutral pose'}. Top-right: ${poses[1] || 'side angle'}.
 Bottom-left: ${poses[2] || 'looking down'}. Bottom-right: ${poses[3] || 'looking up'}.
 SAME face, SAME outfit, SAME location across all 4 photos. Only the pose/angle changes.`;
 
+/**
+ * Build a contact sheet prompt for arbitrary grid sizes.
+ * Assigns poses to cells in row-major order (left→right, top→bottom).
+ */
+export const CONTACT_SHEET_PROMPT_TEMPLATE = (rows: number, cols: number, poses: string[]) => {
+  const total = rows * cols;
+  const labels = ['Top-left', 'Top-center', 'Top-right', 'Middle-left', 'Center', 'Middle-right', 'Bottom-left', 'Bottom-center', 'Bottom-right',
+    'Row4-left', 'Row4-center', 'Row4-right'];
+  const cellDescriptions = Array.from({ length: total }, (_, i) =>
+    `${labels[i] || `Cell ${i + 1}`}: ${poses[i] || 'natural variation'}`
+  ).join('.\n');
+
+  return `A ${rows}x${cols} contact sheet of ${total} different photos of the SAME person from the Base Image.
+${cellDescriptions}.
+SAME face, SAME outfit across all ${total} photos. Only the pose, angle, and framing changes.`;
+};
+
 // ---------------------------------------------------------------------------
 // Image loader helper
 // ---------------------------------------------------------------------------

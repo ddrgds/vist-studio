@@ -27,8 +27,11 @@ const PricingPage = lazy(() => import('./components/PricingPage'));
 const ProfilePage = lazy(() => import('./components/ProfilePage'));
 const AIEditor = lazy(() => import('./pages/AIEditor'));
 const ExportModal = lazy(() => import('./features/export/ExportModal'));
+const PhotoSession = lazy(() => import('./pages/PhotoSession'));
+const VideoStudio = lazy(() => import('./pages/VideoStudio'));
+const StudioV2 = lazy(() => import('./pages/StudioV2').then(m => ({ default: m.StudioV2 })));
 
-export type Page = 'create' | 'studio' | 'editor' | 'gallery' | 'characters' | 'pricing' | 'profile';
+export type Page = 'create' | 'studio' | 'editor' | 'gallery' | 'characters' | 'pricing' | 'profile' | 'carousel' | 'video';
 
 function App() {
   return (
@@ -96,6 +99,16 @@ function AppLayout() {
 function AuthenticatedApp() {
   const [page, setPage] = useState<Page>('studio');
   const [collapsed, setCollapsed] = useState(false);
+
+  // Theme initialization — reads saved preference on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('theme')
+    if (saved === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark')
+    } else {
+      document.documentElement.removeAttribute('data-theme')
+    }
+  }, [])
   const [transitioning, setTransitioning] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
 
@@ -125,12 +138,14 @@ function AuthenticatedApp() {
 
   const pages: Record<Page, JSX.Element> = {
     create: <CreatePersona onNav={handleNav} />,
-    studio: <ContentStudio onNav={handleNav} onEditImage={openEditor} onExportImage={openExport} />,
+    studio: <StudioV2 onNav={handleNav} onEditImage={openEditor} onExportImage={openExport} />,
     editor: <AIEditor onNav={handleNav} />,
     gallery: <Gallery onNav={handleNav} onEditImage={openEditor} onExportImage={openExport} />,
     characters: <CharacterGallery onNav={handleNav} />,
     pricing: <PricingPage />,
     profile: <ProfilePage />,
+    carousel: <PhotoSession onNav={handleNav} />,
+    video: <VideoStudio onNav={handleNav} />,
   };
 
   return (
@@ -141,7 +156,7 @@ function AuthenticatedApp() {
 
       <main
         ref={mainRef}
-        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative"
+        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative pb-16 lg:pb-0"
         style={{
           opacity: transitioning ? 0 : 1,
           transition: 'opacity .15s ease',
@@ -162,7 +177,7 @@ function AuthenticatedApp() {
         </Suspense>
       </main>
 
-      <MobileNav />
+      <MobileNav page={page} onNav={handleNav} />
 
       {/* Global Export Modal — accessible from any page */}
       {exportImageUrl && (
