@@ -71,6 +71,12 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
       } else {
         chars = await loadCharacters();
       }
+      // Auto-migrate: characters without referencePhotoUrls get them from modelImageUrls
+      for (const c of chars) {
+        if ((!c.referencePhotoUrls || c.referencePhotoUrls.length === 0) && c.modelImageUrls && c.modelImageUrls.length > 0) {
+          c.referencePhotoUrls = c.modelImageUrls.slice(0, 5);
+        }
+      }
       set({ characters: chars, isLoading: false });
     } catch {
       // Even IndexedDB failed — start empty

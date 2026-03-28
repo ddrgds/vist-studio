@@ -23,10 +23,10 @@ import { generateCharacterSheet, enhanceSheetWithGrok, type SheetType } from '..
 
 // ─── Character creation engine presets (Soul 2.0 prominent) ──────────
 const CHARACTER_ENGINES = [
-  { id: 'higgsfield:soul', label: 'Soul 2.0', desc: 'Realismo de moda', badge: 'Recomendado' },
-  { id: 'gemini:nb2', label: 'Nano Banana 2', desc: 'Rápido y confiable', badge: null },
-  { id: 'gemini:imagen4', label: 'Imagen 4', desc: 'Fotorrealista, económico', badge: null },
-  { id: 'gemini:pro', label: 'NB Pro', desc: 'Máxima calidad', badge: null },
+  { id: 'gemini:nb2', label: 'Nano Banana 2', desc: 'Rápido, gratis, buena consistencia', badge: 'Recomendado' },
+  { id: 'fal:seedream50', label: 'Seedream 5.0', desc: 'Alta calidad, multi-referencia', badge: null },
+  { id: 'replicate:grok', label: 'Grok Imagine', desc: 'Creativo, buena adherencia al prompt', badge: null },
+  { id: 'gemini:pro', label: 'NB Pro', desc: 'Máxima calidad Gemini', badge: null },
 ] as const;
 
 // ─── Render styles ───────────────────────────────────────────────────
@@ -1408,29 +1408,6 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                 );
               })}
 
-              <div className="h-px my-1 joi-divider" />
-
-              {/* All engines */}
-              <div className="joi-label mb-1 mt-2 px-1 text-[9px]" style={{ color: 'var(--joi-text-3)' }}>Todos los Motores</div>
-              {ENGINE_METADATA.filter(e => !CHARACTER_ENGINES.some(ce => ce.id === e.key)).map(engine => (
-                <button key={engine.key}
-                  onClick={() => { setSelectedEngine(engine.key); setShowEngineModal(false) }}
-                  className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-left transition-all"
-                  style={{
-                    background: selectedEngine === engine.key ? 'rgba(99,102,241,.08)' : 'transparent',
-                    border: `1px solid ${selectedEngine === engine.key ? 'rgba(99,102,241,.2)' : 'transparent'}`,
-                  }}>
-                  <span className="text-sm" style={{ color: 'var(--joi-text-3)' }}>{'\u2699'}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[11px] font-medium" style={{ color: selectedEngine === engine.key ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{engine.userFriendlyName}</div>
-                    <div className="text-[8px]" style={{ color: 'var(--joi-text-3)' }}>{engine.description}</div>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <div className="text-[9px] font-mono" style={{ color: 'var(--joi-pink)' }}>{engine.creditCost}cr</div>
-                    <div className="text-[8px] font-mono" style={{ color: 'var(--joi-text-3)' }}>{engine.estimatedTime}</div>
-                  </div>
-                </button>
-              ))}
             </div>
 
             <div className="shrink-0 px-4 pb-4 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,.04)' }}>
