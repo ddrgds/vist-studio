@@ -237,6 +237,46 @@ export const HEIGHTS: ChipOption[] = [
   { id: 'very-tall',   label: 'Muy alta (>183)',  emoji: '🏔️', promptText: 'very tall over 183cm, model-like height' },
 ]
 
+// ─── Bust / Chest ──────────────────────────────────────────────────
+export const BUST_SIZES: ChipOption[] = [
+  { id: 'flat',        label: 'Plano',        emoji: '▫️', promptText: 'flat chest, no bust' },
+  { id: 'small-bust',  label: 'Pequeño',      emoji: '🔹', promptText: 'small bust, subtle chest' },
+  { id: 'medium-bust', label: 'Mediano',      emoji: '🔷', promptText: 'medium bust, proportional chest' },
+  { id: 'large-bust',  label: 'Grande',       emoji: '💎', promptText: 'large full bust, prominent chest' },
+  { id: 'very-large',  label: 'Muy grande',   emoji: '⭐', promptText: 'very large bust, voluptuous figure' },
+]
+
+// ─── Hips / Glutes ─────────────────────────────────────────────────
+export const HIP_SIZES: ChipOption[] = [
+  { id: 'narrow-hips',  label: 'Estrechas',   emoji: '▫️', promptText: 'narrow slim hips, straight silhouette' },
+  { id: 'medium-hips',  label: 'Medianas',    emoji: '🔹', promptText: 'medium proportional hips' },
+  { id: 'wide-hips',    label: 'Anchas',      emoji: '🔷', promptText: 'wide hips, pronounced hip curve' },
+  { id: 'round-glutes', label: 'Glúteos marcados', emoji: '🍑', promptText: 'round prominent glutes, defined rear' },
+  { id: 'full-hips',    label: 'Voluptuosas', emoji: '💎', promptText: 'full wide hips and round glutes, voluptuous lower body' },
+]
+
+// ─── Musculature ───────────────────────────────────────────────────
+export const MUSCULATURE: ChipOption[] = [
+  { id: 'soft',         label: 'Suave',        emoji: '☁️', promptText: 'soft body, no visible muscle definition' },
+  { id: 'toned-light',  label: 'Ligeramente tonificado', emoji: '🌿', promptText: 'lightly toned, subtle muscle definition, healthy look' },
+  { id: 'toned-defined',label: 'Definido',     emoji: '💪', promptText: 'well defined muscles, visible abs and arm definition, fitness model' },
+  { id: 'muscular',     label: 'Musculoso/a',  emoji: '🏋️', promptText: 'muscular build, large defined muscles, bodybuilder physique' },
+  { id: 'shredded',     label: 'Marcado (seco)',emoji: '⚡', promptText: 'shredded low body fat, extreme muscle definition, vascularity visible' },
+]
+
+// ─── Facial Hair (masculine) ───────────────────────────────────────
+export const FACIAL_HAIR: ChipOption[] = [
+  { id: 'clean-shaven', label: 'Afeitado',     emoji: '🧔‍♂️', promptText: 'clean shaven face, no facial hair' },
+  { id: 'stubble',      label: 'Barba de 3 días', emoji: '🌑', promptText: 'short stubble, 3-day beard shadow, rugged look' },
+  { id: 'short-beard',  label: 'Barba corta',  emoji: '🧔', promptText: 'short well-groomed beard, neatly trimmed' },
+  { id: 'full-beard',   label: 'Barba completa',emoji: '🧔‍♂️', promptText: 'full thick beard, well-maintained' },
+  { id: 'long-beard',   label: 'Barba larga',  emoji: '🧙', promptText: 'long flowing beard' },
+  { id: 'goatee',       label: 'Perilla',      emoji: '▪️', promptText: 'goatee beard style, chin hair only' },
+  { id: 'mustache',     label: 'Bigote',       emoji: '🥸', promptText: 'prominent mustache, no beard' },
+  { id: 'handlebar',    label: 'Bigote manubrio', emoji: '🎭', promptText: 'handlebar mustache, curled ends, vintage style' },
+  { id: 'sideburns',    label: 'Patillas',     emoji: '🔲', promptText: 'prominent sideburns, retro style' },
+]
+
 // ─── Skin Textures (fantastical) ─────────────────────────────────────
 export const SKIN_TEXTURES: ChipOption[] = [
   { id: 'human',       label: 'Humana',    emoji: '🧑', promptText: 'natural human skin texture with visible pores and subtle imperfections' },
@@ -359,6 +399,10 @@ export function buildPromptFromChips(selections: Record<string, string[]>): stri
     eyebrows:     EYEBROWS,
     bodyType:     BODY_TYPES,
     height:       HEIGHTS,
+    bust:         BUST_SIZES,
+    hips:         HIP_SIZES,
+    musculature:  MUSCULATURE,
+    facialHair:   FACIAL_HAIR,
     skinTexture:  SKIN_TEXTURES,
     gender:       GENDERS,
     age:          AGE_RANGES,

@@ -15,7 +15,7 @@ import { PipelineCTA } from '../components/PipelineCTA'
 import {
   type ChipOption, ETHNICITIES, HAIR_STYLES, HAIR_COLORS, SKIN_TONES, EYE_COLORS,
   EYE_SHAPES, NOSE_TYPES, LIP_SHAPES, FACE_SHAPES, JAWLINES, EYEBROWS,
-  BODY_TYPES, HEIGHTS, SKIN_TEXTURES, GENDERS, AGE_RANGES,
+  BODY_TYPES, HEIGHTS, BUST_SIZES, HIP_SIZES, MUSCULATURE, FACIAL_HAIR, SKIN_TEXTURES, GENDERS, AGE_RANGES,
   PERSONALITY_TRAITS, FASHION_STYLES, ACCESSORIES, buildPromptFromChips,
 } from '../data/characterChips'
 import { SOUL_STYLES, SOUL_STYLES_CURATED, SOUL_STYLE_CATEGORIES, type SoulStyleCategory } from '../data/soulStyles'
@@ -113,7 +113,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   const [chipSelections, setChipSelections] = useState<Record<string, string[]>>({
     ethnicity: [], hairStyle: [], hairColor: [], skinTone: [], eyeColor: [],
     eyeShape: [], noseType: [], lipShape: [], faceShape: [], jawline: [], eyebrows: [],
-    bodyType: [], height: [], skinTexture: [],
+    bodyType: [], height: [], bust: [], hips: [], musculature: [], facialHair: [], skinTexture: [],
   })
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [promptText, setPromptText] = useState('')
@@ -790,6 +790,26 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                         <label className="joi-label block mb-2">Altura</label>
                         <ChipSelector options={HEIGHTS} selected={chipSelections.height}
                           onSelect={ids => updateChip('height', ids)} />
+                      </div>
+                      <div>
+                        <label className="joi-label block mb-2">Busto / Pecho</label>
+                        <ChipSelector options={BUST_SIZES} selected={chipSelections.bust}
+                          onSelect={ids => updateChip('bust', ids)} />
+                      </div>
+                      <div>
+                        <label className="joi-label block mb-2">Cadera / Glúteos</label>
+                        <ChipSelector options={HIP_SIZES} selected={chipSelections.hips}
+                          onSelect={ids => updateChip('hips', ids)} />
+                      </div>
+                      <div>
+                        <label className="joi-label block mb-2">Musculatura</label>
+                        <ChipSelector options={MUSCULATURE} selected={chipSelections.musculature}
+                          onSelect={ids => updateChip('musculature', ids)} />
+                      </div>
+                      <div>
+                        <label className="joi-label block mb-2">Vello Facial</label>
+                        <ChipSelector options={FACIAL_HAIR} selected={chipSelections.facialHair}
+                          onSelect={ids => updateChip('facialHair', ids)} />
                       </div>
 
                       {/* ── Detalles faciales (avanzado) ── */}
