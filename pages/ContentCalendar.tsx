@@ -31,7 +31,7 @@ const defaultIdeas = [
 const tagColors: Record<string,{bg:string,fg:string}> = {
   trending: { bg:'rgba(240,104,72,.1)', fg:'var(--accent)' },
   scheduled: { bg:'rgba(80,216,160,.1)', fg:'var(--mint)' },
-  draft: { bg:'rgba(208,72,176,.1)', fg:'var(--magenta)' },
+  draft: { bg:'rgba(79,70,229,.1)', fg:'var(--magenta)' },
   idea: { bg:'rgba(122,139,165,.1)', fg:'var(--blue)' },
 }
 
@@ -162,7 +162,7 @@ export function ContentCalendar() {
                   className="h-[88px] rounded-lg p-1.5 cursor-pointer transition-all hover:scale-[1.02]"
                   style={{
                     background: isSel ? 'var(--joi-bg-3)' : 'var(--joi-bg-2)',
-                    border: `1px solid ${isToday ? 'rgba(240,104,72,.35)' : isSel ? 'rgba(208,72,176,.2)' : 'rgba(255,255,255,.04)'}`,
+                    border: `1px solid ${isToday ? 'rgba(240,104,72,.35)' : isSel ? 'rgba(79,70,229,.2)' : 'rgba(255,255,255,.04)'}`,
                     boxShadow: isToday ? '0 0 12px rgba(240,104,72,.1)' : 'none',
                   }}>
                   <div className="flex justify-between items-start">

@@ -44,71 +44,167 @@ export function Dashboard({ onNav }: Props) {
   ]
 
   const quickActions = [
-    { n: '①', l: 'Create Character', Icon: Upload, p: 'upload' as Page, desc: 'Design your virtual influencer', gradient: 'linear-gradient(135deg, rgba(255,107,157,0.12), rgba(208,72,176,0.06))' },
-    { n: '②', l: 'Create Scene', Icon: Camera, p: 'director' as Page, desc: 'Create a scene', gradient: 'linear-gradient(135deg, rgba(208,72,176,0.12), rgba(104,120,240,0.06))' },
+    { n: '①', l: 'Create Character', Icon: Upload, p: 'create' as Page, desc: 'Design your virtual influencer', gradient: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(79,70,229,0.06))' },
+    { n: '②', l: 'Create Scene', Icon: Camera, p: 'studio' as Page, desc: 'Create a scene', gradient: 'linear-gradient(135deg, rgba(79,70,229,0.12), rgba(104,120,240,0.06))' },
     { n: '③', l: 'AI Editor', Icon: Repeat, p: 'editor' as Page, desc: 'Edit and enhance images', gradient: 'linear-gradient(135deg, rgba(104,120,240,0.12), rgba(184,160,232,0.06))' },
-    { n: '④', l: 'Photo Session', Icon: Wand2, p: 'session' as Page, desc: 'Generate themed photo sets', gradient: 'linear-gradient(135deg, rgba(184,160,232,0.12), rgba(255,107,157,0.06))' },
+    { n: '④', l: 'Photo Session', Icon: Wand2, p: 'studio' as Page, desc: 'Generate themed photo sets', gradient: 'linear-gradient(135deg, rgba(184,160,232,0.12), rgba(99,102,241,0.06))' },
   ]
 
   // ── Onboarding: shown when user has zero content ──
   const isNewUser = characters.length === 0 && galleryItems.length === 0
 
   if (isNewUser) {
+    const sampleImages = [
+      { src: '/samples/influencer-09f6a6a2-b616-4b4e-983c-f63bcde349af.png', tall: true },
+      { src: '/samples/influencer-0b126b31-7b3e-410b-8dd4-c7cdb4c6efb9.png', tall: false },
+      { src: '/samples/influencer-3a85b2fb-4766-4f0a-b4e3-14f6a417b78f.png', tall: false },
+      { src: '/samples/influencer-40b0ba17-c13c-487a-9c9b-5621950c3d57.png', tall: true },
+      { src: '/samples/influencer-4b651978-9594-4854-bfda-9be29257918e.png', tall: false },
+      { src: '/samples/influencer-628020f2-51fa-4971-ad4f-c8005cf1a383.png', tall: false },
+      { src: '/samples/influencer-6d7337fb-6421-42de-8e53-b27eac3a1213.png', tall: true },
+      { src: '/samples/influencer-70d1c646-d330-4d3a-ae8a-e04dfdec7fc9.png', tall: false },
+    ]
+
+    const howItWorks = [
+      { emoji: '🧑', step: 'Sube una foto', label: 'Crea tu personaje' },
+      { emoji: '🎬', step: 'Configura la escena', label: 'Director' },
+      { emoji: '✨', step: 'Genera y edita', label: 'Resultado final' },
+    ]
+
     return (
-      <div className="min-h-screen joi-mesh flex items-center justify-center" style={{ background: 'var(--joi-bg-0)' }}>
-        <div className="joi-orb" style={{ width: 400, height: 400, background: 'rgba(255,107,157,0.04)', top: '-5%', right: '10%' }} />
-        <div className="joi-orb" style={{ width: 300, height: 300, background: 'rgba(208,72,176,0.035)', bottom: '10%', left: '5%' }} />
+      <div className="min-h-screen joi-mesh overflow-hidden" style={{ background: 'var(--joi-bg-0)' }}>
+        {/* Atmospheric orbs */}
+        <div className="joi-orb" style={{ width: 560, height: 560, background: 'rgba(99,102,241,0.05)', top: '-15%', right: '-5%' }} />
+        <div className="joi-orb" style={{ width: 400, height: 400, background: 'rgba(129,140,248,0.04)', bottom: '5%', left: '-8%' }} />
+        <div className="joi-orb" style={{ width: 250, height: 250, background: 'rgba(79,70,229,0.03)', top: '50%', left: '40%' }} />
 
-        <div className="relative max-w-lg w-full text-center px-6">
-          <p className="font-jet text-[10px] tracking-[0.18em] mb-3" style={{ color: 'var(--joi-text-3)' }}>
-            WELCOME TO VIST STUDIO
-          </p>
-          <h1 style={{ fontSize: '2.2rem', lineHeight: 1.15 }}>
-            <span className="joi-heading" style={{ fontWeight: 400 }}>Create your first </span>
-            <span className="joi-heading joi-glow joi-text-gradient" style={{ fontWeight: 700 }}>
-              virtual influencer
-            </span>
-          </h1>
-          <p className="text-sm mt-3 mb-8" style={{ color: 'var(--joi-text-2)' }}>
-            Design a character, create a scene, and edit with AI — all in one place.
-          </p>
+        <div className="relative flex flex-col lg:flex-row min-h-screen">
 
-          {/* Pipeline steps */}
-          <div className="flex items-center justify-center gap-3 mb-8">
-            {[
-              { n: '1', l: 'Create Character', icon: '⊕' },
-              { n: '2', l: 'Create Scene', icon: '◎' },
-              { n: '3', l: 'Edit with AI', icon: '✦' },
-              { n: '4', l: 'Photo Session', icon: '◎' },
-            ].map((step, i) => (
-              <div key={step.n} className="flex items-center gap-3">
-                <div className="flex flex-col items-center gap-1.5">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm"
-                    style={{
-                      background: i === 0 ? 'rgba(255,107,157,.12)' : 'rgba(255,255,255,.03)',
-                      border: `1px solid ${i === 0 ? 'rgba(255,107,157,.25)' : 'rgba(255,255,255,.06)'}`,
-                      color: i === 0 ? 'var(--joi-pink)' : 'var(--joi-text-3)',
-                    }}>
-                    {step.icon}
+          {/* ── Left: Headline + CTA ── */}
+          <div className="flex flex-col justify-center px-6 lg:px-16 pt-12 pb-8 lg:py-20 lg:w-[48%] shrink-0">
+            <p className="font-jet text-[10px] tracking-[0.2em] mb-5" style={{ color: 'var(--joi-text-3)' }}>
+              VIST STUDIO · VIRTUAL INFLUENCER PLATFORM
+            </p>
+
+            <h1 style={{ fontSize: 'clamp(1.7rem, 3vw, 2.6rem)', lineHeight: 1.12, maxWidth: '480px' }}>
+              <span className="joi-heading" style={{ fontWeight: 400, display: 'block' }}>
+                Crea influencers virtuales
+              </span>
+              <span className="joi-heading joi-glow joi-text-gradient" style={{ fontWeight: 700 }}>
+                que nadie sabrá que son IA
+              </span>
+            </h1>
+
+            <p className="mt-4 mb-8 text-[13px] leading-relaxed" style={{ color: 'var(--joi-text-2)', maxWidth: '400px' }}>
+              Fotos de estudio profesionales, outfits personalizados y contenido UGC — todo generado con IA en segundos.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3 items-start">
+              <button
+                onClick={() => onNav('create')}
+                className="joi-btn-solid px-7 py-3.5 text-[13px] font-medium joi-breathe"
+                style={{ boxShadow: '0 4px 32px rgba(99,102,241,.28), 0 0 60px rgba(79,70,229,.1)' }}
+              >
+                Crear mi primer personaje →
+              </button>
+            </div>
+
+            <p className="text-[11px] mt-4" style={{ color: 'var(--joi-text-3)' }}>
+              {credits} créditos disponibles · plan {plan === 'free' ? 'gratuito' : plan}
+            </p>
+
+            {/* How it works */}
+            <div className="mt-10 pt-8" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              <p className="font-jet text-[10px] tracking-[0.16em] mb-5" style={{ color: 'var(--joi-text-3)' }}>
+                ¿CÓMO FUNCIONA?
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                {howItWorks.map((item, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0"
+                      style={{
+                        background: i === 0
+                          ? 'rgba(99,102,241,.1)'
+                          : i === 1
+                          ? 'rgba(129,140,248,.1)'
+                          : 'rgba(79,70,229,.1)',
+                        border: `1px solid ${i === 0 ? 'rgba(99,102,241,.2)' : i === 1 ? 'rgba(129,140,248,.2)' : 'rgba(79,70,229,.2)'}`,
+                      }}
+                    >
+                      {item.emoji}
+                    </div>
+                    <div>
+                      <div className="text-[12px] font-medium" style={{ color: 'var(--joi-text-1)' }}>{item.step}</div>
+                      <div className="font-jet text-[10px]" style={{ color: 'var(--joi-text-3)' }}>{item.label}</div>
+                    </div>
+                    {i < 2 && (
+                      <div className="hidden sm:flex items-center self-center mx-1" style={{ color: 'var(--joi-text-3)', fontSize: '10px', marginTop: '-2px' }}>→</div>
+                    )}
                   </div>
-                  <span className="text-[10px] font-medium" style={{ color: i === 0 ? 'var(--joi-text-1)' : 'var(--joi-text-3)' }}>
-                    {step.l}
-                  </span>
-                </div>
-                {i < 3 && <div className="w-6 h-px mt-[-18px]" style={{ background: 'rgba(255,255,255,.08)' }} />}
+                ))}
               </div>
-            ))}
+            </div>
           </div>
 
-          <button onClick={() => onNav('upload')}
-            className="joi-btn-solid px-8 py-3.5 text-sm font-medium joi-breathe"
-            style={{ boxShadow: '0 4px 30px rgba(255,107,157,.25), 0 0 50px rgba(208,72,176,.1)' }}>
-            ⊕ Create Your First Character
-          </button>
+          {/* ── Right: Sample images grid ── */}
+          <div className="flex-1 relative p-6 lg:p-8 overflow-hidden lg:min-h-screen">
+            {/* Subtle vignette on left edge to blend with content side */}
+            <div className="absolute inset-y-0 left-0 w-16 z-10 pointer-events-none"
+              style={{ background: 'linear-gradient(to right, var(--joi-bg-0), transparent)' }} />
 
-          <p className="text-[11px] mt-4" style={{ color: 'var(--joi-text-3)' }}>
-            {credits} credits available · {plan} plan
-          </p>
+            <div
+              className="h-full"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+                gridTemplateRows: 'repeat(4, minmax(120px, 1fr))',
+                gap: '10px',
+                maxHeight: '80vh',
+              }}
+            >
+              {sampleImages.map((img, i) => (
+                <div
+                  key={i}
+                  className="rounded-xl overflow-hidden"
+                  style={{
+                    gridRow: img.tall ? 'span 2' : 'span 1',
+                    background: 'var(--joi-bg-2)',
+                    border: '1px solid rgba(255,255,255,0.05)',
+                    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                  }}
+                  onMouseOver={e => {
+                    ;(e.currentTarget as HTMLDivElement).style.transform = 'scale(1.025)'
+                    ;(e.currentTarget as HTMLDivElement).style.boxShadow = '0 8px 32px rgba(99,102,241,.15)'
+                  }}
+                  onMouseOut={e => {
+                    ;(e.currentTarget as HTMLDivElement).style.transform = 'scale(1)'
+                    ;(e.currentTarget as HTMLDivElement).style.boxShadow = 'none'
+                  }}
+                >
+                  <img
+                    src={img.src}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* "Generated with AI" badge */}
+            <div
+              className="absolute bottom-10 right-8 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full"
+              style={{
+                background: 'rgba(8,7,12,0.72)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                backdropFilter: 'blur(10px)',
+              }}
+            >
+              <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--joi-pink)', boxShadow: '0 0 6px var(--joi-pink)' }} />
+              <span className="font-jet text-[9px] tracking-wider" style={{ color: 'var(--joi-text-3)' }}>GENERADO CON IA</span>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -138,13 +234,13 @@ export function Dashboard({ onNav }: Props) {
     <div className="min-h-screen joi-mesh" style={{ background: 'var(--joi-bg-0)' }}>
 
       {/* ═══ Floating Holographic Orbs (atmospheric depth) ═══ */}
-      <div className="joi-orb" style={{ width: 400, height: 400, background: 'rgba(255,107,157,0.04)', top: '-5%', right: '10%' }} />
-      <div className="joi-orb" style={{ width: 300, height: 300, background: 'rgba(208,72,176,0.035)', bottom: '10%', left: '5%' }} />
+      <div className="joi-orb" style={{ width: 400, height: 400, background: 'rgba(99,102,241,0.04)', top: '-5%', right: '10%' }} />
+      <div className="joi-orb" style={{ width: 300, height: 300, background: 'rgba(79,70,229,0.035)', bottom: '10%', left: '5%' }} />
       <div className="joi-orb" style={{ width: 200, height: 200, background: 'rgba(104,120,240,0.03)', top: '40%', right: '30%' }} />
 
       {/* ═══ Hero Header ═══ */}
-      <div className="relative px-8 pt-10 pb-8">
-        <div className="flex items-end justify-between">
+      <div className="relative px-4 lg:px-8 pt-10 pb-8">
+        <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="font-jet text-[10px] tracking-[0.18em] mb-2" style={{ color: 'var(--joi-text-3)' }}>
               {new Date().toLocaleDateString('en', { weekday: 'long', month: 'long', day: 'numeric' })}
@@ -185,7 +281,7 @@ export function Dashboard({ onNav }: Props) {
 
         if (pipelineComplete) {
           return (
-            <div className="px-8 pb-6 grid grid-cols-4 gap-4 stagger-children">
+            <div className="px-4 lg:px-8 pb-6 grid grid-cols-2 sm:grid-cols-4 gap-4 stagger-children">
               {statsData.map(s => (
                 <div key={s.l} className="joi-glass joi-border-glow" style={{ padding: '1.25rem 1.5rem', borderRadius: '14px' }}>
                   <div className="flex items-center justify-between">
@@ -200,6 +296,28 @@ export function Dashboard({ onNav }: Props) {
                       <div className="w-2 h-2 rounded-full" style={{ background: s.color, boxShadow: `0 0 8px ${s.color}` }} />
                     </div>
                   </div>
+                  {/* Credits explainer — only on the Credits card */}
+                  {s.l === 'Credits' && credits > 0 && (
+                    <div className="flex gap-1.5 flex-wrap mt-2.5">
+                      {[
+                        { label: '6cr', desc: 'Foto' },
+                        { label: '10cr', desc: 'Try-On' },
+                        { label: '20cr', desc: 'Sesión' },
+                      ].map(item => (
+                        <span
+                          key={item.label}
+                          className="font-jet text-[9px] px-2 py-0.5 rounded-md"
+                          style={{
+                            background: 'rgba(255,255,255,.04)',
+                            color: 'var(--joi-text-3)',
+                            border: '1px solid rgba(255,255,255,.05)',
+                          }}
+                        >
+                          <span style={{ color: 'var(--joi-pink)' }}>{item.label}</span>{' '}= {item.desc}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -208,18 +326,18 @@ export function Dashboard({ onNav }: Props) {
 
         // Onboarding banner — show next pipeline step
         const nextStep = characters.length === 0
-          ? { n: '①', label: 'Create your first character', page: 'upload' as Page, cta: 'Create Character' }
+          ? { n: '①', label: 'Create your first character', page: 'create' as Page, cta: 'Create Character' }
           : !hasContent
-          ? { n: '②', label: `Create a scene for ${featuredChar?.name || 'your character'}`, page: 'director' as Page, cta: 'Go to Scene Studio' }
+          ? { n: '②', label: `Create a scene for ${featuredChar?.name || 'your character'}`, page: 'studio' as Page, cta: 'Go to Scene Studio' }
           : !hasEdits
           ? { n: '③', label: 'Edit an image with AI tools', page: 'editor' as Page, cta: 'Open AI Editor' }
-          : { n: '④', label: 'Run a themed photo session', page: 'session' as Page, cta: 'Start Photo Session' }
+          : { n: '④', label: 'Run a themed photo session', page: 'studio' as Page, cta: 'Start Photo Session' }
 
         return (
-          <div className="px-8 pb-6">
-            <div className="joi-glass joi-border-glow flex items-center gap-4 px-6 py-4" style={{ borderRadius: '14px', border: '1px solid rgba(255,107,157,.1)' }}>
+          <div className="px-4 lg:px-8 pb-6">
+            <div className="joi-glass joi-border-glow flex flex-wrap items-center gap-4 px-4 lg:px-6 py-4" style={{ borderRadius: '14px', border: '1px solid rgba(99,102,241,.1)' }}>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: 'rgba(255,107,157,.08)', border: '1px solid rgba(255,107,157,.15)' }}>
+                style={{ background: 'rgba(99,102,241,.08)', border: '1px solid rgba(99,102,241,.15)' }}>
                 <span className="text-sm" style={{ color: 'var(--joi-pink)' }}>{nextStep.n}</span>
               </div>
               <div className="flex-1 min-w-0">
@@ -238,9 +356,9 @@ export function Dashboard({ onNav }: Props) {
       <div className="joi-divider mx-8" />
 
       {/* ═══ Quick Actions ═══ */}
-      <div className="px-8 py-6">
+      <div className="px-4 lg:px-8 py-6">
         <div className="joi-label" style={{ marginBottom: '1rem' }}>Quick Actions</div>
-        <div className="grid grid-cols-4 gap-4 stagger-children">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 stagger-children">
           {quickActions.map(a => (
             <button
               key={a.l}
@@ -271,7 +389,7 @@ export function Dashboard({ onNav }: Props) {
       </div>
 
       {/* ═══ Character Spotlight + Activity ═══ */}
-      <div className="px-8 py-4 flex gap-5">
+      <div className="px-4 lg:px-8 py-4 flex flex-col lg:flex-row gap-5">
         {/* Characters */}
         <div className="flex-1">
           <div className="flex justify-between items-center mb-4">
@@ -288,14 +406,14 @@ export function Dashboard({ onNav }: Props) {
             <div className="joi-glass joi-breathe flex flex-col items-center justify-center py-16"
               style={{ borderRadius: '16px' }}>
               <div className="w-16 h-16 flex items-center justify-center rounded-full mb-5"
-                style={{ background: 'rgba(255,107,157,0.06)', border: '1px solid rgba(255,107,157,0.1)' }}>
+                style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.1)' }}>
                 <Upload size={24} style={{ color: 'var(--joi-pink)' }} />
               </div>
               <p className="joi-heading" style={{ fontSize: '1.1rem' }}>Start creating content</p>
               <p className="text-[12px] mt-1.5 mb-5" style={{ color: 'var(--joi-text-3)' }}>
                 Create your first AI character to start posting
               </p>
-              <button onClick={() => onNav('upload')} className="joi-btn-solid">Create Character</button>
+              <button onClick={() => onNav('create')} className="joi-btn-solid">Create Character</button>
             </div>
           ) : (
             <div className="flex gap-4">
@@ -309,7 +427,7 @@ export function Dashboard({ onNav }: Props) {
                     }}>
                       {/* Holographic gradient overlay */}
                       <div className="absolute inset-0" style={{
-                        background: 'linear-gradient(to top, var(--joi-bg-0) 0%, rgba(8,7,13,0.5) 40%, rgba(255,107,157,0.04) 100%)',
+                        background: 'linear-gradient(to top, var(--joi-bg-0) 0%, rgba(8,7,13,0.5) 40%, rgba(99,102,241,0.04) 100%)',
                       }} />
                       <div className="absolute bottom-5 left-5 right-5">
                         <h3 className="joi-heading joi-glow--subtle" style={{ fontSize: '1.4rem' }}>{featuredChar.name}</h3>
@@ -324,8 +442,8 @@ export function Dashboard({ onNav }: Props) {
                       </div>
                     </div>
                     <div className="px-5 py-3 flex gap-3">
-                      <button onClick={() => onNav('director')} className="joi-btn-solid flex-1 text-[11px] py-2">Create Scene</button>
-                      <button onClick={() => onNav('session')} className="joi-btn-ghost flex-1 text-[11px] py-2" style={{ borderColor: 'rgba(255,107,157,.3)', color: 'var(--joi-pink)' }}>Photo Session</button>
+                      <button onClick={() => onNav('studio')} className="joi-btn-solid flex-1 text-[11px] py-2">Create Scene</button>
+                      <button onClick={() => onNav('studio')} className="joi-btn-ghost flex-1 text-[11px] py-2" style={{ borderColor: 'rgba(99,102,241,.3)', color: 'var(--joi-pink)' }}>Photo Session</button>
                     </div>
                   </div>
                 )
@@ -344,7 +462,7 @@ export function Dashboard({ onNav }: Props) {
                         {c.thumbnail
                           ? <img src={c.thumbnail} alt={c.name} className="w-full h-full object-cover" />
                           : <div className="w-full h-full flex items-center justify-center text-xs font-bold"
-                              style={{ color: 'var(--joi-text-2)', background: 'linear-gradient(135deg, rgba(255,107,157,0.08), rgba(208,72,176,0.05))' }}>
+                              style={{ color: 'var(--joi-text-2)', background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(79,70,229,0.05))' }}>
                               {c.name[0]}
                             </div>
                         }
@@ -362,14 +480,14 @@ export function Dashboard({ onNav }: Props) {
         </div>
 
         {/* Activity Feed — Holographic */}
-        <div className="w-[280px] shrink-0">
+        <div className="w-full lg:w-[280px] lg:shrink-0">
           <div className="joi-label" style={{ marginBottom: '1rem' }}>Recent Activity</div>
           <div className="joi-glass p-4" style={{ borderRadius: '14px' }}>
             {recentActivity.length === 0 ? (
               <div className="py-6 text-center">
                 <div className="text-xl mb-2">◎</div>
                 <p className="text-[11px] mb-3" style={{ color: 'var(--joi-text-3)' }}>No activity yet</p>
-                <button onClick={() => onNav('director')}
+                <button onClick={() => onNav('studio')}
                   className="joi-btn-solid px-4 py-2 text-[10px]">
                   Create your first post →
                 </button>
@@ -398,7 +516,7 @@ export function Dashboard({ onNav }: Props) {
 
       {/* ═══ Recent Gallery — Holographic Strip ═══ */}
       {galleryItems.length > 0 && (
-        <div className="px-8 py-5 pb-10">
+        <div className="px-4 lg:px-8 py-5 pb-10">
           <div className="flex justify-between items-center mb-4">
             <div className="joi-label">Recent Content</div>
             <button onClick={() => onNav('gallery')}

@@ -56,7 +56,7 @@ const SkinEnhancerModal: React.FC<SkinEnhancerModalProps> = ({ targetItem, onClo
       const targetFile = new File([blob], `target-${targetItem.id}.png`, { type: blob.type || 'image/png' });
 
       const selected = INTENSITY_OPTIONS.find(o => o.value === intensity)!;
-      const instruction = `SKIN ENHANCEMENT TASK — ${intensity.toUpperCase()} intensity
+      const instruction = `SKIN RETOUCH (overrides preservation rule for skin): SKIN ENHANCEMENT TASK — ${intensity.toUpperCase()} intensity
 
 Retouch ONLY the skin in this portrait. Apply ${selected.prompt}
 

@@ -121,7 +121,7 @@ export function PresetManager({ currentSettings, onLoad }: PresetManagerProps) {
             className="w-[120px] px-2.5 py-1.5 rounded-lg text-[11px] outline-none"
             style={{
               background: 'rgba(255,255,255,.04)',
-              border: '1px solid rgba(255,107,157,.2)',
+              border: '1px solid rgba(99,102,241,.2)',
               color: 'var(--joi-text-1)',
             }}
           />
@@ -129,8 +129,8 @@ export function PresetManager({ currentSettings, onLoad }: PresetManagerProps) {
             onClick={handleSave}
             className="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-all"
             style={{
-              background: presetName.trim() ? 'rgba(255,107,157,.15)' : 'rgba(255,255,255,.03)',
-              border: `1px solid ${presetName.trim() ? 'rgba(255,107,157,.3)' : 'rgba(255,255,255,.06)'}`,
+              background: presetName.trim() ? 'rgba(99,102,241,.15)' : 'rgba(255,255,255,.03)',
+              border: `1px solid ${presetName.trim() ? 'rgba(99,102,241,.3)' : 'rgba(255,255,255,.06)'}`,
               color: presetName.trim() ? 'var(--joi-pink)' : 'var(--joi-text-3)',
               cursor: presetName.trim() ? 'pointer' : 'default',
             }}
@@ -154,8 +154,8 @@ export function PresetManager({ currentSettings, onLoad }: PresetManagerProps) {
           onClick={() => setSaving(true)}
           className="px-3 py-1.5 rounded-lg text-[10px] font-semibold transition-all shrink-0 flex items-center gap-1.5"
           style={{
-            background: 'rgba(255,107,157,.08)',
-            border: '1px solid rgba(255,107,157,.18)',
+            background: 'rgba(99,102,241,.08)',
+            border: '1px solid rgba(99,102,241,.18)',
             color: 'var(--joi-pink)',
           }}
         >

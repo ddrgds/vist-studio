@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => {
               proxy.on('proxyReq', (proxyReq) => {
                 proxyReq.setHeader(
                   'Authorization',
-                  `Token ${env.REPLICATE_API_TOKEN}`
+                  `Token ${env.REPLICATE_API_TOKEN || ''}`
                 );
               });
             },
@@ -34,7 +34,7 @@ export default defineConfig(({ mode }) => {
             secure: true,
             configure: (proxy) => {
               proxy.on('proxyReq', (proxyReq) => {
-                proxyReq.setHeader('Api-Key', env.IDEOGRAM_API_KEY);
+                proxyReq.setHeader('Api-Key', env.IDEOGRAM_API_KEY || '');
                 proxyReq.removeHeader('origin');
               });
             },
@@ -54,7 +54,7 @@ export default defineConfig(({ mode }) => {
             secure: true,
             configure: (proxy) => {
               proxy.on('proxyReq', (proxyReq) => {
-                proxyReq.setHeader('Authorization', `Bearer ${env.OPENAI_API_KEY}`);
+                proxyReq.setHeader('Authorization', `Bearer ${env.OPENAI_API_KEY || ''}`);
                 proxyReq.removeHeader('origin');
               });
             },
@@ -91,7 +91,7 @@ export default defineConfig(({ mode }) => {
                   // Remove the SDK header — FAL backend doesn't need it
                   proxyReq.removeHeader('x-fal-target-url');
                 }
-                proxyReq.setHeader('Authorization', `Key ${env.FAL_KEY}`);
+                proxyReq.setHeader('Authorization', `Key ${env.FAL_KEY || ''}`);
                 proxyReq.removeHeader('origin');
               });
             },
@@ -103,7 +103,7 @@ export default defineConfig(({ mode }) => {
             secure: true,
             configure: (proxy) => {
               proxy.on('proxyReq', (proxyReq) => {
-                proxyReq.setHeader('Authorization', `Key ${env.HIGGSFIELD_API_KEY}:${env.HIGGSFIELD_API_SECRET}`);
+                proxyReq.setHeader('Authorization', `Key ${env.HIGGSFIELD_API_KEY || ''}:${env.HIGGSFIELD_API_SECRET || ''}`);
                 proxyReq.removeHeader('origin');
               });
             },
@@ -121,7 +121,7 @@ export default defineConfig(({ mode }) => {
             secure: true,
             configure: (proxy) => {
               proxy.on('proxyReq', (proxyReq) => {
-                proxyReq.setHeader('xi-api-key', env.ELEVENLABS_API_KEY);
+                proxyReq.setHeader('xi-api-key', env.ELEVENLABS_API_KEY || '');
                 proxyReq.removeHeader('origin');
               });
             },

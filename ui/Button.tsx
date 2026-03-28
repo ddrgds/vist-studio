@@ -12,7 +12,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
-  primary: { background: 'linear-gradient(135deg, var(--joi-pink), var(--joi-magenta))', color: '#fff', boxShadow: '0 4px 16px rgba(255,107,157,0.15)' },
+  primary: { background: 'linear-gradient(135deg, var(--joi-pink), var(--joi-magenta))', color: '#fff', boxShadow: '0 4px 16px rgba(99,102,241,0.15)' },
   secondary: { background: 'var(--joi-bg-2)', border: '1px solid rgba(255,255,255,.04)', color: 'var(--joi-text-2)', backdropFilter: 'blur(8px)' },
   ghost: { background: 'transparent', color: 'var(--joi-text-3)' },
   danger: { background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.15)', color: '#f87171' },

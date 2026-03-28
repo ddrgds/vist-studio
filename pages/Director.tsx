@@ -24,28 +24,32 @@ import { runControlNet } from '../services/controlNetService'
 
 // ─── Accordion Section (Joi style) ─────────────────────
 const AccordionSection: React.FC<{
-  title: string; icon: string; isOpen: boolean; onToggle: () => void; badge?: string; children: React.ReactNode
-}> = ({ title, icon, isOpen, onToggle, badge, children }) => (
-  <div style={{ borderBottom: '1px solid rgba(255,255,255,.03)' }}>
+  title: string; icon: string; isOpen: boolean; onToggle: () => void; badge?: string; active?: boolean; children: React.ReactNode
+}> = ({ title, icon, isOpen, onToggle, badge, active, children }) => (
+  <div style={{ borderBottom: '1px solid var(--joi-border)' }}>
     <button onClick={onToggle} className="w-full px-5 py-3.5 flex items-center gap-2.5 group transition-colors"
       style={{ color: 'var(--joi-text-2)' }}>
       <span className="text-sm" style={{ opacity: 0.5 }}>{icon}</span>
       <span className="text-xs font-medium tracking-wide uppercase" style={{ letterSpacing: '0.08em' }}>{title}</span>
       {badge && (
         <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-md" style={{
-          background: 'rgba(255,107,157,.08)',
+          background: 'var(--joi-pink-soft)',
           color: 'var(--joi-pink)',
-          border: '1px solid rgba(255,107,157,.12)',
+          border: '1px solid var(--joi-border)',
         }}>{badge}</span>
+      )}
+      {active && !badge && (
+        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'var(--joi-pink)', opacity: 0.8 }} />
       )}
       <span className="ml-auto text-[10px] transition-transform" style={{
         color: 'var(--joi-text-3)',
         transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
       }}>{'\u25BC'}</span>
     </button>
-    <div className="overflow-hidden transition-all" style={{
+    <div className="overflow-hidden" style={{
       maxHeight: isOpen ? '800px' : '0',
       opacity: isOpen ? 1 : 0,
+      pointerEvents: isOpen ? 'auto' : 'none',
       transition: 'max-height .3s ease, opacity .2s ease',
     }}>
       <div className="px-5 pb-5">{children}</div>
@@ -60,11 +64,11 @@ const OptionChip: React.FC<{
   <button onClick={onClick}
     className="px-3.5 py-2.5 rounded-xl text-[12px] font-medium flex items-center gap-2 transition-all whitespace-nowrap"
     style={{
-      background: selected ? 'rgba(255,107,157,.10)' : 'rgba(255,255,255,.02)',
-      border: `1px solid ${selected ? 'rgba(255,107,157,.25)' : 'rgba(255,255,255,.06)'}`,
+      background: selected ? 'var(--joi-pink-soft)' : 'transparent',
+      border: `1px solid ${selected ? 'var(--joi-border-h)' : 'var(--joi-border)'}`,
       color: selected ? 'var(--joi-pink)' : 'var(--joi-text-2)',
       backdropFilter: 'blur(8px)',
-      boxShadow: selected ? '0 0 16px rgba(255,107,157,.08), inset 0 1px 0 rgba(255,107,157,.06)' : 'none',
+      boxShadow: selected ? '0 0 16px var(--joi-pink-soft)' : 'none',
     }}>
     <span className="text-sm">{option.icon}</span>{option.label}
   </button>
@@ -77,11 +81,11 @@ const EnhancerChip: React.FC<{
   <button onClick={onClick}
     className="px-3 py-2 rounded-xl text-[11px] font-medium flex items-center gap-2 transition-all whitespace-nowrap"
     style={{
-      background: selected ? 'rgba(255,107,157,.10)' : 'rgba(255,255,255,.02)',
-      border: `1px solid ${selected ? 'rgba(255,107,157,.25)' : 'rgba(255,255,255,.06)'}`,
+      background: selected ? 'var(--joi-pink-soft)' : 'transparent',
+      border: `1px solid ${selected ? 'var(--joi-border-h)' : 'var(--joi-border)'}`,
       color: selected ? 'var(--joi-pink)' : 'var(--joi-text-2)',
       backdropFilter: 'blur(8px)',
-      boxShadow: selected ? '0 0 16px rgba(255,107,157,.08), inset 0 1px 0 rgba(255,107,157,.06)' : 'none',
+      boxShadow: selected ? '0 0 16px var(--joi-pink-soft)' : 'none',
     }}>
     <span className="text-sm">{enhancer.icon}</span>{enhancer.label}
   </button>
@@ -99,7 +103,7 @@ const ImageSlot: React.FC<{
         onChange={e => { const f = e.target.files?.[0]; if (f) onUpload(f); e.target.value = '' }} />
       {preview ? (
         <div className="relative w-20 h-20 rounded-xl overflow-hidden group"
-          style={{ border: '1px solid rgba(255,107,157,.25)', boxShadow: '0 0 16px rgba(255,107,157,.1)' }}>
+          style={{ border: '1px solid var(--joi-border-h)', boxShadow: '0 0 16px var(--joi-pink-soft)' }}>
           <img src={preview} className="w-full h-full object-cover" alt="" />
           <button onClick={onRemove}
             className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] opacity-0 group-hover:opacity-100 transition-opacity"
@@ -107,10 +111,10 @@ const ImageSlot: React.FC<{
         </div>
       ) : (
         <button onClick={() => inputRef.current?.click()}
-          className="w-20 h-20 rounded-xl flex flex-col items-center justify-center gap-1 transition-all hover:border-[rgba(255,107,157,.15)]"
+          className="w-20 h-20 rounded-xl flex flex-col items-center justify-center gap-1 transition-all"
           style={{
-            background: 'rgba(255,255,255,.02)',
-            border: '1px dashed rgba(255,255,255,.08)',
+            background: 'transparent',
+            border: '1px dashed var(--joi-border)',
             backdropFilter: 'blur(8px)',
           }}>
           <span className="text-base" style={{ color: 'var(--joi-pink)', opacity: 0.6 }}>{'\u2191'}</span>
@@ -152,7 +156,7 @@ const DIRECTOR_REF_MAX: Record<string, number> = {
 // Input style helper
 const joiInputStyle = (hasValue: boolean) => ({
   background: 'var(--joi-bg-2)',
-  borderColor: hasValue ? 'rgba(255,107,157,.15)' : 'rgba(255,255,255,.04)',
+  borderColor: hasValue ? 'var(--joi-border-h)' : 'var(--joi-border)',
   color: 'var(--joi-text-1)',
   backdropFilter: 'blur(8px)',
 })
@@ -264,6 +268,9 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
     }
   }, [reuseParams])
 
+  // ── Quick Style Presets ──
+  const [activeQuickPreset, setActiveQuickPreset] = useState<string | null>(null)
+
   // ── Engine & generation ──
   const [selectedEngine, setSelectedEngine] = useState<string>('auto')
   const [selectedResolution, setSelectedResolution] = useState('2k')
@@ -317,12 +324,16 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
     setSelectedCharId(id)
     const char = characters.find(c => c.id === id)
     const maxRefs = DIRECTOR_REF_MAX[selectedEngine] ?? 3
-    setCharRefUrls(char?.referencePhotoUrls?.slice(0, maxRefs) ?? [])
+    // Show whichever refs will actually be used: curated > gallery (can't precompute) > main portrait only
+    const displayUrls = char?.referencePhotoUrls?.length
+      ? char.referencePhotoUrls.slice(0, maxRefs)
+      : (char?.modelImageUrls?.length ? [char.modelImageUrls[0]] : [])
+    setCharRefUrls(displayUrls)
   }
 
   const getCharacterReferenceUrls = (): string[] => {
     if (!selectedChar) return []
-    // Priority 1: user-curated reference photos (from A2 task)
+    // Priority 1: user-curated reference photos
     if (selectedChar.referencePhotoUrls?.length) {
       return selectedChar.referencePhotoUrls.slice(0, 5)
     }
@@ -331,7 +342,52 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
       .filter(item => item.characterId === selectedChar.id && typeof item.url === 'string' && item.url.startsWith('http'))
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, 5)
-    return charItems.map(item => item.url).filter(Boolean)
+    if (charItems.length > 0) return charItems.map(item => item.url).filter(Boolean)
+    // Priority 3: character's main portrait (first modelImageUrl — the single clean render
+    // from creation). Avoid sending sheet grids (indices 1-3) which are composite multi-pose
+    // images that dilute the face identity signal.
+    if (selectedChar.modelImageUrls?.length) {
+      return [selectedChar.modelImageUrls[0]]
+    }
+    return []
+  }
+
+  // ── Style boosts by renderStyle id (matches UploadCharacter renderStyles array) ──
+  const RENDER_STYLE_BOOSTS: Record<string, string> = {
+    'anime': 'Premium anime-style illustration, cel-shaded, clean precise linework with variable stroke weight, NOT photorealistic, 2D animation aesthetic, stylized anime rendering',
+    '3d-render': 'AAA game-quality 3D CGI render, Unreal Engine 5 lighting, subsurface scattering skin shader, NOT a photograph, NOT photorealistic',
+    'illustration': 'High-end digital character illustration, concept art portfolio quality, painterly technique, NOT photorealistic',
+    'stylized': 'Stylized character render, Arcane/Spider-Verse aesthetic, bold graphic silhouette, NOT photorealistic',
+    'pixel-art': 'Premium pixel art, pixelated throughout, 16-bit video game aesthetic, NOT smooth, NOT photorealistic',
+  }
+
+  // ── Detect non-photorealistic render style ──
+  // Primary: renderStyle field (explicit, reliable). Fallback: keyword scan of characteristics text.
+  const detectCharStyle = (chars: string, renderStyle?: string): { isRealistic: boolean; styleBoost?: string } => {
+    // Primary signal: explicit renderStyle from character creation
+    if (renderStyle && renderStyle !== 'photorealistic') {
+      const boost = RENDER_STYLE_BOOSTS[renderStyle]
+      return { isRealistic: false, styleBoost: boost || 'Stylized non-photorealistic character illustration, NOT a photograph' }
+    }
+    // Fallback: keyword detection from characteristics text (legacy / imported chars)
+    if (!chars) return { isRealistic: true }
+    const c = chars.toLowerCase()
+    if (c.includes('anime character') || c.includes('cel-shaded') || c.includes('2d illustration') || c.includes('studio bones') || c.includes('production i.g')) {
+      return { isRealistic: false, styleBoost: RENDER_STYLE_BOOSTS['anime'] }
+    }
+    if (c.includes('3d character render') || c.includes('unreal engine') || c.includes('pbr material') || c.includes('aaa game')) {
+      return { isRealistic: false, styleBoost: RENDER_STYLE_BOOSTS['3d-render'] }
+    }
+    if (c.includes('concept art') || c.includes('painterly technique') || c.includes('digital character illustration') || c.includes('art book')) {
+      return { isRealistic: false, styleBoost: RENDER_STYLE_BOOSTS['illustration'] }
+    }
+    if (c.includes('stylized character') || c.includes('arcane') || c.includes('spider-verse') || c.includes('exaggerated design')) {
+      return { isRealistic: false, styleBoost: RENDER_STYLE_BOOSTS['stylized'] }
+    }
+    if (c.includes('pixel art') || c.includes('pixelated') || c.includes('16-bit') || c.includes('8-bit')) {
+      return { isRealistic: false, styleBoost: RENDER_STYLE_BOOSTS['pixel-art'] }
+    }
+    return { isRealistic: true }
   }
 
   // ── Build params ──
@@ -372,7 +428,10 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
       lighting: lightingValue,
       camera: cameraValue,
       negativePrompt: negativePrompt.trim() || undefined,
-      imageBoost: imageBoostOn ? IMAGE_BOOST_KEYWORDS : undefined,
+      imageBoost: imageBoostOn
+        ? IMAGE_BOOST_KEYWORDS
+        : detectCharStyle(characteristics || selectedChar?.characteristics || '', selectedChar?.renderStyle).styleBoost,
+      realistic: imageBoostOn ? true : detectCharStyle(characteristics || selectedChar?.characteristics || '', selectedChar?.renderStyle).isRealistic,
       imageSize,
       aspectRatio: selectedAspectRatio,
       numberOfImages,
@@ -415,13 +474,14 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
         objectText?.trim() && `With: ${objectText.trim()}`,
       ].filter(Boolean).join('. ')
 
+      const charStyleInfo = detectCharStyle(params.characters[0]?.characteristics || '', selectedChar?.renderStyle)
       const compiledScenario = await compilePrompt({
         subjectIntent: rawIntent,
         poseLighting: [params.characters[0]?.pose, params.camera, params.lighting]
           .filter(Boolean).join(', ') || undefined,
         targetModel: targetModelId,
         isEdit: false,
-        isRealistic: true,
+        isRealistic: charStyleInfo.isRealistic,
       }).catch(() => rawIntent)  // fallback to raw if compiler fails
 
       params.scenario = compiledScenario
@@ -476,6 +536,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
         if (eng) engineLabel = eng.userFriendlyName
       }
 
+      const savedParams = buildParams(charRefFiles)
       const items: GalleryItem[] = results.map((url) => ({
         id: crypto.randomUUID(),
         url,
@@ -488,11 +549,11 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
         params: {
           characters: [{ id: selectedChar?.id || 'director-char', characteristics: characteristics || '' }],
           scenario: scenario || 'professional photo shoot',
-          lighting: buildParams().lighting,
-          camera: buildParams().camera,
+          lighting: savedParams.lighting,
+          camera: savedParams.camera,
           negativePrompt: negativePrompt.trim() || undefined,
           imageBoost: imageBoostOn ? IMAGE_BOOST_KEYWORDS : undefined,
-          imageSize: buildParams().imageSize,
+          imageSize: savedParams.imageSize,
           aspectRatio: selectedAspectRatio,
           numberOfImages,
         } as any,
@@ -506,7 +567,8 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
 
     } catch (err: any) {
       if (err?.name !== 'AbortError') {
-        restoreCredits(totalCost)
+        const poseExtraCost = poseRef ? 5 : 0
+        restoreCredits(totalCost + poseExtraCost)
         toast.error('Error al generar la foto principal')
         console.error(err)
       }
@@ -519,18 +581,97 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
   const costPerShot = CREDIT_COSTS['grok-edit']
   const activeEngineLabel = selectedEngine === 'auto' ? 'Auto' : (ENGINE_METADATA.find(e => e.key === selectedEngine)?.userFriendlyName || selectedEngine)
 
+  // ── Canvas adaptive size ──
+  const CANVAS_SIZES: Record<AspectRatio, { w: number; h: number }> = {
+    [AspectRatio.Portrait]:  { w: 390, h: 520 },
+    [AspectRatio.Square]:    { w: 520, h: 520 },
+    [AspectRatio.Landscape]: { w: 520, h: 390 },
+    [AspectRatio.Wide]:      { w: 520, h: 293 },
+    [AspectRatio.Tall]:      { w: 295, h: 520 },
+  }
+  const canvasSize = CANVAS_SIZES[selectedAspectRatio] ?? { w: 520, h: 520 }
+
+  // ── Quick Style Presets data ──
+  const QUICK_STYLE_PRESETS = [
+    {
+      id: 'selfie',
+      emoji: '🤳',
+      label: 'Selfie',
+      desc: 'Close-up natural',
+      scenario: 'selfie style photo, natural casual lighting, close-up portrait, authentic candid feel',
+      camera: 'portrait',
+      lighting: 'natural',
+      pose: 'standing',
+    },
+    {
+      id: 'ugc',
+      emoji: '📦',
+      label: 'UGC',
+      desc: 'Auténtico casual',
+      scenario: 'UGC content creator style, casual home setting, natural daylight, authentic unfiltered look, no heavy makeup, relatable lifestyle',
+      camera: 'portrait',
+      lighting: 'natural',
+      pose: 'leaning',
+    },
+    {
+      id: 'lifestyle',
+      emoji: '🌿',
+      label: 'Lifestyle',
+      desc: 'Exterior golden hour',
+      scenario: 'casual lifestyle outdoor photo, relaxed daytime mood, candid street or park energy',
+      camera: 'wide',
+      lighting: 'golden',
+      pose: 'walking',
+    },
+    {
+      id: 'editorial',
+      emoji: '✨',
+      label: 'Editorial',
+      desc: 'Studio profesional',
+      scenario: 'editorial fashion shoot, clean studio background, professional quality, high fashion energy',
+      camera: 'portrait',
+      lighting: 'studio',
+      pose: 'standing',
+    },
+    {
+      id: 'night-out',
+      emoji: '🌆',
+      label: 'Night Out',
+      desc: 'Ciudad de noche',
+      scenario: 'night out in the city, vibrant nightlife atmosphere, city lights bokeh background, going out vibe',
+      camera: 'portrait',
+      lighting: 'neon',
+      pose: 'leaning',
+    },
+  ]
+
+  const applyQuickPreset = (preset: typeof QUICK_STYLE_PRESETS[0]) => {
+    if (activeQuickPreset === preset.id) {
+      setActiveQuickPreset(null)
+      return
+    }
+    setActiveQuickPreset(preset.id)
+    setScenario(preset.scenario)
+    setSelectedCamera(preset.camera)
+    setSelectedLighting(preset.lighting)
+    setSelectedPose(preset.pose)
+    setCustomCamera('')
+    setCustomLighting('')
+    setCustomPose('')
+  }
+
   return (
-    <div className="h-full flex" style={{ background: 'var(--joi-bg-0)' }}>
+    <div className="flex flex-col lg:flex-row lg:h-full" style={{ background: 'var(--joi-bg-0)' }}>
       <input ref={faceInputRef} type="file" accept="image/*" className="hidden" onChange={handleFaceRefUpload} />
 
       {/* ── Left Panel — Frosted Glass ── */}
-      <div className="w-[400px] shrink-0 flex flex-col" style={{
+      <div className="w-full lg:w-[400px] shrink-0 flex flex-col lg:h-full" style={{
         background: 'var(--joi-bg-1)',
-        borderRight: '1px solid rgba(255,255,255,.04)',
+        borderRight: '1px solid var(--joi-border)',
       }}>
         {/* Header */}
         <div className="px-6 h-16 flex items-center justify-between shrink-0" style={{
-          borderBottom: '1px solid rgba(255,255,255,.04)',
+          borderBottom: '1px solid var(--joi-border)',
         }}>
           <h1 className="joi-heading joi-glow--subtle" style={{ fontSize: '1.5rem' }}>
             <span className="joi-text-gradient">Director</span>
@@ -539,19 +680,19 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
             <button onClick={() => setShowEngineModal(!showEngineModal)}
               className="px-3 py-1.5 rounded-xl text-[11px] font-mono flex items-center gap-1.5 transition-all"
               style={{
-                background: selectedEngine !== 'auto' ? 'rgba(255,107,157,.08)' : 'rgba(255,255,255,.03)',
-                border: `1px solid ${selectedEngine !== 'auto' ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.06)'}`,
+                background: selectedEngine !== 'auto' ? 'var(--joi-pink-soft)' : 'transparent',
+                border: `1px solid ${selectedEngine !== 'auto' ? 'var(--joi-border-h)' : 'var(--joi-border)'}`,
                 color: selectedEngine !== 'auto' ? 'var(--joi-pink)' : 'var(--joi-text-3)',
               }}>
               <span className="text-xs">{'\u2699'}</span> {activeEngineLabel}
             </button>
             {showEngineModal && (
-              <div className="absolute top-full right-0 mt-2 z-50 w-[340px] max-h-[70vh] flex flex-col rounded-2xl"
+              <div className="absolute top-full right-0 mt-2 z-50 w-[340px] max-w-[calc(100vw-2rem)] max-h-[70vh] flex flex-col rounded-2xl"
                 style={{
-                  background: 'rgba(14,12,22,.96)',
+                  background: 'var(--joi-bg-glass)',
                   backdropFilter: 'blur(24px)',
-                  border: '1px solid rgba(255,255,255,.06)',
-                  boxShadow: '0 20px 80px rgba(0,0,0,.6), 0 0 40px rgba(255,107,157,.05)',
+                  border: '1px solid var(--joi-border)',
+                  boxShadow: '0 20px 80px rgba(0,0,0,.6)',
                   overflow: 'hidden',
                 }}>
                 <div className="overflow-y-auto p-4 pb-2 space-y-1 flex-1 min-h-0 joi-scroll">
@@ -560,8 +701,8 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                   <button onClick={() => { setSelectedEngine('auto'); setShowEngineModal(false) }}
                     className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-all"
                     style={{
-                      background: selectedEngine === 'auto' ? 'rgba(255,107,157,.08)' : 'transparent',
-                      border: `1px solid ${selectedEngine === 'auto' ? 'rgba(255,107,157,.2)' : 'transparent'}`,
+                      background: selectedEngine === 'auto' ? 'var(--joi-pink-soft)' : 'transparent',
+                      border: `1px solid ${selectedEngine === 'auto' ? 'var(--joi-border-h)' : 'transparent'}`,
                     }}>
                     <span className="text-base">{'\u2728'}</span>
                     <div className="flex-1 min-w-0">
@@ -576,8 +717,8 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                     <button key={eng.key} onClick={() => { setSelectedEngine(eng.key); setShowEngineModal(false) }}
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-all"
                       style={{
-                        background: selectedEngine === eng.key ? 'rgba(255,107,157,.08)' : 'transparent',
-                        border: `1px solid ${selectedEngine === eng.key ? 'rgba(255,107,157,.2)' : 'transparent'}`,
+                        background: selectedEngine === eng.key ? 'var(--joi-pink-soft)' : 'transparent',
+                        border: `1px solid ${selectedEngine === eng.key ? 'var(--joi-border-h)' : 'transparent'}`,
                       }}>
                       <span className="text-base">{'\u2699'}</span>
                       <div className="flex-1 min-w-0">
@@ -593,7 +734,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                   ))}
                 </div>
 
-                <div className="p-3" style={{ borderTop: '1px solid rgba(255,255,255,.04)' }}>
+                <div className="p-3" style={{ borderTop: '1px solid var(--joi-border)' }}>
                   <div className="joi-label mb-2 px-1">Formato</div>
                   <div className="flex gap-1.5">
                     {[
@@ -606,8 +747,8 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                       <button key={a.id} onClick={() => setSelectedAspectRatio(a.id)}
                         className="flex-1 px-2 py-2 rounded-xl text-center transition-all"
                         style={{
-                          background: selectedAspectRatio === a.id ? 'rgba(255,107,157,.08)' : 'rgba(255,255,255,.02)',
-                          border: `1px solid ${selectedAspectRatio === a.id ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}`,
+                          background: selectedAspectRatio === a.id ? 'var(--joi-pink-soft)' : 'transparent',
+                          border: `1px solid ${selectedAspectRatio === a.id ? 'var(--joi-border-h)' : 'var(--joi-border)'}`,
                         }}>
                         <div className="text-sm mb-0.5">{a.icon}</div>
                         <div className="text-[10px] font-mono font-bold" style={{ color: selectedAspectRatio === a.id ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{a.label}</div>
@@ -617,7 +758,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                   </div>
                 </div>
 
-                <div className="p-3" style={{ borderTop: '1px solid rgba(255,255,255,.04)' }}>
+                <div className="p-3" style={{ borderTop: '1px solid var(--joi-border)' }}>
                   <div className="joi-label mb-2 px-1">Resolución</div>
                   <div className="flex gap-2">
                     {[
@@ -628,8 +769,8 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                       <button key={r.id} onClick={() => setSelectedResolution(r.id)}
                         className="flex-1 px-3 py-2 rounded-xl text-center transition-all"
                         style={{
-                          background: selectedResolution === r.id ? 'rgba(255,107,157,.08)' : 'rgba(255,255,255,.02)',
-                          border: `1px solid ${selectedResolution === r.id ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}`,
+                          background: selectedResolution === r.id ? 'var(--joi-pink-soft)' : 'transparent',
+                          border: `1px solid ${selectedResolution === r.id ? 'var(--joi-border-h)' : 'var(--joi-border)'}`,
                         }}>
                         <div className="text-[11px] font-mono font-bold" style={{ color: selectedResolution === r.id ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{r.label}</div>
                         <div className="text-[8px] font-mono" style={{ color: 'var(--joi-text-3)' }}>{r.desc}</div>
@@ -643,7 +784,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
         </div>
 
         {/* Preset Manager */}
-        <div className="px-5 py-2.5 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,.03)' }}>
+        <div className="px-5 py-2.5 shrink-0" style={{ borderBottom: '1px solid var(--joi-border)' }}>
           <PresetManager
             currentSettings={{
               prompt: scenario,
@@ -658,11 +799,35 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
           />
         </div>
 
+        {/* ── Quick Style Presets ── */}
+        <div className="px-5 py-3 shrink-0" style={{ borderBottom: '1px solid var(--joi-border)' }}>
+          <div className="joi-label mb-2.5">Estilo Rápido</div>
+          <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+            {QUICK_STYLE_PRESETS.map(preset => (
+              <button
+                key={preset.id}
+                onClick={() => applyQuickPreset(preset)}
+                className="shrink-0 flex flex-col items-center gap-1 px-3 py-2.5 rounded-xl transition-all"
+                style={{
+                  background: activeQuickPreset === preset.id ? 'var(--joi-bg-3)' : 'transparent',
+                  border: `1px solid ${activeQuickPreset === preset.id ? 'var(--joi-border-h)' : 'var(--joi-border)'}`,
+                  color: activeQuickPreset === preset.id ? 'var(--joi-pink)' : 'var(--joi-text-2)',
+                  minWidth: 70,
+                }}
+              >
+                <span className="text-lg">{preset.emoji}</span>
+                <span className="text-[11px] font-semibold">{preset.label}</span>
+                <span className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>{preset.desc}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Scrollable accordion */}
         <div className="flex-1 overflow-y-auto joi-scroll">
 
           {/* ── IDENTITY ── */}
-          <AccordionSection title="Identidad" icon="👤" isOpen={!!openSections.identity} onToggle={() => toggleSection('identity')}>
+          <AccordionSection title="Identidad" icon="👤" isOpen={!!openSections.identity} onToggle={() => toggleSection('identity')} active={!!selectedCharId}>
             <div className="space-y-4">
               <div>
                 <div className="text-[11px] font-medium mb-2" style={{ color: 'var(--joi-text-2)' }}>Personaje</div>
@@ -671,19 +836,19 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                     <div className="space-y-2 w-full">
                       <div className="text-[12px] py-3 px-4 rounded-xl w-full text-center" style={{
                         color: 'var(--joi-text-3)',
-                        background: 'rgba(255,255,255,.02)',
-                        border: '1px dashed rgba(255,255,255,.06)',
+                        background: 'transparent',
+                        border: '1px dashed var(--joi-border)',
                       }}>Aún no hay personajes — <span style={{ color: 'var(--joi-pink)', cursor: 'pointer' }} onClick={() => onNav?.('create')}>crea uno</span></div>
                       <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{
-                        background: 'rgba(167,139,250,.05)',
-                        border: '1px dashed rgba(167,139,250,.25)',
+                        background: 'var(--joi-pink-soft)',
+                        border: '1px dashed var(--joi-border-h)',
                       }}>
                         <div className="flex-1 min-w-0">
                           <p className="text-[11px] font-medium" style={{ color: 'var(--joi-text-1)' }}>O sube una foto</p>
                           <p className="text-[9px] mt-0.5" style={{ color: 'var(--joi-text-3)' }}>Pasa directo a las herramientas de edición</p>
                         </div>
                         <label className="shrink-0 cursor-pointer px-3 py-1.5 rounded-lg text-[11px] font-semibold"
-                          style={{ background: 'linear-gradient(135deg, #FF6B9D, #A78BFA)', color: 'white' }}>
+                          style={{ background: 'linear-gradient(135deg, #6366F1, #818CF8)', color: 'white' }}>
                           Subir
                           <input ref={byoInputRef} type="file" accept="image/*" className="hidden" onChange={handleByoUpload} />
                         </label>
@@ -694,18 +859,18 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                       <button key={c.id} onClick={() => handleSelectCharacter(c.id)}
                         className="px-3.5 py-2.5 rounded-xl text-[12px] font-medium flex items-center gap-2 transition-all"
                         style={{
-                          background: selectedCharId === c.id ? 'rgba(255,107,157,.10)' : 'rgba(255,255,255,.02)',
-                          border: `1px solid ${selectedCharId === c.id ? 'rgba(255,107,157,.25)' : 'rgba(255,255,255,.06)'}`,
+                          background: selectedCharId === c.id ? 'var(--joi-pink-soft)' : 'transparent',
+                          border: `1px solid ${selectedCharId === c.id ? 'var(--joi-border-h)' : 'var(--joi-border)'}`,
                           color: selectedCharId === c.id ? 'var(--joi-pink)' : 'var(--joi-text-2)',
-                          boxShadow: selectedCharId === c.id ? '0 0 16px rgba(255,107,157,.08)' : 'none',
+                          boxShadow: 'none',
                         }}>
                         {c.thumbnail ? (
                           <img src={c.thumbnail} className="w-6 h-6 rounded-full object-cover" alt="" style={{
-                            border: selectedCharId === c.id ? '1.5px solid rgba(255,107,157,.4)' : '1.5px solid rgba(255,255,255,.08)',
+                            border: selectedCharId === c.id ? '1.5px solid var(--joi-border-h)' : '1.5px solid var(--joi-border)',
                           }} />
                         ) : (
                           <span className="w-6 h-6 rounded-full flex items-center justify-center text-[11px]" style={{
-                            background: selectedCharId === c.id ? 'rgba(255,107,157,.15)' : 'rgba(255,255,255,.06)',
+                            background: selectedCharId === c.id ? 'var(--joi-pink-soft)' : 'var(--joi-border)',
                           }}>{c.name[0]}</span>
                         )}
                         {c.name.split(' ')[0]}
@@ -725,7 +890,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                   <div className="flex gap-2 flex-wrap mb-2">
                     {charRefUrls.map((url, i) => (
                       <div key={i} className="relative w-14 h-14 rounded-xl overflow-hidden"
-                        style={{ border: '1px solid rgba(255,107,157,.2)', opacity: 0.8 }}>
+                        style={{ border: '1px solid var(--joi-border-h)', opacity: 0.8 }}>
                         <img src={url} className="w-full h-full object-cover" alt="" />
                         <div className="absolute bottom-0 left-0 right-0 text-center text-[7px] py-0.5"
                           style={{ background: 'rgba(0,0,0,.6)', color: 'var(--joi-pink)' }}>ref</div>
@@ -736,7 +901,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                 <div className="flex gap-2.5">
                   {faceRefs.map((ref, i) => (
                     <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden group"
-                      style={{ border: '1px solid rgba(255,107,157,.25)', boxShadow: '0 0 12px rgba(255,107,157,.08)' }}>
+                      style={{ border: '1px solid var(--joi-border-h)', boxShadow: '0 0 12px var(--joi-pink-soft)' }}>
                       <img src={ref.preview} className="w-full h-full object-cover" alt="" />
                       <button onClick={() => { URL.revokeObjectURL(ref.preview); setFaceRefs(prev => prev.filter((_, j) => j !== i)) }}
                         className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[9px] opacity-0 group-hover:opacity-100 transition-opacity"
@@ -746,7 +911,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                   {faceRefs.length < 3 && (
                     <button onClick={() => faceInputRef.current?.click()}
                       className="w-16 h-16 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all"
-                      style={{ background: 'rgba(255,255,255,.02)', border: '1px dashed rgba(255,255,255,.08)' }}>
+                      style={{ background: 'transparent', border: '1px dashed var(--joi-border)' }}>
                       <span className="text-sm" style={{ color: 'var(--joi-pink)', opacity: 0.6 }}>{'\u002B'}</span>
                       <span className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>Rostro</span>
                     </button>
@@ -772,120 +937,8 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
             </div>
           </AccordionSection>
 
-          {/* ── OUTFIT ── */}
-          <AccordionSection title="Outfit" icon="👔" isOpen={!!openSections.outfit} onToggle={() => toggleSection('outfit')}>
-            <div className="space-y-3">
-              <div className="flex gap-3 items-start">
-                <ImageSlot
-                  label="Outfit"
-                  file={outfitRef?.file || null}
-                  preview={outfitRef?.preview || null}
-                  onUpload={f => setOutfitRef({ file: f, preview: URL.createObjectURL(f) })}
-                  onRemove={() => { if (outfitRef) URL.revokeObjectURL(outfitRef.preview); setOutfitRef(null) }}
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="text-[11px] font-medium mb-1.5" style={{ color: 'var(--joi-text-2)' }}>
-                    {outfitRef ? 'Outfit desde imagen' : 'Descripción'}
-                  </div>
-                  {outfitRef ? (
-                    <div className="text-[11px] p-3 rounded-xl" style={{
-                      background: 'rgba(255,107,157,.04)',
-                      color: 'var(--joi-text-2)',
-                      border: '1px solid rgba(255,107,157,.08)',
-                    }}>
-                      Imagen de referencia de ropa — el modelo usará esta prenda como guía
-                    </div>
-                  ) : (
-                    <textarea
-                      rows={2}
-                      placeholder="ej. Chaqueta de cuero negra, camiseta blanca..."
-                      className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none resize-none transition-colors"
-                      style={joiInputStyle(!!outfitDescription)}
-                      value={outfitDescription}
-                      onChange={e => setOutfitDescription(e.target.value)}
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-          </AccordionSection>
-
-          {/* ── POSE ── */}
-          <AccordionSection title="Pose" icon="🧍" isOpen={!!openSections.pose} onToggle={() => toggleSection('pose')}>
-            <div className="space-y-3">
-              <div className="flex gap-3 items-start">
-                <div className="flex flex-col gap-1.5">
-                  <ImageSlot
-                    label="Pose"
-                    file={poseRef?.file || null}
-                    preview={poseRef?.preview || null}
-                    onUpload={f => setPoseRef({ file: f, preview: URL.createObjectURL(f) })}
-                    onRemove={() => { if (poseRef) URL.revokeObjectURL(poseRef.preview); setPoseRef(null) }}
-                  />
-                  {poseRef && (
-                    <div className="flex items-center gap-1.5 mt-1.5">
-                      <span className="text-[9px] font-mono px-2 py-0.5 rounded-md"
-                        style={{
-                          background: 'rgba(255,107,157,.08)',
-                          color: 'var(--joi-pink)',
-                          border: '1px solid rgba(255,107,157,.12)',
-                        }}>
-                        +5cr · ControlNet
-                      </span>
-                      <span className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>conditioning de pose activo</span>
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex gap-2 flex-wrap">
-                    {POSE_OPTIONS.map(p => (
-                      <OptionChip key={p.id} option={p} selected={selectedPose === p.id && !customPose} onClick={() => { setSelectedPose(p.id); setCustomPose('') }} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <input type="text" placeholder="O describe una pose personalizada..."
-                className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none transition-colors"
-                style={joiInputStyle(!!customPose)}
-                value={customPose}
-                onChange={e => setCustomPose(e.target.value)} />
-            </div>
-          </AccordionSection>
-
-          {/* ── CAMERA ── (Advanced) */}
-          <AccordionSection title="Cámara" icon="📷" isOpen={!!openSections.camera} onToggle={() => toggleSection('camera')}>
-            <div className="space-y-3">
-              <div className="flex gap-2 flex-wrap">
-                {CAMERA_OPTIONS.map(c => (
-                  <OptionChip key={c.id} option={c} selected={selectedCamera === c.id && !customCamera} onClick={() => { setSelectedCamera(c.id); setCustomCamera('') }} />
-                ))}
-              </div>
-              <input type="text" placeholder="O describe una cámara personalizada..."
-                className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none transition-colors"
-                style={joiInputStyle(!!customCamera)}
-                value={customCamera}
-                onChange={e => setCustomCamera(e.target.value)} />
-            </div>
-          </AccordionSection>
-
-          {/* ── LIGHTING ── (Advanced) */}
-          <AccordionSection title="Iluminación" icon="💡" isOpen={!!openSections.lighting} onToggle={() => toggleSection('lighting')}>
-            <div className="space-y-3">
-              <div className="flex gap-2 flex-wrap">
-                {LIGHTING_OPTIONS.map(l => (
-                  <OptionChip key={l.id} option={l} selected={selectedLighting === l.id && !customLighting} onClick={() => { setSelectedLighting(l.id); setCustomLighting('') }} />
-                ))}
-              </div>
-              <input type="text" placeholder="O describe una iluminación personalizada..."
-                className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none transition-colors"
-                style={joiInputStyle(!!customLighting)}
-                value={customLighting}
-                onChange={e => setCustomLighting(e.target.value)} />
-            </div>
-          </AccordionSection>
-
           {/* ── SCENARIO ── */}
-          <AccordionSection title="Escenario" icon="🎬" isOpen={!!openSections.scenario} onToggle={() => toggleSection('scenario')}>
+          <AccordionSection title="Escenario" icon="🎬" isOpen={!!openSections.scenario} onToggle={() => toggleSection('scenario')} active={!!scenario.trim()}>
             <div className="space-y-4">
               <textarea
                 rows={3}
@@ -921,8 +974,8 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                     }}
                     className="px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all"
                     style={{
-                      background: 'rgba(255,107,157,.08)',
-                      border: '1px solid rgba(255,107,157,.15)',
+                      background: 'var(--joi-pink-soft)',
+                      border: '1px solid var(--joi-border-h)',
                       color: 'var(--joi-pink)',
                       opacity: enhancingScenario ? 0.4 : 1,
                     }}>
@@ -938,10 +991,10 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                     <button key={ins.id} onClick={() => setScenario(ins.scene)}
                       className="px-3 py-2.5 rounded-xl text-[11px] font-medium flex items-center gap-2 transition-all text-left"
                       style={{
-                        background: scenario === ins.scene ? 'rgba(255,107,157,.10)' : 'rgba(255,255,255,.02)',
-                        border: `1px solid ${scenario === ins.scene ? 'rgba(255,107,157,.25)' : 'rgba(255,255,255,.06)'}`,
+                        background: scenario === ins.scene ? 'var(--joi-pink-soft)' : 'transparent',
+                        border: `1px solid ${scenario === ins.scene ? 'var(--joi-border-h)' : 'var(--joi-border)'}`,
                         color: scenario === ins.scene ? 'var(--joi-pink)' : 'var(--joi-text-2)',
-                        boxShadow: scenario === ins.scene ? '0 0 12px rgba(255,107,157,.06)' : 'none',
+                        boxShadow: 'none',
                       }}>
                       <span className="text-base shrink-0">{ins.emoji}</span>
                       <span className="truncate">{ins.label}</span>
@@ -979,6 +1032,118 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
             </div>
           </AccordionSection>
 
+          {/* ── OUTFIT ── */}
+          <AccordionSection title="Outfit" icon="👔" isOpen={!!openSections.outfit} onToggle={() => toggleSection('outfit')} active={!!outfitRef || !!outfitDescription.trim()}>
+            <div className="space-y-3">
+              <div className="flex gap-3 items-start">
+                <ImageSlot
+                  label="Outfit"
+                  file={outfitRef?.file || null}
+                  preview={outfitRef?.preview || null}
+                  onUpload={f => setOutfitRef({ file: f, preview: URL.createObjectURL(f) })}
+                  onRemove={() => { if (outfitRef) URL.revokeObjectURL(outfitRef.preview); setOutfitRef(null) }}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="text-[11px] font-medium mb-1.5" style={{ color: 'var(--joi-text-2)' }}>
+                    {outfitRef ? 'Outfit desde imagen' : 'Descripción'}
+                  </div>
+                  {outfitRef ? (
+                    <div className="text-[11px] p-3 rounded-xl" style={{
+                      background: 'var(--joi-bg-2)',
+                      color: 'var(--joi-text-2)',
+                      border: '1px solid var(--joi-border)',
+                    }}>
+                      Imagen de referencia de ropa — el modelo usará esta prenda como guía
+                    </div>
+                  ) : (
+                    <textarea
+                      rows={2}
+                      placeholder="ej. Chaqueta de cuero negra, camiseta blanca..."
+                      className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none resize-none transition-colors"
+                      style={joiInputStyle(!!outfitDescription)}
+                      value={outfitDescription}
+                      onChange={e => setOutfitDescription(e.target.value)}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          </AccordionSection>
+
+          {/* ── POSE ── */}
+          <AccordionSection title="Pose" icon="🧍" isOpen={!!openSections.pose} onToggle={() => toggleSection('pose')} active={!!selectedPose || !!customPose.trim() || !!poseRef}>
+            <div className="space-y-3">
+              <div className="flex gap-3 items-start">
+                <div className="flex flex-col gap-1.5">
+                  <ImageSlot
+                    label="Pose"
+                    file={poseRef?.file || null}
+                    preview={poseRef?.preview || null}
+                    onUpload={f => setPoseRef({ file: f, preview: URL.createObjectURL(f) })}
+                    onRemove={() => { if (poseRef) URL.revokeObjectURL(poseRef.preview); setPoseRef(null) }}
+                  />
+                  {poseRef && (
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <span className="text-[9px] font-mono px-2 py-0.5 rounded-md"
+                        style={{
+                          background: 'var(--joi-pink-soft)',
+                          color: 'var(--joi-pink)',
+                          border: '1px solid var(--joi-border)',
+                        }}>
+                        +5cr · ControlNet
+                      </span>
+                      <span className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>conditioning de pose activo</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex gap-2 flex-wrap">
+                    {POSE_OPTIONS.map(p => (
+                      <OptionChip key={p.id} option={p} selected={selectedPose === p.id && !customPose} onClick={() => { setSelectedPose(p.id); setCustomPose('') }} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <input type="text" placeholder="O describe una pose personalizada..."
+                className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none transition-colors"
+                style={joiInputStyle(!!customPose)}
+                value={customPose}
+                onChange={e => setCustomPose(e.target.value)} />
+            </div>
+          </AccordionSection>
+
+          {/* ── CAMERA ── (Advanced) */}
+          <AccordionSection title="Cámara" icon="📷" isOpen={!!openSections.camera} onToggle={() => toggleSection('camera')} active={!!selectedCamera || !!customCamera.trim()}>
+            <div className="space-y-3">
+              <div className="flex gap-2 flex-wrap">
+                {CAMERA_OPTIONS.map(c => (
+                  <OptionChip key={c.id} option={c} selected={selectedCamera === c.id && !customCamera} onClick={() => { setSelectedCamera(c.id); setCustomCamera('') }} />
+                ))}
+              </div>
+              <input type="text" placeholder="O describe una cámara personalizada..."
+                className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none transition-colors"
+                style={joiInputStyle(!!customCamera)}
+                value={customCamera}
+                onChange={e => setCustomCamera(e.target.value)} />
+            </div>
+          </AccordionSection>
+
+          {/* ── LIGHTING ── (Advanced) */}
+          <AccordionSection title="Iluminación" icon="💡" isOpen={!!openSections.lighting} onToggle={() => toggleSection('lighting')} active={!!selectedLighting || !!customLighting.trim()}>
+            <div className="space-y-3">
+              <div className="flex gap-2 flex-wrap">
+                {LIGHTING_OPTIONS.map(l => (
+                  <OptionChip key={l.id} option={l} selected={selectedLighting === l.id && !customLighting} onClick={() => { setSelectedLighting(l.id); setCustomLighting('') }} />
+                ))}
+              </div>
+              <input type="text" placeholder="O describe una iluminación personalizada..."
+                className="w-full px-3.5 py-2.5 rounded-xl text-[12px] border outline-none transition-colors"
+                style={joiInputStyle(!!customLighting)}
+                value={customLighting}
+                onChange={e => setCustomLighting(e.target.value)} />
+            </div>
+          </AccordionSection>
+
           {/* ── ENHANCERS ── (Advanced) */}
           <AccordionSection title="Mejoras" icon="✨" badge={selectedEnhancers.size > 0 ? `${selectedEnhancers.size}` : undefined} isOpen={!!openSections.enhancers} onToggle={() => toggleSection('enhancers')}>
             <div className="space-y-3">
@@ -996,7 +1161,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
           </AccordionSection>
 
           {/* ── ADVANCED: Negative Prompt & Image Boost ── */}
-          <div style={{ borderBottom: '1px solid rgba(255,255,255,.03)' }}>
+          <div style={{ borderBottom: '1px solid var(--joi-border)' }}>
             <button onClick={() => setAdvancedOpen(prev => !prev)}
               className="w-full px-5 py-3 flex items-center gap-2.5 group transition-colors"
               style={{ color: 'var(--joi-text-2)' }}>
@@ -1025,21 +1190,21 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                   <button onClick={() => setImageBoostOn(prev => !prev)}
                     className="relative w-9 h-5 rounded-full transition-all"
                     style={{
-                      background: imageBoostOn ? 'rgba(255,107,157,.35)' : 'rgba(255,255,255,.08)',
-                      border: `1px solid ${imageBoostOn ? 'rgba(255,107,157,.4)' : 'rgba(255,255,255,.06)'}`,
+                      background: imageBoostOn ? 'var(--joi-border-h)' : 'var(--joi-border)',
+                      border: `1px solid ${imageBoostOn ? 'var(--joi-border-h)' : 'var(--joi-border)'}`,
                     }}>
                     <div className="absolute top-0.5 w-3.5 h-3.5 rounded-full transition-all"
                       style={{
                         left: imageBoostOn ? '18px' : '2px',
                         background: imageBoostOn ? 'var(--joi-pink)' : 'rgba(255,255,255,.25)',
-                        boxShadow: imageBoostOn ? '0 0 8px rgba(255,107,157,.4)' : 'none',
+                        boxShadow: imageBoostOn ? '0 0 8px var(--joi-border-h)' : 'none',
                       }} />
                   </button>
                 </div>
                 {imageBoostOn && (
                   <div className="text-[9px] font-mono px-3 py-1.5 rounded-lg" style={{
-                    background: 'rgba(255,107,157,.04)',
-                    border: '1px solid rgba(255,107,157,.08)',
+                    background: 'var(--joi-bg-2)',
+                    border: '1px solid var(--joi-border)',
                     color: 'var(--joi-text-3)',
                   }}>{IMAGE_BOOST_KEYWORDS}</div>
                 )}
@@ -1063,9 +1228,38 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
 
         {/* ── Bottom: images + generate ── */}
         <div className="px-5 py-4 pb-20 lg:pb-4 shrink-0 space-y-3" style={{
-          borderTop: '1px solid rgba(255,255,255,.04)',
-          background: 'linear-gradient(to top, var(--joi-bg-1), rgba(14,12,20,.95))',
+          borderTop: '1px solid var(--joi-border)',
+          background: 'var(--joi-bg-1)',
         }}>
+          {/* Config summary */}
+          {(selectedChar || scenario.trim() || outfitRef || selectedPose) && (
+            <div className="flex gap-1.5 flex-wrap">
+              {selectedChar && (
+                <span className="text-[9px] font-mono px-2 py-0.5 rounded-md"
+                  style={{ background: 'var(--joi-pink-soft)', color: 'var(--joi-pink)', border: '1px solid var(--joi-border)' }}>
+                  👤 {selectedChar.name.split(' ')[0]}
+                </span>
+              )}
+              {scenario.trim() && (
+                <span className="text-[9px] font-mono px-2 py-0.5 rounded-md max-w-[140px] truncate"
+                  style={{ background: 'var(--joi-pink-soft)', color: 'var(--joi-violet)', border: '1px solid var(--joi-border)' }}>
+                  🎬 {scenario.length > 20 ? scenario.slice(0, 20) + '…' : scenario}
+                </span>
+              )}
+              {outfitRef && (
+                <span className="text-[9px] font-mono px-2 py-0.5 rounded-md"
+                  style={{ background: 'var(--joi-bg-2)', color: 'var(--joi-text-3)', border: '1px solid var(--joi-border)' }}>
+                  👔 outfit ref
+                </span>
+              )}
+              {(selectedPose || customPose.trim()) && (
+                <span className="text-[9px] font-mono px-2 py-0.5 rounded-md"
+                  style={{ background: 'var(--joi-bg-2)', color: 'var(--joi-text-3)', border: '1px solid var(--joi-border)' }}>
+                  🧍 pose
+                </span>
+              )}
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <div className="text-[11px] font-medium" style={{ color: 'var(--joi-text-2)' }}>Imágenes</div>
             <div className="flex gap-1.5 flex-1">
@@ -1073,16 +1267,16 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                 <button key={n} onClick={() => setNumberOfImages(n)}
                   className="flex-1 py-2 rounded-lg text-[12px] font-medium transition-all"
                   style={{
-                    background: numberOfImages === n ? 'rgba(255,107,157,.10)' : 'rgba(255,255,255,.03)',
-                    border: `1px solid ${numberOfImages === n ? 'rgba(255,107,157,.25)' : 'rgba(255,255,255,.05)'}`,
+                    background: numberOfImages === n ? 'var(--joi-pink-soft)' : 'transparent',
+                    border: `1px solid ${numberOfImages === n ? 'var(--joi-border-h)' : 'var(--joi-border)'}`,
                     color: numberOfImages === n ? 'var(--joi-pink)' : 'var(--joi-text-3)',
                   }}>{n}</button>
               ))}
             </div>
             <span className="text-[10px] font-mono shrink-0 px-2 py-1 rounded-lg" style={{
-              background: 'rgba(255,107,157,.06)',
+              background: 'var(--joi-pink-soft)',
               color: 'var(--joi-pink)',
-              border: '1px solid rgba(255,107,157,.1)',
+              border: '1px solid var(--joi-border)',
             }}>
               {numberOfImages * costPerShot}cr
             </span>
@@ -1093,7 +1287,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
             style={{
               opacity: (generating || (!selectedChar && faceRefs.length === 0)) ? 0.4 : 1,
               boxShadow: !(generating || (!selectedChar && faceRefs.length === 0))
-                ? '0 4px 30px rgba(255,107,157,.25), 0 0 50px rgba(208,72,176,.1)'
+                ? '0 4px 30px var(--joi-border-h)'
                 : 'none',
             }}>
             {generating ? (
@@ -1107,10 +1301,10 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
       </div>
 
       {/* ── Center Canvas ── */}
-      <div className="flex-1 flex flex-col joi-mesh" style={{ background: 'var(--joi-bg-0)' }}>
+      <div className="flex-1 min-h-[50vh] lg:min-h-0 flex flex-col joi-mesh pb-20 lg:pb-0" style={{ background: 'var(--joi-bg-0)' }}>
         {/* Top bar */}
         <div className="h-11 flex items-center px-5 gap-1.5 shrink-0" style={{
-          borderBottom: '1px solid rgba(255,255,255,.03)',
+          borderBottom: '1px solid var(--joi-border)',
           background: 'var(--joi-bg-1)',
         }}>
           <span className="joi-label">
@@ -1122,16 +1316,32 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
           </span>
         </div>
 
-        {/* Canvas area */}
-        <div className="flex-1 flex items-center justify-center p-8 relative">
-          {/* Atmospheric orbs */}
-          <div className="joi-orb" style={{ width: 300, height: 300, background: 'rgba(255,107,157,0.03)', top: '10%', right: '15%' }} />
-          <div className="joi-orb" style={{ width: 200, height: 200, background: 'rgba(208,72,176,0.025)', bottom: '15%', left: '20%' }} />
+        {/* Progress bar */}
+        {generating && (
+          <div className="h-0.5 shrink-0" style={{ background: 'var(--joi-border)' }}>
+            <div className="h-full transition-all duration-500"
+              style={{
+                width: `${Math.max(5, progress)}%`,
+                background: 'linear-gradient(90deg, var(--joi-pink), var(--joi-violet))',
+                boxShadow: '0 0 8px var(--joi-border-h)',
+              }} />
+          </div>
+        )}
 
-          <div className="w-[520px] h-[520px] rounded-2xl relative overflow-hidden joi-glass"
+        {/* Canvas area */}
+        <div className="flex-1 flex items-center justify-center p-4 lg:p-8 relative">
+          {/* Atmospheric orbs */}
+          <div className="joi-orb" style={{ width: 300, height: 300, background: 'var(--joi-pink-soft)', top: '10%', right: '15%' }} />
+          <div className="joi-orb" style={{ width: 200, height: 200, background: 'var(--joi-pink-soft)', bottom: '15%', left: '20%' }} />
+
+          <div className="w-full flex items-center justify-center">
+          <div className="rounded-2xl relative overflow-hidden joi-glass transition-all duration-300"
             style={{
+              width: '100%',
+              maxWidth: canvasSize.w,
+              aspectRatio: `${canvasSize.w} / ${canvasSize.h}`,
               boxShadow: generatedImages.length > 0
-                ? '0 8px 60px rgba(255,107,157,.1), 0 0 100px rgba(208,72,176,.05)'
+                ? '0 8px 60px var(--joi-pink-soft)'
                 : '0 4px 30px rgba(0,0,0,.3)',
             }}>
 
@@ -1143,16 +1353,16 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                   style={{
                     background: 'rgba(8,7,12,.65)',
                     backdropFilter: 'blur(16px)',
-                    border: '1px solid rgba(255,107,157,.15)',
+                    border: '1px solid var(--joi-border)',
                     boxShadow: '0 4px 24px rgba(0,0,0,.4)',
                   }}>
                   {onEditImage && (
                     <button onClick={() => onEditImage(generatedImages[selectedResult])}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all hover:scale-[1.04]"
                       style={{
-                        background: 'rgba(255,107,157,.12)',
+                        background: 'var(--joi-pink-soft)',
                         color: 'var(--joi-pink)',
-                        border: '1px solid rgba(255,107,157,.18)',
+                        border: '1px solid var(--joi-border-h)',
                       }}>
                       <span>✨</span> Editar
                     </button>
@@ -1161,9 +1371,9 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                     <button onClick={() => onNav('studio')}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all hover:scale-[1.04]"
                       style={{
-                        background: 'rgba(208,72,176,.10)',
-                        color: 'rgb(208,140,220)',
-                        border: '1px solid rgba(208,72,176,.18)',
+                        background: 'var(--joi-pink-soft)',
+                        color: 'var(--joi-violet)',
+                        border: '1px solid var(--joi-border-h)',
                       }}>
                       <span>🎬</span> Crear Reel
                     </button>
@@ -1183,12 +1393,12 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
               </>
             ) : (
               <div className="absolute inset-0" style={{
-                background: 'linear-gradient(135deg, rgba(255,107,157,.04) 0%, var(--joi-bg-1) 50%, rgba(208,72,176,.03) 100%)'
+                background: 'var(--joi-bg-1)'
               }}>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center">
                     <div className="w-16 h-16 rounded-2xl mx-auto mb-3 flex items-center justify-center joi-breathe"
-                      style={{ background: 'rgba(255,107,157,.06)', border: '1px solid rgba(255,107,157,.1)' }}>
+                      style={{ background: 'var(--joi-pink-soft)', border: '1px solid var(--joi-border)' }}>
                       <span className="text-2xl" style={{ opacity: 0.6 }}>{'\u2726'}</span>
                     </div>
                     <p className="joi-heading text-[13px]" style={{ color: 'var(--joi-text-2)' }}>Tu foto principal aparecerá aquí</p>
@@ -1201,17 +1411,18 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
             {scenario && (
               <div className="absolute top-3 left-3 right-3 flex flex-wrap gap-1.5">
                 <span className="px-2.5 py-1 rounded-lg text-[9px] font-mono backdrop-blur-xl"
-                  style={{ background: 'rgba(0,0,0,.4)', color: 'var(--joi-text-1)', border: '1px solid rgba(255,255,255,.04)' }}>
+                  style={{ background: 'rgba(0,0,0,.4)', color: 'var(--joi-text-1)', border: '1px solid var(--joi-border)' }}>
                   {scenario.length > 40 ? scenario.slice(0, 40) + '...' : scenario}
                 </span>
               </div>
             )}
           </div>
+          </div>
         </div>
 
         {/* Bottom filmstrip */}
         <div className="h-20 flex items-center px-5 gap-3 shrink-0" style={{
-          borderTop: '1px solid rgba(255,255,255,.03)',
+          borderTop: '1px solid var(--joi-border)',
           background: 'var(--joi-bg-1)',
         }}>
           <span className="joi-label shrink-0 mr-1">Tomas</span>
@@ -1220,18 +1431,22 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
               <div key={i} onClick={() => setSelectedResult(i)}
                 className="w-12 h-12 rounded-xl shrink-0 cursor-pointer hover:scale-105 transition-transform overflow-hidden"
                 style={{
-                  border: `2px solid ${selectedResult === i ? 'var(--joi-pink)' : 'rgba(255,255,255,.04)'}`,
-                  boxShadow: selectedResult === i ? '0 0 12px rgba(255,107,157,.15)' : 'none',
+                  border: `2px solid ${selectedResult === i ? 'var(--joi-pink)' : 'var(--joi-border)'}`,
+                  boxShadow: selectedResult === i ? '0 0 12px var(--joi-pink-soft)' : 'none',
                 }}>
                 <img src={url} className="w-full h-full object-cover" alt="" />
               </div>
             ))
           ) : (
             Array.from({ length: numberOfImages }, (_, i) => (
-              <div key={i} className="w-12 h-12 rounded-xl shrink-0"
+              <div key={i}
+                className={`w-12 h-12 rounded-xl shrink-0 overflow-hidden ${generating ? 'animate-pulse' : ''}`}
                 style={{
-                  background: 'linear-gradient(135deg, rgba(255,107,157,.04), rgba(208,72,176,.02))',
-                  border: '1px solid rgba(255,255,255,.04)',
+                  background: generating
+                    ? 'var(--joi-pink-soft)'
+                    : 'var(--joi-bg-2)',
+                  border: `1px solid ${generating ? 'var(--joi-border-h)' : 'var(--joi-border)'}`,
+                  animationDelay: generating ? `${i * 200}ms` : '0ms',
                 }} />
             ))
           )}
@@ -1241,8 +1456,8 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
                 <button onClick={() => onEditImage(generatedImages[selectedResult])}
                   className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all hover:scale-[1.02]"
                   style={{
-                    background: 'linear-gradient(135deg, rgba(255,107,157,.12), rgba(208,72,176,.08))',
-                    border: '1px solid rgba(255,107,157,.18)',
+                    background: 'var(--joi-pink-soft)',
+                    border: '1px solid var(--joi-border-h)',
                     color: 'var(--joi-pink)',
                   }}>
                   <span>✨</span> Editar

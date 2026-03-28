@@ -31,6 +31,9 @@ export interface GalleryItem {
   type: 'create' | 'edit' | 'video' | 'session';
   characterId?: string;
 
+  // Workflow status
+  workflowStatus?: 'borrador' | 'editado' | 'aprobado' | 'publicado';
+
   // Persistence fields (from GeneratedContent)
   favorite?: boolean;
   tags?: string[];
@@ -65,6 +68,7 @@ const toGeneratedContent = (item: GalleryItem): GeneratedContent => ({
   openaiModel: item.openaiModel,
   ideogramModel: item.ideogramModel,
   characterId: item.characterId,
+  workflowStatus: item.workflowStatus,
 });
 
 /** Convert GeneratedContent → GalleryItem when loading from storage. */
@@ -83,6 +87,7 @@ const fromGeneratedContent = (gc: GeneratedContent): GalleryItem => ({
   openaiModel: gc.openaiModel,
   ideogramModel: gc.ideogramModel,
   characterId: gc.characterId,
+  workflowStatus: gc.workflowStatus,
 });
 
 // ─────────────────────────────────────────────
@@ -126,6 +131,7 @@ interface GalleryState {
   hydrate: (userId?: string) => Promise<void>;
   addItems: (items: GalleryItem[]) => void;
   removeItem: (id: string) => void;
+  removeItems: (ids: string[]) => void;
   toggleFavorite: (id: string) => void;
   updateItem: (id: string, updates: Partial<GalleryItem>) => void;
   setSelectedItem: (item: GalleryItem | null) => void;
@@ -229,6 +235,22 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
         console.warn('Cloud delete failed:', err),
       );
     }
+  },
+
+  removeItems: (ids) => {
+    const idSet = new Set(ids);
+    set((s) => ({ items: s.items.filter((item) => !idSet.has(item.id)) }));
+    const { _userId } = get();
+    ids.forEach((id) => {
+      deleteHistoryItem(id).catch((err) =>
+        console.warn('IndexedDB bulk delete failed:', err),
+      );
+      if (_userId) {
+        deleteGalleryItem(id, _userId).catch((err) =>
+          console.warn('Cloud bulk delete failed:', err),
+        );
+      }
+    });
   },
 
   // ─── Toggle Favorite ───────────────────────

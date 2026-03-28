@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIST Studio - UX V3 Editorial</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #F3F4F6;
+            --card: rgba(255,255,255,0.95);
+            --card-solid: #FFFFFF;
+            --accent: #1A1A1A;
+            --text-main: #1A1A1A;
+            --text-sec: #555555;
+            --text-mut: #999999;
+            --border: rgba(0,0,0,0.06);
+            --shadow: 0 8px 32px rgba(0,0,0,0.03);
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.02);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg);
+            color: var(--text-main);
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            gap: 40px;
+            padding: 40px;
+            overflow-x: auto;
+        }
+
+        h1, h2, h3, .serif { font-family: 'Instrument Serif', serif; font-weight: 400; color: var(--accent); }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        .phase-container {
+            display: flex;
+            min-width: 900px;
+            height: calc(100vh - 80px);
+            position: relative;
+        }
+        .phase-title { position: absolute; top: -30px; left: 0; font-family: 'Instrument Serif', serif; font-size: 1.5rem; color: var(--text-sec); }
+
+        .panel-left {
+            width: 360px;
+            background: var(--card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: var(--shadow);
+            z-index: 10;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .label { font-size: 0.75rem; font-weight: 600; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; display: block; }
+        
+        /* Toggles & Pills */
+        .toggle-switch { display: flex; background: var(--bg); border-radius: 12px; padding: 4px; border: 1px solid var(--border); }
+        .toggle-opt { flex: 1; text-align: center; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 500; cursor: pointer; color: var(--text-sec); transition: all 0.2s; }
+        .toggle-opt.active { background: var(--accent); color: white; box-shadow: var(--shadow-sm); }
+        
+        .tabs { display: flex; gap: 8px; }
+        .tab-pill { padding: 6px 12px; border-radius: 16px; font-size: 0.8rem; font-weight: 500; cursor: pointer; background: var(--card-solid); border: 1px solid var(--border); color: var(--text-sec); transition: all 0.2s; }
+        .tab-pill.active { background: var(--bg); color: var(--text-main); border-color: transparent; }
+
+        .char-row { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; }
+        .char-avatar { width: 48px; height: 48px; border-radius: 50%; background: #eee; cursor: pointer; flex-shrink: 0; object-fit: cover; border: 2px solid transparent; transition: all 0.2s; }
+        .char-avatar.active { border-color: var(--accent); padding: 2px; }
+
+        .pills-row { display: flex; flex-wrap: wrap; gap: 8px; }
+        .style-pill { padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; background: white; border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; color: var(--text-sec); }
+        .style-pill:hover { border-color: #ccc; }
+        .style-pill.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+        /* Progressive Disclosure */
+        .disclosure-btn { font-size: 0.75rem; color: var(--text-mut); cursor: pointer; background: none; border: none; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; }
+        .disclosure-btn:hover { color: var(--text-main); }
+        .disclosure-content { display: none; margin-top: 12px; animation: slideDown 0.3s ease-out; }
+        .disclosure-content.open { display: block; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .text-input { width: 100%; background: #F9FAFB; border: 1px solid var(--border); border-radius: 12px; padding: 12px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; color: var(--text-main); resize: none; outline: none; }
+        .text-input:focus { border-color: #ccc; }
+
+        /* Button */
+        .cta-btn { width: 100%; background: var(--accent); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 1rem; font-weight: 500; cursor: pointer; margin-top: auto; transition: background 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .cta-btn:hover { background: #000; }
+        .cta-btn.disabled { opacity: 0.6; pointer-events: none; }
+
+        /* Phase 1 Canvas - Empty State Support */
+        .center-canvas { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; position: relative; }
+        .hero-preview { width: 420px; height: 560px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; box-shadow: var(--shadow); background-size: cover; background-position: center; transition: all 0.5s ease; }
+        
+        .hero-preview.empty {
+            background: var(--bg);
+            border: 1px dashed #ccc;
+            box-shadow: none;
+        }
+        .empty-content { display: flex; flex-direction: column; align-items: center; gap: 12px; color: var(--text-mut); transition: opacity 0.3s; }
+        .hero-preview.filled .empty-content { opacity: 0; pointer-events: none; }
+        
+        .hero-action-bar { position: absolute; bottom: 24px; background: var(--card-solid); border-radius: 20px; padding: 8px; display: flex; gap: 8px; box-shadow: var(--shadow); border: 1px solid var(--border); opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        .hero-preview.filled .hero-action-bar { opacity: 1; pointer-events: auto; }
+        
+        .action-btn { padding: 8px 16px; border-radius: 12px; font-size: 0.85rem; font-weight: 500; cursor: pointer; border: none; background: transparent; color: var(--text-main); transition: all 0.2s; }
+        .action-btn.primary { background: var(--accent); color: white; }
+
+        /* Flash animation */
+        .flash-overlay { position: fixed; inset: 0; background: white; z-index: 9999; opacity: 0; pointer-events: none; }
+        .flash-overlay.fire { animation: flash 0.6s ease-out; }
+        @keyframes flash { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+        /* Phase 2 Canvas - The Grid */
+        .contact-grid {
+            width: 100%; max-width: 600px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 80px;
+        }
+        .grid-shot {
+            aspect-ratio: 3/4; background: #E5E7EB; border-radius: 8px; position: relative; overflow: hidden; cursor: pointer; transition: all 0.2s; background-size: cover; background-position: center;
+            /* Empty state style */
+            display: flex; align-items: center; justify-content: center;
+        }
+        .grid-shot::after {
+            content: ''; position: absolute; inset: 0; border: 2px solid transparent; border-radius: 8px; transition: border 0.2s;
+        }
+        .grid-shot:hover::after { border-color: rgba(26,26,26,0.3); }
+        .grid-shot.selected::after { border-color: var(--accent); border-width: 3px; }
+        
+        .check-badge { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; background: var(--accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; opacity: 0; transform: scale(0.8); transition: all 0.2s; z-index: 5; }
+        .grid-shot.selected .check-badge { opacity: 1; transform: scale(1); }
+        
+        .shot-label { position: absolute; bottom: 6px; left: 6px; background: rgba(255,255,255,0.9); padding: 2px 6px; border-radius: 4px; font-size: 0.6rem; font-weight: 500; color: var(--accent); z-index: 5; opacity: 0; transition: opacity 0.3s; }
+        .grid-shot.revealed .shot-label { opacity: 1; }
+        .grid-shot.selected .shot-label { background: var(--accent); color: white; }
+
+        .recycle-overlay { position: absolute; inset: 0; background: rgba(243,244,246,0.8); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 10; }
+        .grid-shot.recycle .recycle-overlay { opacity: 1; }
+
+        /* Loading Spinner */
+        .spinner { width: 24px; height: 24px; border: 3px solid rgba(0,0,0,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .bottom-bar { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); width: calc(100% - 96px); max-width: 600px; background: var(--card-solid); border-radius: 16px; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 12px 48px rgba(0,0,0,0.08); border: 1px solid var(--border); z-index: 20; }
+        .solid-btn { background: var(--accent); color: white; border: none; padding: 12px 24px; border-radius: 12px; font-size: 0.9rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+    </style>
+</head>
+<body>
+    <div class="flash-overlay" id="flash"></div>
+
+    <!-- PHASE 1 -->
+    <div class="phase-container">
+        <div class="phase-title">Phase 1: Composition</div>
+        
+        <div class="panel-left">
+            <div class="toggle-switch">
+                <div class="toggle-opt active">Simple</div>
+                <div class="toggle-opt">Avanzado</div>
+            </div>
+
+            <div>
+                <span class="label">Protagonista</span>
+                <div class="char-row">
+                    <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80" class="char-avatar active">
+                    <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&q=80" class="char-avatar">
+                    <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100&q=80" class="char-avatar">
+                </div>
+            </div>
+
+            <div>
+                <span class="label">Estilo Base (Quick Style)</span>
+                <div class="pills-row">
+                    <div class="style-pill active">✨ Editorial</div>
+                    <div class="style-pill">🌿 Lifestyle</div>
+                    <div class="style-pill">🌆 Night Out</div>
+                    <div class="style-pill">📦 UGC</div>
+                </div>
+            </div>
+
+            <!-- Progressive Disclosure -->
+            <div>
+                <button class="disclosure-btn" onclick="toggleDisc('disc-scene')">+ Añadir instrucción manual de escenario</button>
+                <div class="disclosure-content" id="disc-scene">
+                    <textarea class="text-input" rows="3">editorial fashion shoot, clean studio background...</textarea>
+                </div>
+            </div>
+
+            <div>
+                <button class="disclosure-btn" onclick="toggleDisc('disc-outfit')">+ Subir vestuario específico</button>
+                <div class="disclosure-content" id="disc-outfit">
+                    <div style="display:flex;gap:8px">
+                        <textarea class="text-input" rows="2" placeholder="Describe la ropa..."></textarea>
+                        <button style="width:50px;height:50px;border-radius:12px;border:1px dashed #ccc;background:transparent;cursor:pointer;">⬆</button>
+                    </div>
+                </div>
+            </div>
+
+            <button class="cta-btn" id="btn-hero" onclick="generateHero()">
+                <span id="hero-text">⚡ Generar Hero <span class="mono">· 6cr</span></span>
+                <div class="spinner" id="hero-spin"></div>
+            </button>
+        </div>
+
+        <div class="center-canvas">
+            <div class="hero-preview empty" id="hero-box">
+                <div class="empty-content">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    <span class="serif" style="font-size: 1.2rem; color: #999;">Tu lienzo en blanco</span>
+                </div>
+                <div class="hero-action-bar">
+                    <button class="action-btn">✏️ Editar</button>
+                    <button class="action-btn primary">📸 Sesión</button>
+                </div>
+            </div>
+            <div style="display:flex;gap:12px;margin-top:24px;font-size:0.75rem;color:#999">
+                <span style="color:#1a1a1a;font-weight:600">Portrait 3:4</span>
+                <span>Square 1:1</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- PHASE 2 -->
+    <div class="phase-container">
+        <div class="phase-title">Phase 2: Darkroom Contact Sheet</div>
+        
+        <div class="panel-left">
+            <div style="display:flex;gap:12px;align-items:center;padding:12px;background:var(--bg);border-radius:12px;border:1px solid var(--border)">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80" style="width:48px;height:64px;border-radius:6px;object-fit:cover;">
+                <div>
+                    <div class="label" style="margin-bottom:2px">Imagen base</div>
+                    <div style="font-size:0.75rem; color:var(--text-sec)">Editorial fashion shoot...</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 12px">
+                <span class="label">Dirección Creativa (Vibes)</span>
+                <div class="pills-row">
+                    <!-- Toggle 'active' simulates adding/removing vibes from the generation pool -->
+                    <div class="style-pill active" onclick="toggleVibe(this, 'Glam')">Glamour <span class="mono" style="font-size:0.6rem;background:#eee;padding:2px 4px;border-radius:4px">auto</span></div>
+                    <div class="style-pill" onclick="toggleVibe(this, 'Street')">Streetwear</div>
+                    <div class="style-pill active" onclick="toggleVibe(this, 'Close')">Close-up <span class="mono" style="font-size:0.6rem;background:#eee;padding:2px 4px;border-radius:4px">auto</span></div>
+                </div>
+                <div style="font-size:0.7rem; color:var(--text-mut); margin-top:8px;">Desmarca una vibra y verás cómo las fotos recicladas se opacan en el grid.</div>
+            </div>
+
+            <button class="cta-btn" id="btn-session" onclick="runSession()">
+                📸 Disparar Sesión <span class="mono">· 36cr</span>
+            </button>
+        </div>
+
+        <div class="center-canvas">
+            <div class="contact-grid" id="c-grid">
+                <!-- 9 empty shots -->
+            </div>
+            <div class="bottom-bar">
+                <span style="font-size:0.9rem;font-weight:500;color:var(--text-sec)">Selecciona tus favoritas</span>
+                <div style="display:flex;gap:8px">
+                    <button style="background:white;border:1px solid #ccc;padding:12px;border-radius:12px;cursor:pointer">↻ Regenerar base</button>
+                    <button class="solid-btn">⬆ Upscale Seleccionadas</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Prog. Disclosure
+        function toggleDisc(id) {
+            document.getElementById(id).classList.toggle('open');
+        }
+
+        // Phase 1: Generate Hero Animation
+        function generateHero() {
+            const btn = document.getElementById('btn-hero');
+            const text = document.getElementById('hero-text');
+            const spin = document.getElementById('hero-spin');
+            const box = document.getElementById('hero-box');
+
+            text.style.display = 'none'; spin.style.display = 'block'; btn.classList.add('disabled');
+            
+            setTimeout(() => {
+                // Fire Flash
+                const flash = document.getElementById('flash');
+                flash.classList.add('fire');
+                setTimeout(() => flash.classList.remove('fire'), 600);
+
+                // Reveal
+                box.classList.remove('empty');
+                box.classList.add('filled');
+                box.style.backgroundImage = "url('https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&q=80')";
+                
+                text.style.display = 'inline-block'; spin.style.display = 'none'; btn.classList.remove('disabled');
+            }, 1000);
+        }
+
+        // Phase 2: Init empty grid
+        const grid = document.getElementById('c-grid');
+        let cells = [];
+        for(let i=0; i<9; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'grid-shot';
+            cell.onclick = () => cell.classList.toggle('selected');
+            cell.innerHTML = `
+                <div class="check-badge">✓</div>
+                <div class="shot-label">Draft</div>
+                <div class="recycle-overlay"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></div>
+            `;
+            grid.appendChild(cell);
+            cells.push(cell);
+        }
+
+        const images = [
+            'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=400&q=80',
+            'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&q=80',
+            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80',
+            'https://images.unsplash.com/photo-1542206395-9feb3edaa68d?w=400&q=80',
+            'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&q=80',
+            'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=80',
+            'https://images.unsplash.com/photo-1531123414780-f74242c2b052?w=400&q=80',
+            'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80',
+            'https://images.unsplash.com/photo-1488161628813-04466f872507?w=400&q=80'
+        ];
+
+        // Darkroom Staggered Animation
+        function runSession() {
+            const btn = document.getElementById('btn-session');
+            btn.innerHTML = '⏳ Revelando...'; btn.classList.add('disabled');
+
+            // Clear previous
+            cells.forEach(c => {
+                c.style.backgroundImage = '';
+                c.classList.remove('revealed', 'selected', 'recycle');
+            });
+
+            setTimeout(() => {
+                const flash = document.getElementById('flash');
+                flash.classList.add('fire');
+                setTimeout(() => flash.classList.remove('fire'), 600);
+
+                // Stagger reveals
+                cells.forEach((cell, i) => {
+                    setTimeout(() => {
+                        cell.style.backgroundImage = `url('${images[i]}')`;
+                        cell.querySelector('.shot-label').innerText = i%2===0 ? 'Glamour' : 'Close-up';
+                        cell.classList.add('revealed');
+                        // Fade in visually using CSS opacity trick or just relying on background load.
+                        // Here we just let it pop nicely
+                        cell.style.animation = 'slideDown 0.5s ease-out forwards';
+                    }, 200 + (i * 150)); // stagger 150ms
+                });
+
+                setTimeout(() => {
+                    btn.innerHTML = '📸 Disparar Sesión <span class="mono">· 36cr</span>'; 
+                    btn.classList.remove('disabled');
+                }, 200 + (9*150));
+            }, 500);
+        }
+
+        // Simulate recycle state
+        function toggleVibe(pill, name) {
+            pill.classList.toggle('active');
+            const isActive = pill.classList.contains('active');
+            
+            // Find cells corresponding to this vibe and toggle recycle state
+            cells.forEach(cell => {
+                if(cell.classList.contains('revealed') && cell.querySelector('.shot-label').innerText.includes(name)) {
+                    if(!isActive) cell.classList.add('recycle');
+                    else cell.classList.remove('recycle');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

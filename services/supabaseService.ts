@@ -5,7 +5,13 @@ import { GeneratedContent, CustomPreset } from '../types';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Custom no-op lock — bypasses Navigator LockManager to avoid 10s timeout
+// issues when multiple tabs are open or stale locks are held in localStorage.
+const noLock = <R>(_name: string, _acquireTimeout: number, fn: () => Promise<R>): Promise<R> => fn();
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: { lock: noLock },
+});
 
 // ─────────────────────────────────────────────
 // ERROR HELPER
@@ -57,11 +63,13 @@ export const getCurrentUser = async () => {
  */
 export const saveGalleryItem = async (item: GeneratedContent, userId: string): Promise<void> => {
   try {
-    let publicUrl = item.url;
+    if (!item.url) throw new Error('Gallery item has no URL');
+    // Ensure url is a plain string (Replicate SDK may return FileOutput/URL objects)
+    let publicUrl = typeof item.url === 'string' ? item.url : String((item.url as any)?.url?.() ?? item.url);
 
     // If the URL is base64 or blob, upload to storage
-    if (item.url.startsWith('data:') || item.url.startsWith('blob:')) {
-      const res = await fetch(item.url);
+    if (publicUrl.startsWith('data:') || publicUrl.startsWith('blob:')) {
+      const res = await fetch(publicUrl);
       let blob = await res.blob();
 
       // Compress images before upload (skip videos)
@@ -122,13 +130,46 @@ export const loadGalleryItems = async (userId: string): Promise<GeneratedContent
     favorite: row.favorite ?? false,
     source: (row.source as 'generate' | 'director') ?? 'director',
     characterId: row.character_id ?? undefined,
+    workflowStatus: (row.workflow_status as GeneratedContent['workflowStatus']) ?? undefined,
   }));
 };
 
 export const updateGalleryItem = async (item: GeneratedContent, userId: string): Promise<void> => {
+  let publicUrl: string | undefined;
+
+  // WARN-4 fix: if the url is a data URL (e.g. filtered canvas export), upload
+  // it to Storage and use the resulting public URL for the DB column.
+  if (item.url && item.url.startsWith('data:')) {
+    try {
+      const res = await fetch(item.url);
+      let blob = await res.blob();
+      blob = await compressImage(blob);
+      const ext = blob.type === 'image/webp' ? 'webp' : 'jpg';
+      const path = `${userId}/${item.id}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('gallery')
+        .upload(path, blob, { contentType: blob.type, upsert: true });
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(path);
+        publicUrl = urlData.publicUrl;
+      }
+    } catch {
+      // Upload failed — silently skip URL update; local state still reflects the filter
+    }
+  } else if (item.url && !item.url.startsWith('blob:')) {
+    // Plain remote URL — write as-is
+    publicUrl = item.url;
+  }
+
+  const payload: Record<string, unknown> = {
+    favorite: item.favorite ?? false,
+    ...(item.workflowStatus !== undefined && { workflow_status: item.workflowStatus }),
+    ...(publicUrl !== undefined && { url: publicUrl }),
+  };
+
   const { error } = await supabase
     .from('gallery_items')
-    .update({ favorite: item.favorite ?? false })
+    .update(payload)
     .eq('id', item.id)
     .eq('user_id', userId);
 

@@ -37,18 +37,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    // Hard timeout — if Supabase lock/network takes > 5s, unblock the UI
+    let resolved = false;
+    const fallback = setTimeout(() => {
+      if (!resolved) { resolved = true; setAuthLoading(false); }
+    }, 5000);
+
     // Get current session on mount
     supabase.auth.getSession()
       .then(({ data: { session } }) => stableSetUser(session?.user ?? null))
       .catch(err => console.warn('Failed to restore session:', err))
-      .finally(() => setAuthLoading(false));
+      .finally(() => {
+        if (!resolved) { resolved = true; clearTimeout(fallback); setAuthLoading(false); }
+      });
 
     // Listen for session changes in real time
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       stableSetUser(session?.user ?? null);
     });
 
-    return () => subscription.unsubscribe();
+    return () => { clearTimeout(fallback); subscription.unsubscribe(); };
   }, []);
 
   const handleSignOut = async () => {

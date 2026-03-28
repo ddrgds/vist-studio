@@ -14,7 +14,7 @@ export function PipelineCTA({ label, targetPage, onNav, icon }: PipelineCTAProps
       onClick={() => onNav(targetPage)}
       className="w-full mt-4 py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all group"
       style={{
-        background: 'linear-gradient(135deg, rgba(240,104,72,.1), rgba(208,72,176,.1))',
+        background: 'linear-gradient(135deg, rgba(240,104,72,.1), rgba(79,70,229,.1))',
         border: '1px solid rgba(240,104,72,.2)',
       }}
     >

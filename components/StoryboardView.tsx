@@ -240,8 +240,8 @@ export function StoryboardView() {
             disabled={exportingGrid}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all hover:scale-[1.02]"
             style={{
-              background: 'rgba(167,139,250,.08)',
-              border: '1px solid rgba(167,139,250,.15)',
+              background: 'rgba(129,140,248,.08)',
+              border: '1px solid rgba(129,140,248,.15)',
               color: 'var(--joi-violet)',
               opacity: exportingGrid ? 0.5 : 1,
             }}
@@ -290,7 +290,7 @@ export function StoryboardView() {
               onDragEnd={handleDragEnd}
               className="relative group rounded-xl overflow-hidden aspect-square cursor-grab active:cursor-grabbing transition-all joi-border-glow"
               style={{
-                border: `1px solid ${dragIndex === index ? 'rgba(167,139,250,.4)' : 'rgba(255,255,255,.04)'}`,
+                border: `1px solid ${dragIndex === index ? 'rgba(129,140,248,.4)' : 'rgba(255,255,255,.04)'}`,
                 opacity: dragIndex === index ? 0.5 : 1,
                 transform: dragIndex === index ? 'scale(0.95)' : 'scale(1)',
                 background: 'var(--joi-bg-glass)',

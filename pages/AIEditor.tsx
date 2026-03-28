@@ -104,6 +104,7 @@ const routeEdit = async (
   onProgress?: (p: number) => void,
   abortSignal?: AbortSignal,
   referenceImage?: File | null,
+  bypassCompiler?: boolean,
 ): Promise<string[]> => {
   const eng = ENGINE_METADATA.find(e => e.key === engineKey)
 
@@ -151,12 +152,12 @@ const routeEdit = async (
   // Grok Imagine (edit mode)
   if (engineKey === 'replicate:grok') {
     const refs = referenceImage ? [referenceImage] : []
-    return editImageWithGrokFal(file, instruction, onProgress, abortSignal, refs)
+    return editImageWithGrokFal(file, instruction, onProgress, abortSignal, refs, bypassCompiler)
   }
 
-  // Pruna P-Image-Edit (fast, no safety filter)
+  // Pruna P-Image-Edit (fast, no safety filter) — supports multi-image for try-on
   if (engineKey === 'replicate:pruna') {
-    return editWithPruna(file, instruction, onProgress, abortSignal).then(r => [r])
+    return editWithPruna(file, instruction, onProgress, abortSignal, referenceImage ?? null).then(r => [r])
   }
 
   // GPT Image
@@ -202,6 +203,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
   // Functional state
   const [inputImage, setInputImage] = useState<string | null>(null)
   const [inputFile, setInputFile] = useState<File | null>(null)
+  const [isLoadingFile, setIsLoadingFile] = useState(false)
   const [resultImage, setResultImage] = useState<string | null>(null)
   const [processing, setProcessing] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -229,6 +231,13 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
   const [expandDirection, setExpandDirection] = useState<string>('all')
   const [expandPixels, setExpandPixels] = useState(256)
 
+  // Skin enhancer state
+  const [skinPreset, setSkinPreset] = useState<'soft'|'natural'|'realistic'|'ultra'|'custom'>('natural')
+  const [skinSliders, setSkinSliders] = useState({ pores: 50, veins: 20, tension: 40, imperfections: 30, sss: 50, hydration: 40 })
+
+  // Canvas container ref for non-passive wheel listener
+  const canvasContainerRef = useRef<HTMLDivElement>(null)
+
   const { decrementCredits, restoreCredits } = useProfile()
 
   // Visible cost for the Apply button (shared with handleApply logic)
@@ -255,6 +264,24 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
     }
   }, [activeTool])
 
+  // Non-passive wheel listener for canvas zoom (passive listeners can't preventDefault)
+  useEffect(() => {
+    const el = canvasContainerRef.current
+    if (!el) return
+    const handleWheel = (e: WheelEvent) => {
+      if (!inputImage) return
+      e.preventDefault()
+      const delta = e.deltaY > 0 ? -0.15 : 0.15
+      setCanvasZoom(z => {
+        const nz = Math.max(0.5, Math.min(5, z + delta))
+        if (nz <= 1) setCanvasPan({ x: 0, y: 0 })
+        return nz
+      })
+    }
+    el.addEventListener('wheel', handleWheel, { passive: false })
+    return () => el.removeEventListener('wheel', handleWheel)
+  }, [inputImage])
+
   // Consume pending navigation (e.g. from Gallery → Editor)
   useEffect(() => {
     if (pendingTarget === 'editor' && pendingImage) {
@@ -276,9 +303,11 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
     if (pipelineHeroUrl && !inputImage && !pendingImage) {
       setInputImage(pipelineHeroUrl)
       setResultImage(null)
+      setIsLoadingFile(true)
       urlToFile(pipelineHeroUrl, 'pipeline-hero.png')
         .then(file => setInputFile(file))
-        .catch(() => setInputFile(null))
+        .catch(() => { setInputFile(null); setInputImage(null) })
+        .finally(() => setIsLoadingFile(false))
     }
   }, [pipelineHeroUrl])
 
@@ -337,7 +366,11 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
 
     // Non-modal tools need a File object for the API (except rembg which works on URLs)
     if (!inputFile && activeTool !== 'rembg') {
-      toast.error('Sube una imagen primero')
+      if (isLoadingFile) {
+        toast.info('Espera, cargando imagen...')
+      } else {
+        toast.error('Sube una imagen primero')
+      }
       return
     }
 
@@ -363,7 +396,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
       } else if (activeTool === 'relight') {
         const preset = relightPresets[selPreset]
         const dirHint = `Light source at azimuth ${relightAz}° (${relightAz < -45 ? 'left' : relightAz > 45 ? 'right' : 'front'}), elevation ${relightEl}° (${relightEl > 50 ? 'above' : relightEl < -10 ? 'below' : 'eye-level'}).`
-        const instruction = `Change the lighting to: ${preset.prompt}. ${dirHint} Only modify lighting, shadows, and color temperature.`
+        const instruction = `Change ONLY the lighting to: ${preset.prompt}. ${dirHint} Keep the subject, outfit, pose, background, and scene completely identical — only lighting, shadows, and color temperature may change.`
         resultUrls = await routeEdit(selectedEngine, inputFile, instruction, (p) => setProgress(p))
       } else if (activeTool === 'rotate360') {
         const view = angleViews[sel360]
@@ -378,7 +411,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           'Left 45°': 'background shifts to show what was to the right of the original frame, slight parallax',
         }
         const envHint = envHints[view] || 'background changes naturally to match the new camera position'
-        const instruction = `Create a new photograph of this person as seen from a ${view.toLowerCase()} camera angle. The camera has physically moved around the subject. Keep the exact same person, clothing, hairstyle, and body proportions. The environment is the same location but viewed from a different position: ${envHint}. Do NOT paste the same background — render it from the new camera perspective.`
+        const instruction = `CAMERA ROTATION (overrides preservation rule): Create a new photograph of this person as seen from a ${view.toLowerCase()} camera angle. The camera has physically moved around the subject. Keep the exact same person, clothing, hairstyle, and body proportions. The background and environment MUST change to reflect the new camera position: ${envHint}. Do NOT paste the same background — render it from the new camera perspective.`
         resultUrls = await routeEdit(selectedEngine, inputFile, instruction, (p) => setProgress(p))
       } else if (activeTool === 'bgswap') {
         const bgName = bgPresets[selBg]
@@ -399,7 +432,29 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         const instruction = `STYLE TRANSFER (overrides preservation rule): Transform the entire image into ${style.name} style. ${style.prompt}. The person's face must remain recognizable (same identity, pose, expression) but the visual rendering of EVERYTHING should change to match this aesthetic. Apply strongly and consistently.`
         resultUrls = await routeEdit(selectedEngine, inputFile, instruction, (p) => setProgress(p))
       } else if (activeTool === 'realskin') {
-        const instruction = 'Add realistic skin detail: visible pores, micro-imperfections, natural skin shine, and subtle subsurface scattering. Do not alter the face shape, features, expression, hair, outfit, pose, or background. The goal is photorealistic skin texture, not beauty retouching.'
+        const SKIN_PRESET_INSTRUCTIONS: Record<string, string> = {
+          soft: 'Add barely-visible, very subtle pores with zero imperfections, a smooth dewy skin texture, and gentle diffused subsurface scattering. The result should look beautifully retouched but still natural.',
+          natural: 'Add natural skin texture: slightly visible pores, minimal micro-imperfections, soft subsurface scattering, natural shine. The skin should look naturally good, not heavily retouched.',
+          realistic: 'Add realistic skin detail: visible pores, micro-imperfections, natural skin shine, and subtle subsurface scattering. The goal is photorealistic skin texture, not beauty retouching.',
+          ultra: 'Add ultra-high-definition skin texture: highly detailed visible pores, skin microstructure, natural veins on temples and forehead, micro-imperfections including natural tone variations, subsurface scattering with color variation, translucency on thin skin areas, natural sebum and moisture.',
+        }
+        let skinInstruction: string
+        if (skinPreset !== 'custom') {
+          skinInstruction = SKIN_PRESET_INSTRUCTIONS[skinPreset]
+        } else {
+          const lvl = (v: number) => v < 25 ? 'barely visible' : v < 50 ? 'slightly visible' : v < 75 ? 'clearly visible' : 'highly detailed'
+          const parts: string[] = []
+          if (skinSliders.pores > 5) parts.push(`${lvl(skinSliders.pores)} pores`)
+          if (skinSliders.veins > 5) parts.push(`${lvl(skinSliders.veins)} veins on temples and thin skin areas`)
+          if (skinSliders.tension > 5) parts.push(`${lvl(skinSliders.tension)} skin surface microstructure and tension`)
+          if (skinSliders.imperfections > 5) parts.push(`${lvl(skinSliders.imperfections)} natural micro-imperfections`)
+          if (skinSliders.sss > 5) parts.push(`${lvl(skinSliders.sss)} subsurface scattering with translucent glow`)
+          if (skinSliders.hydration > 5) parts.push(`${lvl(skinSliders.hydration)} natural moisture and skin shine`)
+          skinInstruction = parts.length > 0
+            ? `Add the following skin details: ${parts.join(', ')}.`
+            : 'Preserve the current skin texture as-is.'
+        }
+        const instruction = `${skinInstruction} Do not alter the face shape, features, expression, hair, outfit, pose, or background.`
         resultUrls = await routeEdit(selectedEngine, inputFile, instruction, (p) => setProgress(p))
       } else if (activeTool === 'faceswap' && faceSwapFile) {
         if (selectedEngine === 'gemini:nb2' || selectedEngine === 'auto') {
@@ -410,8 +465,8 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           resultUrls = await routeEdit(selectedEngine, inputFile, instruction, (p) => setProgress(p), undefined, faceSwapFile)
         }
       } else if (activeTool === 'tryon' && garmentFile) {
-        const instruction = `Dress this person in the EXACT outfit shown in the reference image. Reproduce every detail of the clothing: fabric, pattern, color, fit, accessories. Keep the person's face, hairstyle, body proportions, pose, and background completely unchanged. Only replace their clothing with what is shown in the reference.`
-        resultUrls = await routeEdit(selectedEngine, inputFile, instruction, (p) => setProgress(p), undefined, garmentFile)
+        const instruction = `VIRTUAL TRY-ON: IMAGE 1 is the PERSON — preserve this person completely: their exact face identity, facial features, skin tone, hair, body shape, pose, and background must remain 100% unchanged. IMAGE 2 is the GARMENT ONLY — extract just the clothing item and place it on the person from IMAGE 1. Do not copy the body, face, skin, hair, or background from IMAGE 2. Only the clothing changes. Reproduce every fabric detail, pattern, color, texture, and fit from IMAGE 2's garment exactly.`
+        resultUrls = await routeEdit(selectedEngine, inputFile, instruction, (p) => setProgress(p), undefined, garmentFile, true)
       } else if (activeTool === 'expand') {
         const { expandWithBria } = await import('../services/replicateService')
         const expandedUrl = await expandWithBria(inputImage, expandDirection as 'up' | 'down' | 'left' | 'right' | 'all', expandPixels, (p: number) => setProgress(p))
@@ -429,7 +484,9 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         resultUrls = soulResults
       }
 
-      if (resultUrls.length > 0) {
+      const validUrls = resultUrls.filter(Boolean)
+      if (validUrls.length > 0) {
+        resultUrls = validUrls
         setResultImage(resultUrls[0])
         setEditHistory(prev => [resultUrls[0], ...prev].slice(0, 20))
         pipelineSetEditedHero(resultUrls[0])
@@ -445,6 +502,9 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           characterId: pipelineCharId || undefined,
         }])
         toast.success('Edición aplicada')
+      } else {
+        restoreCredits(cost)
+        toast.error('La herramienta no devolvió resultado')
       }
     } catch (err) {
       restoreCredits(cost)
@@ -503,48 +563,48 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
       />
 
       {/* Tool sidebar */}
-      <div className="w-[70px] shrink-0 flex flex-col items-center py-4 gap-1" style={{ background:'var(--joi-bg-1)', borderRight:'1px solid rgba(255,255,255,.04)' }}>
+      <div className="w-[84px] shrink-0 flex flex-col items-center py-4 gap-1" style={{ background:'var(--joi-bg-1)', borderRight:'1px solid var(--joi-border)' }}>
         {(showAllTools ? tools : tools.slice(0, 6)).map(t => (
           <button key={t.id} onClick={()=>setActiveTool(t.id)}
-            className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center transition-all group relative joi-border-glow`}
+            className={`w-14 h-14 rounded-xl flex flex-col items-center justify-center transition-all group relative`}
             style={{
-              background: activeTool===t.id ? 'rgba(255,107,157,.08)' : 'transparent',
-              border: `1px solid ${activeTool===t.id ? 'rgba(255,107,157,.2)' : 'transparent'}`,
+              background: activeTool===t.id ? 'var(--joi-pink-soft)' : 'transparent',
+              border: `1px solid ${activeTool===t.id ? 'var(--joi-border-h)' : 'transparent'}`,
             }}>
-            <span className="text-base">{t.icon}</span>
-            <span className="text-[7px] mt-0.5 font-medium" style={{ color: activeTool===t.id ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>
+            <span className="text-lg">{t.icon}</span>
+            <span className="text-[9px] mt-0.5 font-medium leading-tight text-center px-0.5" style={{ color: activeTool===t.id ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>
               {t.label.split(' ')[0]}
             </span>
             <div className="absolute left-full ml-2 px-2 py-1 rounded-lg text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50"
-              style={{ background:'var(--joi-bg-3)', color:'var(--joi-text-1)', border:'1px solid rgba(255,255,255,.04)', backdropFilter:'blur(12px)' }}>
+              style={{ background:'var(--joi-bg-3)', color:'var(--joi-text-1)', border:'1px solid var(--joi-border)' }}>
               {t.desc}
             </div>
           </button>
         ))}
         <button onClick={() => { setShowAllTools(v => { const next = !v; try { localStorage.setItem('vist-editor-all-tools', String(next)) } catch {} return next }) }}
-          className="w-12 h-8 rounded-xl flex items-center justify-center transition-all mt-1"
-          style={{ background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)', color: 'var(--joi-text-3)' }}
+          className="w-14 h-7 rounded-xl flex items-center justify-center transition-all mt-1"
+          style={{ background: 'var(--joi-bg-3)', border: '1px solid var(--joi-border)', color: 'var(--joi-text-3)' }}
           title={showAllTools ? 'Mostrar menos herramientas' : 'Mostrar más herramientas'}>
           <span className="text-[9px] font-medium">{showAllTools ? '▲ Menos' : '▼ Más'}</span>
         </button>
-        <div className="w-10 h-px my-1" style={{ background: 'rgba(255,255,255,.06)' }} />
+        <div className="w-12 h-px my-1" style={{ background: 'var(--joi-border)' }} />
         <button onClick={() => inputImage && setShowBasicEditor(true)}
-          className="w-12 h-12 rounded-xl flex flex-col items-center justify-center transition-all group relative"
+          className="w-14 h-14 rounded-xl flex flex-col items-center justify-center transition-all group relative"
           style={{
-            background: showBasicEditor ? 'rgba(167,139,250,.08)' : 'transparent',
-            border: `1px solid ${showBasicEditor ? 'rgba(167,139,250,.2)' : 'transparent'}`,
+            background: showBasicEditor ? 'var(--joi-pink-soft)' : 'transparent',
+            border: `1px solid ${showBasicEditor ? 'var(--joi-border-h)' : 'transparent'}`,
             opacity: inputImage ? 1 : 0.3,
           }}
           title="Editor Básico — recorte, filtros, ajustes (sin AI)">
-          <span className="text-base">{'\u270F\uFE0F'}</span>
-          <span className="text-[7px] mt-0.5 font-medium" style={{ color: showBasicEditor ? 'var(--joi-violet)' : 'var(--joi-text-3)' }}>
+          <span className="text-lg">{'\u270F\uFE0F'}</span>
+          <span className="text-[9px] mt-0.5 font-medium" style={{ color: showBasicEditor ? 'var(--joi-violet)' : 'var(--joi-text-3)' }}>
             Básico
           </span>
         </button>
       </div>
 
       {/* Tool Panel */}
-      <div className="w-[300px] shrink-0 flex flex-col joi-scroll" style={{ background:'var(--joi-bg-1)', borderRight:'1px solid rgba(255,255,255,.04)', backdropFilter:'blur(16px)' }}>
+      <div className="w-full lg:w-[300px] shrink-0 flex flex-col joi-scroll" style={{ background:'var(--joi-bg-1)', borderRight:'1px solid rgba(255,255,255,.04)', backdropFilter:'blur(16px)' }}>
         <div className="px-4 h-14 flex items-center shrink-0" style={{ borderBottom:'1px solid rgba(255,255,255,.04)' }}>
           <h2 className="text-sm font-bold" style={{ color:'var(--joi-text-1)' }}>
             {tools.find(t=>t.id===activeTool)?.icon} {tools.find(t=>t.id===activeTool)?.label}
@@ -569,8 +629,8 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
               }}
               className="w-8 h-8 rounded-xl flex items-center justify-center text-sm transition-all hover:scale-105 relative"
               style={{
-                background: selectedEngine !== 'auto' ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)',
-                border: `1px solid ${selectedEngine !== 'auto' ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}`,
+                background: selectedEngine !== 'auto' ? 'var(--joi-pink-soft)' : 'var(--joi-bg-3)',
+                border: `1px solid ${selectedEngine !== 'auto' ? 'var(--joi-border-h)' : 'rgba(255,255,255,.04)'}`,
                 color: selectedEngine !== 'auto' ? 'var(--joi-pink)' : 'var(--joi-text-3)',
               }}>
               {'\uD83D\uDD27'}
@@ -599,10 +659,10 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                     display: 'flex',
                     flexDirection: 'column',
                     borderRadius: '0.75rem',
-                    background: 'rgba(14,12,22,.96)',
+                    background: 'var(--joi-bg-glass)',
                     backdropFilter: 'blur(24px)',
-                    border: '1px solid rgba(255,255,255,.06)',
-                    boxShadow: '0 20px 60px rgba(0,0,0,.6), 0 0 40px rgba(255,107,157,.05)',
+                    border: '1px solid var(--joi-border)',
+                    boxShadow: '0 20px 60px rgba(0,0,0,.6)',
                     overflow: 'hidden',
                   }}>
                   <div className="overflow-y-auto p-3 pb-2 space-y-1 flex-1 min-h-0 joi-scroll">
@@ -616,7 +676,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                         {!allowedKeys && <>
                           <button onClick={() => { setSelectedEngine('auto'); setShowEngineModal(false) }}
                             className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all"
-                            style={{ background: selectedEngine === 'auto' ? 'rgba(255,107,157,.08)' : 'transparent', border: `1px solid ${selectedEngine === 'auto' ? 'rgba(255,107,157,.2)' : 'transparent'}` }}>
+                            style={{ background: selectedEngine === 'auto' ? 'var(--joi-pink-soft)' : 'transparent', border: `1px solid ${selectedEngine === 'auto' ? 'var(--joi-border-h)' : 'transparent'}` }}>
                             <span className="text-base">{'\u2728'}</span>
                             <div className="flex-1 min-w-0">
                               <div className="text-[11px] font-medium" style={{ color: selectedEngine === 'auto' ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>Auto</div>
@@ -628,7 +688,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                         {filteredEngines.map(eng => (
                           <button key={eng.key} onClick={() => { setSelectedEngine(eng.key); setShowEngineModal(false) }}
                             className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all"
-                            style={{ background: selectedEngine === eng.key ? 'rgba(255,107,157,.08)' : 'transparent', border: `1px solid ${selectedEngine === eng.key ? 'rgba(255,107,157,.2)' : 'transparent'}` }}>
+                            style={{ background: selectedEngine === eng.key ? 'var(--joi-pink-soft)' : 'transparent', border: `1px solid ${selectedEngine === eng.key ? 'var(--joi-border-h)' : 'transparent'}` }}>
                             <span className="text-sm" style={{ color: 'var(--joi-text-3)' }}>{'\u2699'}</span>
                             <div className="flex-1 min-w-0">
                               <div className="text-[11px] font-medium" style={{ color: selectedEngine === eng.key ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{eng.userFriendlyName}</div>
@@ -650,7 +710,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                       {[{ id: '1k', label: '1K', desc: '1024px' }, { id: '2k', label: '2K', desc: '2048px' }, { id: '4k', label: '4K', desc: '4096px' }].map(r => (
                         <button key={r.id} onClick={() => setSelectedResolution(r.id)}
                           className="flex-1 px-3 py-2 rounded-lg text-center transition-all"
-                          style={{ background: selectedResolution === r.id ? 'rgba(255,107,157,.08)' : 'rgba(255,255,255,.02)', border: `1px solid ${selectedResolution === r.id ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}` }}>
+                          style={{ background: selectedResolution === r.id ? 'var(--joi-pink-soft)' : 'rgba(255,255,255,.02)', border: `1px solid ${selectedResolution === r.id ? 'var(--joi-border-h)' : 'rgba(255,255,255,.04)'}` }}>
                           <div className="text-[11px] font-mono font-bold" style={{ color: selectedResolution === r.id ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{r.label}</div>
                           <div className="text-[8px] font-mono" style={{ color: 'var(--joi-text-3)' }}>{r.desc}</div>
                         </button>
@@ -700,7 +760,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                       }
                     }}
                     className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[10px] transition-all"
-                    style={{ background: inputImage === ch.thumbnail ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)', border: `1px solid ${inputImage === ch.thumbnail ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}`, color: inputImage === ch.thumbnail ? 'var(--joi-pink)' : 'var(--joi-text-2)' }}>
+                    style={{ background: inputImage === ch.thumbnail ? 'rgba(99,102,241,.08)' : 'var(--joi-bg-3)', border: `1px solid ${inputImage === ch.thumbnail ? 'rgba(99,102,241,.2)' : 'rgba(255,255,255,.04)'}`, color: inputImage === ch.thumbnail ? 'var(--joi-pink)' : 'var(--joi-text-2)' }}>
                     {ch.thumbnail && <img src={ch.thumbnail} className="w-5 h-5 rounded-full object-cover" alt="" />}
                     {ch.name}
                   </button>
@@ -726,7 +786,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
               {['Make cinematic','Add soft blur bg','Golden hour lighting','Change to b&w','Add film grain','Enhance details'].map(q => (
                 <button key={q} onClick={() => setFreePrompt(q)}
                   className="px-2.5 py-1 rounded-lg text-[9px] transition-all"
-                  style={{ background: freePrompt === q ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)', border: `1px solid ${freePrompt === q ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}`, color: freePrompt === q ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>{q}</button>
+                  style={{ background: freePrompt === q ? 'rgba(99,102,241,.08)' : 'var(--joi-bg-3)', border: `1px solid ${freePrompt === q ? 'rgba(99,102,241,.2)' : 'rgba(255,255,255,.04)'}`, color: freePrompt === q ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>{q}</button>
               ))}
             </div>
           </>}
@@ -747,10 +807,10 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
               {['Editorial magazine cover','Golden hour beach','Studio fashion portrait','Cyberpunk neon','Vintage film aesthetic','Luxury lifestyle'].map(q => (
                 <button key={q} onClick={() => setReimaginePrompt(q)}
                   className="px-2.5 py-1 rounded-lg text-[9px] transition-all"
-                  style={{ background: reimaginePrompt === q ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)', border: `1px solid ${reimaginePrompt === q ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}`, color: reimaginePrompt === q ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>{q}</button>
+                  style={{ background: reimaginePrompt === q ? 'rgba(99,102,241,.08)' : 'var(--joi-bg-3)', border: `1px solid ${reimaginePrompt === q ? 'rgba(99,102,241,.2)' : 'rgba(255,255,255,.04)'}`, color: reimaginePrompt === q ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>{q}</button>
               ))}
             </div>
-            <div className="rounded-xl p-3 mt-1" style={{ background: 'rgba(255,107,157,.04)', border: '1px solid rgba(255,107,157,.1)' }}>
+            <div className="rounded-xl p-3 mt-1" style={{ background: 'rgba(99,102,241,.04)', border: '1px solid rgba(99,102,241,.1)' }}>
               <div className="flex items-center gap-2 mb-1.5">
                 <span className="text-sm">{'\u2726'}</span>
                 <span className="text-[11px] font-semibold" style={{ color: 'var(--joi-pink)' }}>Soul 2.0</span>
@@ -876,7 +936,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                         background: sel360 === i ? 'var(--joi-pink)' : 'var(--joi-bg-3)',
                         color: sel360 === i ? '#fff' : 'var(--joi-text-3)',
                         border: `1px solid ${sel360 === i ? 'var(--joi-pink)' : 'rgba(255,255,255,.04)'}`,
-                        boxShadow: sel360 === i ? '0 0 12px rgba(255,107,157,.3)' : 'none',
+                        boxShadow: sel360 === i ? '0 0 12px rgba(99,102,241,.3)' : 'none',
                       }}>{a.replace('°', '')}</button>
                   )
                 })}
@@ -907,7 +967,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                 onClick={() => faceSwapInputRef.current?.click()}
                 onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; if (f?.type.startsWith('image/')) { setFaceSwapFile(f); setFaceSwapPreview(URL.createObjectURL(f)) } }}
                 onDragOver={(e) => e.preventDefault()}
-                style={{ background:'var(--joi-bg-3)', border: faceSwapPreview ? '1px solid rgba(255,107,157,.3)' : '1px dashed rgba(255,255,255,.08)' }}>
+                style={{ background:'var(--joi-bg-3)', border: faceSwapPreview ? '1px solid rgba(99,102,241,.3)' : '1px dashed rgba(255,255,255,.08)' }}>
                 {faceSwapPreview ? (
                   <div className="relative w-full h-full group">
                     <img src={faceSwapPreview} alt="Source face" className="w-full h-full object-cover" />
@@ -945,7 +1005,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                 onClick={() => garmentInputRef.current?.click()}
                 onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; if (f?.type.startsWith('image/')) { setGarmentFile(f); setGarmentPreview(URL.createObjectURL(f)) } }}
                 onDragOver={(e) => e.preventDefault()}
-                style={{ background:'var(--joi-bg-3)', border: garmentPreview ? '1px solid rgba(167,139,250,.3)' : '1px dashed rgba(255,255,255,.08)' }}>
+                style={{ background:'var(--joi-bg-3)', border: garmentPreview ? '1px solid rgba(129,140,248,.3)' : '1px dashed rgba(255,255,255,.08)' }}>
                 {garmentPreview ? (
                   <div className="relative w-full h-full group">
                     <img src={garmentPreview} alt="Outfit" className="w-full h-full object-contain p-1" />
@@ -989,7 +1049,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
               {bgPresets.map((b,i)=>(
                 <button key={b} onClick={() => setSelBg(i)}
                   className="py-3 rounded-lg text-[11px]"
-                  style={{ background: selBg === i ? 'rgba(255,107,157,.1)' : 'var(--joi-bg-3)', border: `1px solid ${selBg === i ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}`, color: selBg === i ? 'var(--joi-pink)' : 'var(--joi-text-2)' }}>{b}</button>
+                  style={{ background: selBg === i ? 'rgba(99,102,241,.1)' : 'var(--joi-bg-3)', border: `1px solid ${selBg === i ? 'rgba(99,102,241,.2)' : 'rgba(255,255,255,.04)'}`, color: selBg === i ? 'var(--joi-pink)' : 'var(--joi-text-2)' }}>{b}</button>
               ))}
             </div>
           </>}
@@ -1007,7 +1067,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
             {sceneSource === 'upload' && (
               sceneImage ? (
                 <div className="aspect-[4/3] rounded-xl relative overflow-hidden"
-                  style={{ background:'var(--joi-bg-3)', border:'1px dashed rgba(255,107,157,.3)' }}>
+                  style={{ background:'var(--joi-bg-3)', border:'1px dashed rgba(99,102,241,.3)' }}>
                   <img src={sceneImage} className="w-full h-full object-cover rounded-xl" alt="Scene" />
                   <button onClick={() => { setSceneImage(null); setSceneFile(null) }}
                     className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] z-20"
@@ -1033,7 +1093,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
 
             {sceneSource === 'gallery' && (
               <div>
-                <div className="grid grid-cols-3 gap-1.5 max-h-[200px] overflow-y-auto joi-scroll">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-[200px] overflow-y-auto joi-scroll">
                   {galleryItems.slice(0, 12).map(item => (
                     <button key={item.id} onClick={async () => {
                       setSceneImage(item.url)
@@ -1049,7 +1109,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                   ))}
                 </div>
                 {sceneImage && sceneSource === 'gallery' && (
-                  <div className="mt-2 rounded-lg overflow-hidden" style={{ border:'1px solid rgba(255,107,157,.2)' }}>
+                  <div className="mt-2 rounded-lg overflow-hidden" style={{ border:'1px solid rgba(99,102,241,.2)' }}>
                     <img src={sceneImage} className="w-full h-24 object-cover" alt="Selected scene" />
                   </div>
                 )}
@@ -1073,7 +1133,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
               {['Tokyo neon streets','Café in Paris','Beach sunset','NYC rooftop','Enchanted forest','Space station'].map(q => (
                 <button key={q} onClick={() => { setSceneSource('prompt'); setScenePrompt(q) }}
                   className="px-2.5 py-1 rounded-lg text-[9px] transition-all"
-                  style={{ background: scenePrompt === q ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)', border: `1px solid ${scenePrompt === q ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}`, color: scenePrompt === q ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>{q}</button>
+                  style={{ background: scenePrompt === q ? 'rgba(99,102,241,.08)' : 'var(--joi-bg-3)', border: `1px solid ${scenePrompt === q ? 'rgba(99,102,241,.2)' : 'rgba(255,255,255,.04)'}`, color: scenePrompt === q ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>{q}</button>
               ))}
             </div>
 
@@ -1106,7 +1166,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                       } catch { setSceneFile(null) }
                     }}
                       className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[10px] transition-all"
-                      style={{ background: sceneImage === ch.thumbnail ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)', border: `1px solid ${sceneImage === ch.thumbnail ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}`, color: sceneImage === ch.thumbnail ? 'var(--joi-pink)' : 'var(--joi-text-2)' }}>
+                      style={{ background: sceneImage === ch.thumbnail ? 'rgba(99,102,241,.08)' : 'var(--joi-bg-3)', border: `1px solid ${sceneImage === ch.thumbnail ? 'rgba(99,102,241,.2)' : 'rgba(255,255,255,.04)'}`, color: sceneImage === ch.thumbnail ? 'var(--joi-pink)' : 'var(--joi-text-2)' }}>
                       <img src={ch.thumbnail} className="w-5 h-5 rounded-full object-cover" alt="" />
                       {ch.name}
                     </button>
@@ -1117,18 +1177,61 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           </>}
 
           {activeTool === 'realskin' && <>
-            <div className="joi-label mb-2">Piel Realista</div>
-            <p className="text-[10px] mb-3" style={{ color:'var(--joi-text-3)', lineHeight: 1.5 }}>
-              Agrega textura de piel fotorrealista — poros visibles, micro-imperfecciones, brillo natural.
-              No altera la forma del rostro, rasgos ni expresión.
-            </p>
-            <div className="text-[10px] space-y-2 mb-3" style={{ color:'var(--joi-text-2)' }}>
-              <div className="flex items-center gap-2"><span>Poros</span><div className="flex-1 h-1 rounded-full" style={{ background: 'linear-gradient(90deg, rgba(255,107,157,.1), rgba(255,107,157,.5))' }} /></div>
-              <div className="flex items-center gap-2"><span>Imperfecciones</span><div className="flex-1 h-1 rounded-full" style={{ background: 'linear-gradient(90deg, rgba(167,139,250,.1), rgba(167,139,250,.5))' }} /></div>
-              <div className="flex items-center gap-2"><span>Subsuperficial</span><div className="flex-1 h-1 rounded-full" style={{ background: 'linear-gradient(90deg, rgba(255,255,255,.05), rgba(255,255,255,.2))' }} /></div>
+            <div className="joi-label mb-3">Nivel de Realismo</div>
+            {/* Presets */}
+            <div className="grid grid-cols-2 gap-1.5 mb-4">
+              {([
+                { id:'soft',      label:'Suave',    desc:'Piel lisa, sin imperfecciones' },
+                { id:'natural',   label:'Natural',  desc:'Poros sutiles, textura leve' },
+                { id:'realistic', label:'Realista', desc:'Poros visibles, imperfecciones' },
+                { id:'ultra',     label:'Ultra HD', desc:'Máximo detalle, venas, SSS' },
+              ] as const).map(p => (
+                <button key={p.id} onClick={() => setSkinPreset(p.id)}
+                  className="text-left px-2.5 py-2 rounded-lg transition-colors"
+                  style={{
+                    background: skinPreset === p.id ? 'var(--joi-pink-soft)' : 'var(--joi-bg-3)',
+                    border: `1px solid ${skinPreset === p.id ? 'var(--joi-border-h)' : 'rgba(255,255,255,.04)'}`,
+                  }}>
+                  <div className="text-[11px] font-medium mb-0.5" style={{ color: skinPreset === p.id ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{p.label}</div>
+                  <div className="text-[9px]" style={{ color:'var(--joi-text-3)' }}>{p.desc}</div>
+                </button>
+              ))}
             </div>
+            {/* Custom preset button */}
+            <button onClick={() => setSkinPreset('custom')}
+              className="w-full py-2 rounded-lg text-[11px] mb-3 transition-colors"
+              style={{
+                background: skinPreset === 'custom' ? 'var(--joi-pink-soft)' : 'var(--joi-bg-3)',
+                border: `1px solid ${skinPreset === 'custom' ? 'var(--joi-border-h)' : 'rgba(255,255,255,.04)'}`,
+                color: skinPreset === 'custom' ? 'var(--joi-pink)' : 'var(--joi-text-2)',
+              }}>
+              Personalizado
+            </button>
+            {/* Custom sliders */}
+            {skinPreset === 'custom' && (
+              <div className="space-y-2.5 mb-3 p-2.5 rounded-lg" style={{ background:'var(--joi-bg-2)', border:'1px solid rgba(255,255,255,.04)' }}>
+                {([
+                  { key:'pores',         label:'Poros' },
+                  { key:'veins',         label:'Venas' },
+                  { key:'tension',       label:'Textura / Tensión' },
+                  { key:'imperfections', label:'Imperfecciones' },
+                  { key:'sss',           label:'Sub-superficial (SSS)' },
+                  { key:'hydration',     label:'Hidratación' },
+                ] as const).map(s => (
+                  <div key={s.key}>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-[10px]" style={{ color:'var(--joi-text-2)' }}>{s.label}</span>
+                      <span className="text-[10px] font-mono" style={{ color:'var(--joi-text-3)' }}>{skinSliders[s.key]}</span>
+                    </div>
+                    <input type="range" min={0} max={100} value={skinSliders[s.key]}
+                      onChange={e => setSkinSliders(prev => ({ ...prev, [s.key]: Number(e.target.value) }))}
+                      className="w-full slider-t" />
+                  </div>
+                ))}
+              </div>
+            )}
             <p className="text-[9px]" style={{ color:'var(--joi-text-3)' }}>
-              Un solo clic — presiona Aplicar para procesar
+              No altera el rostro, rasgos, expresión ni fondo
             </p>
           </>}
 
@@ -1157,7 +1260,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
               {styleNames.map((s,i)=>(
                 <button key={s} onClick={() => setSelStyle(i)}
                   className="py-3 rounded-lg text-[11px]"
-                  style={{ background: selStyle === i ? 'rgba(255,107,157,.1)' : 'var(--joi-bg-3)', border: `1px solid ${selStyle === i ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)'}`, color: selStyle === i ? 'var(--joi-pink)' : 'var(--joi-text-2)' }}>{s}</button>
+                  style={{ background: selStyle === i ? 'rgba(99,102,241,.1)' : 'var(--joi-bg-3)', border: `1px solid ${selStyle === i ? 'rgba(99,102,241,.2)' : 'rgba(255,255,255,.04)'}`, color: selStyle === i ? 'var(--joi-pink)' : 'var(--joi-text-2)' }}>{s}</button>
               ))}
             </div>
             <div className="flex items-center gap-2 mt-3">
@@ -1218,10 +1321,10 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                       onClick={() => setExpandDirection(dir)}
                       className="px-3 py-2.5 rounded-lg text-[11px] font-medium capitalize transition-all text-center"
                       style={{
-                        background: expandDirection === dir ? 'rgba(167,139,250,0.15)' : 'var(--joi-bg-3)',
-                        border: `1px solid ${expandDirection === dir ? 'rgba(167,139,250,0.3)' : 'rgba(255,255,255,.04)'}`,
-                        color: expandDirection === dir ? '#A78BFA' : 'var(--joi-text-2)',
-                        boxShadow: expandDirection === dir ? '0 0 12px rgba(167,139,250,.1)' : 'none',
+                        background: expandDirection === dir ? 'rgba(129,140,248,0.15)' : 'var(--joi-bg-3)',
+                        border: `1px solid ${expandDirection === dir ? 'rgba(129,140,248,0.3)' : 'rgba(255,255,255,.04)'}`,
+                        color: expandDirection === dir ? '#818CF8' : 'var(--joi-text-2)',
+                        boxShadow: expandDirection === dir ? '0 0 12px rgba(129,140,248,.1)' : 'none',
                       }}
                     >
                       {dir}
@@ -1232,7 +1335,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
 
               <div>
                 <div className="joi-label mb-2">
-                  Pixels: <span className="font-mono" style={{ color: '#A78BFA' }}>{expandPixels}px</span>
+                  Pixels: <span className="font-mono" style={{ color: '#818CF8' }}>{expandPixels}px</span>
                 </div>
                 <input
                   type="range"
@@ -1273,7 +1376,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           <button title="Rehacer" className="px-2.5 py-1 rounded-lg text-[11px] hover:bg-white/5 transition-colors" style={{ color:'var(--joi-text-2)' }}>{'\u21BB'}</button>
           <button title="Comparar antes y después" onClick={() => { setCompareMode(!compareMode); setCanvasZoom(1); setCanvasPan({ x: 0, y: 0 }) }}
             className="px-2.5 py-1 rounded-lg text-[11px] transition-colors"
-            style={{ color: compareMode ? 'var(--joi-pink)' : 'var(--joi-text-2)', background: compareMode ? 'rgba(255,107,157,.1)' : 'transparent' }}>Antes/Después</button>
+            style={{ color: compareMode ? 'var(--joi-pink)' : 'var(--joi-text-2)', background: compareMode ? 'rgba(99,102,241,.1)' : 'transparent' }}>Antes/Después</button>
           <button title="Acercar" onClick={() => { setCanvasZoom(z => Math.min(z + 0.25, 5)); setCanvasPan({ x: 0, y: 0 }) }}
             className="px-2.5 py-1 rounded-lg text-[11px] hover:bg-white/5 transition-colors" style={{ color:'var(--joi-text-2)' }}>Acercar</button>
           <button title="Alejar" onClick={() => { const nz = Math.max(canvasZoom - 0.25, 0.5); setCanvasZoom(nz); if (nz <= 1) setCanvasPan({ x: 0, y: 0 }) }}
@@ -1285,8 +1388,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           <span className="text-[10px] font-mono" style={{ color:'var(--joi-text-3)' }}>Zoom: {Math.round(canvasZoom * 100)}%</span>
         </div>
 
-        <div className="flex-1 flex items-center justify-center p-6 gap-6"
-          onWheel={(e) => { if (!inputImage) return; e.preventDefault(); const delta = e.deltaY > 0 ? -0.15 : 0.15; setCanvasZoom(z => { const nz = Math.max(0.5, Math.min(5, z + delta)); if (nz <= 1) setCanvasPan({ x: 0, y: 0 }); return nz }) }}
+        <div ref={canvasContainerRef} className="flex-1 flex items-center justify-center p-6 gap-6"
           onPointerDown={(e) => { if (canvasZoom <= 1 || !inputImage) return; setIsPanning(true); panStart.current = { x: e.clientX, y: e.clientY, panX: canvasPan.x, panY: canvasPan.y }; (e.target as HTMLElement).setPointerCapture?.(e.pointerId) }}
           onPointerMove={(e) => { if (!isPanning) return; setCanvasPan({ x: panStart.current.panX + (e.clientX - panStart.current.x), y: panStart.current.panY + (e.clientY - panStart.current.y) }) }}
           onPointerUp={() => setIsPanning(false)}
@@ -1296,7 +1398,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
             /* ── Empty canvas: tool showcase ── */
             <div className="max-w-[640px] w-full text-center">
               <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-                style={{ background: 'rgba(255,107,157,.06)', border: '1px solid rgba(255,107,157,.1)' }}>
+                style={{ background: 'rgba(99,102,241,.06)', border: '1px solid rgba(99,102,241,.1)' }}>
                 <span className="text-2xl" style={{ color:'var(--joi-pink)', opacity: 0.6 }}>{'\u2191'}</span>
               </div>
               <p className="text-sm font-medium mb-1" style={{ color:'var(--joi-text-1)' }}>Sube una imagen para empezar a editar</p>
@@ -1331,7 +1433,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
             </div>
             <div className="w-px shrink-0" style={{ background:'var(--joi-pink)' }} />
             <div className="relative" style={{ transform: `scale(${canvasZoom}) translate(${canvasPan.x / canvasZoom}px, ${canvasPan.y / canvasZoom}px)`, transition: isPanning ? 'none' : 'transform 0.15s ease' }}>
-              <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[9px] font-mono z-10" style={{ background:'rgba(255,107,157,.3)', color:'white' }}>DESPUÉS</div>
+              <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[9px] font-mono z-10" style={{ background:'rgba(99,102,241,.3)', color:'white' }}>DESPUÉS</div>
               <img src={resultImage} className="max-h-[70vh] object-contain select-none" draggable={false} alt="After" />
             </div>
           </div>
@@ -1339,7 +1441,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           <>
           <div className="text-center" style={{ transform: `scale(${canvasZoom}) translate(${canvasPan.x / canvasZoom}px, ${canvasPan.y / canvasZoom}px)`, transition: isPanning ? 'none' : 'transform 0.15s ease' }}>
             <div className="joi-label mb-2">Original</div>
-            <div className="w-[340px] h-[420px] rounded-xl flex items-center justify-center overflow-hidden joi-glass"
+            <div className="w-[min(340px,_90vw)] h-[min(420px,_60vh)] rounded-xl flex items-center justify-center overflow-hidden joi-glass"
               style={{ border:'1px solid rgba(255,255,255,.04)' }}>
               <img src={inputImage} className="w-full h-full object-cover rounded-xl select-none" draggable={false} alt="Original" />
             </div>
@@ -1349,8 +1451,8 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
 
           <div className="text-center" style={{ transform: `scale(${canvasZoom}) translate(${canvasPan.x / canvasZoom}px, ${canvasPan.y / canvasZoom}px)`, transition: isPanning ? 'none' : 'transform 0.15s ease' }}>
             <div className="joi-label mb-2" style={{ color:'var(--joi-pink)' }}>Resultado AI</div>
-            <div className="w-[340px] h-[420px] rounded-xl flex items-center justify-center overflow-hidden joi-glass joi-border-glow"
-              style={{ border:'1px solid rgba(255,255,255,.04)', boxShadow:'0 0 30px rgba(255,107,157,.06)' }}>
+            <div className="w-[min(340px,_90vw)] h-[min(420px,_60vh)] rounded-xl flex items-center justify-center overflow-hidden joi-glass joi-border-glow"
+              style={{ border:'1px solid rgba(255,255,255,.04)', boxShadow:'0 0 30px rgba(99,102,241,.06)' }}>
               {resultImage ? (
                 <img src={resultImage} className="w-full h-full object-cover rounded-xl select-none" draggable={false} alt="Result" />
               ) : (
@@ -1377,7 +1479,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           ))}
           {resultImage && onNav && (
             <div className="ml-auto shrink-0 w-56">
-              <PipelineCTA label="Iniciar Sesión de Fotos" targetPage="session" onNav={onNav} icon="📸" />
+              <PipelineCTA label="Iniciar Sesión de Fotos" targetPage="studio" onNav={onNav} icon="📸" />
             </div>
           )}
         </div>}
@@ -1417,7 +1519,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
             onSave={(editedDataUrl) => {
               setResultImage(editedDataUrl)
               setEditHistory(prev => [...prev, editedDataUrl])
-              addItems([{ url: editedDataUrl, type: 'edit', model: 'basic-editor', tags: ['edited'] }])
+              addItems([{ id: crypto.randomUUID(), url: editedDataUrl, type: 'edit', model: 'basic-editor', tags: ['edited'], timestamp: Date.now() }])
               toast.addToast('Imagen editada guardada', 'success')
             }}
             onClose={() => setShowBasicEditor(false)}

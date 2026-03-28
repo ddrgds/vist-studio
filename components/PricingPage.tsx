@@ -266,7 +266,7 @@ const PricingPage: React.FC = () => {
               }>
               Anual
               <span className="text-[9px] px-1.5 py-0.5 rounded-full font-jet font-bold"
-                style={{ background: 'rgba(255,107,157,0.15)', color: 'var(--joi-pink)' }}>2 meses gratis</span>
+                style={{ background: 'rgba(99,102,241,0.15)', color: 'var(--joi-pink)' }}>2 meses gratis</span>
             </button>
           </div>
         </div>
@@ -276,8 +276,8 @@ const PricingPage: React.FC = () => {
           <div
             className="mb-8 px-5 py-3.5 rounded-2xl flex items-center justify-center gap-3 text-center"
             style={{
-              background: 'linear-gradient(135deg, rgba(255,107,157,0.06) 0%, rgba(208,72,176,0.04) 100%)',
-              border: '1px solid rgba(255,107,157,0.15)',
+              background: 'linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(79,70,229,0.04) 100%)',
+              border: '1px solid rgba(99,102,241,0.15)',
             }}
           >
             <span className="text-[13px] font-medium" style={{ color: 'var(--joi-text-2)' }}>
@@ -285,7 +285,7 @@ const PricingPage: React.FC = () => {
             </span>
             <span
               className="text-[14px] font-bold font-jet px-2.5 py-0.5 rounded-full"
-              style={{ background: 'rgba(255,107,157,0.12)', color: 'var(--joi-pink)' }}
+              style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--joi-pink)' }}
             >
               ${(PLANS[3].monthlyPrice - PLANS[3].annualPrice) * 12}/año
             </span>
@@ -298,7 +298,7 @@ const PricingPage: React.FC = () => {
         {/* ── Sign-up prompt for anonymous users ── */}
         {showSignUpPrompt && !user && (
           <div className="mb-6 px-5 py-4 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3"
-            style={{ background: 'rgba(255,107,157,0.06)', border: '1px solid rgba(255,107,157,0.2)' }}>
+            style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)' }}>
             <div>
               <p className="text-[13px] font-semibold" style={{ color: 'var(--joi-text-1)' }}>
                 Crea una cuenta gratis para suscribirte

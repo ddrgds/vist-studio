@@ -1,30 +1,28 @@
 import React, { useState, useEffect, useRef, lazy, Suspense, useCallback } from 'react'
 import type { Page } from '../App'
-import { Camera, Film, Images, Sparkles, Upload, ChevronDown, Check, X, ImagePlus, Lightbulb } from 'lucide-react'
+import { Sparkles, Upload, ChevronDown, Check, X, ImagePlus, Lightbulb } from 'lucide-react'
 import { InspirationBoard, type InspirationIdea } from '../components/InspirationBoard'
 import { useCharacterStore, type SavedCharacter } from '../stores/characterStore'
 import { useGalleryStore, type GalleryItem } from '../stores/galleryStore'
+import { useNavigationStore } from '../stores/navigationStore'
 import { useToast } from '../contexts/ToastContext'
 import { useProfile } from '../contexts/ProfileContext'
 import { generateInfluencerImage } from '../services/geminiService'
 import {
   changeScene, changeOutfit, relight, faceSwap, realisticSkin,
-  styleTransfer, upscale, generateAngles, aiEdit, grokEdit, uploadToFal,
+  styleTransfer, upscale, aiEdit,
+  generateCharacterSheet, enhanceSheetWithGrok,
   SCENE_PRESETS, RELIGHT_PRESETS, STYLE_PRESETS,
-  ANGLE_PROMPTS, ANGLE_GROK_ENHANCE_PROMPTS,
   type ToolResult,
 } from '../services/toolEngines'
 import { ImageSize, AspectRatio, GeminiImageModel, CREDIT_COSTS } from '../types'
 import type { InfluencerParams, CharacterParams } from '../types'
 
-// Lazy load sub-modes
+// Lazy load sub-mode
 const Director = lazy(() => import('./Director'))
-const VideoStudio = lazy(() => import('./VideoStudio'))
-const PhotoSession = lazy(() => import('./PhotoSession'))
 
 // ─── Types ──────────────────────────────────────────────
 
-type StudioMode = 'photo' | 'video' | 'session'
 type Phase = 'create' | 'edit'
 
 interface FilmstripItem {
@@ -80,10 +78,10 @@ const cardBg: React.CSSProperties = {
 }
 
 const selectedCardBg: React.CSSProperties = {
-  background: 'rgba(255,107,157,.10)',
-  border: '1px solid rgba(255,107,157,.25)',
+  background: 'rgba(99,102,241,.10)',
+  border: '1px solid rgba(99,102,241,.25)',
   backdropFilter: 'blur(8px)',
-  boxShadow: '0 0 16px rgba(255,107,157,.08)',
+  boxShadow: '0 0 16px rgba(99,102,241,.08)',
 }
 
 const inputStyle: React.CSSProperties = {
@@ -130,12 +128,12 @@ const BigButton: React.FC<{
   <button onClick={onClick} disabled={disabled || loading}
     className="w-full py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2"
     style={{
-      background: disabled ? 'rgba(255,255,255,.04)' : 'linear-gradient(135deg, rgba(255,107,157,.85), rgba(200,80,200,.7))',
+      background: disabled ? 'rgba(255,255,255,.04)' : 'linear-gradient(135deg, rgba(99,102,241,.85), rgba(200,80,200,.7))',
       color: disabled ? 'var(--joi-text-3)' : '#fff',
-      border: disabled ? '1px solid rgba(255,255,255,.06)' : '1px solid rgba(255,107,157,.3)',
+      border: disabled ? '1px solid rgba(255,255,255,.06)' : '1px solid rgba(99,102,241,.3)',
       cursor: disabled ? 'not-allowed' : 'pointer',
       opacity: loading ? 0.7 : 1,
-      boxShadow: disabled ? 'none' : '0 4px 24px rgba(255,107,157,.15)',
+      boxShadow: disabled ? 'none' : '0 4px 24px rgba(99,102,241,.15)',
     }}>
     {loading ? (
       <>
@@ -181,7 +179,7 @@ const CharacterSelector: React.FC<{
         {selected ? (
           <>
             <img src={selected.thumbnail} alt="" className="w-7 h-7 rounded-full object-cover"
-              style={{ border: '1.5px solid rgba(255,107,157,.3)' }} />
+              style={{ border: '1.5px solid rgba(99,102,241,.3)' }} />
             <span className="text-[12px] font-medium flex-1 truncate">{selected.name}</span>
           </>
         ) : (
@@ -232,7 +230,7 @@ const Filmstrip: React.FC<{
             <div className="w-12 h-12 rounded-lg overflow-hidden"
               style={{
                 border: activeIndex === i ? '2px solid var(--joi-pink)' : '2px solid rgba(255,255,255,.08)',
-                boxShadow: activeIndex === i ? '0 0 12px rgba(255,107,157,.2)' : 'none',
+                boxShadow: activeIndex === i ? '0 0 12px rgba(99,102,241,.2)' : 'none',
               }}>
               <img src={item.url} alt={item.label} className="w-full h-full object-cover" />
             </div>
@@ -307,7 +305,7 @@ const CreatePanel: React.FC<{
             onChange={e => { setSceneCustom(e.target.value); if (e.target.value) setScenePreset(null) }}
             className="mt-2"
             style={inputStyle}
-            onFocus={e => e.currentTarget.style.borderColor = 'rgba(255,107,157,.35)'}
+            onFocus={e => e.currentTarget.style.borderColor = 'rgba(99,102,241,.35)'}
             onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,.08)'}
           />
         </div>
@@ -318,7 +316,7 @@ const CreatePanel: React.FC<{
           <input type="text" placeholder="ej. vestido negro elegante de noche, tenis rojos..."
             value={outfit} onChange={e => setOutfit(e.target.value)}
             style={inputStyle}
-            onFocus={e => e.currentTarget.style.borderColor = 'rgba(255,107,157,.35)'}
+            onFocus={e => e.currentTarget.style.borderColor = 'rgba(99,102,241,.35)'}
             onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,.08)'}
           />
         </div>
@@ -329,7 +327,7 @@ const CreatePanel: React.FC<{
           <input type="text" placeholder="ej. sentado en una silla, brazos cruzados, caminando..."
             value={pose} onChange={e => setPose(e.target.value)}
             style={inputStyle}
-            onFocus={e => e.currentTarget.style.borderColor = 'rgba(255,107,157,.35)'}
+            onFocus={e => e.currentTarget.style.borderColor = 'rgba(99,102,241,.35)'}
             onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,.08)'}
           />
         </div>
@@ -437,7 +435,7 @@ const EditPanel: React.FC<{
               value={presetId ? '' : toolInput}
               onChange={e => { setToolInput(e.target.value); setPresetId(null) }}
               style={inputStyle}
-              onFocus={e => e.currentTarget.style.borderColor = 'rgba(255,107,157,.35)'}
+              onFocus={e => e.currentTarget.style.borderColor = 'rgba(99,102,241,.35)'}
               onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,.08)'}
             />
           </div>
@@ -451,7 +449,7 @@ const EditPanel: React.FC<{
               value={presetId ? '' : toolInput}
               onChange={e => { setToolInput(e.target.value); setPresetId(null) }}
               style={inputStyle}
-              onFocus={e => e.currentTarget.style.borderColor = 'rgba(255,107,157,.35)'}
+              onFocus={e => e.currentTarget.style.borderColor = 'rgba(99,102,241,.35)'}
               onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,.08)'}
             />
           </div>
@@ -465,7 +463,7 @@ const EditPanel: React.FC<{
               value={presetId ? '' : toolInput}
               onChange={e => { setToolInput(e.target.value); setPresetId(null) }}
               style={inputStyle}
-              onFocus={e => e.currentTarget.style.borderColor = 'rgba(255,107,157,.35)'}
+              onFocus={e => e.currentTarget.style.borderColor = 'rgba(99,102,241,.35)'}
               onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,.08)'}
             />
           </div>
@@ -479,7 +477,7 @@ const EditPanel: React.FC<{
               placeholder={activeTool === 'outfit' ? 'Describe el outfit...' : 'Describe la edición...'}
               value={toolInput} onChange={e => setToolInput(e.target.value)}
               style={inputStyle}
-              onFocus={e => e.currentTarget.style.borderColor = 'rgba(255,107,157,.35)'}
+              onFocus={e => e.currentTarget.style.borderColor = 'rgba(99,102,241,.35)'}
               onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,.08)'}
               onKeyDown={e => { if (e.key === 'Enter' && toolInput.trim()) handleApply() }}
             />
@@ -620,19 +618,12 @@ const EditPanel: React.FC<{
 // MAIN CONTENT STUDIO
 // ═════════════════════════════════════════════════════════
 
-const MODES: { id: StudioMode; label: string; icon: React.ReactNode; desc: string }[] = [
-  { id: 'photo', label: 'Foto', icon: <Camera size={15} />, desc: 'Genera fotos y escenas' },
-  { id: 'session', label: 'Lote de Fotos', icon: <Images size={15} />, desc: 'Sesión de fotos multi-vibe' },
-  { id: 'video', label: 'Video y Reels', icon: <Film size={15} />, desc: 'Control de movimiento \u00B7 Lip sync \u00B7 Animar' },
-]
 
 export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
   onNav: (p: Page) => void
   onEditImage?: (url: string) => void
   onExportImage?: (url: string) => void
 }) {
-  const [mode, setMode] = useState<StudioMode>('photo')
-
   // ── Phase state ──
   const [phase, setPhase] = useState<Phase>('create')
   const [selectedCharId, setSelectedCharId] = useState<string | null>(null)
@@ -655,6 +646,19 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
   const addGalleryItems = useGalleryStore(s => s.addItems)
   const toast = useToast()
   const { profile, decrementCredits, restoreCredits } = useProfile()
+
+  // Navigation store — consume pending image routed here from Gallery
+  const { pendingImage, pendingTarget, consume: consumeNav } = useNavigationStore()
+
+  useEffect(() => {
+    if (pendingTarget === 'studio' && pendingImage) {
+      setCurrentImageUrl(pendingImage)
+      setFilmstrip([{ url: pendingImage, label: 'Galería', tool: 'import' }])
+      setFilmstripIndex(0)
+      setPhase('edit')
+      consumeNav()
+    }
+  }, [pendingTarget, pendingImage, consumeNav])
 
   // Handle uploaded photo for "bring your own" flow
   const handleBYOUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -698,13 +702,22 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
     setCurrentImageUrl(filmstrip[index]?.url ?? null)
   }, [filmstrip])
 
-  // ── Helper: get character blobs as File[] ──
-  const getCharacterFiles = useCallback((): File[] => {
+  // ── Helper: get character blobs as File[] — lazy fetch from URLs if blobs not in memory ──
+  const getCharacterFiles = useCallback(async (): Promise<File[]> => {
     const char = characters.find(c => c.id === selectedCharId)
-    if (!char || !char.modelImageBlobs?.length) return []
-    return char.modelImageBlobs.map((blob, i) =>
-      new File([blob], `model-${i}.jpg`, { type: 'image/jpeg' })
-    )
+    if (!char) return []
+    if (char.modelImageBlobs?.length) {
+      return char.modelImageBlobs.map((blob, i) => new File([blob], `model-${i}.jpg`, { type: 'image/jpeg' }))
+    }
+    const urls = char.modelImageUrls ?? []
+    if (!urls.length) return []
+    const files = await Promise.all(urls.map(async (url, i) => {
+      try {
+        const blob = await fetch(url).then(r => r.blob())
+        return new File([blob], `model-${i}.jpg`, { type: 'image/jpeg' })
+      } catch { return null }
+    }))
+    return files.filter((f): f is File => f !== null)
   }, [characters, selectedCharId])
 
   // ═══════════════════════════════════════════════
@@ -723,7 +736,7 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
 
     setGenerating(true)
 
-    const modelFiles = getCharacterFiles()
+    const modelFiles = await getCharacterFiles()
     const cameraPrompt = CAMERA_OPTIONS.find(c => c.id === params.camera)?.prompt ?? ''
 
     // Build prompt
@@ -845,45 +858,19 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
         case 'angles': {
           const aMode: AngleMode = extra?.angleMode ?? 'face'
           const aQuality: AngleQuality = extra?.angleQuality ?? 'standard'
-          label = `Angles (${aMode})`
+          label = `Ángulos (${aMode})`
 
-          // For angles, we need to call Gemini with the angle prompt + character reference
-          const modelFiles = getCharacterFiles()
-          const anglePrompt = ANGLE_PROMPTS[aMode]
+          // Generate angle sheet directly from current image using NB2 edit
+          const sheetUrl = await generateCharacterSheet(currentImageUrl, aMode)
+          let finalUrl = sheetUrl
 
-          const inflParams: InfluencerParams = {
-            characters: [{
-              id: selectedCharId || 'temp',
-              modelImages: modelFiles,
-            }],
-            scenario: anglePrompt,
-            lighting: 'clean professional studio lighting',
-            imageSize: ImageSize.Size2K,
-            aspectRatio: AspectRatio.Square,
-            numberOfImages: 1,
-            model: GeminiImageModel.Flash2,
+          // Ultra: enhance with Grok (face + expressions only, not body)
+          if (aQuality === 'ultra' && aMode !== 'body') {
+            const enhancedUrl = await enhanceSheetWithGrok(sheetUrl, aMode as 'face' | 'expressions')
+            if (enhancedUrl) finalUrl = enhancedUrl
           }
 
-          try {
-            const urls = await generateInfluencerImage(inflParams)
-            if (urls?.[0]) {
-              let finalUrl = urls[0]
-              // If ultra quality, enhance with Grok
-              if (aQuality === 'ultra' && ANGLE_GROK_ENHANCE_PROMPTS[aMode as keyof typeof ANGLE_GROK_ENHANCE_PROMPTS]) {
-                const enhancePrompt = ANGLE_GROK_ENHANCE_PROMPTS[aMode as keyof typeof ANGLE_GROK_ENHANCE_PROMPTS]
-                const enhancedUrl = await grokEdit(finalUrl, enhancePrompt)
-                if (enhancedUrl) finalUrl = enhancedUrl
-              }
-              result = { url: finalUrl, engine: aQuality === 'ultra' ? 'nb2+grok' : 'nb2' }
-            } else {
-              throw new Error('No angle sheet generated')
-            }
-          } catch (angleErr) {
-            console.error('Angle generation failed:', angleErr)
-            toast.error('La generación de ángulos falló')
-            setGenerating(false)
-            return
-          }
+          result = { url: finalUrl, engine: 'nb2' }
           break
         }
         case 'ai-edit': {
@@ -938,63 +925,43 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
       {/* Hidden upload input for "bring your own" flow */}
       <input ref={uploadInputRef} type="file" accept="image/*" className="hidden" onChange={handleBYOUpload} />
 
-      {/* Mode switcher bar */}
-      <div className="shrink-0 flex items-center gap-2 px-5 py-2.5"
-        style={{ borderBottom: '1px solid rgba(255,255,255,.03)', background: 'var(--joi-bg-1)' }}>
-        <span className="text-xs font-semibold mr-2" style={{ color: 'var(--joi-text-3)' }}>MODO</span>
-        <div className="flex gap-1 p-0.5 rounded-lg" style={{ background: 'rgba(255,255,255,.02)' }}>
-          {MODES.map(m => (
-            <button key={m.id} onClick={() => setMode(m.id)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-all"
-              style={{
-                background: mode === m.id ? 'rgba(255,107,157,.10)' : 'transparent',
-                color: mode === m.id ? 'var(--joi-pink)' : 'var(--joi-text-3)',
-                border: mode === m.id ? '1px solid rgba(255,107,157,.18)' : '1px solid transparent',
-              }}>
-              {m.icon}
-              {m.label}
-            </button>
-          ))}
-        </div>
-        <span className="text-[10px] ml-2" style={{ color: 'var(--joi-text-3)' }}>
-          {MODES.find(m => m.id === mode)?.desc}
-        </span>
-
-        <div className="ml-auto">
+      {/* Inspiration shortcut — only while composing */}
+      {phase === 'create' && (
+        <div className="shrink-0 flex items-center justify-end px-4 py-2"
+          style={{ borderBottom: '1px solid rgba(255,255,255,.03)', background: 'var(--joi-bg-1)' }}>
           <button
             onClick={() => setShowInspiration(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-all"
             style={{
-              background: 'rgba(167,139,250,.08)',
-              border: '1px solid rgba(167,139,250,.18)',
-              color: '#A78BFA',
+              background: 'rgba(129,140,248,.08)',
+              border: '1px solid rgba(129,140,248,.18)',
+              color: '#818CF8',
             }}
           >
             <Lightbulb size={13} />
             Inspiración
           </button>
         </div>
-      </div>
+      )}
 
       {/* Content */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-y-auto lg:overflow-hidden">
         <Suspense fallback={
           <div className="h-full flex items-center justify-center" style={{ color: 'var(--joi-text-3)' }}>
             Cargando...
           </div>
         }>
-          {mode === 'photo' && (
-            phase === 'create' ? (
+          {phase === 'create' ? (
               /* PHASE 1: Director — full screen, all its features */
-              <div className="flex flex-col h-full">
+              <div className="flex flex-col lg:h-full">
                 {/* "Bring your own" upload banner */}
                 {!selectedCharId && characters.length === 0 && (
                   <div className="shrink-0 mx-5 mt-4 mb-2 p-4 rounded-xl flex items-center gap-4"
                     style={{
-                      background: 'rgba(167,139,250,0.05)',
-                      border: '1px dashed rgba(167,139,250,0.3)',
+                      background: 'rgba(129,140,248,0.05)',
+                      border: '1px dashed rgba(129,140,248,0.3)',
                     }}>
-                    <ImagePlus size={22} style={{ color: '#A78BFA', opacity: 0.7, flexShrink: 0 }} />
+                    <ImagePlus size={22} style={{ color: '#818CF8', opacity: 0.7, flexShrink: 0 }} />
                     <div className="flex-1 min-w-0">
                       <p className="text-[13px] font-medium" style={{ color: 'var(--joi-text-1)' }}>
                         ¿Sin personaje? No hay problema.
@@ -1005,16 +972,16 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
                     </div>
                     <label className="shrink-0 cursor-pointer px-4 py-2 rounded-lg text-[12px] font-semibold transition-all"
                       style={{
-                        background: 'linear-gradient(135deg, #FF6B9D, #A78BFA)',
+                        background: 'linear-gradient(135deg, #6366F1, #818CF8)',
                         color: 'white',
-                        boxShadow: '0 4px 16px rgba(255,107,157,.2)',
+                        boxShadow: '0 4px 16px rgba(99,102,241,.2)',
                       }}>
                       Subir
                       <input type="file" accept="image/*" className="hidden" onChange={handleBYOUpload} />
                     </label>
                   </div>
                 )}
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 lg:overflow-hidden">
                   <Director
                     onNav={onNav}
                     onEditImage={(url: string) => {
@@ -1106,9 +1073,7 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
               </div>
             </div>
             )
-          )}
-          {mode === 'session' && <PhotoSession onNav={onNav} />}
-          {mode === 'video' && <VideoStudio onNav={onNav} />}
+          }
         </Suspense>
       </div>
 
@@ -1117,7 +1082,6 @@ export default function ContentStudio({ onNav, onEditImage, onExportImage }: {
         <InspirationBoard
           onSelectIdea={(idea: InspirationIdea) => {
             setInspirationPrompt(idea.prompt)
-            setMode('photo')
             setPhase('create')
             setShowInspiration(false)
           }}

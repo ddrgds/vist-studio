@@ -34,7 +34,6 @@ const InpaintingModal: React.FC<InpaintingModalProps> = ({ item, onClose, onSave
     setImageLoaded(false);
     setImageError(false);
     const img = new Image();
-    img.crossOrigin = 'anonymous';
     img.onload = () => {
       const maxW = Math.min(512, window.innerWidth - 80);
       const ratio = img.height / img.width;

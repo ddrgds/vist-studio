@@ -82,7 +82,7 @@ const CompareSliderModal: React.FC<CompareSliderModalProps> = ({ itemA, itemB, o
           <span className="text-[11px]" style={{ color: 'var(--joi-text-3)' }}>Arrastra el deslizador {'\u00B7'} Teclas de flecha</span>
         </div>
         <div className="flex items-center gap-2 text-[11px]" style={{ color: 'var(--joi-text-3)' }}>
-          <span style={{ color: '#A78BFA' }} className="font-medium">{Math.round(sliderPos)}%</span>
+          <span style={{ color: '#818CF8' }} className="font-medium">{Math.round(sliderPos)}%</span>
         </div>
       </div>
 
@@ -163,15 +163,15 @@ const CompareSliderModal: React.FC<CompareSliderModalProps> = ({ itemA, itemB, o
         }}
       >
         <div className="flex items-center gap-2">
-          <div className="w-1.5 h-8 rounded-full" style={{ background: '#FF6B9D' }} />
-          <img src={itemA.url} alt={labelA} className="w-10 h-10 rounded-lg object-cover" style={{ border: '2px solid rgba(255,107,157,0.4)' }} />
+          <div className="w-1.5 h-8 rounded-full" style={{ background: '#6366F1' }} />
+          <img src={itemA.url} alt={labelA} className="w-10 h-10 rounded-lg object-cover" style={{ border: '2px solid rgba(99,102,241,0.4)' }} />
           <span className="text-[11px]" style={{ color: 'var(--joi-text-2)' }}>{labelA}</span>
         </div>
         <span className="text-sm" style={{ color: 'var(--joi-text-3)' }}>vs</span>
         <div className="flex items-center gap-2">
-          <img src={itemB.url} alt={labelB} className="w-10 h-10 rounded-lg object-cover" style={{ border: '2px solid rgba(167,139,250,0.4)' }} />
+          <img src={itemB.url} alt={labelB} className="w-10 h-10 rounded-lg object-cover" style={{ border: '2px solid rgba(129,140,248,0.4)' }} />
           <span className="text-[11px]" style={{ color: 'var(--joi-text-2)' }}>{labelB}</span>
-          <div className="w-1.5 h-8 rounded-full" style={{ background: '#A78BFA' }} />
+          <div className="w-1.5 h-8 rounded-full" style={{ background: '#818CF8' }} />
         </div>
       </div>
     </div>

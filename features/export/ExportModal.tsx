@@ -97,9 +97,9 @@ const ExportModal: React.FC<ExportModalProps> = ({ imageUrl, onClose }) => {
             transition: 'all 0.15s ease',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(255,107,157,0.12)';
-            e.currentTarget.style.color = '#FF6B9D';
-            e.currentTarget.style.borderColor = 'rgba(255,107,157,0.2)';
+            e.currentTarget.style.background = 'rgba(99,102,241,0.12)';
+            e.currentTarget.style.color = '#6366F1';
+            e.currentTarget.style.borderColor = 'rgba(99,102,241,0.2)';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
@@ -174,7 +174,7 @@ const ExportModal: React.FC<ExportModalProps> = ({ imageUrl, onClose }) => {
                   borderRadius: 12,
                   border: '1px solid rgba(255,255,255,0.04)',
                   background: isActive
-                    ? 'rgba(255,107,157,0.10)'
+                    ? 'rgba(99,102,241,0.10)'
                     : 'rgba(255,255,255,0.02)',
                   cursor: exporting ? 'wait' : 'pointer',
                   transition: 'all 0.15s ease',
@@ -185,8 +185,8 @@ const ExportModal: React.FC<ExportModalProps> = ({ imageUrl, onClose }) => {
                 }}
                 onMouseEnter={(e) => {
                   if (!exporting) {
-                    e.currentTarget.style.background = 'rgba(255,107,157,0.08)';
-                    e.currentTarget.style.borderColor = 'rgba(255,107,157,0.15)';
+                    e.currentTarget.style.background = 'rgba(99,102,241,0.08)';
+                    e.currentTarget.style.borderColor = 'rgba(99,102,241,0.15)';
                   }
                 }}
                 onMouseLeave={(e) => {
@@ -218,7 +218,7 @@ const ExportModal: React.FC<ExportModalProps> = ({ imageUrl, onClose }) => {
                   }}
                 >
                   {isActive ? (
-                    <span style={{ color: '#FF6B9D' }}>Exporting...</span>
+                    <span style={{ color: '#6366F1' }}>Exporting...</span>
                   ) : (
                     <span style={{ color: '#A898B8', fontSize: 16 }}>↓</span>
                   )}

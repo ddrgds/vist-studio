@@ -32,14 +32,14 @@ export const useNavigationStore = create<NavigationState>((set, get) => ({
     const prev = get()._timeoutId
     if (prev) clearTimeout(prev)
     const tid = setTimeout(() => get().consume(), 10000)
-    set({ pendingImage: image, pendingFile: null, pendingSource: 'gallery', pendingTarget: 'session', _timeoutId: tid })
+    set({ pendingImage: image, pendingFile: null, pendingSource: 'gallery', pendingTarget: 'studio', _timeoutId: tid })
   },
 
   navigateToUpload: (image) => {
     const prev = get()._timeoutId
     if (prev) clearTimeout(prev)
     const tid = setTimeout(() => get().consume(), 10000)
-    set({ pendingImage: image, pendingFile: null, pendingSource: 'gallery', pendingTarget: 'upload', _timeoutId: tid })
+    set({ pendingImage: image, pendingFile: null, pendingSource: 'gallery', pendingTarget: 'create', _timeoutId: tid })
   },
 
   consume: () => {

@@ -49,6 +49,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
   const [showAllStyles, setShowAllStyles] = useState(false)
   const [shotCount, setShotCount] = useState(4)
   const [selectedEngine, setSelectedEngine] = useState<string>('grok')
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState<AspectRatio>(AspectRatio.Portrait)
   const [selectedResolution, setSelectedResolution] = useState('1k')
   const [showEngineModal, setShowEngineModal] = useState(false)
   const [realisticMode, setRealisticMode] = useState(true)
@@ -161,7 +162,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
 
   // Consume pending navigation (e.g. from Gallery → Session)
   useEffect(() => {
-    if (pendingTarget === 'session' && pendingImage) {
+    if (pendingTarget === 'studio' && pendingImage) {
       // Gallery → Session: use the image as the subject
       setSourceMode('gallery')
       // Find matching gallery item or create a pseudo-selection
@@ -282,7 +283,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
         gridMode: gridMode && effectivePoses.length >= 4,
         scenario: sceneOverride || undefined,
         upscale: upscaleMode,
-        aspectRatio: AspectRatio.Portrait,
+        aspectRatio: selectedAspectRatio,
         loraUrl: selectedChar?.loraUrl,
         loraTriggerWord: selectedChar?.name || 'subject',
         onProgress: (step, pct) => { setProgressStep(step); setProgress(pct) },
@@ -389,7 +390,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
             const urls = await editWithSoulReference(
               refFile,
               prompt,
-              AspectRatio.Portrait,
+              selectedAspectRatio,
               (p) => setProgress(((i + p / 100) / mixedShots.length) * 100),
               abortRef.current!.signal,
               selectedSoulStyle
@@ -466,8 +467,10 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
         // ── Character mode (fallback): existing Gemini-based generation ──
         let refFile: File | null = null
 
-        if (selectedChar!.modelImageBlobs.length > 0) {
-          refFile = new File([selectedChar!.modelImageBlobs[0]], 'reference.jpg', { type: 'image/jpeg' })
+        const firstBlob = selectedChar!.modelImageBlobs?.[0]
+          ?? (selectedChar!.modelImageUrls?.[0] ? await fetch(selectedChar!.modelImageUrls[0]).then(r => r.blob()) : null)
+        if (firstBlob) {
+          refFile = new File([firstBlob], 'reference.jpg', { type: 'image/jpeg' })
         }
 
         const sessionPrompt = sceneOverride || 'natural indoor setting'
@@ -488,7 +491,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
               const urls = await editWithSoulReference(
                 refFile,
                 prompt,
-                AspectRatio.Portrait,
+                selectedAspectRatio,
                 (p) => setProgress(((i + p / 100) / angles.length) * 100),
                 abortRef.current!.signal,
                 selectedSoulStyle
@@ -576,7 +579,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
             lighting: 'natural, varied per shot',
             camera: 'varied angles',
             imageSize: ImageSize.Size2K,
-            aspectRatio: AspectRatio.Portrait,
+            aspectRatio: selectedAspectRatio,
             numberOfImages: shotCount,
             scenarioImage: refImage ? [refImage.file] : undefined,
           }
@@ -643,13 +646,13 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
   })()
 
   return (
-    <div className="h-full flex" style={{ background: 'var(--joi-bg-0)' }}>
+    <div className="flex flex-col lg:flex-row lg:h-full" style={{ background: 'var(--joi-bg-0)' }}>
       {/* Hidden file inputs */}
       <input ref={refInputRef} type="file" accept="image/*" className="hidden" onChange={handleRefUpload} />
       <input ref={subjectInputRef} type="file" accept="image/*" className="hidden" onChange={handleSubjectUpload} />
 
       {/* Left Panel */}
-      <div className="w-[360px] shrink-0 flex flex-col" style={{ background:'var(--joi-bg-1)', borderRight:'1px solid var(--joi-border)' }}>
+      <div className="w-full lg:w-[360px] shrink-0 flex flex-col border-b lg:border-b-0" style={{ background:'var(--joi-bg-1)', borderRight:'1px solid var(--joi-border)' }}>
         <div className="px-5 h-14 flex items-center shrink-0" style={{ borderBottom:'1px solid var(--joi-border)' }}>
           <h1 className="joi-heading joi-glow" style={{ fontSize: '1.75rem' }}>
             <span style={{ color: 'var(--joi-pink)' }}>Sesión de</span>{' '}
@@ -686,7 +689,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                 <button key={mode} onClick={() => setSourceMode(mode)}
                   className="px-2 py-0.5 rounded-md text-[9px] transition-all"
                   style={{
-                    background: sourceMode === mode ? 'rgba(255,107,157,.08)' : 'transparent',
+                    background: sourceMode === mode ? 'rgba(99,102,241,.08)' : 'transparent',
                     color: sourceMode === mode ? 'var(--joi-pink)' : 'var(--joi-text-3)',
                   }}>
                   {mode === 'gallery' ? 'Galería' : mode === 'upload' ? 'Subir' : 'Personaje'}
@@ -737,8 +740,8 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                 <button onClick={() => setShowEngineModal(!showEngineModal)}
                   className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:scale-105 shrink-0"
                   style={{
-                    background: selectedEngine !== 'auto' ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)',
-                    border: `1px solid ${selectedEngine !== 'auto' ? 'rgba(255,107,157,.2)' : 'var(--joi-border)'}`,
+                    background: selectedEngine !== 'auto' ? 'rgba(99,102,241,.08)' : 'var(--joi-bg-3)',
+                    border: `1px solid ${selectedEngine !== 'auto' ? 'rgba(99,102,241,.2)' : 'var(--joi-border)'}`,
                     color: selectedEngine !== 'auto' ? 'var(--joi-pink)' : 'var(--joi-text-3)',
                   }}>
                   {'\uD83D\uDD27'}
@@ -772,8 +775,8 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
               <button onClick={() => setShowEngineModal(!showEngineModal)}
                 className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:scale-105 shrink-0"
                 style={{
-                  background: selectedEngine !== 'auto' ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)',
-                  border: `1px solid ${selectedEngine !== 'auto' ? 'rgba(255,107,157,.2)' : 'var(--joi-border)'}`,
+                  background: selectedEngine !== 'auto' ? 'rgba(99,102,241,.08)' : 'var(--joi-bg-3)',
+                  border: `1px solid ${selectedEngine !== 'auto' ? 'rgba(99,102,241,.2)' : 'var(--joi-border)'}`,
                   color: selectedEngine !== 'auto' ? 'var(--joi-pink)' : 'var(--joi-text-3)',
                 }}>
                 {'\uD83D\uDD27'}
@@ -789,8 +792,8 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                   <button key={c.id} onClick={() => setSelectedCharId(c.id)}
                     className="flex-1 py-2 rounded-lg text-[11px] flex items-center justify-center gap-1.5 transition-all"
                     style={{
-                      background: selectedCharId === c.id ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)',
-                      border: `1px solid ${selectedCharId === c.id ? 'rgba(255,107,157,.2)' : 'var(--joi-border)'}`,
+                      background: selectedCharId === c.id ? 'rgba(99,102,241,.08)' : 'var(--joi-bg-3)',
+                      border: `1px solid ${selectedCharId === c.id ? 'rgba(99,102,241,.2)' : 'var(--joi-border)'}`,
                       color: selectedCharId === c.id ? 'var(--joi-pink)' : 'var(--joi-text-2)',
                     }}>
                     {c.thumbnail ? (
@@ -806,8 +809,8 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
               <button onClick={() => setShowEngineModal(!showEngineModal)}
                 className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:scale-105 shrink-0"
                 style={{
-                  background: selectedEngine !== 'auto' ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)',
-                  border: `1px solid ${selectedEngine !== 'auto' ? 'rgba(255,107,157,.2)' : 'var(--joi-border)'}`,
+                  background: selectedEngine !== 'auto' ? 'rgba(99,102,241,.08)' : 'var(--joi-bg-3)',
+                  border: `1px solid ${selectedEngine !== 'auto' ? 'rgba(99,102,241,.2)' : 'var(--joi-border)'}`,
                   color: selectedEngine !== 'auto' ? 'var(--joi-pink)' : 'var(--joi-text-3)',
                 }}>
                 {'\uD83D\uDD27'}
@@ -831,7 +834,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                   benefit: 'Rápido y económico',
                   icon: '\u26A1',
                   cost: SESSION_TIER_COSTS.basic,
-                  accentColor: 'rgba(255,107,157',
+                  accentColor: 'rgba(99,102,241',
                 },
                 {
                   tier: 'standard' as SessionTier,
@@ -841,7 +844,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                   icon: '\u2B50',
                   cost: SESSION_TIER_COSTS.standard,
                   recommended: true,
-                  accentColor: 'rgba(167,139,250',
+                  accentColor: 'rgba(129,140,248',
                 },
                 {
                   tier: 'premium' as SessionTier,
@@ -859,7 +862,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                   benefit: 'Realismo nivel moda',
                   icon: '\u2726',
                   cost: SESSION_TIER_COSTS.soul,
-                  accentColor: 'rgba(255,107,157',
+                  accentColor: 'rgba(99,102,241',
                 },
               ]).map(t => {
                 const active = selectedTier === t.tier
@@ -902,7 +905,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                 <button onClick={() => setPoseMode('presets')}
                   className="px-2.5 py-1 rounded-md text-[9px] font-medium transition-all"
                   style={{
-                    background: poseMode === 'presets' ? 'rgba(255,107,157,.08)' : 'transparent',
+                    background: poseMode === 'presets' ? 'rgba(99,102,241,.08)' : 'transparent',
                     color: poseMode === 'presets' ? 'var(--joi-pink)' : 'var(--joi-text-3)',
                   }}>
                   Presets
@@ -910,7 +913,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                 <button onClick={() => setPoseMode('manual')}
                   className="px-2.5 py-1 rounded-md text-[9px] font-medium transition-all"
                   style={{
-                    background: poseMode === 'manual' ? 'rgba(167,139,250,.08)' : 'transparent',
+                    background: poseMode === 'manual' ? 'rgba(129,140,248,.08)' : 'transparent',
                     color: poseMode === 'manual' ? 'var(--joi-violet)' : 'var(--joi-text-3)',
                   }}>
                   Manual
@@ -927,12 +930,12 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                   const isSkeleton = skeletonPoseIds.has(pose.id)
                   const isExtracting = extractingSkeletonIds.has(pose.id)
                   return (
-                  <div key={pose.id} className="p-2.5 rounded-lg relative" style={{ background:'var(--joi-bg-3)', border: `1px solid ${isSkeleton ? 'rgba(167,139,250,.25)' : 'var(--joi-border)'}` }}>
+                  <div key={pose.id} className="p-2.5 rounded-lg relative" style={{ background:'var(--joi-bg-3)', border: `1px solid ${isSkeleton ? 'rgba(129,140,248,.25)' : 'var(--joi-border)'}` }}>
                     <div className="flex items-center gap-2 mb-1.5">
                       <span className="text-[9px] font-mono" style={{ color:'var(--joi-text-3)' }}>#{idx + 1}</span>
                       {isSkeleton && (
                         <span className="text-[7px] px-1.5 py-0.5 rounded-full font-medium"
-                          style={{ background:'rgba(167,139,250,.1)', color:'var(--joi-violet)', border:'1px solid rgba(167,139,250,.2)' }}>
+                          style={{ background:'rgba(129,140,248,.1)', color:'var(--joi-violet)', border:'1px solid rgba(129,140,248,.2)' }}>
                           Esqueleto
                         </span>
                       )}
@@ -951,7 +954,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                       {/* Pose reference image */}
                       {pose.images.length > 0 ? (
                         <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0"
-                          style={{ border: `1px solid ${isSkeleton ? 'rgba(167,139,250,.4)' : 'rgba(167,139,250,.3)'}` }}>
+                          style={{ border: `1px solid ${isSkeleton ? 'rgba(129,140,248,.4)' : 'rgba(129,140,248,.3)'}` }}>
                           <img src={URL.createObjectURL(pose.images[0])} className="w-full h-full object-cover" alt="" />
                           {isExtracting && (
                             <div className="absolute inset-0 flex items-center justify-center" style={{ background:'rgba(0,0,0,.6)' }}>
@@ -986,8 +989,8 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                           disabled={isExtracting}
                           className="px-2 py-1 rounded-lg text-[9px] transition-all self-center"
                           style={{
-                            background: isExtracting ? 'rgba(167,139,250,.04)' : 'rgba(167,139,250,.08)',
-                            border:'1px solid rgba(167,139,250,.15)',
+                            background: isExtracting ? 'rgba(129,140,248,.04)' : 'rgba(129,140,248,.08)',
+                            border:'1px solid rgba(129,140,248,.15)',
                             color:'var(--joi-violet)',
                             opacity: isExtracting ? 0.6 : 1,
                           }}
@@ -1008,7 +1011,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                 {manualPoses.length < 8 && (
                   <button onClick={addManualPose}
                     className="w-full py-2 rounded-lg text-[10px] font-medium transition-all"
-                    style={{ background:'rgba(167,139,250,.06)', border:'1px dashed rgba(167,139,250,.15)', color:'var(--joi-violet)' }}>
+                    style={{ background:'rgba(129,140,248,.06)', border:'1px dashed rgba(129,140,248,.15)', color:'var(--joi-violet)' }}>
                     + Agregar Pose ({manualPoses.length}/8)
                   </button>
                 )}
@@ -1022,8 +1025,8 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
               className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-medium transition-all"
               title="Genera 1 imagen como cuadrícula 2x2, luego la divide en 4 imágenes individuales"
               style={{
-                background: gridMode ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)',
-                border: `1px solid ${gridMode ? 'rgba(255,107,157,.2)' : 'var(--joi-border)'}`,
+                background: gridMode ? 'rgba(99,102,241,.08)' : 'var(--joi-bg-3)',
+                border: `1px solid ${gridMode ? 'rgba(99,102,241,.2)' : 'var(--joi-border)'}`,
                 color: gridMode ? 'var(--joi-pink)' : 'var(--joi-text-2)',
               }}>
               <span>{gridMode ? '\u2611' : '\u2610'}</span> Cuadrícula (4 en 1)
@@ -1032,8 +1035,8 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
               className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-medium transition-all"
               title="Escalar todos los resultados con AuraSR después de la generación"
               style={{
-                background: upscaleMode ? 'rgba(167,139,250,.08)' : 'var(--joi-bg-3)',
-                border: `1px solid ${upscaleMode ? 'rgba(167,139,250,.2)' : 'var(--joi-border)'}`,
+                background: upscaleMode ? 'rgba(129,140,248,.08)' : 'var(--joi-bg-3)',
+                border: `1px solid ${upscaleMode ? 'rgba(129,140,248,.2)' : 'var(--joi-border)'}`,
                 color: upscaleMode ? 'var(--joi-violet)' : 'var(--joi-text-2)',
               }}>
               <span>{upscaleMode ? '\u2611' : '\u2610'}</span> Upscale
@@ -1052,7 +1055,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
 
           {/* Grid mode helper text */}
           {gridMode && (
-            <div className="text-[9px] px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(255,107,157,.04)', border: '1px solid rgba(255,107,157,.08)', color: 'var(--joi-text-3)' }}>
+            <div className="text-[9px] px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(99,102,241,.04)', border: '1px solid rgba(99,102,241,.08)', color: 'var(--joi-text-3)' }}>
               El modo cuadrícula genera una sola imagen 2x2 con 4 poses, luego la divide en fotos individuales. Mejor con 4 poses.
             </div>
           )}
@@ -1070,8 +1073,8 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                 <button key={s.id} onClick={() => { setSelectedScene(selectedScene === s.id ? '' : s.id); setCustomScene('') }}
                   className="shrink-0 px-2.5 py-1.5 rounded-lg text-[10px] font-medium flex items-center gap-1.5 transition-all whitespace-nowrap"
                   style={{
-                    background: selectedScene === s.id && !customScene ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)',
-                    border: `1px solid ${selectedScene === s.id && !customScene ? 'rgba(255,107,157,.2)' : 'var(--joi-border)'}`,
+                    background: selectedScene === s.id && !customScene ? 'rgba(99,102,241,.08)' : 'var(--joi-bg-3)',
+                    border: `1px solid ${selectedScene === s.id && !customScene ? 'rgba(99,102,241,.2)' : 'var(--joi-border)'}`,
                     color: selectedScene === s.id && !customScene ? 'var(--joi-pink)' : 'var(--joi-text-2)',
                   }}>
                   <span>{s.icon}</span>{s.label}
@@ -1082,7 +1085,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
               className="w-full mt-2 px-3 py-2 rounded-xl text-[11px] border outline-none transition-colors"
               style={{
                 background: 'var(--joi-bg-2)',
-                borderColor: customScene ? 'rgba(255,107,157,.2)' : 'rgba(255,255,255,.04)',
+                borderColor: customScene ? 'rgba(99,102,241,.2)' : 'rgba(255,255,255,.04)',
                 color: 'var(--joi-text-1)',
                 backdropFilter: 'blur(8px)',
               }}
@@ -1101,7 +1104,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
               )}
             </div>
             {selectedPresets.size > 1 && selectedEngine !== 'higgsfield:soul' && (
-              <div className="text-[9px] mb-2 px-2 py-1 rounded-lg" style={{ background: 'rgba(255,107,157,.04)', color: 'var(--joi-text-3)', border: '1px solid rgba(255,107,157,.08)' }}>
+              <div className="text-[9px] mb-2 px-2 py-1 rounded-lg" style={{ background: 'rgba(99,102,241,.04)', color: 'var(--joi-text-3)', border: '1px solid rgba(99,102,241,.08)' }}>
                 Cada vibe genera su propio set de fotos — las tomas se mezclan entre vibes
               </div>
             )}
@@ -1114,8 +1117,8 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                     <button key={cat.key} onClick={() => setSoulStyleCategory(cat.key)}
                       className="px-2 py-1 rounded-md text-[9px] font-medium whitespace-nowrap transition-all flex items-center gap-1"
                       style={{
-                        background: soulStyleCategory === cat.key ? 'rgba(255,107,157,.12)' : 'var(--joi-bg-3)',
-                        border: `1px solid ${soulStyleCategory === cat.key ? 'rgba(255,107,157,.3)' : 'transparent'}`,
+                        background: soulStyleCategory === cat.key ? 'rgba(99,102,241,.12)' : 'var(--joi-bg-3)',
+                        border: `1px solid ${soulStyleCategory === cat.key ? 'rgba(99,102,241,.3)' : 'transparent'}`,
                         color: soulStyleCategory === cat.key ? 'var(--joi-pink)' : 'var(--joi-text-3)',
                       }}>
                       <span className="text-[10px]">{cat.icon}</span> {cat.label}
@@ -1133,9 +1136,9 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                         <button key={s.id} onClick={() => setSelectedSoulStyle(s.id)}
                           className="p-2 rounded-lg text-center transition-all relative"
                           style={{
-                            background: active ? 'rgba(255,107,157,.1)' : 'var(--joi-bg-3)',
-                            border: `1px solid ${active ? 'rgba(255,107,157,.3)' : 'var(--joi-border)'}`,
-                            boxShadow: active ? '0 0 12px rgba(255,107,157,.08)' : 'none',
+                            background: active ? 'rgba(99,102,241,.1)' : 'var(--joi-bg-3)',
+                            border: `1px solid ${active ? 'rgba(99,102,241,.3)' : 'var(--joi-border)'}`,
+                            boxShadow: active ? '0 0 12px rgba(99,102,241,.08)' : 'none',
                           }}>
                           {s.featured && <span className="absolute top-0.5 right-0.5 text-[7px]" title="Featured">⭐</span>}
                           <span className="text-lg block">{s.icon}</span>
@@ -1167,8 +1170,8 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                           <button key={p.id} onClick={() => togglePreset(p.id)}
                             className="p-3 rounded-lg text-left transition-all group"
                             style={{
-                              background: active ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)',
-                              border: `1px solid ${active ? 'rgba(255,107,157,.25)' : 'var(--joi-border)'}`,
+                              background: active ? 'rgba(99,102,241,.08)' : 'var(--joi-bg-3)',
+                              border: `1px solid ${active ? 'rgba(99,102,241,.25)' : 'var(--joi-border)'}`,
                             }}>
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-base">{p.icon}</span>
@@ -1197,7 +1200,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
 
             {refImage ? (
               <div className="relative aspect-video rounded-lg overflow-hidden"
-                style={{ border:'1px solid rgba(255,107,157,.2)' }}>
+                style={{ border:'1px solid rgba(99,102,241,.2)' }}>
                 <img src={refImage.preview} className="w-full h-full object-cover" alt="" />
                 <button onClick={() => setRefImage(null)}
                   className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
@@ -1265,21 +1268,21 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                 <button onClick={() => setImageBoostOn(prev => !prev)}
                   className="relative w-9 h-5 rounded-full transition-all"
                   style={{
-                    background: imageBoostOn ? 'rgba(255,107,157,.35)' : 'rgba(255,255,255,.08)',
-                    border: `1px solid ${imageBoostOn ? 'rgba(255,107,157,.4)' : 'rgba(255,255,255,.06)'}`,
+                    background: imageBoostOn ? 'rgba(99,102,241,.35)' : 'rgba(255,255,255,.08)',
+                    border: `1px solid ${imageBoostOn ? 'rgba(99,102,241,.4)' : 'rgba(255,255,255,.06)'}`,
                   }}>
                   <div className="absolute top-0.5 w-3.5 h-3.5 rounded-full transition-all"
                     style={{
                       left: imageBoostOn ? '18px' : '2px',
                       background: imageBoostOn ? 'var(--joi-pink)' : 'rgba(255,255,255,.25)',
-                      boxShadow: imageBoostOn ? '0 0 8px rgba(255,107,157,.4)' : 'none',
+                      boxShadow: imageBoostOn ? '0 0 8px rgba(99,102,241,.4)' : 'none',
                     }} />
                 </button>
               </div>
               {imageBoostOn && (
                 <div className="text-[9px] font-mono px-3 py-1.5 rounded-lg" style={{
-                  background: 'rgba(255,107,157,.04)',
-                  border: '1px solid rgba(255,107,157,.08)',
+                  background: 'rgba(99,102,241,.04)',
+                  border: '1px solid rgba(99,102,241,.08)',
                   color: 'var(--joi-text-3)',
                 }}>{IMAGE_BOOST_KEYWORDS}</div>
               )}
@@ -1293,7 +1296,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                   className="w-full px-3 py-2 rounded-xl text-[11px] border outline-none resize-none transition-colors"
                   style={{
                     background: 'var(--joi-bg-2)',
-                    borderColor: negativePrompt ? 'rgba(255,107,157,.15)' : 'rgba(255,255,255,.04)',
+                    borderColor: negativePrompt ? 'rgba(99,102,241,.15)' : 'rgba(255,255,255,.04)',
                     color: 'var(--joi-text-1)',
                     backdropFilter: 'blur(8px)',
                   }}
@@ -1314,8 +1317,8 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                 <button key={n} onClick={() => setShotCount(n)}
                   className="flex-1 py-1.5 rounded-lg text-[11px] font-medium transition-all"
                   style={{
-                    background: shotCount === n ? 'rgba(255,107,157,.12)' : 'var(--joi-bg-3)',
-                    border: `1px solid ${shotCount === n ? 'rgba(255,107,157,.25)' : 'var(--joi-border)'}`,
+                    background: shotCount === n ? 'rgba(99,102,241,.12)' : 'var(--joi-bg-3)',
+                    border: `1px solid ${shotCount === n ? 'rgba(99,102,241,.25)' : 'var(--joi-border)'}`,
                     color: shotCount === n ? 'var(--joi-pink)' : 'var(--joi-text-3)',
                   }}>{n}</button>
               ))}
@@ -1327,7 +1330,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                   : `${effectivePoses.length} pose${effectivePoses.length !== 1 ? 's' : ''} (manual)${effectivePoses.some(p => p.images.length > 0) ? ' · ref imgs' : ''}`
                 }
               </div>
-              <span className="badge text-[9px] shrink-0" style={{ background:'rgba(255,107,157,.08)', color:'var(--joi-pink)', border:'1px solid rgba(255,107,157,.15)' }}>
+              <span className="badge text-[9px] shrink-0" style={{ background:'rgba(99,102,241,.08)', color:'var(--joi-pink)', border:'1px solid rgba(99,102,241,.15)' }}>
                 {(gridMode ? 4 : effectivePoses.length) * costPerShot} cr · {selectedTier}
               </span>
             </div>
@@ -1350,7 +1353,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
       </div>
 
       {/* Center Canvas */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 min-h-[70vw] lg:min-h-0 flex flex-col pb-20 lg:pb-0">
         <div className="h-11 flex items-center px-4 gap-1.5 shrink-0" style={{ borderBottom:'1px solid var(--joi-border)', background:'var(--joi-bg-1)' }}>
           {['\u21BA','\u21BB','\uD83D\uDD0D','\u27F2 Variations','\uD83D\uDCBE'].map(t => (
             <button key={t} className="px-2.5 py-1 rounded-md text-[11px] transition-colors hover:bg-white/5" style={{ color:'var(--joi-text-2)' }}>{t}</button>
@@ -1373,7 +1376,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center">
                     <div className="w-14 h-14 rounded-md mx-auto mb-2 flex items-center justify-center joi-breathe"
-                      style={{ background:'rgba(255,107,157,.1)', border:'1px solid rgba(255,107,157,.2)' }}>
+                      style={{ background:'rgba(99,102,241,.1)', border:'1px solid rgba(99,102,241,.2)' }}>
                       <span className="text-xl">{'\uD83D\uDCF8'}</span>
                     </div>
                     <p className="text-[11px]" style={{ color:'var(--joi-text-2)' }}>Foto base lista — elige vibes y dispara</p>
@@ -1382,7 +1385,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
               </div>
             ) : (
               <div className="absolute inset-0" style={{
-                background:'linear-gradient(135deg, rgba(255,107,157,.06) 0%, var(--joi-bg-2) 50%, rgba(200,130,255,.04) 100%)'
+                background:'linear-gradient(135deg, rgba(99,102,241,.06) 0%, var(--joi-bg-2) 50%, rgba(200,130,255,.04) 100%)'
               }}>
                 {/* Floating vibe icons */}
                 <div className="absolute inset-0 flex items-center justify-center gap-4 opacity-20">
@@ -1427,7 +1430,7 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
                   <div className="w-14 h-14 rounded-md mx-auto mb-2 flex items-center justify-center joi-breathe"
-                    style={{ background:'rgba(255,107,157,.1)', border:'1px solid rgba(255,107,157,.2)' }}>
+                    style={{ background:'rgba(99,102,241,.1)', border:'1px solid rgba(99,102,241,.2)' }}>
                     <span className="text-xl">{'\uD83D\uDCF8'}</span>
                   </div>
                   <p className="text-[11px]" style={{ color:'var(--joi-text-3)' }}>Pick a base photo and vibes, then shoot</p>
@@ -1480,8 +1483,8 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
               <button key={eng.key} onClick={() => { setSelectedEngine(eng.key); setShowEngineModal(false) }}
                 className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all"
                 style={{
-                  background: selectedEngine === eng.key ? 'rgba(255,107,157,.08)' : 'transparent',
-                  border: `1px solid ${selectedEngine === eng.key ? 'rgba(255,107,157,.2)' : 'transparent'}`,
+                  background: selectedEngine === eng.key ? 'rgba(99,102,241,.08)' : 'transparent',
+                  border: `1px solid ${selectedEngine === eng.key ? 'rgba(99,102,241,.2)' : 'transparent'}`,
                 }}>
                 <span className="text-base">{eng.icon}</span>
                 <div className="flex-1 min-w-0">
@@ -1497,6 +1500,30 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
           </div>
 
           <div className="shrink-0 px-3 pb-3 pt-2" style={{ borderTop:'1px solid var(--joi-border)' }}>
+            <div className="joi-label mb-2 px-1">Formato</div>
+            <div className="flex gap-1.5">
+              {[
+                { id: AspectRatio.Portrait,  label: '3:4',  icon: '▯', desc: 'Retrato' },
+                { id: AspectRatio.Square,    label: '1:1',  icon: '⬜', desc: 'Cuadrado' },
+                { id: AspectRatio.Landscape, label: '4:3',  icon: '▭', desc: 'Paisaje' },
+                { id: AspectRatio.Tall,      label: '9:16', icon: '📱', desc: 'Story' },
+                { id: AspectRatio.Wide,      label: '16:9', icon: '🖥️', desc: 'Wide' },
+              ].map(a => (
+                <button key={a.id} onClick={() => setSelectedAspectRatio(a.id)}
+                  className="flex-1 px-2 py-2 rounded-xl text-center transition-all"
+                  style={{
+                    background: selectedAspectRatio === a.id ? 'var(--joi-pink-soft)' : 'transparent',
+                    border: `1px solid ${selectedAspectRatio === a.id ? 'var(--joi-border-h)' : 'var(--joi-border)'}`,
+                  }}>
+                  <div className="text-sm mb-0.5">{a.icon}</div>
+                  <div className="text-[10px] font-mono font-bold" style={{ color: selectedAspectRatio === a.id ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{a.label}</div>
+                  <div className="text-[7px]" style={{ color: 'var(--joi-text-3)' }}>{a.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="shrink-0 px-3 pb-3 pt-2" style={{ borderTop:'1px solid var(--joi-border)' }}>
             <div className="joi-label mb-2 px-1">Resolución</div>
             <div className="flex gap-2">
               {[
@@ -1508,8 +1535,8 @@ export function PhotoSession({ onNav }: { onNav?: (page: string) => void }) {
                   onClick={() => setSelectedResolution(r.id)}
                   className="flex-1 px-3 py-2 rounded-lg text-center transition-all"
                   style={{
-                    background: selectedResolution === r.id ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)',
-                    border: `1px solid ${selectedResolution === r.id ? 'rgba(255,107,157,.25)' : 'var(--joi-border)'}`,
+                    background: selectedResolution === r.id ? 'rgba(99,102,241,.08)' : 'var(--joi-bg-3)',
+                    border: `1px solid ${selectedResolution === r.id ? 'rgba(99,102,241,.25)' : 'var(--joi-border)'}`,
                   }}>
                   <div className="text-[11px] font-mono font-bold" style={{ color: selectedResolution === r.id ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{r.label}</div>
                   <div className="text-[8px] font-mono" style={{ color:'var(--joi-text-3)' }}>{r.desc}</div>

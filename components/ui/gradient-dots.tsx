@@ -33,10 +33,10 @@ export function GradientDots({
             style={{
                 ...style,
                 backgroundImage: `
-                    radial-gradient(circle ${dotSize}px, rgba(255,107,157,0.8) 0%, transparent 100%),
-                    radial-gradient(circle ${dotSize}px, rgba(255,107,157,0.8) 0%, transparent 100%),
-                    radial-gradient(ellipse at 25% 35%, rgba(255,107,157,0.2) 0%, transparent 70%),
-                    radial-gradient(ellipse at 75% 55%, rgba(208,72,176,0.18) 0%, transparent 70%),
+                    radial-gradient(circle ${dotSize}px, rgba(99,102,241,0.8) 0%, transparent 100%),
+                    radial-gradient(circle ${dotSize}px, rgba(99,102,241,0.8) 0%, transparent 100%),
+                    radial-gradient(ellipse at 25% 35%, rgba(99,102,241,0.2) 0%, transparent 70%),
+                    radial-gradient(ellipse at 75% 55%, rgba(79,70,229,0.18) 0%, transparent 70%),
                     radial-gradient(ellipse at 50% 85%, rgba(72,88,224,0.15) 0%, transparent 70%)
                 `,
                 backgroundSize: `

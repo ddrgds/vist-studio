@@ -39,6 +39,13 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const lastLoadedUserId = useRef<string | null>(null);
+  // Refs so decrementCredits can read current values without stale closure
+  const profileRef = useRef<UserProfile | null>(null);
+  const isLoadingRef = useRef(true);
+
+  // Keep refs in sync
+  useEffect(() => { profileRef.current = profile; }, [profile]);
+  useEffect(() => { isLoadingRef.current = isLoading; }, [isLoading]);
 
   // ─── Load on auth change ────────────────────────────────────────────────
   const refreshProfile = useCallback(async () => {
@@ -95,13 +102,36 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // ─── Decrement credits (optimistic + atomic DB update) ──────────────────
   const decrementCredits = useCallback(async (cost: number): Promise<boolean> => {
-    if (!user || !profile) return false;
+    if (!user) return false; // truly unauthenticated — don't retry
+
+    // If profile is still loading (100-200ms window after auth), wait briefly
+    // rather than returning false and showing a misleading "insufficient credits"
+    // error to the user.
+    if (!profileRef.current && isLoadingRef.current) {
+      await new Promise<void>((resolve) => {
+        const INTERVAL = 50;
+        const MAX_WAIT = 1500;
+        let waited = 0;
+        const id = setInterval(() => {
+          waited += INTERVAL;
+          if (profileRef.current || !isLoadingRef.current || waited >= MAX_WAIT) {
+            clearInterval(id);
+            resolve();
+          }
+        }, INTERVAL);
+      });
+    }
+
+    // Re-read from refs after the potential wait
+    const currentProfile = profileRef.current;
+    if (!currentProfile) return false; // still null after wait — unauthenticated or load failed
+
     // Brand plan = unlimited
-    if (profile.creditsRemaining >= 999999) return true;
-    if (profile.creditsRemaining < cost) return false;
+    if (currentProfile.creditsRemaining >= 999999) return true;
+    if (currentProfile.creditsRemaining < cost) return false;
 
     // Optimistic update
-    const prevCredits = profile.creditsRemaining;
+    const prevCredits = currentProfile.creditsRemaining;
     setProfile(prev => prev ? { ...prev, creditsRemaining: prev.creditsRemaining - cost } : null);
 
     try {
@@ -112,7 +142,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setProfile(prev => prev ? { ...prev, creditsRemaining: prevCredits } : null);
       return false;
     }
-  }, [user, profile]);
+  }, [user]); // profileRef / isLoadingRef are refs — stable, no need in deps
 
   // ─── Restore credits (on generation failure) ───────────────────────────
   const restoreCredits = useCallback((cost: number) => {

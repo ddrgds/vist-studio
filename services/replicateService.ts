@@ -519,9 +519,23 @@ export async function expandWithBria(
     all: { top: pixels, bottom: pixels, left: pixels, right: pixels },
   }[direction];
 
+  // Replicate processes images server-side — blob:// and local URLs are unreachable.
+  // Convert to base64 data URI so the SDK can send it inline.
+  let image = imageUrl;
+  if (!imageUrl.startsWith('http')) {
+    const res = await fetch(imageUrl);
+    const blob = await res.blob();
+    image = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
   onProgress?.(10);
   const output = await replicate.run('bria/expand-image' as `${string}/${string}`, {
-    input: { image: imageUrl, ...padding },
+    input: { image, ...padding },
   });
   onProgress?.(100);
   return typeof output === 'string' ? output : (output as string[])[0];
@@ -535,16 +549,56 @@ export async function editWithPruna(
   prompt: string,
   onProgress?: (p: number) => void,
   abortSignal?: AbortSignal,
+  referenceImage?: File | null,
 ): Promise<string> {
   onProgress?.(10);
   const image = imageInput instanceof File
     ? await fileToDataUri(imageInput)
     : imageInput;
+
+  // Pruna always expects the `images` array — singular `image` param is not accepted
+  const inputParams: Record<string, unknown> = referenceImage
+    ? {
+        images: [image, await fileToDataUri(referenceImage)],
+        prompt,
+        reference_image: '1',
+        disable_safety_checker: true,
+      }
+    : {
+        images: [image],
+        prompt,
+        disable_safety_checker: true,
+      };
+
   const output = await replicate.run('prunaai/p-image-edit' as `${string}/${string}`, {
-    input: { image, prompt, disable_safety_checker: true },
+    input: inputParams,
   });
   onProgress?.(100);
-  return typeof output === 'string' ? output : (output as string[])[0];
+
+  // Replicate SDK can return: string | string[] | FileOutput | FileOutput[] | URL | {output: ...}
+  const raw = output as any;
+
+  // Extracts a plain string from any Replicate output type
+  const extractUrl = (v: any): string | undefined => {
+    if (!v) return undefined;
+    if (typeof v === 'string') return v || undefined;
+    if (typeof v?.url === 'function') return String(v.url()); // FileOutput.url() → URL obj → string
+    if (v instanceof URL) return v.toString();
+    const s = String(v);
+    return s && s !== '[object Object]' ? s : undefined;
+  };
+
+  let result: string | undefined;
+  if (Array.isArray(raw)) {
+    result = extractUrl(raw[0]);
+  } else if (raw?.output) {
+    result = extractUrl(Array.isArray(raw.output) ? raw.output[0] : raw.output);
+  } else {
+    result = extractUrl(raw);
+  }
+
+  if (!result) throw new Error(`P-Image-Edit returned empty output (got: ${JSON.stringify(raw)}). Try a different engine.`);
+  return result;
 }
 
 // ─────────────────────────────────────────────

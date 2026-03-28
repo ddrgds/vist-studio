@@ -19,9 +19,9 @@ interface InspirationBoardProps {
 const CATEGORIES = ['Todas', 'Fashion', 'Lifestyle', 'Travel', 'Beauty', 'Fitness', 'Food', 'Tech'] as const
 
 const GRADIENTS: Record<string, string> = {
-  Fashion:   'linear-gradient(135deg, #FF6B9D 0%, #A78BFA 100%)',
-  Lifestyle: 'linear-gradient(135deg, #A78BFA 0%, #6366F1 100%)',
-  Travel:    'linear-gradient(135deg, #F59E0B 0%, #FF6B9D 100%)',
+  Fashion:   'linear-gradient(135deg, #6366F1 0%, #818CF8 100%)',
+  Lifestyle: 'linear-gradient(135deg, #818CF8 0%, #6366F1 100%)',
+  Travel:    'linear-gradient(135deg, #F59E0B 0%, #6366F1 100%)',
   Beauty:    'linear-gradient(135deg, #EC4899 0%, #F472B6 100%)',
   Fitness:   'linear-gradient(135deg, #10B981 0%, #6366F1 100%)',
   Food:      'linear-gradient(135deg, #F97316 0%, #EF4444 100%)',
@@ -177,7 +177,7 @@ export function InspirationBoard({ onSelectIdea, onClose }: InspirationBoardProp
         style={{
           background: 'var(--joi-bg-1)',
           border: '1px solid rgba(255,255,255,.06)',
-          boxShadow: '0 24px 80px rgba(0,0,0,.6), 0 0 60px rgba(255,107,157,.05)',
+          boxShadow: '0 24px 80px rgba(0,0,0,.6), 0 0 60px rgba(99,102,241,.05)',
         }}
         onClick={e => e.stopPropagation()}
       >
@@ -210,8 +210,8 @@ export function InspirationBoard({ onSelectIdea, onClose }: InspirationBoardProp
               onClick={() => setActiveCategory(cat)}
               className="px-3.5 py-1.5 rounded-full text-[11px] font-medium transition-all whitespace-nowrap shrink-0"
               style={{
-                background: activeCategory === cat ? 'rgba(255,107,157,.12)' : 'rgba(255,255,255,.03)',
-                border: `1px solid ${activeCategory === cat ? 'rgba(255,107,157,.25)' : 'rgba(255,255,255,.06)'}`,
+                background: activeCategory === cat ? 'rgba(99,102,241,.12)' : 'rgba(255,255,255,.03)',
+                border: `1px solid ${activeCategory === cat ? 'rgba(99,102,241,.25)' : 'rgba(255,255,255,.06)'}`,
                 color: activeCategory === cat ? 'var(--joi-pink)' : 'var(--joi-text-2)',
               }}
             >
@@ -251,7 +251,7 @@ export function InspirationBoard({ onSelectIdea, onClose }: InspirationBoardProp
                   >
                     <span className="text-[11px] font-semibold px-3 py-1.5 rounded-full"
                       style={{
-                        background: 'rgba(255,107,157,.9)',
+                        background: 'rgba(99,102,241,.9)',
                         color: '#fff',
                       }}>
                       Usar esta idea
@@ -267,9 +267,9 @@ export function InspirationBoard({ onSelectIdea, onClose }: InspirationBoardProp
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-[9px] px-2 py-0.5 rounded-full font-medium"
                       style={{
-                        background: 'rgba(255,107,157,.08)',
+                        background: 'rgba(99,102,241,.08)',
                         color: 'var(--joi-pink)',
-                        border: '1px solid rgba(255,107,157,.15)',
+                        border: '1px solid rgba(99,102,241,.15)',
                       }}>
                       {idea.category}
                     </span>

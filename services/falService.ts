@@ -175,11 +175,18 @@ export const generateWithKontextMulti = async (
   // Key: name subject by specific features, not pronouns. Explicitly list what must NOT change.
   // Reddit r/FluxAI: "88% character consistency" requires anchoring with feature-by-feature identity sheet.
   const subjectAnchor = character.characteristics
-    ? `the person with ${character.characteristics}`
+    ? `the character described as: ${character.characteristics}`
     : 'the exact person shown in the reference images';
 
-  let prompt = `Ultra-photorealistic fashion editorial photograph of ${subjectAnchor}. `;
-  prompt += `IDENTITY LOCKED — preserve without alteration: exact facial bone structure, eye shape and color, nose shape, lip form, skin tone, skin texture, hair color and texture, overall face proportions. Do not idealize, smooth, blend, or reinterpret the face in any way. `;
+  const isKontextStylized = params.realistic === false
+  const kontextStylePrefix = isKontextStylized && params.imageBoost
+    ? params.imageBoost
+    : 'Ultra-photorealistic fashion editorial photograph'
+
+  let prompt = `${kontextStylePrefix} of ${subjectAnchor}. `;
+  if (!isKontextStylized) {
+    prompt += `IDENTITY LOCKED — preserve without alteration: exact facial bone structure, eye shape and color, nose shape, lip form, skin tone, skin texture, hair color and texture, overall face proportions. Do not idealize, smooth, blend, or reinterpret the face in any way. `;
+  }
 
   // Outfit — be explicit (FLUX Kontext best practice: describe what to change precisely)
   if (character.outfitDescription) {
@@ -214,9 +221,9 @@ export const generateWithKontextMulti = async (
   }
 
   // Camera & quality (FLUX Kontext is trained on DSLR-style data — use specific lens specs)
-  if (params.imageBoost) {
+  if (params.imageBoost && !isKontextStylized) {
     prompt += `Style: ${params.imageBoost}. `;
-  } else {
+  } else if (!isKontextStylized) {
     prompt += `Camera: Sony A7R V, 85mm f/1.4 portrait lens, shallow depth of field, RAW. Quality: Vogue / Harper's Bazaar editorial level, natural skin texture with visible pores, realistic hair strands, precise fabric microdetail, no AI artifacts, no plastic skin. `;
   }
 
@@ -415,13 +422,16 @@ export const generateWithSeedream45 = async (
   if (onProgress) onProgress(10);
 
   // ── Seedream 4.5 prompt structure (fal.ai research-backed 2026):
-  // Order: subject description → style → composition → lighting → technical/camera
+  // Order: style/subject → composition → lighting → technical/camera
   // Optimal length: 30-100 words. Seedream responds strongly to specific lighting vocabulary.
   const seedreamSubject = character.characteristics
-    ? `A model described as: ${character.characteristics}`
-    : 'A model';
+    ? `A character described as: ${character.characteristics}`
+    : 'A subject';
 
-  let prompt = `Ultra-photorealistic editorial photograph. ${seedreamSubject}.`;
+  const isStylized = params.realistic === false
+  const stylePrefix = isStylized && params.imageBoost ? params.imageBoost : 'Ultra-photorealistic editorial photograph'
+
+  let prompt = `${stylePrefix}. ${seedreamSubject}.`;
 
   if (character.outfitDescription) {
     prompt += ` Wearing: ${character.outfitDescription}.`;
@@ -446,15 +456,16 @@ export const generateWithSeedream45 = async (
   // Seedream 4.5 is highly responsive to specific lighting cues (fal.ai guide 2026)
   if (params.lighting) {
     prompt += ` Lighting: ${params.lighting}.`;
-  } else {
+  } else if (!isStylized) {
     prompt += ` Lighting: soft directional studio light, slight rim highlight, natural skin tones.`;
   }
 
-  if (params.imageBoost) {
+  // Append imageBoost only when it wasn't already used as the opening prefix
+  if (params.imageBoost && !isStylized) {
     prompt += ` ${params.imageBoost}.`;
   }
 
-  prompt += ' Shot on Sony A7R V, 85mm f/1.4. Sharp detail, visible skin texture, no artifacts.';
+  if (!isStylized) prompt += ' Shot on Sony A7R V, 85mm f/1.4. Sharp detail, visible skin texture, no artifacts.';
   const count = params.numberOfImages || 1;
   const results: string[] = [];
 
@@ -510,13 +521,16 @@ export const generateWithSeedream50 = async (
   if (onProgress) onProgress(10);
 
   // ── Seedream 5.0 prompt structure (fal.ai research-backed 2026):
-  // Same structure as 4.5: subject → style → composition → lighting → camera
+  // Same structure as 4.5: style/subject → composition → lighting → camera
   // Seedream responds strongly to specific lighting vocabulary.
-  const seedreamSubject = character.characteristics
-    ? `A model described as: ${character.characteristics}`
-    : 'A model';
+  const seedreamSubject50 = character.characteristics
+    ? `A character described as: ${character.characteristics}`
+    : 'A subject';
 
-  let prompt = `Ultra-photorealistic editorial photograph. ${seedreamSubject}.`;
+  const isStylized50 = params.realistic === false
+  const stylePrefix50 = isStylized50 && params.imageBoost ? params.imageBoost : 'Ultra-photorealistic editorial photograph'
+
+  let prompt = `${stylePrefix50}. ${seedreamSubject50}.`;
 
   if (character.outfitDescription) {
     prompt += ` Wearing: ${character.outfitDescription}.`;
@@ -540,15 +554,15 @@ export const generateWithSeedream50 = async (
 
   if (params.lighting) {
     prompt += ` Lighting: ${params.lighting}.`;
-  } else {
+  } else if (!isStylized50) {
     prompt += ` Lighting: soft directional studio light, slight rim highlight, natural skin tones.`;
   }
 
-  if (params.imageBoost) {
+  if (params.imageBoost && !isStylized50) {
     prompt += ` ${params.imageBoost}.`;
   }
 
-  prompt += ' Shot on Sony A7R V, 85mm f/1.4. Sharp detail, visible skin texture, no artifacts.';
+  if (!isStylized50) prompt += ' Shot on Sony A7R V, 85mm f/1.4. Sharp detail, visible skin texture, no artifacts.';
   const count = params.numberOfImages || 1;
   const results: string[] = [];
 
@@ -987,7 +1001,6 @@ export const inpaintImage = async (
       num_inference_steps: 28,
       strength: 0.99,
       num_images: 1,
-      safety_tolerance: '6',
     },
     onQueueUpdate: (update: any) => {
       if (update.status === 'IN_PROGRESS' && onProgress) {
@@ -1445,6 +1458,7 @@ export const editImageWithGrokFal = async (
   onProgress?: (percent: number) => void,
   abortSignal?: AbortSignal,
   referenceImages?: File[],
+  bypassCompiler?: boolean,
 ): Promise<string[]> => {
   if (abortSignal?.aborted) throw new Error('Cancelado');
   if (onProgress) onProgress(15);
@@ -1459,15 +1473,22 @@ export const editImageWithGrokFal = async (
   }
   if (onProgress) onProgress(35);
 
-  // Compile edit prompt through Flash Lite (EDIT_INPAINT rules: delta only)
-  const compiledEdit = await compilePrompt({
-    subjectIntent: prompt,
-    targetModel: 'xai/grok-imagine-image/edit',
-    isEdit: true,
-  });
-  // Grok needs explicit "lock" instructions to preserve unchanged areas
-  const lockPrefix = 'Keep face, pose, and background unchanged unless the edit specifically requires changing them. ';
-  const fullPrompt = lockPrefix + compiledEdit;
+  let fullPrompt: string;
+  if (bypassCompiler) {
+    // Synthesis prompts (try-on, multi-image composition) work better without
+    // Flash Lite stripping — Grok understands "image 1 / image 2" natively.
+    fullPrompt = prompt;
+  } else {
+    // Compile edit prompt through Flash Lite (EDIT_INPAINT rules: delta only)
+    const compiledEdit = await compilePrompt({
+      subjectIntent: prompt,
+      targetModel: 'xai/grok-imagine-image/edit',
+      isEdit: true,
+    });
+    // Grok needs explicit "lock" instructions to preserve unchanged areas
+    const lockPrefix = 'Keep face, pose, and background unchanged unless the edit specifically requires changing them. ';
+    fullPrompt = lockPrefix + compiledEdit;
+  }
 
   const result = await fal.subscribe('xai/grok-imagine-image/edit', {
     input: {
@@ -1578,7 +1599,7 @@ export const generatePhotoSessionWithGrok = async (
       : `${FACE_LOCK_PROMPT} ${OUTFIT_PRESERVE_PROMPT} Photo session — shot ${i + 1} of ${clampedCount}. Same person as reference image. Keep the EXACT same face, skin tone, hair color and style from the base image. Creative direction for this shot: ${angle}.${scenePart}${boostPart} The person should adopt the pose, expression, and body language described naturally — NOT a stiff copy of the reference. Vary the pose and mood for each shot while keeping the same person and outfit.${negativePart} ${FACE_CHECK_PROMPT}`;
 
     const result = await fal.subscribe('xai/grok-imagine-image/edit', {
-      input: { prompt, image_urls: [imageUrl], num_images: 1, output_format: 'jpeg' },
+      input: { prompt, image_urls: [imageUrl] },
       onQueueUpdate: (update: any) => {
         if (update.status === 'IN_PROGRESS' && onProgress) {
           onProgress(Math.round(15 + ((i + 0.5) / clampedCount) * 80));
@@ -2109,9 +2130,6 @@ export const inpaintWithZImageTurbo = async (
       enable_safety_checker: false,  // Uncensored
       acceleration: 'regular',
       strength: 1,
-      control_scale: 0.75,
-      control_start: 0,
-      control_end: 0.8,
     },
     onQueueUpdate: (update: any) => {
       if (update.status === 'IN_PROGRESS' && onProgress) {

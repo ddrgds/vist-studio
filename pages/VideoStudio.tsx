@@ -160,8 +160,10 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
     setError(null)
 
     try {
-      // Build character image File from stored blob
-      const charBlob = selectedChar.modelImageBlobs[0]
+      // Build character image File — use stored blob if available, else fetch from URL lazily
+      const charBlob = selectedChar.modelImageBlobs?.[0]
+        ?? (selectedChar.modelImageUrls?.[0] ? await fetch(selectedChar.modelImageUrls[0]).then(r => r.blob()) : null)
+      if (!charBlob) { toast.error('No hay imagen de referencia para este personaje'); return }
       const charFile = new File([charBlob], 'character.png', { type: 'image/png' })
 
       let result: { videoUrl: string; duration?: number }
@@ -225,9 +227,9 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
   const availableEngines = getEnginesForMode(mode)
 
   return (
-    <div className="flex h-full" style={{ color: 'var(--joi-text-1)' }}>
+    <div className="flex flex-col lg:flex-row lg:h-full" style={{ color: 'var(--joi-text-1)' }}>
       {/* ═══ LEFT PANEL — Controls ═══ */}
-      <div className="w-[380px] shrink-0 h-full overflow-y-auto border-r"
+      <div className="w-full lg:w-[380px] shrink-0 lg:h-full overflow-y-auto border-b lg:border-b-0 border-r-0 lg:border-r"
         style={{ background: 'var(--joi-bg-1)', borderColor: 'rgba(255,255,255,.03)' }}>
 
         {/* Header */}
@@ -248,9 +250,9 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
               <button key={m.id} onClick={() => setMode(m.id)}
                 className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-lg text-[11px] font-medium transition-all"
                 style={{
-                  background: mode === m.id ? 'rgba(255,107,157,.10)' : 'transparent',
+                  background: mode === m.id ? 'rgba(99,102,241,.10)' : 'transparent',
                   color: mode === m.id ? 'var(--joi-pink)' : 'var(--joi-text-3)',
-                  border: mode === m.id ? '1px solid rgba(255,107,157,.20)' : '1px solid transparent',
+                  border: mode === m.id ? '1px solid rgba(99,102,241,.20)' : '1px solid transparent',
                 }}>
                 {m.icon}
                 <span className="hidden lg:inline">{m.label}</span>
@@ -269,7 +271,7 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
           {characters.length === 0 ? (
             <button onClick={() => onNav('create')}
               className="w-full py-3 rounded-xl text-xs font-medium transition-colors"
-              style={{ background: 'rgba(255,107,157,.06)', color: 'var(--joi-pink)', border: '1px solid rgba(255,107,157,.15)' }}>
+              style={{ background: 'rgba(99,102,241,.06)', color: 'var(--joi-pink)', border: '1px solid rgba(99,102,241,.15)' }}>
               Crea tu primer personaje
             </button>
           ) : (
@@ -278,8 +280,8 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
                 <button key={c.id} onClick={() => setSelectedCharId(c.id)}
                   className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all"
                   style={{
-                    background: selectedCharId === c.id ? 'rgba(255,107,157,.10)' : 'rgba(255,255,255,.02)',
-                    border: `1px solid ${selectedCharId === c.id ? 'rgba(255,107,157,.25)' : 'rgba(255,255,255,.06)'}`,
+                    background: selectedCharId === c.id ? 'rgba(99,102,241,.10)' : 'rgba(255,255,255,.02)',
+                    border: `1px solid ${selectedCharId === c.id ? 'rgba(99,102,241,.25)' : 'rgba(255,255,255,.06)'}`,
                     color: selectedCharId === c.id ? 'var(--joi-pink)' : 'var(--joi-text-2)',
                   }}>
                   <img src={c.thumbnail} alt="" className="w-6 h-6 rounded-full object-cover" />
@@ -296,7 +298,7 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
             <Section title="Video de Referencia" icon="🎬">
               <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoUpload} />
               {referenceVideo ? (
-                <div className="relative rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,107,157,.25)' }}>
+                <div className="relative rounded-xl overflow-hidden" style={{ border: '1px solid rgba(99,102,241,.25)' }}>
                   <video src={referenceVideoPreview!} className="w-full aspect-video object-cover" controls muted />
                   <button onClick={() => { setReferenceVideo(null); if (referenceVideoPreview) URL.revokeObjectURL(referenceVideoPreview); setReferenceVideoPreview(null) }}
                     className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center"
@@ -321,8 +323,8 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
                   <button key={o} onClick={() => setCharacterOrientation(o)}
                     className="flex-1 py-2.5 rounded-xl text-xs font-medium transition-all"
                     style={{
-                      background: characterOrientation === o ? 'rgba(255,107,157,.10)' : 'rgba(255,255,255,.02)',
-                      border: `1px solid ${characterOrientation === o ? 'rgba(255,107,157,.25)' : 'rgba(255,255,255,.06)'}`,
+                      background: characterOrientation === o ? 'rgba(99,102,241,.10)' : 'rgba(255,255,255,.02)',
+                      border: `1px solid ${characterOrientation === o ? 'rgba(99,102,241,.25)' : 'rgba(255,255,255,.06)'}`,
                       color: characterOrientation === o ? 'var(--joi-pink)' : 'var(--joi-text-2)',
                     }}>
                     {o === 'video' ? 'Igualar pose del video (30s)' : 'Igualar pose de imagen (10s)'}
@@ -360,7 +362,7 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
                     if (voice?.preview_url) playVoicePreview(voice.preview_url)
                   }}
                   className="mt-2 flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-lg transition-colors"
-                  style={{ color: 'var(--joi-pink)', background: 'rgba(255,107,157,.06)' }}>
+                  style={{ color: 'var(--joi-pink)', background: 'rgba(99,102,241,.06)' }}>
                   <Volume2 size={12} /> Escuchar voz
                 </button>
               )}
@@ -383,7 +385,7 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
                   onClick={handleGenerateTTS}
                   disabled={!ttsText.trim() || !selectedVoiceId || generatingTTS}
                   className="flex-1 py-2.5 rounded-xl text-xs font-medium flex items-center justify-center gap-2 transition-all disabled:opacity-40"
-                  style={{ background: 'rgba(255,107,157,.10)', color: 'var(--joi-pink)', border: '1px solid rgba(255,107,157,.20)' }}>
+                  style={{ background: 'rgba(99,102,241,.10)', color: 'var(--joi-pink)', border: '1px solid rgba(99,102,241,.20)' }}>
                   {generatingTTS ? (
                     <><span className="animate-spin">◌</span> Generando...</>
                   ) : (
@@ -396,7 +398,7 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
             <Section title="O Sube Audio" icon="📎">
               <input ref={audioInputRef} type="file" accept="audio/*" className="hidden" onChange={handleAudioUpload} />
               {audioFile ? (
-                <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,107,157,.20)' }}>
+                <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(99,102,241,.20)' }}>
                   <audio src={audioPreviewUrl!} controls className="flex-1 h-8" style={{ filter: 'hue-rotate(320deg)' }} />
                   <button onClick={() => { setAudioFile(null); if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl); setAudioPreviewUrl(null) }}>
                     <X size={14} style={{ color: 'var(--joi-text-3)' }} />
@@ -421,8 +423,8 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
                 <button key={d} onClick={() => setDuration(d)}
                   className="flex-1 py-2.5 rounded-xl text-xs font-medium transition-all"
                   style={{
-                    background: duration === d ? 'rgba(255,107,157,.10)' : 'rgba(255,255,255,.02)',
-                    border: `1px solid ${duration === d ? 'rgba(255,107,157,.25)' : 'rgba(255,255,255,.06)'}`,
+                    background: duration === d ? 'rgba(99,102,241,.10)' : 'rgba(255,255,255,.02)',
+                    border: `1px solid ${duration === d ? 'rgba(99,102,241,.25)' : 'rgba(255,255,255,.06)'}`,
                     color: duration === d ? 'var(--joi-pink)' : 'var(--joi-text-2)',
                   }}>
                   {d}s
@@ -461,8 +463,8 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
                 <button key={engine} onClick={() => setSelectedEngine(engine)}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all"
                   style={{
-                    background: selectedEngine === engine ? 'rgba(255,107,157,.10)' : 'rgba(255,255,255,.02)',
-                    border: `1px solid ${selectedEngine === engine ? 'rgba(255,107,157,.25)' : 'rgba(255,255,255,.04)'}`,
+                    background: selectedEngine === engine ? 'rgba(99,102,241,.10)' : 'rgba(255,255,255,.02)',
+                    border: `1px solid ${selectedEngine === engine ? 'rgba(99,102,241,.25)' : 'rgba(255,255,255,.04)'}`,
                   }}>
                   <span className="text-base">{meta.icon}</span>
                   <div className="flex-1 min-w-0">
@@ -481,7 +483,7 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
         </Section>
 
         {/* Generate button */}
-        <div className="px-5 py-4">
+        <div className="px-5 py-4 pb-4 lg:pb-4">
           <button
             onClick={handleGenerate}
             disabled={!canGenerate()}
@@ -489,7 +491,7 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
             style={{
               background: 'linear-gradient(135deg, var(--joi-pink), var(--joi-lavender))',
               color: 'white',
-              boxShadow: canGenerate() ? '0 0 24px rgba(255,107,157,.25)' : 'none',
+              boxShadow: canGenerate() ? '0 0 24px rgba(99,102,241,.25)' : 'none',
             }}>
             {generating ? (
               <>
@@ -507,7 +509,7 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
       </div>
 
       {/* ═══ RIGHT PANEL — Preview / Result ═══ */}
-      <div className="flex-1 flex flex-col items-center justify-center p-8" style={{ background: 'var(--joi-bg-0)' }}>
+      <div className="flex-1 min-h-[60vh] lg:min-h-0 flex flex-col items-center justify-center p-8 pb-24 lg:pb-8" style={{ background: 'var(--joi-bg-0)' }}>
         {resultUrl ? (
           <div className="w-full max-w-2xl">
             <video
@@ -516,7 +518,7 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
               autoPlay
               loop
               className="w-full rounded-2xl"
-              style={{ boxShadow: '0 0 60px rgba(255,107,157,.15)', border: '1px solid rgba(255,255,255,.06)' }}
+              style={{ boxShadow: '0 0 60px rgba(99,102,241,.15)', border: '1px solid rgba(255,255,255,.06)' }}
             />
             <div className="flex items-center justify-center gap-3 mt-4">
               <a href={resultUrl} download="video.mp4" target="_blank" rel="noopener noreferrer"
@@ -526,7 +528,7 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
               </a>
               <button onClick={() => setResultUrl(null)}
                 className="px-4 py-2 rounded-xl text-xs font-medium transition-colors"
-                style={{ background: 'rgba(255,107,157,.08)', color: 'var(--joi-pink)', border: '1px solid rgba(255,107,157,.15)' }}>
+                style={{ background: 'rgba(99,102,241,.08)', color: 'var(--joi-pink)', border: '1px solid rgba(99,102,241,.15)' }}>
                 Nuevo Video
               </button>
             </div>
@@ -534,7 +536,7 @@ export default function VideoStudio({ onNav }: { onNav: (p: Page) => void }) {
         ) : generating ? (
           <div className="flex flex-col items-center gap-4">
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
-              style={{ background: 'rgba(255,107,157,.08)', border: '1px solid rgba(255,107,157,.15)' }}>
+              style={{ background: 'rgba(99,102,241,.08)', border: '1px solid rgba(99,102,241,.15)' }}>
               <Film size={24} className="animate-pulse" style={{ color: 'var(--joi-pink)' }} />
             </div>
             <div className="text-center">

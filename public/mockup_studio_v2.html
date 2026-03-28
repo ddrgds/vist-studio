@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>VIST Studio V2</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+        :root { --bg0: #08080c; --bg1: #101017; --bg2: #1b1b24; --bgG: rgba(22,22,30,0.9); --bord: rgba(255,255,255,0.06); --bordH: rgba(255,255,255,0.2); --pink: #ff2a85; --pinks: rgba(255,42,133,0.15); --txt1: #f3f4f6; --txt2: #9ca3af; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background: var(--bg0); color: var(--txt1); display: flex; height: 100vh; overflow: hidden; }
+        .panel-left { width: 320px; background: var(--bg1); border-right: 1px solid var(--bord); display: flex; flex-direction: column; overflow-y: auto; z-index: 10; }
+        .header { padding: 24px; border-bottom: 1px solid var(--bord); }
+        .header h1 { font-size: 1.25rem; font-weight: 600; } .header span { color: var(--pink); }
+        .tabs { display: flex; gap: 8px; margin-top: 16px; background: var(--bg2); padding: 4px; border-radius: 12px; }
+        .tab { flex: 1; padding: 8px; text-align: center; font-size: 0.75rem; border-radius: 8px; cursor: pointer; color: var(--txt2); transition: 0.2s; }
+        .tab.active { background: var(--bordH); color: var(--txt1); }
+        .lib { padding: 24px; }
+        .sec-title { font-size: 0.7rem; text-transform: uppercase; color: var(--txt2); margin-bottom: 12px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+        .card { aspect-ratio: 1; background: var(--bg2); border: 1px solid var(--bord); border-radius: 12px; position: relative; overflow: hidden; cursor: grab; padding: 8px; display: flex; align-items: flex-end; }
+        .card:hover { border-color: var(--pink); }
+        .card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.5; pointer-events: none; }
+        .card span { position: relative; z-index: 2; font-size: 0.7rem; pointer-events: none; }
+        
+        .panel-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding: 40px; }
+        .glow { position: absolute; width: 400px; height: 400px; background: var(--pink); filter: blur(150px); border-radius: 50%; opacity: 0.05; pointer-events: none; top: -100px; left: -100px; }
+        .c-title { position: absolute; top: 20px; left: 30px; font-weight: 600; }
+        
+        .mode-create { display: flex; align-items: center; gap: 24px; }
+        .mode-edit { display: none; align-items: center; gap: 24px; }
+        
+        .slot { width: 160px; height: 230px; background: var(--bg1); border: 2px dashed var(--bordH); border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; cursor: pointer; }
+        .slot.large { width: 340px; height: 400px; }
+        .slot:hover { border-color: var(--pink); }
+        .slot.filled { border-style: solid; border-color: var(--bordH); }
+        .plus { font-size: 1.5rem; color: var(--bordH); }
+        
+        .inspector { position: absolute; top: -40px; left: 180px; width: 260px; background: var(--bgG); border: 1px solid var(--bordH); padding: 16px; border-radius: 16px; opacity: 0; pointer-events: none; transition: 0.2s; z-index: 100; backdrop-filter: blur(10px); }
+        .inspector.visible { opacity: 1; pointer-events: auto; }
+        .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 16px 0; }
+        .chip { padding: 6px 10px; background: var(--bg1); border: 1px solid var(--bord); border-radius: 8px; font-size: 0.7rem; cursor: pointer; }
+        .chip.sel { background: var(--pinks); border-color: var(--pink); color: var(--pink); }
+        textarea { width: 100%; background: var(--bg1); border: 1px solid var(--bord); padding: 8px; color: var(--txt1); border-radius: 8px; resize: none; font-size: 0.75rem; }
+        
+        .btn-shoot { position: absolute; bottom: 40px; background: linear-gradient(135deg, #ff2a85, #ff6b2a); color: white; border: none; padding: 16px 48px; border-radius: 40px; font-weight: 600; font-size: 1.1rem; cursor: pointer; box-shadow: 0 8px 32px rgba(255,42,133,0.4); }
+        
+        .panel-right { width: 340px; background: var(--bg1); border-left: 1px solid var(--bord); padding: 24px; z-index: 10; display: flex; flex-direction: column; }
+        .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; overflow-y: auto; }
+        .shot { aspect-ratio: 3/4; background: var(--bg2); border: 1px solid var(--bord); border-radius: 12px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+        .shot.loading span { animation: pulse 1s infinite alternate; opacity: 0.2; font-size: 1.5rem; }
+        .shot:hover .overlay { opacity: 1; }
+        .overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0; transition: 0.2s; gap: 8px; backdrop-filter: blur(2px); }
+        .btn-sel { padding: 6px 12px; font-size: 0.7rem; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; background: white; color: black; width: 80%; }
+        @keyframes pulse { from { transform: scale(0.8); } to { transform: scale(1.1); } }
+    </style>
+</head>
+<body>
+    <div class="panel-left">
+        <div class="header">
+            <h1>VIST <span>Studio</span></h1>
+            <div class="tabs">
+                <div class="tab active" onclick="sw(0, this)">🎨 Crear</div>
+                <div class="tab" onclick="sw(1, this)">📸 Edición (Img2Img)</div>
+            </div>
+        </div>
+        <div class="lib">
+            <div class="sec-title">Protagonista</div>
+            <div class="grid">
+                <div class="card" draggable="true" ondragstart="drag(event, 'face', 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&q=80', 'Aria')">
+                    <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&q=80"><span>Aria</span>
+                </div>
+            </div>
+            <div class="sec-title" id="outfit-tit">Vestuario</div>
+            <div class="grid" id="outfit-grid">
+                <div class="card" draggable="true" ondragstart="drag(event, 'out', 'https://images.unsplash.com/photo-1551537482-f209bfc4c693?w=200&q=80', 'Chaqueta')">
+                    <img src="https://images.unsplash.com/photo-1551537482-f209bfc4c693?w=200&q=80"><span>Chaqueta</span>
+                </div>
+            </div>
+            <div class="sec-title">Sets Mágicos</div>
+            <div class="grid">
+                <div class="card" draggable="true" ondragstart="drag(event, 'bg', 'https://images.unsplash.com/photo-1519608487953-e999c86e7455?w=200&q=80', 'Neón')">
+                    <img src="https://images.unsplash.com/photo-1519608487953-e999c86e7455?w=200&q=80"><span>Neón Noche</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="panel-center">
+        <div class="glow"></div>
+        <div class="c-title" id="ct">Compositor</div>
+        
+        <div class="mode-create" id="m-create">
+            <div class="slot" ondrop="drop(event, 'face')" ondragover="allow(event)">👤<br>Rostro</div>
+            <div class="plus">+</div>
+            <div class="slot" ondrop="drop(event, 'out')" ondragover="allow(event)">🧥<br>Ropa</div>
+            <div class="plus">+</div>
+            <div style="position:relative">
+                <div class="slot" ondrop="drop(event, 'bg')" ondragover="allow(event)" onclick="toggle('ins')">
+                    🌆<br>Fondo<br><span style="font-size:0.6rem; color:var(--txt2)">(Clic para Opciones Pro)</span>
+                </div>
+                <div class="inspector" id="ins">
+                    <div style="font-size: 0.8rem; font-weight: 600; margin-bottom: 8px; border-bottom: 1px solid var(--bord); padding-bottom: 8px;">Control Avanzado <span style="float:right; cursor:pointer" onclick="event.stopPropagation();toggle('ins')">✕</span></div>
+                    <div style="font-size:0.7rem; color:var(--txt2)">Iluminación</div>
+                    <div class="chips"><div class="chip sel">Natural</div><div class="chip">Estudio</div><div class="chip">Cine</div></div>
+                    <div style="font-size:0.7rem; color:var(--txt2)">Plano</div>
+                    <div class="chips"><div class="chip sel">Portrait</div><div class="chip">Wide</div></div>
+                    <div style="font-size:0.7rem; color:var(--txt2)">Prompt Manual</div>
+                    <textarea rows="3" placeholder="Escribe detalles extra..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="mode-edit" id="m-edit">
+            <div class="slot large" ondrop="drop(event, 'bg')" ondragover="allow(event)">
+                🖼️<br>Arrastra la Foto Base (Img2Img)
+            </div>
+        </div>
+        
+        <button class="btn-shoot" onclick="shoot(this)">📸 Tirar Fotos (Grid x4)</button>
+    </div>
+    <div class="panel-right">
+        <h2 style="font-size:1.1rem">Hoja de Contactos</h2>
+        <p style="font-size:0.7rem; color:var(--txt2); margin-top:8px">Resultados rápidos. Selecciona para Upscale 4K.</p>
+        <div class="contact-grid" id="cg">
+            <div class="shot"><span>⏳</span></div><div class="shot"><span>⏳</span></div>
+            <div class="shot"><span>⏳</span></div><div class="shot"><span>⏳</span></div>
+        </div>
+    </div>
+    <script>
+        let dT, dS, dL;
+        function drag(e, t, s, l) { dT=t; dS=s; dL=l; }
+        function allow(e) { e.preventDefault(); }
+        function drop(e, t) {
+            e.preventDefault();
+            if(dT === t || dT === 'bg') {
+                e.currentTarget.classList.add('filled');
+                e.currentTarget.innerHTML = `<img src="${dS}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:14px;opacity:0.9"><div style="position:absolute;bottom:8px;background:rgba(0,0,0,0.8);padding:4px 8px;border-radius:6px;font-size:0.7rem;color:white">${dL}</div>`;
+            }
+        }
+        function toggle(id) { document.getElementById(id).classList.toggle('visible'); }
+        function sw(mode, el) {
+            document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); el.classList.add('active');
+            if(mode===0) { 
+                document.getElementById('m-create').style.display='flex'; 
+                document.getElementById('m-edit').style.display='none';
+                document.getElementById('ct').innerText='Compositor';
+                document.getElementById('outfit-grid').style.opacity='1';
+                document.getElementById('outfit-grid').style.pointerEvents='auto';
+            } else { 
+                document.getElementById('m-create').style.display='none'; 
+                document.getElementById('m-edit').style.display='flex';
+                document.getElementById('ct').innerText='Editor Base (Img2Img / ControlNet)';
+                document.getElementById('outfit-grid').style.opacity='0.3';
+                document.getElementById('outfit-grid').style.pointerEvents='none';
+            }
+        }
+        function shoot(btn) {
+            const o = btn.innerHTML; btn.innerHTML='⏳ Revelando...'; btn.style.pointerEvents='none';
+            document.querySelectorAll('.shot').forEach(s=>s.classList.add('loading'));
+            setTimeout(() => {
+                btn.innerHTML=o; btn.style.pointerEvents='auto';
+                document.getElementById('cg').innerHTML = [
+                    'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&q=80',
+                    'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&q=80',
+                    'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&q=80',
+                    'https://images.unsplash.com/photo-1542206395-9feb3edaa68d?w=400&q=80'
+                ].map(src=>`<div class="shot"><img src="${src}" style="width:100%;height:100%;object-fit:cover;"><div class="overlay"><button class="btn-sel">✨ Upscale 4K</button></div></div>`).join('');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

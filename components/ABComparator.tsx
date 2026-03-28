@@ -164,12 +164,12 @@ const ABComparator: React.FC<ABComparatorProps> = ({ itemA, itemB, onClose }) =>
       {/* Bottom info */}
       <div className="mt-3 flex gap-6 text-[11px] shrink-0" style={{ color: 'var(--joi-text-3)' }}>
         <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full inline-block" style={{ background: '#FF6B9D' }}/>
+          <span className="w-2 h-2 rounded-full inline-block" style={{ background: '#6366F1' }}/>
           A {'\u2014'} {labelA}
           {' '}{new Date(itemA.timestamp).toLocaleDateString()}
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full inline-block" style={{ background: '#A78BFA' }}/>
+          <span className="w-2 h-2 rounded-full inline-block" style={{ background: '#818CF8' }}/>
           B {'\u2014'} {labelB}
           {' '}{new Date(itemB.timestamp).toLocaleDateString()}
         </span>

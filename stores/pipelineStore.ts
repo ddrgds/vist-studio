@@ -31,9 +31,9 @@ export const usePipelineStore = create<PipelineState & PipelineActions>((set) =>
   lastSoulStyleId: null,
   suggestedNext: null,
 
-  setCharacter: (id) => set({ characterId: id, heroShotUrl: null, heroShotFile: null, editedHeroUrl: null, editedHeroFile: null, suggestedNext: 'director' }),
+  setCharacter: (id) => set({ characterId: id, heroShotUrl: null, heroShotFile: null, editedHeroUrl: null, editedHeroFile: null, suggestedNext: 'studio' }),
   setHeroShot: (url, file) => set({ heroShotUrl: url, heroShotFile: file ?? null, suggestedNext: 'editor' }),
-  setEditedHero: (url, file) => set({ editedHeroUrl: url, editedHeroFile: file ?? null, suggestedNext: 'session' }),
+  setEditedHero: (url, file) => set({ editedHeroUrl: url, editedHeroFile: file ?? null, suggestedNext: 'studio' }),
   setLastEngine: (engine, soulStyleId) => set({ lastEngine: engine, lastSoulStyleId: soulStyleId ?? null }),
   setSuggestedNext: (page) => set({ suggestedNext: page }),
   clear: () => set({ characterId: null, heroShotUrl: null, heroShotFile: null, editedHeroUrl: null, editedHeroFile: null, lastEngine: null, lastSoulStyleId: null, suggestedNext: null }),

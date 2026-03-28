@@ -58,7 +58,8 @@ const SessionTool: React.FC = () => {
 
   const handleShoot = useCallback(async () => {
     if (!selectedChar || selectedStyles.length === 0) return;
-    if (selectedChar.modelImageBlobs.length === 0) {
+    const hasRef = (selectedChar.modelImageBlobs?.length ?? 0) > 0 || (selectedChar.modelImageUrls?.length ?? 0) > 0;
+    if (!hasRef) {
       toast.warning('This character has no reference photos.');
       return;
     }
@@ -81,7 +82,9 @@ const SessionTool: React.FC = () => {
     abortRef.current = ctrl;
 
     try {
-      const refBlob = selectedChar.modelImageBlobs[0];
+      const refBlob = selectedChar.modelImageBlobs?.[0]
+        ?? (selectedChar.modelImageUrls?.[0] ? await fetch(selectedChar.modelImageUrls[0]).then(r => r.blob()) : null);
+      if (!refBlob) { toast.error('No reference image found'); return; }
       const refFile = new File([refBlob], 'ref.jpg', { type: refBlob.type || 'image/jpeg' });
 
       const scenario = [sceneText, ...selectedStyles].filter(Boolean).join(', ');

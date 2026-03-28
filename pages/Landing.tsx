@@ -20,15 +20,15 @@ const Reveal = ({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
 
 /* ── Colors ────────────────────────────────────────────────── */
 const C = {
-  bg: '#08070C',
-  n900: '#151214',
-  n800: '#1F1A1E',
-  n700: '#342C31',
-  n400: '#A09299',
-  pink: '#FF6B9D',
-  text1: '#f1f5f9',
-  text2: '#cbd5e1',
-  text3: '#94a3b8',
+  bg: '#FFFFFF',
+  n900: '#F7F7F8',
+  n800: '#F0F0F1',
+  n700: '#E8E8EA',
+  n400: '#999999',
+  pink: '#111111',    // primary action — near black
+  text1: '#111111',
+  text2: '#555555',
+  text3: '#888888',
 };
 
 /* ── Phone carousel images ─────────────────────────────────── */
@@ -60,8 +60,8 @@ export default function Landing({ onAuth }: LandingProps) {
         position: 'sticky', top: 0, zIndex: 50,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '0 80px', height: '64px',
-        background: 'rgba(8,7,12,0.8)', backdropFilter: 'blur(12px)',
-        borderBottom: `1px solid ${C.n700}`,
+        background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(0,0,0,0.08)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ width: '24px', height: '24px', color: C.pink }}>
@@ -83,23 +83,19 @@ export default function Landing({ onAuth }: LandingProps) {
           </nav>
           <div style={{ display: 'flex', gap: '12px' }}>
             <button onClick={onAuth} style={{
-              background: C.n800, color: C.text1, border: 'none',
+              background: 'transparent', color: '#111111',
+              border: '1px solid rgba(0,0,0,0.15)',
+              borderRadius: '999px', padding: '0 24px', height: '40px',
+              fontSize: '14px', fontWeight: 600, cursor: 'pointer',
+            }}>Iniciar Sesión</button>
+            <button onClick={onAuth} style={{
+              background: '#111111', color: '#FFFFFF', border: 'none',
               borderRadius: '999px', padding: '0 24px', height: '40px',
               fontSize: '14px', fontWeight: 700, cursor: 'pointer',
               transition: 'background 150ms',
             }}
-              onMouseEnter={e => (e.currentTarget.style.background = C.n700)}
-              onMouseLeave={e => (e.currentTarget.style.background = C.n800)}
-            >Iniciar Sesión</button>
-            <button onClick={onAuth} style={{
-              background: C.pink, color: C.bg, border: 'none',
-              borderRadius: '999px', padding: '0 24px', height: '40px',
-              fontSize: '14px', fontWeight: 700, cursor: 'pointer',
-              boxShadow: '0 0 15px rgba(255,107,157,0.4)',
-              transition: 'box-shadow 150ms',
-            }}
-              onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 0 25px rgba(255,107,157,0.6)')}
-              onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 0 15px rgba(255,107,157,0.4)')}
+              onMouseEnter={e => (e.currentTarget.style.background = '#333333')}
+              onMouseLeave={e => (e.currentTarget.style.background = '#111111')}
             >Comenzar</button>
           </div>
         </div>
@@ -110,10 +106,7 @@ export default function Landing({ onAuth }: LandingProps) {
         title={
           <>
             CREA CONTENIDO QUE<br />
-            <span style={{
-              backgroundImage: 'linear-gradient(90deg, #FF6B9D, #A78BFA)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-            }}>DETENGA EL SCROLL</span>
+            <span style={{ color: '#111111' }}>DETENGA EL SCROLL</span>
           </>
         }
         subtitle="VIST Studio: La plataforma definitiva de contenido con IA para influencers virtuales. Genera posts, reels y stories hiperrealistas en segundos."
@@ -146,20 +139,20 @@ export default function Landing({ onAuth }: LandingProps) {
               <div style={{
                 position: 'relative', overflow: 'hidden',
                 padding: '32px', borderRadius: '16px',
-                background: 'rgba(31,26,30,0.4)', backdropFilter: 'blur(12px)',
-                border: `1px solid ${C.n700}`,
+                background: '#F7F7F8',
+                border: '1px solid rgba(0,0,0,0.08)',
                 transition: 'border-color 300ms, box-shadow 300ms',
               }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,107,157,0.3)'; e.currentTarget.style.boxShadow = '0 0 30px rgba(255,107,157,0.1)'; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = C.n700; e.currentTarget.style.boxShadow = 'none'; }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.2)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.08)'; e.currentTarget.style.boxShadow = 'none'; }}
               >
                 <div style={{
                   position: 'absolute', top: '-32px', right: '-32px', width: '128px', height: '128px',
-                  background: 'rgba(255,107,157,0.1)', borderRadius: '50%', filter: 'blur(24px)',
+                  background: 'rgba(0,0,0,0.04)', borderRadius: '50%', filter: 'blur(24px)',
                 }} />
                 <div style={{
                   width: '56px', height: '56px', borderRadius: '12px',
-                  background: 'rgba(255,107,157,0.1)', color: C.pink,
+                  background: 'rgba(0,0,0,0.06)', color: C.pink,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '28px', marginBottom: '16px', position: 'relative', zIndex: 1,
                 }}>{f.icon}</div>
@@ -180,8 +173,8 @@ export default function Landing({ onAuth }: LandingProps) {
         <Reveal>
           <div style={{
             width: '400px', flexShrink: 0, borderRadius: '24px', overflow: 'hidden',
-            boxShadow: '0 30px 80px rgba(0,0,0,0.4), 0 0 60px rgba(255,107,157,0.08)',
-            border: '1px solid rgba(255,255,255,0.04)',
+            boxShadow: '0 30px 80px rgba(0,0,0,0.1)',
+            border: '1px solid rgba(0,0,0,0.08)',
           }}>
             <img src="/phone/hero-split.png" alt="AI influencer" style={{
               width: '100%', display: 'block',
@@ -214,12 +207,12 @@ export default function Landing({ onAuth }: LandingProps) {
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: '16px',
                   padding: '16px 20px', borderRadius: '14px',
-                  background: 'rgba(31,26,30,0.4)',
-                  border: `1px solid ${C.n700}`,
+                  background: '#F7F7F8',
+                  border: '1px solid rgba(0,0,0,0.08)',
                   transition: 'border-color 200ms',
                 }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,107,157,0.2)')}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = C.n700)}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(0,0,0,0.2)')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(0,0,0,0.08)')}
                 >
                   <span style={{ fontSize: '24px' }}>{item.icon}</span>
                   <div>
@@ -254,9 +247,9 @@ export default function Landing({ onAuth }: LandingProps) {
             {/* Phone frame */}
             <div style={{
               width: '340px', borderRadius: '40px',
-              border: '4px solid rgba(255,255,255,0.08)',
+              border: '4px solid rgba(0,0,0,0.12)',
               background: '#111', padding: '14px',
-              boxShadow: '0 30px 80px rgba(0,0,0,0.5), 0 0 100px rgba(255,107,157,0.12)',
+              boxShadow: '0 30px 80px rgba(0,0,0,0.15)',
             }}>
               {/* Notch */}
               <div style={{
@@ -275,7 +268,7 @@ export default function Landing({ onAuth }: LandingProps) {
               }}>
                 <div style={{
                   width: '36px', height: '36px', borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #FF6B9D, #A78BFA)',
+                  background: 'linear-gradient(135deg, #333333, #666666)',
                   padding: '2px',
                 }}>
                   <img src="/phone/2.png" alt="" style={{
@@ -354,14 +347,14 @@ export default function Landing({ onAuth }: LandingProps) {
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0' }}>
                   <div style={{
                     width: '48px', height: '48px', borderRadius: '50%',
-                    background: C.n800, border: `2px solid ${C.pink}`,
+                    background: C.n800, border: `2px solid rgba(0,0,0,0.2)`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     color: C.pink, fontSize: '20px', flexShrink: 0,
                   }}>{s.icon}</div>
                   {i < 2 && (
                     <div style={{
                       width: '2px', height: '64px',
-                      background: `linear-gradient(to bottom, ${C.pink}, ${C.n700})`,
+                      background: `linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.06))`,
                     }} />
                   )}
                 </div>
@@ -406,7 +399,7 @@ export default function Landing({ onAuth }: LandingProps) {
                 }} />
                 <div style={{
                   position: 'absolute', inset: 0,
-                  background: 'linear-gradient(to top, rgba(8,7,12,0.9), transparent 50%, transparent)',
+                  background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent 50%, transparent)',
                   opacity: 0, transition: 'opacity 300ms',
                   display: 'flex', alignItems: 'flex-end', padding: '24px',
                 }}
@@ -429,7 +422,7 @@ export default function Landing({ onAuth }: LandingProps) {
         <div style={{
           position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
           width: '50%', height: '100%', borderRadius: '50%',
-          background: 'rgba(255,107,157,0.05)', filter: 'blur(120px)', pointerEvents: 'none',
+          background: 'rgba(0,0,0,0.02)', filter: 'blur(120px)', pointerEvents: 'none',
         }} />
         <Reveal>
           <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', fontWeight: 900, marginBottom: '20px', position: 'relative', zIndex: 1 }}>
@@ -439,18 +432,14 @@ export default function Landing({ onAuth }: LandingProps) {
             Únete a miles de creadores construyendo la próxima generación de influencers en redes sociales con VIST Studio.
           </p>
           <div style={{ position: 'relative', zIndex: 1, display: 'inline-block' }}>
-            <div style={{
-              position: 'absolute', inset: 0,
-              background: C.pink, filter: 'blur(20px)', opacity: 0.4, borderRadius: '999px',
-            }} />
             <button onClick={onAuth} style={{
-              position: 'relative', background: C.pink, color: C.bg, border: 'none',
+              position: 'relative', background: '#111111', color: '#FFFFFF', border: 'none',
               borderRadius: '999px', padding: '0 48px', height: '64px',
               fontSize: '20px', fontWeight: 700, cursor: 'pointer',
-              transition: 'transform 300ms',
+              transition: 'background 150ms, transform 300ms',
             }}
-              onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')}
-              onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+              onMouseEnter={e => { e.currentTarget.style.background = '#333333'; e.currentTarget.style.transform = 'scale(1.05)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#111111'; e.currentTarget.style.transform = 'scale(1)'; }}
             >
               Comenzar Gratis
             </button>
@@ -460,7 +449,7 @@ export default function Landing({ onAuth }: LandingProps) {
 
       {/* ── Footer ────────────────────────────────────────── */}
       <footer style={{
-        borderTop: `1px solid ${C.n800}`, padding: '40px 0', marginTop: '40px',
+        borderTop: '1px solid rgba(0,0,0,0.08)', padding: '40px 0', marginTop: '40px',
         textAlign: 'center', color: C.n400, fontSize: '14px',
       }}>
         © 2026 VIST Studio. Todos los derechos reservados.

@@ -4,10 +4,10 @@ import { useGalleryStore } from '../stores/galleryStore'
 import { useToast } from '../contexts/ToastContext'
 
 const gradients = [
-  'linear-gradient(135deg,#f06848,#d048b0)',
+  'linear-gradient(135deg,#f06848,#4f46e5)',
   'linear-gradient(135deg,#4858e0,#50d8a0)',
-  'linear-gradient(135deg,#d048b0,#f06848)',
-  'linear-gradient(135deg,#4858e0,#d048b0)',
+  'linear-gradient(135deg,#4f46e5,#f06848)',
+  'linear-gradient(135deg,#4858e0,#4f46e5)',
 ]
 function getGradientForIndex(i: number) { return gradients[i % gradients.length] }
 
@@ -28,8 +28,10 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
   const [detailTab, setDetailTab] = useState('Resumen')
 
   const storeCharacters = useCharacterStore(s => s.characters)
+  const isLoadingChars = useCharacterStore(s => s.isLoading)
   const trainLoRA = useCharacterStore(s => s.trainLoRA)
   const updateCharacter = useCharacterStore(s => s.updateCharacter)
+  const removeCharacter = useCharacterStore(s => s.removeCharacter)
   const galleryItems = useGalleryStore(s => s.items)
   const toast = useToast()
 
@@ -79,6 +81,23 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
   const charPhotoItems = charGalleryItems.filter(i => i.type === 'create' || i.type === 'session')
   const charEditItems = charGalleryItems.filter(i => i.type === 'edit')
 
+  if (isLoadingChars) {
+    return (
+      <div className="min-h-screen joi-mesh" style={{ background: 'var(--joi-bg-0)' }}>
+        <div className="px-8 pt-8 pb-2">
+          <div className="h-7 w-48 rounded-lg animate-pulse mb-2" style={{ background: 'rgba(255,255,255,.05)' }} />
+          <div className="h-4 w-32 rounded animate-pulse" style={{ background: 'rgba(255,255,255,.03)' }} />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 px-8 pt-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="rounded-2xl animate-pulse"
+              style={{ height: 200, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.04)' }} />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   if (storeCharacters.length === 0) {
     return (
       <div className="min-h-screen joi-mesh flex items-center justify-center" style={{ background: 'var(--joi-bg-0)' }}>
@@ -99,7 +118,7 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--joi-bg-0)' }}>
-      <div className="px-8 pt-8 pb-2 flex items-end justify-between">
+      <div className="px-4 md:px-8 pt-8 pb-2 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">
             <span style={{ color: 'var(--joi-pink)' }}>Galería de</span> <span style={{ color: 'var(--joi-text-1)' }}>Personajes</span>
@@ -110,23 +129,23 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
       </div>
 
       {/* Stats */}
-      <div className="px-8 py-4 flex gap-3">
+      <div className="px-4 md:px-8 py-4 grid grid-cols-2 md:grid-cols-4 gap-2">
         {[
           { l:'Personajes', v:String(characters.length), c:'var(--accent)' },
           { l:'Usos Totales', v:String(totalUses), c:'var(--mint)' },
           { l:'Fotos', v:String(totalPhotos), c:'var(--rose)' },
           { l:'Ediciones AI', v:String(totalEdits), c:'var(--magenta)' },
         ].map(s=>(
-          <div key={s.l} className="px-4 py-3 flex-1 rounded-md" style={{ background: 'var(--joi-bg-2)', border: '1px solid rgba(255,255,255,.04)' }}>
+          <div key={s.l} className="px-4 py-3 rounded-md" style={{ background: 'var(--joi-bg-2)', border: '1px solid rgba(255,255,255,.04)' }}>
             <div className="text-[9px] font-mono uppercase tracking-wider" style={{ color:'var(--joi-text-3)' }}>{s.l}</div>
             <div className="text-lg font-bold mt-0.5" style={{ color:s.c }}>{s.v}</div>
           </div>
         ))}
       </div>
 
-      <div className="px-8 pb-8 flex gap-6">
-        {/* Character Cards */}
-        <div className={`${selectedChar !== null ? 'w-[360px] shrink-0' : 'flex-1'} space-y-3 transition-all`}>
+      <div className="px-4 md:px-8 pb-20 md:pb-8 flex gap-6">
+        {/* Character Cards — hidden on mobile when detail is open */}
+        <div className={`${selectedChar !== null ? 'hidden md:block md:w-[360px] md:shrink-0' : 'w-full'} space-y-3 transition-all`}>
           {characters.map((c, i) => (
             <div
               key={c.id}
@@ -154,7 +173,7 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                     </div>
                     <span className="text-[9px] font-mono px-2 py-0.5 rounded-md"
                       style={{
-                        background: 'rgba(255,107,157,.06)',
+                        background: 'rgba(99,102,241,.06)',
                         color: 'var(--joi-text-3)',
                         border: '1px solid rgba(255,255,255,.06)',
                       }}>{c.photos} fotos</span>
@@ -183,7 +202,14 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
 
         {/* Detail Panel */}
         {selectedChar !== null && characters[selectedChar] && (
-          <div className="flex-1 anim-in">
+          <div className="flex-1 min-w-0 anim-in">
+            {/* Mobile back button */}
+            <button className="md:hidden mb-3 flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg w-full"
+              style={{ color: 'var(--joi-text-2)', background: 'var(--joi-bg-2)', border: '1px solid rgba(255,255,255,.04)' }}
+              onClick={() => setSelectedChar(null)}>
+              ← Volver a Personajes
+            </button>
+          <div className="anim-in">
             <div className="overflow-hidden rounded-md" style={{ background: 'var(--joi-bg-2)', border: '1px solid rgba(255,255,255,.04)' }}>
               <div className="h-40 relative" style={{ background: characters[selectedChar].gradient }}>
                 {characters[selectedChar].thumbnailUrl && (
@@ -226,6 +252,38 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                       <div className="text-[10px] font-mono uppercase tracking-wider mb-1.5" style={{ color:'var(--joi-text-3)' }}>Biografía</div>
                       <p className="text-sm" style={{ color:'var(--joi-text-2)' }}>{characters[selectedChar].bio}</p>
                     </div>
+
+                    {/* Model / consistency images */}
+                    {(() => {
+                      const sc = storeCharacters[selectedChar]
+                      const urls = sc?.modelImageUrls ?? []
+                      if (urls.length === 0) return null
+                      return (
+                        <div>
+                          <div className="text-[10px] font-mono uppercase tracking-wider mb-2" style={{ color:'var(--joi-text-3)' }}>
+                            Imágenes de Consistencia IA
+                          </div>
+                          <div className="grid grid-cols-5 gap-2">
+                            {urls.map((url, i) => (
+                              <div key={i} className="aspect-square rounded-lg overflow-hidden relative"
+                                style={{ border: `1px solid ${i === 0 ? 'rgba(255,107,157,.35)' : 'rgba(255,255,255,.06)'}` }}>
+                                <img src={url} className="w-full h-full object-cover" />
+                                {i === 0 && (
+                                  <div className="absolute bottom-0 inset-x-0 text-[7px] text-center py-0.5 font-mono"
+                                    style={{ background: 'rgba(0,0,0,.65)', color: 'var(--joi-pink)' }}>
+                                    principal
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-[10px] mt-1.5" style={{ color:'var(--joi-text-3)' }}>
+                            Estas imágenes se pasan automáticamente como referencia al generar contenido.
+                          </p>
+                        </div>
+                      )
+                    })()}
+
                     <div className="grid grid-cols-4 gap-3">
                       {[
                         { l:'Usos', v:characters[selectedChar].usageCount, c:'var(--accent)' },
@@ -313,8 +371,8 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                         if (sc.loraTrainingStatus === 'training') {
                           return (
                             <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg"
-                              style={{ background: 'rgba(167,139,250,0.1)', border: '1px solid rgba(167,139,250,0.15)' }}>
-                              <span className="inline-block w-3.5 h-3.5 border-2 border-[#A78BFA]/30 border-t-[#A78BFA] rounded-full animate-spin" />
+                              style={{ background: 'rgba(129,140,248,0.1)', border: '1px solid rgba(129,140,248,0.15)' }}>
+                              <span className="inline-block w-3.5 h-3.5 border-2 border-[#818CF8]/30 border-t-[#818CF8] rounded-full animate-spin" />
                               <span className="text-[12px] font-medium" style={{ color: 'var(--joi-text-2)' }}>Entrenando LoRA (~15 min)...</span>
                             </div>
                           )
@@ -331,14 +389,14 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                                   catch (e: any) { toast.error(e.message || 'Entrenamiento fallido') }
                                 }}
                                 className="ml-auto text-[10px] font-medium px-2 py-1 rounded-md"
-                                style={{ background: 'rgba(167,139,250,0.15)', color: '#A78BFA' }}>
+                                style={{ background: 'rgba(129,140,248,0.15)', color: '#818CF8' }}>
                                 Reintentar
                               </button>
                             </div>
                           )
                         }
                         // idle / no status
-                        const photoCount = sc.modelImageBlobs?.length || 0
+                        const photoCount = sc.modelImageBlobs?.length || sc.modelImageUrls?.length || 0
                         return (
                           <button
                             onClick={async () => {
@@ -353,9 +411,9 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                             disabled={photoCount < 5}
                             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[12px] font-medium transition-all"
                             style={{
-                              background: photoCount < 5 ? 'rgba(255,255,255,0.03)' : 'rgba(167,139,250,0.15)',
-                              color: photoCount < 5 ? 'var(--joi-text-3)' : '#A78BFA',
-                              border: `1px solid ${photoCount < 5 ? 'rgba(255,255,255,0.04)' : 'rgba(167,139,250,0.25)'}`,
+                              background: photoCount < 5 ? 'rgba(255,255,255,0.03)' : 'rgba(129,140,248,0.15)',
+                              color: photoCount < 5 ? 'var(--joi-text-3)' : '#818CF8',
+                              border: `1px solid ${photoCount < 5 ? 'rgba(255,255,255,0.04)' : 'rgba(129,140,248,0.25)'}`,
                               cursor: photoCount < 5 ? 'not-allowed' : 'pointer',
                             }}>
                             Entrenar LoRA{photoCount < 5 ? ` (faltan ${5 - photoCount} fotos más)` : ' (571 créditos)'}
@@ -381,9 +439,9 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                           }}
                           className="text-[11px] px-3 py-1 rounded-lg transition-colors"
                           style={{
-                            background: 'rgba(255,107,157,0.08)',
+                            background: 'rgba(99,102,241,0.08)',
                             color: 'var(--joi-pink)',
-                            border: '1px solid rgba(255,107,157,0.15)',
+                            border: '1px solid rgba(99,102,241,0.15)',
                           }}
                         >
                           Gestionar Referencias
@@ -428,7 +486,7 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                               <div
                                 key={item.id}
                                 className="relative aspect-[3/4] rounded-lg overflow-hidden cursor-pointer hover:scale-[1.03] transition-transform"
-                                style={{ border: `1px solid ${isRef && refSelectMode ? 'rgba(255,107,157,.35)' : 'rgba(255,255,255,.04)'}` }}
+                                style={{ border: `1px solid ${isRef && refSelectMode ? 'rgba(99,102,241,.35)' : 'rgba(255,255,255,.04)'}` }}
                                 onClick={() => {
                                   if (!refSelectMode) return
                                   if (isRef) {
@@ -443,7 +501,7 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                                 {refSelectMode && (
                                   <div
                                     className="absolute inset-0 transition-colors"
-                                    style={{ background: isRef ? 'rgba(255,107,157,0.25)' : 'transparent' }}
+                                    style={{ background: isRef ? 'rgba(99,102,241,0.25)' : 'transparent' }}
                                   />
                                 )}
                                 {/* Checkbox badge in select mode */}
@@ -524,35 +582,93 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                     <button className="btn-primary w-full py-2.5 text-sm">✦ Expandir Universo con AI</button>
                   </div>
                 )}
-                {detailTab === 'Ajustes' && (
-                  <div className="space-y-4">
-                    {['Nombre','Handle','Estilo','Biografía','Género','Edad','Paleta de Colores'].map(f=>(
-                      <div key={f}>
-                        <label className="text-[10px] font-mono uppercase block mb-1" style={{ color:'var(--joi-text-3)' }}>{f}</label>
-                        <input defaultValue={f==='Nombre'?characters[selectedChar].name : f==='Handle'?characters[selectedChar].handle : f==='Estilo'?characters[selectedChar].style : ''}
+                {detailTab === 'Ajustes' && selectedChar !== null && (() => {
+                  const sc = storeCharacters[selectedChar as number]
+                  if (!sc) return null
+                  const RENDER_STYLES = [
+                    { id: 'photorealistic', label: 'Fotorrealista', icon: '📷' },
+                    { id: 'anime',          label: 'Anime',         icon: '🎌' },
+                    { id: '3d-render',      label: '3D Render',     icon: '🎮' },
+                    { id: 'illustration',   label: 'Ilustración',   icon: '🎨' },
+                    { id: 'stylized',       label: 'Estilizado',    icon: '✦' },
+                    { id: 'pixel-art',      label: 'Pixel Art',     icon: '🕹️' },
+                  ]
+                  return (
+                    <div className="space-y-5">
+                      {/* Name */}
+                      <div>
+                        <label className="text-[10px] font-mono uppercase block mb-1.5" style={{ color: 'var(--joi-text-3)' }}>Nombre</label>
+                        <input
+                          key={sc.id + '-name'}
+                          defaultValue={sc.name}
+                          onBlur={e => {
+                            const val = e.currentTarget.value.trim()
+                            if (val && val !== sc.name) updateCharacter(sc.id, { name: val })
+                          }}
                           className="w-full px-3 py-2 rounded-lg text-xs border outline-none"
-                          style={{ background:'var(--joi-bg-3)', borderColor:'rgba(255,255,255,.04)', color:'var(--joi-text-1)' }} />
+                          style={{ background: 'var(--joi-bg-3)', borderColor: 'rgba(255,255,255,.06)', color: 'var(--joi-text-1)' }}
+                        />
                       </div>
-                    ))}
-                    {characters[selectedChar].rawPrompt && (
-                      <details className="group">
-                        <summary className="text-[10px] font-mono uppercase cursor-pointer flex items-center gap-1.5 py-1" style={{ color:'var(--joi-text-3)' }}>
-                          <span className="text-[9px] transition-transform group-open:rotate-90">▶</span>
-                          Prompt técnico
-                        </summary>
-                        <textarea readOnly rows={4} value={characters[selectedChar].rawPrompt}
-                          className="w-full mt-2 px-3 py-2 rounded-lg text-[10px] border outline-none resize-none font-mono"
-                          style={{ background:'var(--joi-bg-3)', borderColor:'rgba(255,255,255,.04)', color:'var(--joi-text-3)' }} />
-                      </details>
-                    )}
-                    <div className="flex gap-2 pt-2">
-                      <button className="btn-primary flex-1 py-2 text-sm">Guardar</button>
-                      <button className="btn-ghost px-4 py-2 text-sm" style={{ color:'var(--rose)' }}>Archivar</button>
+
+                      {/* Render Style */}
+                      <div>
+                        <label className="text-[10px] font-mono uppercase block mb-2" style={{ color: 'var(--joi-text-3)' }}>
+                          Estilo de Render
+                          <span className="ml-1.5 normal-case" style={{ color: 'var(--joi-text-3)', opacity: 0.6 }}>— usado por el Director para mantener el estilo del personaje</span>
+                        </label>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {RENDER_STYLES.map(rs => {
+                            const active = (sc.renderStyle ?? 'photorealistic') === rs.id
+                            return (
+                              <button key={rs.id}
+                                onClick={() => updateCharacter(sc.id, { renderStyle: rs.id })}
+                                className="flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl text-[11px] font-medium transition-all"
+                                style={{
+                                  background: active ? 'rgba(240,104,72,.12)' : 'var(--joi-bg-3)',
+                                  border: `1px solid ${active ? 'rgba(240,104,72,.35)' : 'rgba(255,255,255,.05)'}`,
+                                  color: active ? 'var(--accent)' : 'var(--joi-text-2)',
+                                }}>
+                                <span>{rs.icon}</span>
+                                <span>{rs.label}</span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Raw prompt (read-only) */}
+                      {sc.characteristics && (
+                        <details className="group">
+                          <summary className="text-[10px] font-mono uppercase cursor-pointer flex items-center gap-1.5 py-1" style={{ color: 'var(--joi-text-3)' }}>
+                            <span className="text-[9px] transition-transform group-open:rotate-90">▶</span>
+                            Prompt técnico
+                          </summary>
+                          <textarea readOnly rows={4} value={sc.characteristics}
+                            className="w-full mt-2 px-3 py-2 rounded-lg text-[10px] border outline-none resize-none font-mono"
+                            style={{ background: 'var(--joi-bg-3)', borderColor: 'rgba(255,255,255,.04)', color: 'var(--joi-text-3)' }} />
+                        </details>
+                      )}
+
+                      {/* Danger zone — delete */}
+                      <div className="pt-2 border-t" style={{ borderColor: 'rgba(255,255,255,.05)' }}>
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`¿Eliminar "${sc.name}"? Esta acción no se puede deshacer.`)) {
+                              removeCharacter(sc.id)
+                              setSelectedChar(null)
+                            }
+                          }}
+                          className="w-full py-2 rounded-lg text-xs font-medium transition-all hover:opacity-90"
+                          style={{ background: 'rgba(220,38,38,.12)', border: '1px solid rgba(220,38,38,.25)', color: '#f87171' }}>
+                          Eliminar personaje
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )
+                })()}
               </div>
             </div>
+          </div>
           </div>
         )}
       </div>

@@ -148,7 +148,7 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
         style={{
           background: 'linear-gradient(145deg, rgba(14,12,20,0.98), rgba(21,18,28,0.98))',
           border: '1px solid rgba(255,255,255,0.06)',
-          boxShadow: '0 40px 120px rgba(0,0,0,0.6), 0 0 60px rgba(255,107,157,0.05)',
+          boxShadow: '0 40px 120px rgba(0,0,0,0.6), 0 0 60px rgba(99,102,241,0.05)',
         }}
         onClick={e => e.stopPropagation()}
       >
@@ -157,7 +157,7 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
           style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm"
-              style={{ background: 'rgba(255,107,157,0.1)', color: '#FF6B9D' }}>
+              style={{ background: 'rgba(99,102,241,0.1)', color: '#6366F1' }}>
               {'\uD83D\uDC57'}
             </div>
             <div>
@@ -192,7 +192,7 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
                 <div key={i} className="relative shrink-0 w-16 h-16 rounded-xl overflow-hidden"
                   style={{
                     border: r.status === 'processing'
-                      ? '2px solid #FF6B9D'
+                      ? '2px solid #6366F1'
                       : r.status === 'done'
                         ? '2px solid #50d8a0'
                         : r.status === 'error'
@@ -207,7 +207,7 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
                   {r.status === 'processing' && (
                     <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                       <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
-                        style={{ borderColor: '#FF6B9D', borderTopColor: 'transparent' }} />
+                        style={{ borderColor: '#6366F1', borderTopColor: 'transparent' }} />
                     </div>
                   )}
                   {r.status === 'done' && (
@@ -259,7 +259,7 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
               className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all hover:border-white/15"
               style={{
                 background: 'rgba(255,255,255,0.02)',
-                border: `1px dashed ${garmentPreview ? 'rgba(167,139,250,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                border: `1px dashed ${garmentPreview ? 'rgba(129,140,248,0.3)' : 'rgba(255,255,255,0.08)'}`,
                 opacity: isProcessing ? 0.5 : 1,
                 pointerEvents: isProcessing ? 'none' : 'auto',
               }}
@@ -287,7 +287,7 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
               ) : (
                 <>
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
-                    style={{ background: 'rgba(167,139,250,0.08)', color: '#A78BFA' }}>
+                    style={{ background: 'rgba(129,140,248,0.08)', color: '#818CF8' }}>
                     {'\uD83D\uDC55'}
                   </div>
                   <div>
@@ -317,7 +317,7 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
                 <span className="text-[11px] font-medium" style={{ color: 'var(--joi-text-2)' }}>
                   Procesando {currentIndex + 1}/{totalCount}...
                 </span>
-                <span className="text-[10px] font-mono" style={{ color: '#FF6B9D' }}>
+                <span className="text-[10px] font-mono" style={{ color: '#6366F1' }}>
                   {progressPercent}%
                 </span>
               </div>
@@ -327,8 +327,8 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
                   className="h-full rounded-full transition-all duration-500"
                   style={{
                     width: `${Math.max(3, progressPercent)}%`,
-                    background: 'linear-gradient(90deg, #FF6B9D, #A78BFA)',
-                    boxShadow: '0 0 10px rgba(255,107,157,0.4)',
+                    background: 'linear-gradient(90deg, #6366F1, #818CF8)',
+                    boxShadow: '0 0 10px rgba(99,102,241,0.4)',
                   }}
                 />
               </div>
@@ -409,10 +409,10 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
                   className="px-6 py-2.5 rounded-xl text-[11px] font-bold transition-all hover:scale-[1.02]"
                   style={{
                     background: outfitDesc.trim()
-                      ? 'linear-gradient(135deg, #FF6B9D, #A78BFA)'
+                      ? 'linear-gradient(135deg, #6366F1, #818CF8)'
                       : 'rgba(255,255,255,0.04)',
                     color: outfitDesc.trim() ? '#fff' : 'var(--joi-text-3)',
-                    boxShadow: outfitDesc.trim() ? '0 4px 20px rgba(255,107,157,0.25)' : 'none',
+                    boxShadow: outfitDesc.trim() ? '0 4px 20px rgba(99,102,241,0.25)' : 'none',
                   }}
                 >
                   Aplicar a Todas ({totalCount})
@@ -439,10 +439,10 @@ export default function BatchOutfitModal({ imageUrls, onClose, onComplete }: Bat
                 className="px-6 py-2.5 rounded-xl text-[11px] font-bold transition-all hover:scale-[1.02]"
                 style={{
                   background: doneCount > 0
-                    ? 'linear-gradient(135deg, #FF6B9D, #A78BFA)'
+                    ? 'linear-gradient(135deg, #6366F1, #818CF8)'
                     : 'rgba(255,255,255,0.04)',
                   color: doneCount > 0 ? '#fff' : 'var(--joi-text-3)',
-                  boxShadow: doneCount > 0 ? '0 4px 20px rgba(255,107,157,0.25)' : 'none',
+                  boxShadow: doneCount > 0 ? '0 4px 20px rgba(99,102,241,0.25)' : 'none',
                 }}
               >
                 Guardar Todo en Galería ({doneCount})

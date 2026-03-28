@@ -68,14 +68,14 @@ const CaptionModal: React.FC<CaptionModalProps> = ({ imageUrl, onClose }) => {
         style={{
           background: 'var(--joi-bg-1)',
           border: '1px solid var(--joi-border)',
-          boxShadow: '0 25px 60px rgba(0,0,0,.5), 0 0 40px rgba(167,139,250,.06)',
+          boxShadow: '0 25px 60px rgba(0,0,0,.5), 0 0 40px rgba(129,140,248,.06)',
         }}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 shrink-0" style={{ borderBottom: '1px solid var(--joi-border)' }}>
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm"
-              style={{ background: 'rgba(255,107,157,.08)', border: '1px solid rgba(255,107,157,.15)' }}>
+              style={{ background: 'rgba(99,102,241,.08)', border: '1px solid rgba(99,102,241,.15)' }}>
               {'\u270D\uFE0F'}
             </div>
             <h2 className="text-sm font-semibold" style={{ color: 'var(--joi-text-1)' }}>Generador de Descripción</h2>
@@ -106,8 +106,8 @@ const CaptionModal: React.FC<CaptionModalProps> = ({ imageUrl, onClose }) => {
                   onClick={() => setPlatform(key)}
                   className="py-2.5 px-3 rounded-xl text-sm font-medium transition-all flex flex-col items-center gap-1.5 hover:scale-[1.02]"
                   style={{
-                    background: platform === key ? 'rgba(255,107,157,.08)' : 'var(--joi-bg-3)',
-                    border: `1px solid ${platform === key ? 'rgba(255,107,157,.2)' : 'var(--joi-border)'}`,
+                    background: platform === key ? 'rgba(99,102,241,.08)' : 'var(--joi-bg-3)',
+                    border: `1px solid ${platform === key ? 'rgba(99,102,241,.2)' : 'var(--joi-border)'}`,
                     color: platform === key ? 'var(--joi-pink)' : 'var(--joi-text-2)',
                   }}
                 >
@@ -129,8 +129,8 @@ const CaptionModal: React.FC<CaptionModalProps> = ({ imageUrl, onClose }) => {
                     onClick={() => setLanguage(lang)}
                     className="py-2 rounded-lg text-xs font-medium transition-all"
                     style={{
-                      background: language === lang ? 'rgba(167,139,250,.1)' : 'var(--joi-bg-3)',
-                      border: `1px solid ${language === lang ? 'rgba(167,139,250,.2)' : 'var(--joi-border)'}`,
+                      background: language === lang ? 'rgba(129,140,248,.1)' : 'var(--joi-bg-3)',
+                      border: `1px solid ${language === lang ? 'rgba(129,140,248,.2)' : 'var(--joi-border)'}`,
                       color: language === lang ? 'var(--joi-violet)' : 'var(--joi-text-2)',
                     }}
                   >
@@ -152,7 +152,7 @@ const CaptionModal: React.FC<CaptionModalProps> = ({ imageUrl, onClose }) => {
                   border: '1px solid var(--joi-border)',
                   color: 'var(--joi-text-1)',
                 }}
-                onFocus={e => (e.target.style.borderColor = 'rgba(167,139,250,.3)')}
+                onFocus={e => (e.target.style.borderColor = 'rgba(129,140,248,.3)')}
                 onBlur={e => (e.target.style.borderColor = 'var(--joi-border)')}
               />
             </div>
@@ -222,8 +222,8 @@ const CaptionModal: React.FC<CaptionModalProps> = ({ imageUrl, onClose }) => {
                         className="text-[11px] px-2.5 py-0.5 rounded-full"
                         style={{
                           color: 'var(--joi-violet)',
-                          background: 'rgba(167,139,250,.08)',
-                          border: '1px solid rgba(167,139,250,.15)',
+                          background: 'rgba(129,140,248,.08)',
+                          border: '1px solid rgba(129,140,248,.15)',
                         }}>
                         #{tag}
                       </span>

@@ -100,17 +100,17 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
 
       {/* Logo / title */}
       <div className="mb-6 text-center">
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ background: 'linear-gradient(135deg, var(--joi-pink), var(--joi-magenta))', boxShadow: '0 4px 20px rgba(255,107,157,0.2)' }}>
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ background: 'var(--joi-pink)', boxShadow: 'none' }}>
           <span className="text-white font-bold text-lg">V</span>
         </div>
-        <h1 className="text-3xl font-bold text-white tracking-tight" style={{ fontFamily: "'Instrument Serif', serif" }}>VIST</h1>
+        <h1 className="text-3xl font-bold tracking-tight" style={{ fontFamily: "'Instrument Serif', serif", color: 'var(--joi-text-1)' }}>VIST</h1>
         <p style={{ color: 'var(--joi-text-3)', fontSize: 13, marginTop: 4 }}>AI Studio</p>
       </div>
 
       {/* Context banner */}
       {intendedWorkspace && CONTEXT_BANNERS[intendedWorkspace] && (
         <div className="w-full mb-3 px-4 py-3 rounded-xl text-[13px] text-center"
-          style={{ background: 'rgba(255,92,53,0.08)', border: '1px solid rgba(255,92,53,0.2)', color: '#FF5C35' }}>
+          style={{ background: 'var(--joi-bg-2)', border: '1px solid var(--joi-border)', color: 'var(--joi-text-2)' }}>
           {CONTEXT_BANNERS[intendedWorkspace]}
         </div>
       )}
@@ -152,13 +152,13 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
                   required
                   autoComplete="email"
                   placeholder="you@email.com"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition-all"
+                  className="w-full rounded-lg px-3 py-2.5 text-sm outline-none transition-all" style={{ background: 'var(--joi-bg-2)', border: '1px solid var(--joi-border)', color: 'var(--joi-text-1)' }}
                 />
               </div>
               <button
                 type="submit"
                 disabled={loading || !email}
-                className="w-full py-2.5 bg-gradient-to-r from-pink-500 to-fuchsia-600 hover:from-pink-400 hover:to-fuchsia-500 disabled:from-zinc-700 disabled:to-zinc-700 disabled:text-zinc-500 text-white font-semibold text-sm rounded-lg transition-all shadow-lg shadow-pink-900/20 flex items-center justify-center gap-2"
+                className="w-full py-2.5 font-semibold text-sm rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed" style={{ background: 'var(--joi-pink)', color: 'var(--joi-bg-0)', border: 'none' }}
               >
                 {loading ? (
                   <>
@@ -176,13 +176,12 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
           /* ── Login / Register view ── */
           <>
             {/* Tabs */}
-            <div className="flex rounded-xl bg-zinc-800 p-1 mb-6" role="tablist">
+            <div className="flex rounded-xl p-1 mb-6" style={{ background: 'var(--joi-bg-3)' }} role="tablist">
               <button
                 role="tab"
                 aria-selected={mode === 'login'}
                 onClick={() => switchMode('login')}
-                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${mode === 'login' ? 'bg-zinc-700 text-white shadow' : 'text-zinc-500 hover:text-zinc-300'
-                  }`}
+                className="flex-1 py-2 text-sm font-semibold rounded-lg transition-all" style={{ background: mode === 'login' ? 'var(--joi-bg-0)' : 'transparent', color: mode === 'login' ? 'var(--joi-text-1)' : 'var(--joi-text-3)', boxShadow: mode === 'login' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}
               >
                 Sign in
               </button>
@@ -190,8 +189,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
                 role="tab"
                 aria-selected={mode === 'register'}
                 onClick={() => switchMode('register')}
-                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${mode === 'register' ? 'bg-zinc-700 text-white shadow' : 'text-zinc-500 hover:text-zinc-300'
-                  }`}
+                className="flex-1 py-2 text-sm font-semibold rounded-lg transition-all" style={{ background: mode === 'register' ? 'var(--joi-bg-0)' : 'transparent', color: mode === 'register' ? 'var(--joi-text-1)' : 'var(--joi-text-3)', boxShadow: mode === 'register' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}
               >
                 Create account
               </button>
@@ -223,7 +221,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
                   required
                   autoComplete="email"
                   placeholder="you@email.com"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition-all"
+                  className="w-full rounded-lg px-3 py-2.5 text-sm outline-none transition-all" style={{ background: 'var(--joi-bg-2)', border: '1px solid var(--joi-border)', color: 'var(--joi-text-1)' }}
                 />
               </div>
 
@@ -240,7 +238,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
                     required
                     autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                     placeholder={mode === 'register' ? 'Minimum 6 characters' : '••••••••'}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 pr-10 text-sm text-white placeholder:text-zinc-600 focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition-all"
+                    className="w-full rounded-lg px-3 py-2.5 pr-10 text-sm outline-none transition-all" style={{ background: 'var(--joi-bg-2)', border: '1px solid var(--joi-border)', color: 'var(--joi-text-1)' }}
                   />
                   <button
                     type="button"
@@ -274,7 +272,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
                 type="submit"
                 disabled={loading || !email || !password}
                 aria-busy={loading}
-                className="w-full py-2.5 bg-gradient-to-r from-pink-500 to-fuchsia-600 hover:from-pink-400 hover:to-fuchsia-500 disabled:from-zinc-700 disabled:to-zinc-700 disabled:text-zinc-500 text-white font-semibold text-sm rounded-lg transition-all shadow-lg shadow-pink-900/20 flex items-center justify-center gap-2"
+                className="w-full py-2.5 font-semibold text-sm rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed" style={{ background: 'var(--joi-pink)', color: 'var(--joi-bg-0)', border: 'none' }}
               >
                 {loading ? (
                   <>
@@ -310,7 +308,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
     return (
       <div style={{
         background: 'var(--joi-bg-glass)',
-        border: '1px solid rgba(255,255,255,.04)',
+        border: '1px solid var(--joi-border)',
         backdropFilter: 'blur(24px)',
         borderRadius: 20,
         padding: '40px 32px',

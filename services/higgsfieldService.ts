@@ -1,9 +1,12 @@
+import { fal } from '@fal-ai/client';
 import { InfluencerParams, AspectRatio } from '../types';
 
 // ─────────────────────────────────────────────
 // Higgsfield API — async submit + poll pattern
 // Auth is injected by the /higgsfield-api proxy.
 // ─────────────────────────────────────────────
+
+fal.config({ proxyUrl: '/fal-api' });
 
 const PROXY_BASE = '/higgsfield-api';
 const POLL_INTERVAL = 2000; // 2s between status checks
@@ -12,14 +15,6 @@ const MAX_POLL_TIME = 120_000; // 2 min timeout
 // ─────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────
-
-const fileToDataUri = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
 
 const urlToDataUrl = async (url: string): Promise<string> => {
   const resp = await fetch(url);
@@ -207,12 +202,13 @@ export const editWithSoulReference = async (
 ): Promise<string[]> => {
   if (onProgress) onProgress(5);
 
-  const imageDataUri = await fileToDataUri(baseImage);
+  // Higgsfield requires an HTTP URL — upload via fal.ai storage to get one
+  const imageUrl = await fal.storage.upload(baseImage);
   if (onProgress) onProgress(15);
 
   const input: Record<string, unknown> = {
     prompt,
-    image_url: imageDataUri,
+    image_url: imageUrl,
     aspect_ratio: toHiggsfieldAspectRatio(aspectRatio),
     resolution: '1080p',
     strength: 0.65,

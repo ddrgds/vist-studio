@@ -33,6 +33,8 @@ export interface SavedCharacter {
   personalityTraits?: string[]   // e.g. ['bold', 'mysterious', 'playful']
   // Reference photos — user-curated face refs (max 20) used in Director
   referencePhotoUrls?: string[]
+  // Cloud URLs for model images — populated when loaded from Supabase (no blob download)
+  modelImageUrls?: string[]
 }
 
 interface CharacterState {

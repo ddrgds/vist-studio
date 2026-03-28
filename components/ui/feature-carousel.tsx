@@ -36,7 +36,7 @@ export const HeroCarousel = React.forwardRef<HTMLDivElement, HeroCarouselProps>(
           'relative w-full min-h-screen flex flex-col items-center justify-center overflow-x-hidden p-4',
           className
         )}
-        style={{ background: '#08070C', color: '#F0EAF4' }}
+        style={{ background: 'var(--joi-bg-0)', color: 'var(--joi-text-1)' }}
         {...props}
       >
         {/* Background glows */}
@@ -45,7 +45,7 @@ export const HeroCarousel = React.forwardRef<HTMLDivElement, HeroCarouselProps>(
             className="absolute rounded-full"
             style={{
               bottom: '10%', left: '-10%', width: '500px', height: '500px',
-              background: 'radial-gradient(circle, rgba(255,107,157,0.15), transparent 70%)',
+              background: 'radial-gradient(circle, rgba(0,0,0,0.04), transparent 70%)',
               filter: 'blur(80px)',
             }}
           />
@@ -53,7 +53,7 @@ export const HeroCarousel = React.forwardRef<HTMLDivElement, HeroCarouselProps>(
             className="absolute rounded-full"
             style={{
               top: '-5%', right: '-10%', width: '500px', height: '500px',
-              background: 'radial-gradient(circle, rgba(167,139,250,0.12), transparent 70%)',
+              background: 'radial-gradient(circle, rgba(0,0,0,0.03), transparent 70%)',
               filter: 'blur(80px)',
             }}
           />
@@ -66,7 +66,7 @@ export const HeroCarousel = React.forwardRef<HTMLDivElement, HeroCarouselProps>(
             <h1 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tighter max-w-4xl leading-[1.05]">
               {title}
             </h1>
-            <p className="max-w-2xl mx-auto text-lg md:text-xl" style={{ color: '#A09299' }}>
+            <p className="max-w-2xl mx-auto text-lg md:text-xl" style={{ color: 'var(--joi-text-2)' }}>
               {subtitle}
             </p>
           </div>
@@ -77,11 +77,11 @@ export const HeroCarousel = React.forwardRef<HTMLDivElement, HeroCarouselProps>(
               onClick={onCtaClick}
               className="rounded-full text-lg font-bold transition-all duration-200 hover:scale-105"
               style={{
-                background: '#FF6B9D',
-                color: '#08070C',
+                background: '#111111',
+                color: '#FFFFFF',
                 padding: '0 32px',
                 height: '56px',
-                boxShadow: '0 0 20px rgba(255,107,157,0.5)',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
                 border: 'none',
                 cursor: 'pointer',
               }}
@@ -127,9 +127,9 @@ export const HeroCarousel = React.forwardRef<HTMLDivElement, HeroCarouselProps>(
                       alt={image.alt}
                       className="object-cover w-full h-full rounded-3xl shadow-2xl"
                       style={{
-                        border: isCenter ? '2px solid rgba(255,107,157,0.3)' : '2px solid rgba(255,255,255,0.06)',
+                        border: isCenter ? '2px solid rgba(99,102,241,0.3)' : '2px solid rgba(255,255,255,0.06)',
                         boxShadow: isCenter
-                          ? '0 25px 60px rgba(0,0,0,0.5), 0 0 80px rgba(255,107,157,0.15)'
+                          ? '0 25px 60px rgba(0,0,0,0.5), 0 0 80px rgba(99,102,241,0.15)'
                           : '0 15px 40px rgba(0,0,0,0.3)',
                       }}
                     />
@@ -146,7 +146,7 @@ export const HeroCarousel = React.forwardRef<HTMLDivElement, HeroCarouselProps>(
                 background: 'rgba(8,7,12,0.6)',
                 backdropFilter: 'blur(8px)',
                 border: '1px solid rgba(255,255,255,0.1)',
-                color: '#F0EAF4',
+                color: 'var(--joi-text-1)',
                 cursor: 'pointer',
               }}
             >
@@ -159,7 +159,7 @@ export const HeroCarousel = React.forwardRef<HTMLDivElement, HeroCarouselProps>(
                 background: 'rgba(8,7,12,0.6)',
                 backdropFilter: 'blur(8px)',
                 border: '1px solid rgba(255,255,255,0.1)',
-                color: '#F0EAF4',
+                color: 'var(--joi-text-1)',
                 cursor: 'pointer',
               }}
             >
@@ -177,7 +177,7 @@ export const HeroCarousel = React.forwardRef<HTMLDivElement, HeroCarouselProps>(
                 style={{
                   width: i === currentIndex ? '24px' : '8px',
                   height: '8px',
-                  background: i === currentIndex ? '#FF6B9D' : 'rgba(255,255,255,0.2)',
+                  background: i === currentIndex ? '#6366F1' : 'rgba(255,255,255,0.2)',
                   border: 'none',
                   cursor: 'pointer',
                 }}

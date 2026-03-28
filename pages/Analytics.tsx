@@ -117,9 +117,9 @@ export function Analytics() {
               <button key={r} onClick={()=>setRange(r)}
                 className="px-2.5 py-1 rounded-md text-[11px] font-mono transition-all"
                 style={{
-                  background: range===r ? 'rgba(208,72,176,.1)' : 'transparent',
+                  background: range===r ? 'rgba(79,70,229,.1)' : 'transparent',
                   color: range===r ? 'var(--magenta)' : 'var(--joi-text-3)',
-                  border: `1px solid ${range===r ? 'rgba(208,72,176,.2)' : 'transparent'}`,
+                  border: `1px solid ${range===r ? 'rgba(79,70,229,.2)' : 'transparent'}`,
                 }}>{r}</button>
             ))}
           </div>

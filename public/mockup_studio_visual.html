@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mockup - El Estudio (VIST)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --bg-0: #0a0a0f;
+            --bg-1: #12121a;
+            --bg-2: #1c1c28;
+            --border: rgba(255,255,255,0.08);
+            --border-h: rgba(255,255,255,0.15);
+            --pink: #ff2a85;
+            --pink-soft: rgba(255,42,133,0.15);
+            --text-1: #f3f4f6;
+            --text-2: #9ca3af;
+            --text-3: #6b7280;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+
+        body {
+            background: var(--bg-0);
+            color: var(--text-1);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Left Panel - Library */
+        .panel-left {
+            width: 300px;
+            background: var(--bg-1);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        .header { margin-bottom: 24px; }
+        .header h1 { font-size: 1.25rem; font-weight: 600; }
+        .header h1 span { color: var(--pink); }
+
+        .library-section { margin-bottom: 24px; }
+        .section-title { font-size: 0.75rem; text-transform: uppercase; color: var(--text-3); font-weight: 600; letter-spacing: 0.05em; margin-bottom: 12px; }
+        
+        .asset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .asset-card {
+            aspect-ratio: 1;
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            align-items: flex-end;
+            padding: 8px;
+            cursor: grab;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .asset-card:hover { border-color: var(--pink); transform: translateY(-2px); box-shadow: 0 4px 12px var(--pink-soft); }
+        .asset-label { font-size: 0.7rem; font-weight: 500; position: relative; z-index: 2; text-shadow: 0 1px 4px rgba(0,0,0,0.8); pointer-events: none; }
+        .asset-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.5; transition: opacity 0.2s; pointer-events: none; }
+        .asset-card:hover .asset-img { opacity: 0.8; }
+
+        /* Center Panel - The Canvas */
+        .panel-center {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 40px;
+        }
+
+        .canvas-title {
+            position: absolute;
+            top: 24px;
+            left: 32px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-1);
+        }
+        .canvas-subtitle {
+            position: absolute;
+            top: 50px;
+            left: 32px;
+            font-size: 0.85rem;
+            font-weight: 400;
+            color: var(--text-3);
+        }
+
+        /* The Slots */
+        .moodboard {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+            margin-bottom: 70px;
+        }
+
+        .drop-slot {
+            width: 170px;
+            height: 240px;
+            background: var(--bg-1);
+            border: 2px dashed var(--border-h);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .drop-slot.active { border-color: var(--pink); background: var(--pink-soft); transform: scale(1.05); }
+        .drop-slot .icon { font-size: 2rem; opacity: 0.5; }
+        .drop-slot .label { font-size: 0.8rem; color: var(--text-2); font-weight: 500; text-align: center; }
+        .plus { font-size: 1.5rem; color: var(--border-h); font-weight: 300; }
+
+        /* The Shoot Button */
+        .shoot-container { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+        .shoot-btn {
+            background: linear-gradient(135deg, #ff2a85, #ff6b2a);
+            color: white;
+            border: none;
+            padding: 16px 48px;
+            border-radius: 40px;
+            font-size: 1.15rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 8px 32px rgba(255,42,133,0.4);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .shoot-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(255,42,133,0.6); }
+        .shoot-btn:active { transform: translateY(2px); }
+        .cost { font-size: 0.75rem; color: var(--text-3); display: flex; align-items: center; gap: 4px; }
+        .cost span { color: var(--pink); font-weight: 600; }
+
+        /* Right Panel - Contact Sheet */
+        .panel-right {
+            width: 360px;
+            background: var(--bg-1);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            z-index: 10;
+        }
+
+        .contact-sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .contact-sheet-header h2 { font-size: 1.1rem; font-weight: 600; }
+        .badge { background: var(--bg-2); border: 1px solid var(--border); padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; color: var(--text-2); font-weight: 500; }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            flex: 1;
+            align-content: start;
+        }
+        
+        .contact-shot {
+            aspect-ratio: 3/4;
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .placeholder-icon { font-size: 1.5rem; opacity: 0.2; transform: scale(0.8); transition: all 0.5s; }
+        .contact-shot.loading .placeholder-icon { animation: pulse 1s infinite alternate; }
+        
+        @keyframes pulse {
+            from { transform: scale(0.8); opacity: 0.2; }
+            to { transform: scale(1.1); opacity: 0.6; }
+        }
+        
+        .contact-shot:hover .overlay { opacity: 1; }
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+            gap: 8px;
+            backdrop-filter: blur(4px);
+        }
+        .btn-select { background: white; color: black; border: none; padding: 8px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s; width: 80%; }
+        .btn-select:hover { background: var(--pink); color: white; transform: scale(1.05); }
+
+        /* Decorative elements */
+        .glow { position: absolute; width: 500px; height: 500px; background: var(--pink); filter: blur(160px); border-radius: 50%; opacity: 0.08; z-index: 0; pointer-events: none; }
+        .glow.top-left { top: -200px; left: -200px; }
+        .glow.bottom-right { bottom: -200px; right: -200px; background: #6366f1; }
+    </style>
+</head>
+<body>
+    <!-- Left Panel: Assets -->
+    <div class="panel-left">
+        <div class="header">
+            <h1>Estudio <span>Visual</span></h1>
+        </div>
+
+        <div class="library-section">
+            <div class="section-title">1. Protagonista</div>
+            <div class="asset-grid">
+                <div class="asset-card" draggable="true">
+                    <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&q=80" class="asset-img">
+                    <span class="asset-label">Aria</span>
+                </div>
+                <div class="asset-card" style="border: 1px dashed var(--border-h); align-items: center; justify-content: center; cursor: pointer;">
+                    <span style="color: var(--text-3); font-size: 1.5rem;">+</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="library-section">
+            <div class="section-title">2. Vestuario (Outfit)</div>
+            <div class="asset-grid">
+                <div class="asset-card" draggable="true">
+                    <img src="https://images.unsplash.com/photo-1551537482-f209bfc4c693?w=200&q=80" class="asset-img">
+                    <span class="asset-label">Chaquetón</span>
+                </div>
+                <div class="asset-card" draggable="true">
+                    <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=200&q=80" class="asset-img">
+                    <span class="asset-label">Estilo Fashion</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="library-section">
+            <div class="section-title">3. Sets & Escenas</div>
+            <div class="asset-grid">
+                <div class="asset-card" draggable="true">
+                    <img src="https://images.unsplash.com/photo-1550989460-0adf9ea622e2?w=200&q=80" class="asset-img">
+                    <span class="asset-label">Cafetería Paris</span>
+                </div>
+                <div class="asset-card" draggable="true">
+                    <img src="https://images.unsplash.com/photo-1519608487953-e999c86e7455?w=200&q=80" class="asset-img">
+                    <span class="asset-label">Noche Neón</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Center Panel: The Composer Canvas -->
+    <div class="panel-center">
+        <div class="glow top-left"></div>
+        <div class="glow bottom-right"></div>
+        
+        <div class="canvas-title">El Compositor</div>
+        <div class="canvas-subtitle">Arrastra elementos de la barra lateral hacia las cajas.</div>
+
+        <!-- The Slots -->
+        <div class="moodboard">
+            <div class="drop-slot" id="slot-face">
+                <span class="icon">👤</span>
+                <span class="label">Arrastra la Cara<br>(Obligatorio)</span>
+            </div>
+            <div class="plus">+</div>
+            <div class="drop-slot" id="slot-outfit">
+                <span class="icon">🧥</span>
+                <span class="label">Arrastra la Ropa<br>(Opcional)</span>
+            </div>
+            <div class="plus">+</div>
+            <div class="drop-slot" id="slot-scene">
+                <span class="icon">🌆</span>
+                <span class="label">Fondo o Locación<br>(Opcional)</span>
+            </div>
+        </div>
+
+        <div class="shoot-container">
+            <button class="shoot-btn" onclick="animateShoot()" id="btn-shoot">
+                <span>📸</span> Tirar Fotos (Grid x4)
+            </button>
+            <div class="cost">Costo estimado: <span>20 Tokens</span> (Motor Automático)</div>
+        </div>
+    </div>
+
+    <!-- Right Panel: Contact Sheet -->
+    <div class="panel-right">
+        <div class="contact-sheet-header">
+            <h2>Hoja de Contactos</h2>
+            <span class="badge">Sesión Actual</span>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-3); margin-bottom: 24px; line-height: 1.4;">
+            Las fotos rápidas en baja resolución aparecerán aquí. Selecciona las mejores para enviarlas a producción (Upscale 4K).
+        </p>
+        
+        <div class="contact-grid" id="contact-grid">
+            <div class="contact-shot"><span class="placeholder-icon">⏳</span></div>
+            <div class="contact-shot"><span class="placeholder-icon">⏳</span></div>
+            <div class="contact-shot"><span class="placeholder-icon">⏳</span></div>
+            <div class="contact-shot"><span class="placeholder-icon">⏳</span></div>
+        </div>
+    </div>
+
+    <script>
+        // Superficial drag and drop simulation for the mockup
+        const cards = document.querySelectorAll('.asset-card[draggable]');
+        let draggedSrc = null;
+        let draggedLabel = null;
+
+        cards.forEach(card => {
+            card.addEventListener('dragstart', (e) => {
+                draggedSrc = card.querySelector('.asset-img').src;
+                draggedLabel = card.querySelector('.asset-label').innerText;
+            });
+        });
+
+        const slots = document.querySelectorAll('.drop-slot');
+        slots.forEach(slot => {
+            slot.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                slot.classList.add('active');
+            });
+            slot.addEventListener('dragleave', (e) => {
+                slot.classList.remove('active');
+            });
+            slot.addEventListener('drop', (e) => {
+                e.preventDefault();
+                slot.classList.remove('active');
+                if(draggedSrc) {
+                    slot.style.borderStyle = 'solid';
+                    slot.innerHTML = `
+                        <img src="${draggedSrc}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity: 0.9;">
+                        <div style="position:absolute; background:rgba(0,0,0,0.7); box-shadow: 0 4px 12px rgba(0,0,0,0.5); padding:6px 12px; border-radius:8px; font-size:0.75rem; color:white; font-weight:600; bottom:12px; backdrop-filter:blur(4px);">${draggedLabel}</div>
+                    `;
+                }
+            });
+        });
+
+        // Simulate shooting
+        function animateShoot() {
+            const btn = document.getElementById('btn-shoot');
+            const oldHTML = btn.innerHTML;
+            btn.innerHTML = '<span>⏳</span> Generando contacto...';
+            btn.style.opacity = '0.7';
+            btn.style.pointerEvents = 'none';
+            
+            // Flash effect
+            const flash = document.createElement('div');
+            flash.style.position = 'fixed';
+            flash.style.inset = '0';
+            flash.style.background = 'white';
+            flash.style.zIndex = '9999';
+            flash.style.transition = 'opacity 0.6s ease-out';
+            document.body.appendChild(flash);
+            
+            setTimeout(() => { flash.style.opacity = '0'; }, 30);
+            setTimeout(() => { flash.remove(); }, 650);
+
+            // Put grid in loading state
+            const grid = document.getElementById('contact-grid');
+            const shots = grid.querySelectorAll('.contact-shot');
+            shots.forEach(s => s.classList.add('loading'));
+
+            // Fill contact sheet with fake results after 2 sec
+            setTimeout(() => {
+                btn.innerHTML = oldHTML;
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+                
+                grid.innerHTML = '';
+                const demoImages = [
+                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80',
+                    'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&q=80',
+                    'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&q=80',
+                    'https://images.unsplash.com/photo-1542206395-9feb3edaa68d?w=400&q=80'
+                ];
+                demoImages.forEach((src, i) => {
+                    grid.innerHTML += `
+                        <div class="contact-shot" style="animation: fadein 0.5s ease forwards ${i * 0.1}s; opacity: 0;">
+                            <img src="${src}" style="width:100%;height:100%;object-fit:cover;">
+                            <div class="overlay">
+                                <button class="btn-select">✨ Upscale 4K</button>
+                                <button class="btn-select" style="background:var(--bg-2);color:white;">🗑️ Descartar</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }, 2500);
+        }
+
+        // Add fade in animation dynamically
+        const style = document.createElement('style');
+        style.innerHTML = `
+        @keyframes fadein {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }`;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

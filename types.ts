@@ -74,6 +74,8 @@ export interface InfluencerParams {
   strength?: number;
   seed?: number;
   model?: GeminiImageModel;
+  /** false = character is stylized (anime/3D/illustration/etc.) — service functions skip the realistic prefix */
+  realistic?: boolean;
 }
 
 export interface SessionPoseItem {
@@ -174,6 +176,8 @@ export interface GeneratedContent {
   ideogramModel?: IdeogramModel;
   higgsfieldModel?: HiggsfieldModel;
   characterId?: string;
+  /** Workflow status — persisted to Supabase as workflow_status */
+  workflowStatus?: 'borrador' | 'editado' | 'aprobado' | 'publicado';
 }
 
 export interface AIStudioClient {
@@ -238,6 +242,8 @@ export interface SavedCharacter {
   loraTrainedAt?: number;
   // Reference photos — user-curated face refs (max 20) used in Director
   referencePhotoUrls?: string[];
+  // Cloud URLs for model images — populated when loaded from Supabase (no blob download)
+  modelImageUrls?: string[];
 }
 
 export interface BatchOutfitItem {
@@ -871,7 +877,7 @@ export const FEATURE_ENGINES: Record<string, { default: string; keys: string[] }
   },
   'try-on': {
     default: 'replicate:grok',
-    keys: ['replicate:grok', 'gemini:nb2'],
+    keys: ['replicate:grok', 'gemini:nb2', 'gemini:pro', 'replicate:pruna'],
   },
   'inpaint': {
     default: 'fal:onereward',
@@ -882,8 +888,8 @@ export const FEATURE_ENGINES: Record<string, { default: string; keys: string[] }
     keys: ['fal:aura-sr'],
   },
   'skin-enhancer': {
-    default: 'gemini:nb2',
-    keys: ['gemini:nb2', 'replicate:grok', 'fal:firered-edit', 'replicate:pruna'],
+    default: 'replicate:grok',
+    keys: ['replicate:grok', 'fal:firered-edit', 'replicate:pruna', 'gemini:nb2'],
   },
   'angles': {
     default: 'gemini:nb2',

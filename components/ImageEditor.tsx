@@ -4,6 +4,8 @@ interface ImageEditorProps {
   imageUrl: string;           // URL or data URL of image to edit
   onSave: (editedDataUrl: string) => void;
   onClose: () => void;
+  /** Optional action buttons rendered at the top of the sidebar (AI Editor, Try-On, etc.) */
+  actions?: React.ReactNode;
 }
 
 interface FilterState {
@@ -19,7 +21,7 @@ interface HistoryItem {
   filters: FilterState;
 }
 
-const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) => {
+const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose, actions }) => {
   const initialFilters: FilterState = {
     brightness: 100,
     contrast: 100,
@@ -394,27 +396,30 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  const renderPresetButton = (id: string, name: string, bgClass: string, overlayClass: string) => (
+  const renderPresetButton = (id: string, name: string) => (
     <button
       key={id}
       onClick={() => applyPreset(id)}
       title={`Aplicar preset ${name}`}
-      className={`h-16 rounded-lg ${bgClass} border border-white/10 hover:border-white/25 transition-all overflow-hidden relative group`}
+      className="h-14 rounded-lg transition-all overflow-hidden relative group hover:bg-black/5"
+      style={{ background: 'var(--joi-bg-0)', border: '1px solid var(--joi-border)' }}
     >
-      <div className={`absolute inset-0 ${overlayClass}`} />
-      <span className="relative z-10 text-xs text-white/90 font-medium drop-shadow-md">{name}</span>
+      <span className="relative z-10 text-xs font-medium" style={{ color: 'var(--joi-text-2)' }}>{name}</span>
     </button>
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md p-0 lg:p-4 animate-in fade-in duration-200">
-      <div className="bg-[#0e0c14] border-0 lg:border border-white/10 rounded-none lg:rounded-2xl w-full max-w-6xl h-full lg:h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 lg:p-4 animate-in fade-in duration-200"
+      style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)' }}>
+      <div className="border-0 lg:border rounded-none lg:rounded-2xl w-full max-w-6xl h-full lg:h-[90vh] flex flex-col overflow-hidden shadow-2xl"
+        style={{ background: 'var(--joi-bg-0)', borderColor: 'var(--joi-border)' }}>
         {/* Header */}
-        <div className="h-16 border-b border-white/10 flex items-center justify-between px-4 lg:px-6 bg-[#0e0c14] shrink-0">
+        <div className="h-16 flex items-center justify-between px-4 lg:px-6 shrink-0"
+          style={{ borderBottom: '1px solid var(--joi-border)', background: 'var(--joi-bg-1)' }}>
           <div className="flex items-center gap-2 lg:gap-4">
-            <h3 className="text-white font-medium flex items-center gap-2">
-              <div className="p-2 bg-[#A78BFA]/20 rounded-lg hidden sm:block">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#A78BFA]">
+            <h3 className="font-medium flex items-center gap-2" style={{ color: 'var(--joi-text-1)' }}>
+              <div className="p-2 rounded-lg hidden sm:block" style={{ background: 'var(--joi-bg-3)' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--joi-text-2)' }}>
                   <path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
                 </svg>
               </div>
@@ -425,7 +430,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                 onClick={handleUndo}
                 disabled={historyIndex <= 0}
                 title="Deshacer (Ctrl+Z)"
-                className={`p-2 rounded-lg hover:bg-white/5 transition-colors ${historyIndex <= 0 ? 'text-white/20' : 'text-white/60'}`}
+                className="p-2 rounded-lg transition-colors hover:bg-black/5"
+                style={{ color: historyIndex <= 0 ? 'var(--joi-text-3)' : 'var(--joi-text-2)', opacity: historyIndex <= 0 ? 0.4 : 1 }}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6" /><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" /></svg>
               </button>
@@ -433,7 +439,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                 onClick={handleRedo}
                 disabled={historyIndex >= history.length - 1}
                 title="Rehacer (Ctrl+Y)"
-                className={`p-2 rounded-lg hover:bg-white/5 transition-colors ${historyIndex >= history.length - 1 ? 'text-white/20' : 'text-white/60'}`}
+                className="p-2 rounded-lg transition-colors hover:bg-black/5"
+                style={{ color: historyIndex >= history.length - 1 ? 'var(--joi-text-3)' : 'var(--joi-text-2)', opacity: historyIndex >= history.length - 1 ? 0.4 : 1 }}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 7v6h-6" /><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7" /></svg>
               </button>
@@ -444,29 +451,32 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
             <button
               onClick={handleRestoreOriginal}
               title="Restaurar Original"
-              className="px-3 py-2 text-xs lg:text-sm text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-colors"
+              className="px-3 py-2 text-xs lg:text-sm rounded-lg transition-colors hover:bg-red-50"
+              style={{ color: '#e05050' }}
             >
               Restaurar
             </button>
-            <div className="w-px h-6 bg-white/10 my-auto hidden sm:block" />
+            <div className="w-px h-6 my-auto hidden sm:block" style={{ background: 'var(--joi-border)' }} />
             <button
               onClick={handleDownload}
               disabled={isProcessing || isCropping}
               title="Descargar como PNG"
-              className={`p-2 rounded-lg hover:bg-white/5 transition-colors ${isCropping ? 'text-white/20' : 'text-white/40 hover:text-white'}`}
+              className="p-2 rounded-lg transition-colors hover:bg-black/5"
+              style={{ color: isCropping ? 'var(--joi-text-3)' : 'var(--joi-text-2)', opacity: isCropping ? 0.3 : 1 }}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
             </button>
-            <button onClick={onClose} className="px-3 py-2 text-xs lg:text-sm text-white/40 hover:text-white transition-colors" title="Cerrar sin guardar">
+            <button onClick={onClose} className="px-3 py-2 text-xs lg:text-sm transition-colors hover:bg-black/5 rounded-lg" style={{ color: 'var(--joi-text-3)' }} title="Cerrar sin guardar">
               Cancelar
             </button>
             <button
               onClick={handleSave}
               disabled={isProcessing || isCropping}
               title="Guardar cambios"
-              className={`px-4 py-2 text-xs lg:text-sm bg-gradient-to-r from-[#FF6B9D] to-[#A78BFA] hover:opacity-90 text-white font-medium rounded-lg transition-all flex items-center gap-2 ${isCropping ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`px-4 py-2 text-xs lg:text-sm font-medium rounded-lg transition-all flex items-center gap-2 ${isCropping ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'}`}
+              style={{ background: 'var(--joi-pink)', color: 'var(--joi-bg-0)' }}
             >
-              {isProcessing && <div className="animate-spin h-3 w-3 border-2 border-white/30 border-t-white rounded-full" />}
+              {isProcessing && <div className="animate-spin h-3 w-3 border-2 rounded-full" style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'white' }} />}
               Guardar
             </button>
           </div>
@@ -475,16 +485,18 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
           {/* Preview Area */}
           <div
-            className="flex-1 bg-[#08070C] p-4 lg:p-8 flex items-center justify-center relative select-none overflow-hidden h-[45vh] lg:h-auto border-b lg:border-b-0 border-white/10"
+            className="flex-1 p-4 lg:p-8 flex items-center justify-center relative select-none overflow-hidden h-[45vh] lg:h-auto"
             style={{
+              borderBottom: '1px solid var(--joi-border)',
               backgroundImage: `
-                linear-gradient(45deg, #0e0c14 25%, transparent 25%),
-                linear-gradient(-45deg, #0e0c14 25%, transparent 25%),
-                linear-gradient(45deg, transparent 75%, #0e0c14 75%),
-                linear-gradient(-45deg, transparent 75%, #0e0c14 75%)
+                linear-gradient(45deg, #E8E8EA 25%, transparent 25%),
+                linear-gradient(-45deg, #E8E8EA 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #E8E8EA 75%),
+                linear-gradient(-45deg, transparent 75%, #E8E8EA 75%)
               `,
               backgroundSize: '20px 20px',
               backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
+              backgroundColor: '#F3F4F6',
             }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
@@ -551,10 +563,10 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                       <div className="absolute -bottom-1 -left-1 w-3 h-3 border-b-2 border-l-2 border-white" />
                       <div className="absolute -bottom-1 -right-1 w-3 h-3 border-b-2 border-r-2 border-white" />
                       {/* Grid lines */}
-                      <div className="absolute top-1/3 left-0 right-0 h-px bg-white/30" />
-                      <div className="absolute top-2/3 left-0 right-0 h-px bg-white/30" />
-                      <div className="absolute left-1/3 top-0 bottom-0 w-px bg-white/30" />
-                      <div className="absolute left-2/3 top-0 bottom-0 w-px bg-white/30" />
+                      <div className="absolute top-1/3 left-0 right-0 h-px bg-black/30" />
+                      <div className="absolute top-2/3 left-0 right-0 h-px bg-black/30" />
+                      <div className="absolute left-1/3 top-0 bottom-0 w-px bg-black/30" />
+                      <div className="absolute left-2/3 top-0 bottom-0 w-px bg-black/30" />
                     </div>
                   )}
                 </div>
@@ -563,18 +575,19 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
 
             {/* Zoom Controls */}
             <div
-              className="absolute bottom-4 right-4 lg:bottom-8 lg:right-8 flex flex-col gap-2 bg-[#0e0c14] border border-white/10 rounded-lg shadow-xl p-1 z-40"
+              className="absolute bottom-4 right-4 lg:bottom-8 lg:right-8 flex flex-col gap-2 rounded-lg shadow-xl p-1 z-40"
+              style={{ background: 'var(--joi-bg-1)', border: '1px solid var(--joi-border)' }}
               onMouseDown={(e) => e.stopPropagation()}
               onTouchStart={(e) => e.stopPropagation()}
             >
               <button
                 onClick={() => setZoom((prev) => Math.min(prev + 0.5, 5))}
-                className="p-2 hover:bg-white/5 text-white/40 hover:text-white rounded transition-colors"
+                className="p-2 hover:bg-black/5 rounded transition-colors" style={{ color: 'var(--joi-text-3)' }}
                 title="Acercar (+)"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /><line x1="11" y1="8" x2="11" y2="14" /><line x1="8" y1="11" x2="14" y2="11" /></svg>
               </button>
-              <div className="text-[10px] text-center text-white/30 font-mono py-1">{Math.round(zoom * 100)}%</div>
+              <div className="text-[10px] text-center font-mono py-1" style={{ color: 'var(--joi-text-3)' }}>{Math.round(zoom * 100)}%</div>
               <button
                 onClick={() =>
                   setZoom((prev) => {
@@ -583,14 +596,15 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                     return newZoom;
                   })
                 }
-                className="p-2 hover:bg-white/5 text-white/40 hover:text-white rounded transition-colors"
+                className="p-2 hover:bg-black/5 rounded transition-colors" style={{ color: 'var(--joi-text-3)' }}
                 title="Alejar (-)"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /><line x1="8" y1="11" x2="14" y2="11" /></svg>
               </button>
               <button
                 onClick={handleResetZoom}
-                className="p-2 hover:bg-white/5 text-white/40 hover:text-white rounded transition-colors border-t border-white/10"
+                className="p-2 hover:bg-black/5 rounded transition-colors"
+                style={{ color: 'var(--joi-text-3)', borderTop: '1px solid var(--joi-border)' }}
                 title="Restablecer Zoom"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
@@ -600,22 +614,24 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
             {/* Crop Action Bar */}
             {isCropping && (
               <div
-                className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-[#0e0c14] border border-white/10 rounded-full px-4 py-2 flex items-center gap-3 shadow-xl z-30 animate-in slide-in-from-bottom-4 w-max max-w-[90%]"
+                className="absolute bottom-8 left-1/2 -translate-x-1/2 rounded-full px-4 py-2 flex items-center gap-3 shadow-xl z-30 animate-in slide-in-from-bottom-4 w-max max-w-[90%]"
+                style={{ background: 'var(--joi-bg-1)', border: '1px solid var(--joi-border)' }}
                 onMouseDown={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
               >
-                <span className="text-xs text-white/60 font-medium px-2 whitespace-nowrap">Ajustar Recorte</span>
-                <div className="w-px h-4 bg-white/10" />
+                <span className="text-xs font-medium px-2 whitespace-nowrap" style={{ color: 'var(--joi-text-2)' }}>Ajustar Recorte</span>
+                <div className="w-px h-4" style={{ background: 'var(--joi-border)' }} />
                 <button
                   onClick={() => toggleCropMode(false)}
-                  className="p-1 hover:bg-white/5 rounded-full text-white/40 hover:text-white transition-colors"
+                  className="p-1 hover:bg-black/5 rounded-full transition-colors"
+                  style={{ color: 'var(--joi-text-3)' }}
                   title="Cancelar recorte"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                 </button>
                 <button
                   onClick={applyCrop}
-                  className="p-1 hover:bg-white/5 rounded-full text-green-400 hover:text-green-300 transition-colors"
+                  className="p-1 hover:bg-black/5 rounded-full text-green-600 hover:text-green-700 transition-colors"
                   title="Aplicar recorte"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
@@ -625,53 +641,67 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
           </div>
 
           {/* Controls Sidebar */}
-          <div className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-white/10 bg-[#0e0c14] flex flex-col shrink-0 h-[55vh] lg:h-auto">
+          <div className="w-full lg:w-80 flex flex-col shrink-0 h-[55vh] lg:h-auto"
+            style={{ borderTop: '1px solid var(--joi-border)', borderLeft: '1px solid var(--joi-border)', background: 'var(--joi-bg-1)' }}>
             <div className="p-5 flex-1 overflow-y-auto custom-scrollbar space-y-6">
+              {/* External actions (AI Editor, Try-On, etc.) injected by parent */}
+              {actions && (
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--joi-text-3)' }}>Enviar a</h4>
+                  <div className="flex flex-col gap-1.5">{actions}</div>
+                </div>
+              )}
               {/* Tools Section */}
               <div>
-                <h4 className="text-xs font-bold text-white/30 uppercase tracking-wider mb-3">Herramientas</h4>
+                <h4 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--joi-text-3)' }}>Herramientas</h4>
 
                 {!isCropping ? (
                   <button
                     onClick={() => toggleCropMode(true)}
                     title="Activar herramienta de recorte (reinicia el zoom)"
-                    className="w-full flex items-center justify-center p-4 rounded-xl border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-all gap-2"
+                    className="w-full flex items-center justify-center p-4 rounded-xl transition-all gap-2 hover:bg-black/5"
+                    style={{ border: '1px solid var(--joi-border)', color: 'var(--joi-text-2)' }}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2v14a2 2 0 0 0 2 2h14" /><path d="M18 22V8a2 2 0 0 0-2-2H2" /></svg>
                     <span className="text-sm font-medium">Recortar Imagen</span>
                   </button>
                 ) : (
                   <div className="space-y-2">
-                    <div className="text-xs text-[#A78BFA] font-medium mb-2">Recorte Inteligente</div>
+                    <div className="text-xs font-medium mb-2" style={{ color: 'var(--joi-text-2)' }}>Recorte Inteligente</div>
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={() => applySmartCrop(1, 1)}
-                        className="px-3 py-2 bg-white/5 hover:bg-white/10 rounded text-xs text-white/60 border border-white/10"
+                        className="px-3 py-2 rounded text-xs transition-colors hover:bg-black/5"
+                        style={{ background: 'var(--joi-bg-3)', border: '1px solid var(--joi-border)', color: 'var(--joi-text-2)' }}
                       >
                         Cuadrado (1:1)
                       </button>
                       <button
                         onClick={() => applySmartCrop(4, 5)}
-                        className="px-3 py-2 bg-white/5 hover:bg-white/10 rounded text-xs text-white/60 border border-white/10"
+                        className="px-3 py-2 rounded text-xs transition-colors hover:bg-black/5"
+                        style={{ background: 'var(--joi-bg-3)', border: '1px solid var(--joi-border)', color: 'var(--joi-text-2)' }}
                       >
                         Retrato (4:5)
                       </button>
                       <button
                         onClick={() => applySmartCrop(16, 9)}
-                        className="px-3 py-2 bg-white/5 hover:bg-white/10 rounded text-xs text-white/60 border border-white/10"
+                        className="px-3 py-2 rounded text-xs transition-colors hover:bg-black/5"
+                        style={{ background: 'var(--joi-bg-3)', border: '1px solid var(--joi-border)', color: 'var(--joi-text-2)' }}
                       >
                         Paisaje (16:9)
                       </button>
                       <button
                         onClick={() => applySmartCrop(9, 16)}
-                        className="px-3 py-2 bg-white/5 hover:bg-white/10 rounded text-xs text-white/60 border border-white/10"
+                        className="px-3 py-2 rounded text-xs transition-colors hover:bg-black/5"
+                        style={{ background: 'var(--joi-bg-3)', border: '1px solid var(--joi-border)', color: 'var(--joi-text-2)' }}
                       >
                         Historia (9:16)
                       </button>
                     </div>
                     <button
                       onClick={() => toggleCropMode(false)}
-                      className="w-full mt-2 py-2 text-xs text-white/30 hover:text-white/60 underline"
+                      className="w-full mt-2 py-2 text-xs underline hover:opacity-70 transition-opacity"
+                      style={{ color: 'var(--joi-text-3)' }}
                     >
                       Cancelar Recorte
                     </button>
@@ -681,25 +711,26 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
 
               {/* Presets */}
               <div>
-                <h4 className="text-xs font-bold text-white/30 uppercase tracking-wider mb-3">Presets</h4>
+                <h4 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--joi-text-3)' }}>Presets</h4>
                 <div className="grid grid-cols-2 gap-2">
-                  {renderPresetButton('bw', 'B/N', 'bg-zinc-800', 'bg-gradient-to-tr from-black to-transparent opacity-50')}
-                  {renderPresetButton('warm', 'Cálido', 'bg-orange-900/30', 'bg-orange-500/10')}
-                  {renderPresetButton('cool', 'Frío', 'bg-blue-900/30', 'bg-blue-500/10')}
-                  {renderPresetButton('vintage', 'Vintage', 'bg-amber-900/30', 'bg-amber-600/10')}
-                  {renderPresetButton('cinematic', 'Cinemático', 'bg-teal-900/30', 'bg-teal-500/10')}
-                  {renderPresetButton('vivid', 'Vívido', 'bg-pink-900/30', 'bg-pink-500/10')}
-                  {renderPresetButton('matte', 'Mate', 'bg-stone-800', 'bg-stone-500/10')}
+                  {renderPresetButton('bw', 'B/N')}
+                  {renderPresetButton('warm', 'Cálido')}
+                  {renderPresetButton('cool', 'Frío')}
+                  {renderPresetButton('vintage', 'Vintage')}
+                  {renderPresetButton('cinematic', 'Cinemático')}
+                  {renderPresetButton('vivid', 'Vívido')}
+                  {renderPresetButton('matte', 'Mate')}
                 </div>
               </div>
 
               {/* Adjustments Groups */}
               <div className="space-y-4">
                 {/* Light Section */}
-                <div className="border border-white/10 rounded-xl bg-white/5 overflow-hidden">
+                <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--joi-border)', background: 'var(--joi-bg-3)' }}>
                   <button
                     onClick={() => toggleSection('light')}
-                    className="w-full flex items-center justify-between p-3 text-xs font-medium text-white/60 hover:bg-white/5 transition-colors"
+                    className="w-full flex items-center justify-between p-3 text-xs font-medium transition-colors hover:bg-black/5"
+                    style={{ color: 'var(--joi-text-2)' }}
                   >
                     <span>Luz y Exposición</span>
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${openSection === 'light' ? 'rotate-180' : ''}`}><path d="m6 9 6 6 6-6" /></svg>
@@ -709,8 +740,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                     <div className="p-4 pt-0 space-y-4 animate-in slide-in-from-top-2 duration-200">
                       <div className="space-y-2 pt-2">
                         <div className="flex justify-between text-xs">
-                          <label className="text-white/40">Brillo</label>
-                          <span className="text-white/30 tabular-nums">{filters.brightness}%</span>
+                          <label style={{ color: 'var(--joi-text-3)' }}>Brillo</label>
+                          <span className="tabular-nums" style={{ color: 'var(--joi-text-3)' }}>{filters.brightness}%</span>
                         </div>
                         <input
                           type="range" min="0" max="200"
@@ -718,13 +749,14 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                           onChange={(e) => updateFilter('brightness', Number(e.target.value))}
                           onMouseUp={commitFilterChange}
                           onTouchEnd={commitFilterChange}
-                          className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#A78BFA]"
+                          className="w-full h-1 rounded-lg appearance-none cursor-pointer accent-black"
+                          style={{ background: 'var(--joi-border)' }}
                         />
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between text-xs">
-                          <label className="text-white/40">Contraste</label>
-                          <span className="text-white/30 tabular-nums">{filters.contrast}%</span>
+                          <label style={{ color: 'var(--joi-text-3)' }}>Contraste</label>
+                          <span className="tabular-nums" style={{ color: 'var(--joi-text-3)' }}>{filters.contrast}%</span>
                         </div>
                         <input
                           type="range" min="0" max="200"
@@ -732,7 +764,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                           onChange={(e) => updateFilter('contrast', Number(e.target.value))}
                           onMouseUp={commitFilterChange}
                           onTouchEnd={commitFilterChange}
-                          className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#A78BFA]"
+                          className="w-full h-1 rounded-lg appearance-none cursor-pointer accent-black"
+                          style={{ background: 'var(--joi-border)' }}
                         />
                       </div>
                     </div>
@@ -740,10 +773,11 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                 </div>
 
                 {/* Color Section */}
-                <div className="border border-white/10 rounded-xl bg-white/5 overflow-hidden">
+                <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--joi-border)', background: 'var(--joi-bg-3)' }}>
                   <button
                     onClick={() => toggleSection('color')}
-                    className="w-full flex items-center justify-between p-3 text-xs font-medium text-white/60 hover:bg-white/5 transition-colors"
+                    className="w-full flex items-center justify-between p-3 text-xs font-medium transition-colors hover:bg-black/5"
+                    style={{ color: 'var(--joi-text-2)' }}
                   >
                     <span>Color y Saturación</span>
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${openSection === 'color' ? 'rotate-180' : ''}`}><path d="m6 9 6 6 6-6" /></svg>
@@ -753,8 +787,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                     <div className="p-4 pt-0 space-y-4 animate-in slide-in-from-top-2 duration-200">
                       <div className="space-y-2 pt-2">
                         <div className="flex justify-between text-xs">
-                          <label className="text-white/40">Saturación</label>
-                          <span className="text-white/30 tabular-nums">{filters.saturation}%</span>
+                          <label style={{ color: 'var(--joi-text-3)' }}>Saturación</label>
+                          <span className="tabular-nums" style={{ color: 'var(--joi-text-3)' }}>{filters.saturation}%</span>
                         </div>
                         <input
                           type="range" min="0" max="200"
@@ -763,7 +797,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                           onMouseUp={commitFilterChange}
                           onTouchEnd={commitFilterChange}
                           title="Ajustar intensidad del color"
-                          className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#A78BFA]"
+                          className="w-full h-1 rounded-lg appearance-none cursor-pointer accent-black"
+                          style={{ background: 'var(--joi-border)' }}
                         />
                       </div>
                     </div>
@@ -771,10 +806,11 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                 </div>
 
                 {/* Effects Section */}
-                <div className="border border-white/10 rounded-xl bg-white/5 overflow-hidden">
+                <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--joi-border)', background: 'var(--joi-bg-3)' }}>
                   <button
                     onClick={() => toggleSection('effects')}
-                    className="w-full flex items-center justify-between p-3 text-xs font-medium text-white/60 hover:bg-white/5 transition-colors"
+                    className="w-full flex items-center justify-between p-3 text-xs font-medium transition-colors hover:bg-black/5"
+                    style={{ color: 'var(--joi-text-2)' }}
                   >
                     <span>Efectos de Filtro</span>
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${openSection === 'effects' ? 'rotate-180' : ''}`}><path d="m6 9 6 6 6-6" /></svg>
@@ -784,8 +820,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                     <div className="p-4 pt-0 space-y-4 animate-in slide-in-from-top-2 duration-200">
                       <div className="space-y-2 pt-2">
                         <div className="flex justify-between text-xs">
-                          <label className="text-white/40">Sepia</label>
-                          <span className="text-white/30 tabular-nums">{filters.sepia}%</span>
+                          <label style={{ color: 'var(--joi-text-3)' }}>Sepia</label>
+                          <span className="tabular-nums" style={{ color: 'var(--joi-text-3)' }}>{filters.sepia}%</span>
                         </div>
                         <input
                           type="range" min="0" max="100"
@@ -794,13 +830,14 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                           onMouseUp={commitFilterChange}
                           onTouchEnd={commitFilterChange}
                           title="Agregar tono sepia"
-                          className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#A78BFA]"
+                          className="w-full h-1 rounded-lg appearance-none cursor-pointer accent-black"
+                          style={{ background: 'var(--joi-border)' }}
                         />
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between text-xs">
-                          <label className="text-white/40">Escala de grises</label>
-                          <span className="text-white/30 tabular-nums">{filters.grayscale}%</span>
+                          <label style={{ color: 'var(--joi-text-3)' }}>Escala de grises</label>
+                          <span className="tabular-nums" style={{ color: 'var(--joi-text-3)' }}>{filters.grayscale}%</span>
                         </div>
                         <input
                           type="range" min="0" max="100"
@@ -809,7 +846,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, onSave, onClose }) 
                           onMouseUp={commitFilterChange}
                           onTouchEnd={commitFilterChange}
                           title="Convertir a escala de grises"
-                          className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#A78BFA]"
+                          className="w-full h-1 rounded-lg appearance-none cursor-pointer accent-black"
+                          style={{ background: 'var(--joi-border)' }}
                         />
                       </div>
                     </div>

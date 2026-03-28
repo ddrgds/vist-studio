@@ -10,7 +10,7 @@ export const colors = {
   accent:      '#f06848',
   accentDim:   'rgba(240,104,72,0.15)',
   accentHover: '#ff8870',
-  magenta:     '#d048b0',
+  magenta:     '#4F46E5',
   blue:        '#4858e0',
   mint:        '#50d8a0',
   gold:        '#e0b050',

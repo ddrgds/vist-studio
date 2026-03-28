@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIST Studio - Editorial Light Theme</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #F3F4F6;
+            --card: rgba(255,255,255,0.90);
+            --card-solid: #FFFFFF;
+            --accent: #1A1A1A;
+            --text-main: #1A1A1A;
+            --text-sec: #555555;
+            --text-mut: #999999;
+            --border: rgba(0,0,0,0.08);
+            --shadow: 0 8px 32px rgba(0,0,0,0.04);
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.03);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg);
+            color: var(--text-main);
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            gap: 40px;
+            padding: 40px;
+            overflow-x: auto;
+        }
+
+        h1, h2, h3, .serif {
+            font-family: 'Instrument Serif', serif;
+            font-weight: 400;
+            color: var(--accent);
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Layout Containers */
+        .phase-container {
+            display: flex;
+            min-width: 900px;
+            height: calc(100vh - 80px);
+            background: transparent;
+            border-radius: 24px;
+            position: relative;
+        }
+
+        .phase-title {
+            position: absolute;
+            top: -30px;
+            left: 0;
+            font-family: 'Instrument Serif', serif;
+            font-size: 1.5rem;
+            color: var(--text-sec);
+        }
+
+        /* Left Panel */
+        .panel-left {
+            width: 360px;
+            background: var(--card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            box-shadow: var(--shadow);
+            z-index: 10;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        /* Common UI Elements */
+        .label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-sec);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .toggle-switch {
+            display: flex;
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 4px;
+            border: 1px solid var(--border);
+        }
+        .toggle-opt {
+            flex: 1;
+            text-align: center;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            color: var(--text-sec);
+            transition: all 0.2s;
+        }
+        .toggle-opt.active {
+            background: var(--accent);
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+        }
+        .tab-pill {
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            background: var(--card-solid);
+            border: 1px solid var(--border);
+            color: var(--text-sec);
+            transition: all 0.2s;
+        }
+        .tab-pill.active {
+            background: var(--bg);
+            color: var(--text-main);
+            border-color: transparent;
+        }
+
+        .char-row {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+        .char-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #eee;
+            cursor: pointer;
+            flex-shrink: 0;
+            object-fit: cover;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .char-avatar.active {
+            border-color: var(--accent);
+            padding: 2px;
+        }
+
+        .pills-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .style-pill {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            background: white;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-sec);
+        }
+        .style-pill:hover {
+            border-color: #ccc;
+        }
+        .style-pill.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .text-input {
+            width: 100%;
+            background: #F9FAFB;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            color: var(--text-main);
+            resize: none;
+            outline: none;
+        }
+        .text-input:focus {
+            border-color: #ccc;
+        }
+
+        .outfit-row {
+            display: flex;
+            gap: 8px;
+        }
+        .upload-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            border: 1px dashed #ccc;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-mut);
+            flex-shrink: 0;
+        }
+        .upload-btn:hover { background: #f9f9f9; }
+
+        .cta-btn {
+            width: 100%;
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: auto;
+            transition: background 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        .cta-btn:hover { background: #000; }
+        .cta-btn .mono { font-size: 0.8rem; opacity: 0.8; }
+
+        .link-btn {
+            background: none;
+            border: none;
+            color: var(--text-sec);
+            font-size: 0.8rem;
+            cursor: pointer;
+            text-decoration: none;
+            margin-top: -12px;
+            margin-bottom: 12px;
+        }
+        .link-btn:hover { color: var(--text-main); }
+
+        /* Center Canvas */
+        .center-canvas {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            position: relative;
+        }
+
+        .hero-preview {
+            width: 420px;
+            height: 560px; /* 3:4 */
+            background: #E5E7EB;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: var(--shadow);
+            background-image: url('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .ar-pills {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        .ar-pill {
+            font-size: 0.75rem;
+            color: var(--text-mut);
+            cursor: pointer;
+        }
+        .ar-pill.active {
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .action-bar {
+            position: absolute;
+            bottom: 24px;
+            background: var(--card-solid);
+            border-radius: 20px;
+            padding: 8px;
+            display: flex;
+            gap: 8px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+        }
+        .action-btn {
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: var(--text-main);
+            transition: all 0.2s;
+        }
+        .action-btn:hover {
+            background: var(--bg);
+        }
+        .action-btn.primary {
+            background: var(--accent);
+            color: white;
+        }
+        .action-btn.primary:hover {
+            background: #000;
+        }
+
+        /* Phase 2 Specific */
+        .thumbnail-box {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            padding: 12px;
+            background: var(--bg);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .thumb-img {
+            width: 48px;
+            height: 64px;
+            border-radius: 6px;
+            object-fit: cover;
+        }
+
+        .stepper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 16px;
+            background: var(--bg);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+        }
+        .step-btn {
+            cursor: pointer;
+            color: var(--text-mut);
+        }
+        .step-btn:hover { color: var(--accent); }
+
+        .auto-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            background: #E5E7EB;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 6px;
+            color: var(--text-sec);
+        }
+
+        /* Grid View */
+        .contact-sheet-wrapper {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 80px;
+        }
+
+        /* Visual contact sheet simulating one big image sliced into 3x3 */
+        .contact-sheet {
+            width: 100%;
+            aspect-ratio: 3/4;
+            background-image: url('https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=800&q=80'); /* Fake monolithic grid image */
+            background-size: cover;
+            background-position: center;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            overflow: hidden;
+        }
+
+        .grid-cell {
+            border: 1px dashed rgba(255,255,255,0.3);
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .grid-cell:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .grid-cell.selected {
+            border: 3px solid var(--accent);
+            background: rgba(0,0,0,0.05);
+        }
+        .check-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 24px;
+            height: 24px;
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.2s;
+        }
+        .grid-cell.selected .check-badge {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .cell-label {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            background: rgba(255,255,255,0.9);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 500;
+            color: var(--accent);
+        }
+        .grid-cell.selected .cell-label {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* Bottom Action Bar Phase 2 */
+        .bottom-bar {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 96px);
+            max-width: 600px;
+            background: var(--card-solid);
+            border-radius: 16px;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 12px 48px rgba(0,0,0,0.08);
+            border: 1px solid var(--border);
+            z-index: 20;
+        }
+
+        .ghost-btn {
+            background: white;
+            color: var(--accent);
+            border: 1px solid var(--border);
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .ghost-btn:hover { border-color: var(--text-mut); }
+
+        .solid-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+        .solid-btn:hover { background: #000; }
+
+    </style>
+</head>
+<body>
+
+    <!-- PHASE 1 -->
+    <div class="phase-container">
+        <div class="phase-title">PHASE 1: Hero Generation</div>
+        
+        <div class="panel-left">
+            <div class="toggle-switch">
+                <div class="toggle-opt active">Simple</div>
+                <div class="toggle-opt">Avanzado</div>
+            </div>
+
+            <div>
+                <span class="label">Fuente</span>
+                <div class="tabs">
+                    <div class="tab-pill active">✨ Crear</div>
+                    <div class="tab-pill">📷 Subir</div>
+                    <div class="tab-pill">🖼 Galería</div>
+                </div>
+            </div>
+
+            <div>
+                <span class="label">Protagonista</span>
+                <div class="char-row">
+                    <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80" class="char-avatar active">
+                    <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&q=80" class="char-avatar">
+                    <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100&q=80" class="char-avatar">
+                    <div class="char-avatar" style="display:flex;align-items:center;justify-content:center;border:1px dashed #ccc;color:#99;background:transparent;">+</div>
+                </div>
+            </div>
+
+            <div>
+                <span class="label">Quick Styles</span>
+                <div class="pills-row">
+                    <div class="style-pill">🤳 Selfie</div>
+                    <div class="style-pill">📦 UGC</div>
+                    <div class="style-pill">🌿 Lifestyle</div>
+                    <div class="style-pill active">✨ Editorial</div>
+                    <div class="style-pill">🌆 Night Out</div>
+                </div>
+            </div>
+
+            <div>
+                <span class="label">Escenario</span>
+                <textarea class="text-input" rows="3">editorial fashion shoot, clean studio background, professional quality, high fashion energy</textarea>
+            </div>
+
+            <div>
+                <span class="label">Vestuario (Opcional)</span>
+                <div class="outfit-row">
+                    <textarea class="text-input" rows="2" placeholder="Describe la ropa..."></textarea>
+                    <button class="upload-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <button class="cta-btn">
+                ⚡ Generar Hero <span class="mono">· 6cr</span>
+            </button>
+        </div>
+
+        <div class="center-canvas">
+            <div class="hero-preview">
+                <div class="action-bar">
+                    <button class="action-btn">✏️ Editar</button>
+                    <button class="action-btn">💾 Exportar</button>
+                    <button class="action-btn primary">📸 Sesión</button>
+                </div>
+            </div>
+            <div class="ar-pills">
+                <span class="ar-pill active">3:4</span>
+                <span class="ar-pill">1:1</span>
+                <span class="ar-pill">4:3</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- PHASE 2 -->
+    <div class="phase-container">
+        <div class="phase-title">PHASE 2: Photo Session Grid</div>
+
+        <div class="panel-left">
+            <button class="link-btn">← Volver al hero</button>
+
+            <div class="thumbnail-box">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80" class="thumb-img">
+                <div>
+                    <div class="label" style="margin-bottom:2px">Imagen base</div>
+                    <div style="font-size:0.8rem; color:var(--text-sec)">Editorial fashion shoot...</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 12px">
+                <span class="label">Dirección Creativa (Vibes)</span>
+                <div class="pills-row">
+                    <div class="style-pill active">Glamour <span class="auto-badge">auto</span></div>
+                    <div class="style-pill">Streetwear</div>
+                    <div class="style-pill">Casual</div>
+                    <div class="style-pill active">Close-up <span class="auto-badge">auto</span></div>
+                    <div class="style-pill">Cinematic</div>
+                </div>
+            </div>
+
+            <div>
+                <span class="label">Cantidad de fotos</span>
+                <div class="stepper">
+                    <span class="step-btn">◀</span>
+                    <span>9 shots</span>
+                    <span class="step-btn">▶</span>
+                </div>
+            </div>
+
+            <button class="cta-btn">
+                📸 Disparar Sesión <span class="mono">· 54cr</span>
+            </button>
+        </div>
+
+        <div class="center-canvas">
+            <div class="contact-sheet-wrapper">
+                <div class="contact-sheet">
+                    <!-- 3x3 Grid Cells -->
+                    <div class="grid-cell" onclick="this.classList.toggle('selected')">
+                        <div class="check-badge">✓</div>
+                        <div class="cell-label">Glamour</div>
+                    </div>
+                    <div class="grid-cell selected" onclick="this.classList.toggle('selected')">
+                        <div class="check-badge">✓</div>
+                        <div class="cell-label">Glamour</div>
+                    </div>
+                    <div class="grid-cell" onclick="this.classList.toggle('selected')">
+                        <div class="check-badge">✓</div>
+                        <div class="cell-label">Close-up</div>
+                    </div>
+                    <div class="grid-cell selected" onclick="this.classList.toggle('selected')">
+                        <div class="check-badge">✓</div>
+                        <div class="cell-label">Close-up</div>
+                    </div>
+                    <div class="grid-cell" onclick="this.classList.toggle('selected')">
+                        <div class="check-badge">✓</div>
+                        <div class="cell-label">Glamour</div>
+                    </div>
+                    <div class="grid-cell" onclick="this.classList.toggle('selected')">
+                        <div class="check-badge">✓</div>
+                        <div class="cell-label">Close-up</div>
+                    </div>
+                    <div class="grid-cell selected" onclick="this.classList.toggle('selected')">
+                        <div class="check-badge">✓</div>
+                        <div class="cell-label">Glamour</div>
+                    </div>
+                    <div class="grid-cell" onclick="this.classList.toggle('selected')">
+                        <div class="check-badge">✓</div>
+                        <div class="cell-label">Close-up</div>
+                    </div>
+                    <div class="grid-cell selected" onclick="this.classList.toggle('selected')">
+                        <div class="check-badge">✓</div>
+                        <div class="cell-label">Glamour</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bottom-bar">
+                <div style="font-size:0.9rem; font-weight:500; color:var(--text-sec)">
+                    4 de 9 seleccionadas
+                </div>
+                <div style="display:flex; gap:12px">
+                    <button class="ghost-btn">↻ Regenerar</button>
+                    <button class="solid-btn">⬆ Upscale 4 fotos <span class="mono" style="opacity:0.8;font-size:0.75rem">· 8cr</span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Interactions mapped to grid cells are inline (onclick="this.classList.toggle('selected')")
+    </script>
+</body>
+</html>
