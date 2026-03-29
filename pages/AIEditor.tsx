@@ -9,8 +9,8 @@ import { editImageWithFluxKontext, editImageWithSeedream5, editImageWithFlux2Pro
 import { editImageWithGPT } from '../services/openaiService'
 import { editWithSoulReference } from '../services/higgsfieldService'
 import { editWithPruna } from '../services/replicateService'
-import { ENGINE_METADATA, FEATURE_ENGINES, AIProvider, AspectRatio } from '../types'
-import { runEditWithFallback } from '../services/toolEngines'
+import { ENGINE_METADATA, FEATURE_ENGINES, AIProvider, AspectRatio, CREDIT_COSTS } from '../types'
+import { runEditWithFallback, generateCharacterSheet, enhanceSheetWithGrok, type SheetType } from '../services/toolEngines'
 import { useNavigationStore } from '../stores/navigationStore'
 import { usePipelineStore } from '../stores/pipelineStore'
 import { PipelineCTA } from '../components/PipelineCTA'
@@ -193,6 +193,8 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
   const [relightDir, setRelightDir] = useState('front')
   const [relightIntensity, setRelightIntensity] = useState('normal')
   const [sel360, setSel360] = useState(0)
+  const [sheetGenerating, setSheetGenerating] = useState<SheetType | null>(null)
+  const [sheetResult, setSheetResult] = useState<string | null>(null)
   const [selStyle, setSelStyle] = useState(0)
   const [selBg, setSelBg] = useState(0)
   const [bgMode, setBgMode] = useState<'Preset'|'Upload'|'Prompt'>('Preset')
@@ -938,6 +940,64 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
             </div>
             <div className="text-[9px]" style={{ color:'var(--joi-text-3)' }}>
               Selecciona un ángulo y presiona Aplicar. La cámara se moverá alrededor del sujeto.
+            </div>
+
+            {/* Character Sheets */}
+            <div style={{ borderTop: '1px solid var(--joi-border)', marginTop: 12, paddingTop: 12 }}>
+              <div className="joi-label mb-2">Hojas de Referencia</div>
+              <div className="flex flex-col gap-1.5">
+                {([
+                  { type: 'face' as SheetType, icon: '👤', label: 'Ángulos de Rostro', desc: '4 vistas (frente, perfil, ¾)' },
+                  { type: 'body' as SheetType, icon: '🧍', label: 'Ángulos de Cuerpo', desc: '4 vistas completas' },
+                  { type: 'expressions' as SheetType, icon: '😊', label: 'Expresiones', desc: '9 expresiones faciales' },
+                ]).map(s => (
+                  <button key={s.type} disabled={sheetGenerating !== null || !inputImage}
+                    onClick={async () => {
+                      if (!inputImage) return
+                      const cost = CREDIT_COSTS['grok-edit']
+                      const ok = await decrementCredits(cost)
+                      if (!ok) { toast.error('Créditos insuficientes'); return }
+                      setSheetGenerating(s.type); setSheetResult(null)
+                      try {
+                        const url = await generateCharacterSheet(inputImage, s.type)
+                        setSheetResult(url)
+                        toast.success(`${s.label} generado`)
+                      } catch (err: any) {
+                        restoreCredits(cost)
+                        toast.error(`Error generando ${s.label.toLowerCase()}`)
+                        console.error(err)
+                      } finally { setSheetGenerating(null) }
+                    }}
+                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left transition-all"
+                    style={{
+                      background: 'var(--joi-bg-3)',
+                      border: '1px solid rgba(255,255,255,.04)',
+                      opacity: sheetGenerating && sheetGenerating !== s.type ? 0.4 : 1,
+                    }}>
+                    <span className="text-sm">{sheetGenerating === s.type ? '⏳' : s.icon}</span>
+                    <div>
+                      <div className="text-[10px] font-medium" style={{ color: 'var(--joi-text-1)' }}>{s.label}</div>
+                      <div className="text-[8px]" style={{ color: 'var(--joi-text-3)' }}>{s.desc}</div>
+                    </div>
+                    <span className="ml-auto text-[9px] font-mono" style={{ color: 'var(--joi-text-3)' }}>{CREDIT_COSTS['grok-edit']}cr</span>
+                  </button>
+                ))}
+              </div>
+              {sheetResult && (
+                <div className="mt-3 rounded-lg overflow-hidden" style={{ border: '1px solid var(--joi-border)' }}>
+                  <img src={sheetResult} className="w-full object-contain" alt="Sheet result" />
+                  <div className="flex gap-2 p-2" style={{ background: 'var(--joi-bg-3)' }}>
+                    <button onClick={() => { if (sheetResult) { setInputImage(sheetResult); setSheetResult(null) } }}
+                      className="flex-1 py-1.5 rounded-lg text-[10px] font-medium" style={{ background: 'var(--joi-pink-soft)', color: 'var(--joi-pink)', border: '1px solid var(--joi-border-h)' }}>
+                      Usar como base
+                    </button>
+                    <a href={sheetResult} download={`sheet-${Date.now()}.png`}
+                      className="flex-1 py-1.5 rounded-lg text-[10px] font-medium text-center" style={{ background: 'var(--joi-bg-2)', color: 'var(--joi-text-2)', border: '1px solid rgba(255,255,255,.04)' }}>
+                      Descargar
+                    </a>
+                  </div>
+                </div>
+              )}
             </div>
           </>}
 

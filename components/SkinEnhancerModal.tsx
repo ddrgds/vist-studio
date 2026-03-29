@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { editImageWithAI } from '../services/geminiService';
+import { editImageWithSeedream5Lite } from '../services/falService';
 import { GeminiImageModel, CREDIT_COSTS } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import { useProfile } from '../contexts/ProfileContext';
@@ -16,20 +17,20 @@ type Intensity = 'light' | 'medium' | 'strong';
 const INTENSITY_OPTIONS: { value: Intensity; label: string; desc: string; prompt: string }[] = [
   {
     value: 'light',
-    label: 'Light',
-    desc: 'Subtle, barely noticeable — fresh and clean',
+    label: 'Sutil',
+    desc: 'Apenas perceptible — fresco y natural',
     prompt: 'barely noticeable subtle retouching. Only reduce the most obvious imperfections. Result should look completely natural, as if no editing was done.',
   },
   {
     value: 'medium',
-    label: 'Medium',
-    desc: 'Professional quality — polished but realistic',
+    label: 'Profesional',
+    desc: 'Calidad profesional — pulido pero realista',
     prompt: 'professional beauty retouching. Smooth skin texture, remove blemishes, even out skin tone, add soft natural luminosity. Result should look like a professional photoshoot — clearly enhanced but fully realistic.',
   },
   {
     value: 'strong',
-    label: 'Strong',
-    desc: 'Editorial — flawless, high-fashion quality',
+    label: 'Editorial',
+    desc: 'Alta moda — impecable, calidad revista',
     prompt: 'editorial high-fashion retouching. Flawlessly smooth skin, luminous glowing complexion, complete blemish removal, maximally even tone. Result should look like a magazine cover — flawless but avoid plastic or artificial look.',
   },
 ];
@@ -45,7 +46,7 @@ const SkinEnhancerModal: React.FC<SkinEnhancerModalProps> = ({ targetItem, onClo
   const handleGenerate = async () => {
     const cost = CREDIT_COSTS['realistic-skin'];
     const hasCredits = await decrementCredits(cost);
-    if (!hasCredits) { toast.error('Insufficient credits. Please upgrade your plan.'); return; }
+    if (!hasCredits) { toast.error('Créditos insuficientes'); return; }
 
     setLoading(true);
     setProgress(0);
@@ -76,15 +77,22 @@ PRESERVE ABSOLUTELY EVERYTHING ELSE:
 
 OUTPUT: Return the complete photograph. Only the skin quality changes.`;
 
-      const results = await editImageWithAI(
-        { baseImage: targetFile, instruction, model: GeminiImageModel.Flash2 },
-        setProgress,
-      );
+      // NB2 first, fallback to Seedream if NB2 fails
+      let results: string[];
+      try {
+        results = await editImageWithAI(
+          { baseImage: targetFile, instruction, model: GeminiImageModel.Flash2 },
+          setProgress,
+        );
+      } catch (nb2Err) {
+        console.warn('NB2 skin enhance failed, trying Seedream:', nb2Err);
+        results = await editImageWithSeedream5Lite(targetFile, instruction, setProgress);
+      }
       if (results.length === 0) throw new Error('No image returned.');
       setResult(results[0]);
     } catch (err: any) {
       restoreCredits(cost);
-      toast.error(err?.message || 'Error enhancing the skin');
+      toast.error(err?.message || 'Error al mejorar la piel');
     } finally {
       setLoading(false);
     }
@@ -94,7 +102,7 @@ OUTPUT: Return the complete photograph. Only the skin quality changes.`;
     if (!result) return;
     try {
       await onSave(result, targetItem.id);
-      toast.success('Image saved to gallery');
+      toast.success('Imagen guardada en galería');
       onClose();
     } catch {
       toast.error('Error saving');
