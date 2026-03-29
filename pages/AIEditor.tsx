@@ -1293,26 +1293,23 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           </>}
 
           {activeTool === 'inpaint' && <>
-            <div className="joi-label mb-2">Herramientas de Pintura</div>
-            <div className="grid grid-cols-2 gap-2">
-              {['Pincel Libre','Selección Auto','Quitar Objeto','Agregar Objeto'].map(t=>(
-                <button key={t} className="py-2.5 rounded-lg text-[11px]"
-                  style={{ background:'var(--joi-bg-3)', border:'1px solid rgba(255,255,255,.04)', color:'var(--joi-text-2)' }}>{t}</button>
-              ))}
-            </div>
-            <div className="space-y-3 mt-3">
-              {['Tamaño de Pincel','Suavizado','Difuminado'].map(s=>(
-                <div key={s} className="flex items-center gap-2">
-                  <span className="text-[10px] w-24 shrink-0" style={{ color:'var(--joi-text-2)' }}>{s}</span>
-                  <input type="range" min={0} max={100} defaultValue={50} className="flex-1 slider-t" />
+            <div className="flex flex-col items-center gap-3 py-4 text-center">
+              <span className="text-3xl">🖌️</span>
+              <div>
+                <div className="text-[12px] font-medium" style={{ color: 'var(--joi-text-1)' }}>Edición por Zonas</div>
+                <div className="text-[10px] mt-1" style={{ color: 'var(--joi-text-3)' }}>
+                  Pinta sobre la zona que quieres cambiar y describe qué quieres generar ahí.
                 </div>
-              ))}
+              </div>
+              <div className="text-[9px] px-3 py-2 rounded-lg" style={{ background: 'var(--joi-bg-3)', color: 'var(--joi-text-2)', border: '1px solid rgba(255,255,255,.04)' }}>
+                Presiona <strong>Aplicar</strong> para abrir el editor de pintura
+              </div>
             </div>
-            <div className="mt-3">
-              <div className="joi-label mb-1.5">Prompt de zona</div>
-              <textarea rows={2} placeholder="Describe lo que quieres en el área seleccionada..."
-                className="w-full px-3 py-2 rounded-xl text-[11px] border outline-none resize-none"
-                style={{ background:'var(--joi-bg-2)', borderColor:'rgba(255,255,255,.04)', color:'var(--joi-text-1)', backdropFilter:'blur(8px)' }} />
+            <div className="space-y-2 mt-2">
+              <div className="joi-label">Motor</div>
+              <div className="text-[10px]" style={{ color: 'var(--joi-text-3)' }}>
+                Z-Image Turbo (rápido) — se configura en el editor
+              </div>
             </div>
           </>}
 

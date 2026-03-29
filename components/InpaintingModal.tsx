@@ -229,7 +229,7 @@ const InpaintingModal: React.FC<InpaintingModalProps> = ({ item, onClose, onSave
             <div className="absolute inset-0 bg-black/70 backdrop-blur-md flex flex-col items-center justify-center z-20 rounded-xl">
               <svg className="animate-spin text-white mb-6" xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
               <div className="w-72">
-                <ProgressBar progress={progress} label="Applying Inpainting..." />
+                <ProgressBar progress={progress} label="Aplicando inpaint..." />
               </div>
             </div>
           )}
@@ -243,11 +243,11 @@ const InpaintingModal: React.FC<InpaintingModalProps> = ({ item, onClose, onSave
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <span className="text-xl">🖌️</span>
-              <h2 className="text-lg font-bold text-white tracking-wide">Inpainting</h2>
+              <h2 className="text-lg font-bold text-white tracking-wide">Inpaint</h2>
             </div>
-            <span className="text-[10px] text-zinc-400 bg-white/5 px-2 py-1 rounded border border-white/10 uppercase tracking-widest">Inspector</span>
+            <span className="text-[10px] text-zinc-400 bg-white/5 px-2 py-1 rounded border border-white/10 uppercase tracking-widest">Editor</span>
           </div>
-          <p className="text-xs text-zinc-500 font-light">Draw over the area you want to replace</p>
+          <p className="text-xs text-zinc-500 font-light">Pinta sobre la zona que quieres reemplazar</p>
         </div>
 
         <div className="overflow-y-auto flex-1 p-6 space-y-8 custom-scrollbar">
@@ -256,7 +256,7 @@ const InpaintingModal: React.FC<InpaintingModalProps> = ({ item, onClose, onSave
           {!result && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Brush Size</label>
+                <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Tamaño de Pincel</label>
                 <span className="text-xs text-zinc-500 font-mono">{brushSize}px</span>
               </div>
               <input
@@ -272,14 +272,14 @@ const InpaintingModal: React.FC<InpaintingModalProps> = ({ item, onClose, onSave
                 className="w-full py-2.5 bg-white/5 hover:bg-white/10 border border-white/5 text-zinc-300 text-sm font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
-                Clear Mask
+                Limpiar Máscara
               </button>
             </div>
           )}
 
           {/* Engine Selector */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">Engine</label>
+            <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">Motor</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setEngine('zimage')}
@@ -300,11 +300,11 @@ const InpaintingModal: React.FC<InpaintingModalProps> = ({ item, onClose, onSave
 
           {/* Prompt Input */}
           <div className="space-y-3">
-            <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">Generation Prompt</label>
+            <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">Prompt de Generación</label>
             <textarea
               value={prompt}
               onChange={e => setPrompt(e.target.value)}
-              placeholder="Describe what to generate inside the masked area (e.g., 'a red handbag', 'sunglasses')..."
+              placeholder="Describe qué generar en la zona pintada (ej: 'un bolso rojo', 'lentes de sol')..."
               rows={4}
               className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 outline-none focus:border-white/20 focus:bg-white/[0.04] transition-all resize-none shadow-inner"
             />
@@ -319,13 +319,13 @@ const InpaintingModal: React.FC<InpaintingModalProps> = ({ item, onClose, onSave
                   disabled={loading}
                   className="flex-1 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl text-sm font-medium transition-all"
                 >
-                  Retry Inpaint
+                  Reintentar
                 </button>
                 <button
                   onClick={handleSave}
                   className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-sm font-bold tracking-wide transition-all shadow-[0_0_20px_rgba(147,51,234,0.3)] active:scale-[0.98]"
                 >
-                  Save to Gallery
+                  Guardar en Galería
                 </button>
               </div>
             ) : (
@@ -334,7 +334,7 @@ const InpaintingModal: React.FC<InpaintingModalProps> = ({ item, onClose, onSave
                 disabled={loading || !imageLoaded || imageError}
                 className="w-full py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:from-zinc-800 disabled:to-zinc-800 disabled:text-zinc-500 disabled:shadow-none text-white rounded-xl text-sm font-bold tracking-wide transition-all shadow-[0_0_20px_rgba(147,51,234,0.3)] active:scale-[0.98]"
               >
-                APPLY INPAINTING
+                APLICAR INPAINT
               </button>
             )}
           </div>
