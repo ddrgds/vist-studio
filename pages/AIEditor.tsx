@@ -10,6 +10,7 @@ import { editImageWithGPT } from '../services/openaiService'
 import { editWithSoulReference } from '../services/higgsfieldService'
 import { editWithPruna } from '../services/replicateService'
 import { ENGINE_METADATA, FEATURE_ENGINES, AIProvider, AspectRatio } from '../types'
+import { runEditWithFallback } from '../services/toolEngines'
 import { useNavigationStore } from '../stores/navigationStore'
 import { usePipelineStore } from '../stores/pipelineStore'
 import { PipelineCTA } from '../components/PipelineCTA'
@@ -409,8 +410,10 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         const preset = relightPresets[selPreset]
         const dir = relightDirections.find(d => d.id === relightDir) || relightDirections[1]
         const intensity = relightIntensities.find(i => i.id === relightIntensity) || relightIntensities[1]
-        const instruction = `Change ONLY the lighting to: ${preset.prompt}. ${dir.prompt}. ${intensity.prompt}. Keep the subject, outfit, pose, background, and scene completely identical — only lighting, shadows, and color temperature may change.`
-        resultUrls = await routeEdit('auto', inputFile, instruction, (p) => setProgress(p))
+        const instruction = `${preset.prompt}. ${dir.prompt}. ${intensity.prompt}`
+        // Fixed NB2 with fallback chain (nb2 → seedream → grok → nb-pro → pruna)
+        const result = await runEditWithFallback(inputImage!, instruction, 'nb2', 'relight')
+        resultUrls = [result.url]
       } else if (activeTool === 'rotate360') {
         const view = angleViews[sel360]
         const envHints: Record<string, string> = {
@@ -424,8 +427,10 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           'Left 45°': 'background shifts to show what was to the right of the original frame, slight parallax',
         }
         const envHint = envHints[view] || 'background changes naturally to match the new camera position'
-        const instruction = `CAMERA ROTATION (overrides preservation rule): Create a new photograph of this person as seen from a ${view.toLowerCase()} camera angle. The camera has physically moved around the subject. Keep the exact same person, clothing, hairstyle, and body proportions. The background and environment MUST change to reflect the new camera position: ${envHint}. Do NOT paste the same background — render it from the new camera perspective.`
-        resultUrls = await routeEdit('auto', inputFile, instruction, (p) => setProgress(p))
+        const instruction = `Create a new photograph of this person from a ${view.toLowerCase()} camera angle. The camera has moved around the subject. Keep exact same person, clothing, hairstyle, body. Background MUST change: ${envHint}. Render from the new camera perspective.`
+        // Fixed NB2 with fallback chain
+        const result = await runEditWithFallback(inputImage!, instruction, 'nb2', 'angles')
+        resultUrls = [result.url]
       } else if (activeTool === 'bgswap') {
         const bgName = bgPresets[selBg]
         const instruction = `Remove the background and replace it with a ${bgName.toLowerCase()} background. Match the lighting direction and color temperature of the new background to the subject's existing lighting so the composition looks natural and seamless`
