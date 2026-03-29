@@ -457,8 +457,10 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         }
       } else if (activeTool === 'style') {
         const style = styleTransfers[selStyle]
-        const instruction = `STYLE TRANSFER (overrides preservation rule): Transform the entire image into ${style.name} style. ${style.prompt}. The person's face must remain recognizable (same identity, pose, expression) but the visual rendering of EVERYTHING should change to match this aesthetic. Apply strongly and consistently.`
-        resultUrls = await routeEdit(selectedEngine, inputFile, instruction, (p) => setProgress(p))
+        const instruction = `Transform the entire image into ${style.name} style. ${style.prompt}. The person's face must remain recognizable but the visual rendering should change to match this aesthetic.`
+        // NB2 → Seedream → Grok fallback
+        const result = await runEditWithFallback(inputImage!, instruction, 'nb2', 'style-transfer')
+        resultUrls = [result.url]
       } else if (activeTool === 'realskin') {
         const SKIN_PRESET_INSTRUCTIONS: Record<string, string> = {
           soft: 'Add barely-visible, very subtle pores with zero imperfections, a smooth dewy skin texture, and gentle diffused subsurface scattering. The result should look beautifully retouched but still natural.',
@@ -658,7 +660,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           </h2>
           <div className="ml-auto relative">
             {(() => {
-              if (['reimagine','relight','rotate360','faceswap','tryon','composite'].includes(activeTool)) return null // fixed engine tools
+              if (['reimagine','relight','rotate360','faceswap','tryon','composite','style'].includes(activeTool)) return null // fixed engine tools
               const fk = TOOL_TO_FEATURE[activeTool]
               const fd = fk ? FEATURE_ENGINES[fk] : null
               const hasMultiple = fd ? fd.keys.length > 1 : true
@@ -1278,17 +1280,20 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           </>}
 
           {activeTool === 'style' && <>
-            <div className="joi-label mb-2">Estilos</div>
-            <div className="grid grid-cols-2 gap-2">
-              {styleNames.map((s,i)=>(
-                <button key={s} onClick={() => setSelStyle(i)}
-                  className="py-3 rounded-lg text-[11px]"
-                  style={{ background: selStyle === i ? 'rgba(99,102,241,.1)' : 'var(--joi-bg-3)', border: `1px solid ${selStyle === i ? 'rgba(99,102,241,.2)' : 'rgba(255,255,255,.04)'}`, color: selStyle === i ? 'var(--joi-pink)' : 'var(--joi-text-2)' }}>{s}</button>
+            <div className="joi-label mb-2">Estilo Artístico</div>
+            <div className="grid grid-cols-2 gap-1.5">
+              {styleTransfers.map((s,i)=>(
+                <button key={s.name} onClick={() => setSelStyle(i)}
+                  className="px-3 py-2.5 rounded-lg text-[10px] text-left transition-all"
+                  style={{
+                    background: selStyle === i ? 'var(--joi-pink-soft)' : 'var(--joi-bg-3)',
+                    border: `1px solid ${selStyle === i ? 'var(--joi-border-h)' : 'rgba(255,255,255,.04)'}`,
+                    color: selStyle === i ? 'var(--joi-pink)' : 'var(--joi-text-2)',
+                  }}>{s.name}</button>
               ))}
             </div>
-            <div className="flex items-center gap-2 mt-3">
-              <span className="text-[10px] w-20 shrink-0" style={{ color:'var(--joi-text-2)' }}>Intensidad</span>
-              <input type="range" min={0} max={100} defaultValue={75} className="flex-1 slider-t" />
+            <div className="text-[9px] mt-2" style={{ color:'var(--joi-text-3)' }}>
+              Transforma la imagen completa al estilo seleccionado manteniendo la identidad del rostro.
             </div>
           </>}
 
