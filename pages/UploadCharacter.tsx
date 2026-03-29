@@ -11,6 +11,7 @@ import { ImageSize, AspectRatio, ENGINE_METADATA, FEATURE_ENGINES, AIProvider } 
 import type { InfluencerParams } from '../types'
 import { useNavigationStore } from '../stores/navigationStore'
 import { usePipelineStore } from '../stores/pipelineStore'
+import { useGalleryStore, type GalleryItem } from '../stores/galleryStore'
 import { PipelineCTA } from '../components/PipelineCTA'
 import {
   type ChipOption, ETHNICITIES, HAIR_STYLES, HAIR_COLORS, SKIN_TONES, EYE_COLORS,
@@ -433,6 +434,22 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     try {
       addCharacter(char)
       usePipelineStore.getState().setCharacter(char.id)
+
+      // Save creation photos to gallery so they appear in the character's gallery
+      const sheetLabels = ['Retrato', 'Ángulos de Rostro', 'Ángulos de Cuerpo', 'Expresiones']
+      const galleryItems: GalleryItem[] = allPhotoUrls.map((url, i) => ({
+        id: crypto.randomUUID(),
+        url,
+        prompt: `${name} — ${sheetLabels[i] || 'Referencia'}`,
+        model: 'character-creator',
+        timestamp: Date.now() + i, // offset to ensure sort order
+        type: 'create' as const,
+        characterId: char.id,
+        tags: ['character-creation', i === 0 ? 'portrait' : 'sheet'],
+        source: 'director' as const,
+      }))
+      useGalleryStore.getState().addItems(galleryItems)
+
       toast.success(`${name} creado!`)
       setCharacterSaved(true)
     } catch {
