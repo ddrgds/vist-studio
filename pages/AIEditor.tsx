@@ -29,11 +29,11 @@ const tools = [
   { id:'relight', label:'Reiluminar', icon:'\uD83D\uDCA1', desc:'Cambia la iluminación de cualquier foto' },
   { id:'faceswap', label:'Cambio de Rostro', icon:'\uD83C\uDFAD', desc:'Intercambia rostros entre imágenes' },
   { id:'tryon', label:'Try-On Virtual', icon:'\uD83D\uDC57', desc:'Prueba ropa y accesorios' },
-  { id:'bgswap', label:'Fondo', icon:'\uD83D\uDDBC\uFE0F', desc:'Cambia o genera fondos' },
+  // bgswap removed — unified into composite/scene
   { id:'realskin', label:'Piel Realista', icon:'\uD83E\uDDF4', desc:'Agrega poros naturales, textura e imperfecciones' },
   // Secondary tools (behind "More" toggle)
   { id:'rotate360', label:'Ángulos 360\u00b0', icon:'\uD83D\uDD04', desc:'Genera vistas desde todos los ángulos' },
-  { id:'composite', label:'Escena', icon:'\uD83C\uDFAC', desc:'Coloca al personaje en cualquier escena' },
+  { id:'composite', label:'Escena / Fondo', icon:'\uD83C\uDFAC', desc:'Cambia el fondo o coloca en otra escena' },
   { id:'enhance', label:'Mejorar', icon:'\u2728', desc:'Mejora la calidad y los detalles' },
   { id:'style', label:'Transferencia de Estilo', icon:'\uD83C\uDFA8', desc:'Aplica estilos artísticos' },
   { id:'inpaint', label:'Inpaint', icon:'\uD83D\uDD8C\uFE0F', desc:'Edita áreas específicas' },
@@ -258,7 +258,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
     if (activeTool === 'reimagine') return 14 // Soul 2.0 fixed cost
     const eng = selectedEngine !== 'auto' ? ENGINE_METADATA.find(e => e.key === selectedEngine) : null
     if (eng) return eng.creditCost
-    return activeTool === 'rotate360' || activeTool === 'composite' ? 10 : 8
+    return activeTool === 'rotate360' ? 10 : 8
   }, [selectedEngine, activeTool])
   const toast = useToast()
   const addItems = useGalleryStore(s => s.addItems)
@@ -393,7 +393,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
 
     // Resolve engine and cost — use engine's credit cost when a specific engine is selected
     const eng = selectedEngine !== 'auto' ? ENGINE_METADATA.find(e => e.key === selectedEngine) : null
-    const baseCost = activeTool === 'reimagine' ? 14 : activeTool === 'rotate360' ? 10 : activeTool === 'composite' ? 10 : 8
+    const baseCost = activeTool === 'reimagine' ? 14 : activeTool === 'rotate360' ? 10 : 8
     const cost = activeTool === 'reimagine' ? 14 : eng ? eng.creditCost : baseCost
     const ok = await decrementCredits(cost)
     if (!ok) { toast.error('Créditos insuficientes'); setProcessing(false); return }
@@ -431,20 +431,28 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         // Fixed NB2 with fallback chain
         const result = await runEditWithFallback(inputImage!, instruction, 'nb2', 'angles')
         resultUrls = [result.url]
-      } else if (activeTool === 'bgswap') {
-        const bgName = bgPresets[selBg]
-        const instruction = `Remove the background and replace it with a ${bgName.toLowerCase()} background. Match the lighting direction and color temperature of the new background to the subject's existing lighting so the composition looks natural and seamless`
-        resultUrls = await routeEdit(selectedEngine, inputFile, instruction, (p) => setProgress(p))
       } else if (activeTool === 'composite') {
-        let compositeInstruction: string
+        let sceneInstruction: string
         if (sceneImage && scenePrompt.trim()) {
-          compositeInstruction = `Place this person into the scene shown in the reference image. Additional instructions: ${scenePrompt.trim()}. Keep the person's face, body, outfit, and pose identical. Match the scene's lighting direction, color temperature, and shadow angles onto the person. Adjust color grading so the person looks naturally photographed in that location.`
+          sceneInstruction = `Place this person into the scene shown in the reference image. Additional: ${scenePrompt.trim()}. Keep person's face, body, outfit, pose identical. Match lighting, shadows, color grading to the scene.`
         } else if (sceneImage) {
-          compositeInstruction = `Place this person into the exact scene/location shown in the reference image. Keep the person's face, body, outfit, and pose identical. Match the scene's lighting direction, color temperature, and shadow angles onto the person. Adjust color grading so the person looks naturally photographed in that location.`
+          sceneInstruction = `Place this person into the exact scene/location shown in the reference image. Keep person's face, body, outfit, pose identical. Match lighting, shadows, color grading.`
         } else {
-          compositeInstruction = `Place this person into the following scene: ${scenePrompt.trim()}. Keep the person's face, body, outfit, and pose identical. Create lighting, shadows, and color grading consistent with the described scene so the person looks naturally photographed there.`
+          sceneInstruction = `Change the background/scene to: ${scenePrompt.trim()}. Keep person's face, body, outfit, pose identical. Match lighting and color grading to the new scene.`
         }
-        resultUrls = await routeEdit(selectedEngine, inputFile, compositeInstruction, (p) => setProgress(p), undefined, sceneFile)
+        // NB2 → Seedream → Grok fallback (with scene reference if available)
+        try {
+          const results = await editImageWithAI({ baseImage: inputFile, referenceImage: sceneFile ?? undefined, instruction: sceneInstruction })
+          resultUrls = results
+        } catch (nb2Err) {
+          console.warn('NB2 scene failed, trying Seedream:', nb2Err)
+          try {
+            resultUrls = await editImageWithSeedream5(inputFile, sceneInstruction, sceneFile ? [sceneFile] : [], (p) => setProgress(p))
+          } catch (sdErr) {
+            console.warn('Seedream scene failed, trying Grok:', sdErr)
+            resultUrls = await editImageWithGrokFal(inputFile, sceneInstruction, (p) => setProgress(p), undefined, sceneFile ? [sceneFile] : [])
+          }
+        }
       } else if (activeTool === 'style') {
         const style = styleTransfers[selStyle]
         const instruction = `STYLE TRANSFER (overrides preservation rule): Transform the entire image into ${style.name} style. ${style.prompt}. The person's face must remain recognizable (same identity, pose, expression) but the visual rendering of EVERYTHING should change to match this aesthetic. Apply strongly and consistently.`
@@ -648,7 +656,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           </h2>
           <div className="ml-auto relative">
             {(() => {
-              if (['reimagine','relight','rotate360','faceswap','tryon'].includes(activeTool)) return null // fixed engine tools
+              if (['reimagine','relight','rotate360','faceswap','tryon','composite'].includes(activeTool)) return null // fixed engine tools
               const fk = TOOL_TO_FEATURE[activeTool]
               const fd = fk ? FEATURE_ENGINES[fk] : null
               const hasMultiple = fd ? fd.keys.length > 1 : true
@@ -1009,24 +1017,6 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
             </div>
           </>}
 
-          {activeTool === 'bgswap' && <>
-            <div className="joi-label mb-2">Nuevo Fondo</div>
-            <div className="flex gap-1 p-0.5 rounded-xl mb-3" style={{ background:'var(--joi-bg-3)' }}>
-              {(['Preset','Upload','Prompt'] as const).map(m=>(
-                <button key={m} onClick={() => setBgMode(m)}
-                  className="flex-1 py-1.5 rounded-lg text-[10px] font-medium"
-                  style={{ background: bgMode === m ? 'var(--joi-bg-2)' : 'transparent', color: bgMode === m ? 'var(--joi-text-1)' : 'var(--joi-text-3)' }}>{m}</button>
-              ))}
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {bgPresets.map((b,i)=>(
-                <button key={b} onClick={() => setSelBg(i)}
-                  className="py-3 rounded-lg text-[11px]"
-                  style={{ background: selBg === i ? 'rgba(99,102,241,.1)' : 'var(--joi-bg-3)', border: `1px solid ${selBg === i ? 'rgba(99,102,241,.2)' : 'rgba(255,255,255,.04)'}`, color: selBg === i ? 'var(--joi-pink)' : 'var(--joi-text-2)' }}>{b}</button>
-              ))}
-            </div>
-          </>}
-
           {activeTool === 'composite' && <>
             <div className="joi-label mb-2">Origen de Escena</div>
             <div className="flex gap-1 p-0.5 rounded-xl mb-3" style={{ background:'var(--joi-bg-3)' }}>
@@ -1103,7 +1093,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
             {/* Quick scene chips (visible on all modes) */}
             <div className="joi-label mt-3 mb-1.5">Escenas rápidas</div>
             <div className="flex gap-1.5 flex-wrap">
-              {['Tokyo neon streets','Café in Paris','Beach sunset','NYC rooftop','Enchanted forest','Space station'].map(q => (
+              {['Studio white background','Nature park','City street','Cozy interior','Tokyo neon streets','Café in Paris','Beach sunset','NYC rooftop','Enchanted forest','Space station'].map(q => (
                 <button key={q} onClick={() => { setSceneSource('prompt'); setScenePrompt(q) }}
                   className="px-2.5 py-1 rounded-lg text-[9px] transition-all"
                   style={{ background: scenePrompt === q ? 'rgba(99,102,241,.08)' : 'var(--joi-bg-3)', border: `1px solid ${scenePrompt === q ? 'rgba(99,102,241,.2)' : 'rgba(255,255,255,.04)'}`, color: scenePrompt === q ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>{q}</button>
@@ -1382,7 +1372,6 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                 {[
                   { tool: 'relight', icon: '\uD83D\uDCA1', label: 'Reiluminar', desc: 'Cambia dirección, color y atmósfera de la luz' },
                   { tool: 'faceswap', icon: '\uD83C\uDFAD', label: 'Cambio de Rostro', desc: 'Intercambia rostros entre dos imágenes' },
-                  { tool: 'bgswap', icon: '\uD83D\uDDBC\uFE0F', label: 'Fondo', desc: 'Reemplaza o genera nuevos fondos' },
                   { tool: 'freeai', icon: '\u2728', label: 'AI Edit', desc: 'Describe cualquier edición en lenguaje natural' },
                 ].map(ex => (
                   <button key={ex.tool} onClick={() => setActiveTool(ex.tool)}
