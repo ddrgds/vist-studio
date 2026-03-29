@@ -407,7 +407,9 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
       let resultUrls: string[] = []
 
       if (activeTool === 'freeai') {
-        resultUrls = await routeEdit(selectedEngine, inputFile, freePrompt.trim(), (p) => setProgress(p))
+        // NB2 with fallback chain
+        const result = await runEditWithFallback(inputImage!, freePrompt.trim(), 'nb2', 'ai-edit')
+        resultUrls = [result.url]
       } else if (activeTool === 'relight') {
         const preset = relightPresets[selPreset]
         const dir = relightDirections.find(d => d.id === relightDir) || relightDirections[1]
@@ -660,7 +662,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           </h2>
           <div className="ml-auto relative">
             {(() => {
-              if (['reimagine','relight','rotate360','faceswap','tryon','composite','style'].includes(activeTool)) return null // fixed engine tools
+              if (['reimagine','relight','rotate360','faceswap','tryon','composite','style','freeai'].includes(activeTool)) return null // fixed engine tools
               const fk = TOOL_TO_FEATURE[activeTool]
               const fd = fk ? FEATURE_ENGINES[fk] : null
               const hasMultiple = fd ? fd.keys.length > 1 : true
