@@ -425,7 +425,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         }
         const envHint = envHints[view] || 'background changes naturally to match the new camera position'
         const instruction = `CAMERA ROTATION (overrides preservation rule): Create a new photograph of this person as seen from a ${view.toLowerCase()} camera angle. The camera has physically moved around the subject. Keep the exact same person, clothing, hairstyle, and body proportions. The background and environment MUST change to reflect the new camera position: ${envHint}. Do NOT paste the same background — render it from the new camera perspective.`
-        resultUrls = await routeEdit(selectedEngine, inputFile, instruction, (p) => setProgress(p))
+        resultUrls = await routeEdit('auto', inputFile, instruction, (p) => setProgress(p))
       } else if (activeTool === 'bgswap') {
         const bgName = bgPresets[selBg]
         const instruction = `Remove the background and replace it with a ${bgName.toLowerCase()} background. Match the lighting direction and color temperature of the new background to the subject's existing lighting so the composition looks natural and seamless`
@@ -624,7 +624,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           </h2>
           <div className="ml-auto relative">
             {(() => {
-              if (activeTool === 'reimagine' || activeTool === 'relight') return null // fixed engine tools
+              if (activeTool === 'reimagine' || activeTool === 'relight' || activeTool === 'rotate360') return null // fixed engine tools
               const fk = TOOL_TO_FEATURE[activeTool]
               const fd = fk ? FEATURE_ENGINES[fk] : null
               const hasMultiple = fd ? fd.keys.length > 1 : true
@@ -888,49 +888,24 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
 
           {activeTool === 'rotate360' && <>
             <div>
-              <div className="joi-label mb-3">Ángulo de Cámara</div>
-              {/* Top-down orbit visualization */}
-              <div className="relative w-44 h-44 mx-auto mb-3">
-                {/* Orbit ring */}
-                <div className="absolute inset-2 rounded-full" style={{ border:'1px solid rgba(255,255,255,.04)' }} />
-                {/* Direction lines */}
-                <div className="absolute left-1/2 top-1 bottom-1 w-px" style={{ background:'rgba(255,255,255,.04)' }} />
-                <div className="absolute top-1/2 left-1 right-1 h-px" style={{ background:'rgba(255,255,255,.04)' }} />
-
-                {/* Angle buttons around the circle */}
-                {angleViews.map((a, i) => {
-                  const angle = (i * 45) * (Math.PI / 180) - Math.PI / 2
-                  const x = 50 + 40 * Math.cos(angle)
-                  const y = 50 + 40 * Math.sin(angle)
-                  return (
-                    <button key={a} onClick={() => setSel360(i)}
-                      className="absolute w-8 h-8 rounded-full flex items-center justify-center text-[7px] font-mono transition-all"
-                      style={{
-                        left: `${x}%`, top: `${y}%`, transform: 'translate(-50%,-50%)',
-                        background: sel360 === i ? 'var(--joi-pink)' : 'var(--joi-bg-3)',
-                        color: sel360 === i ? '#fff' : 'var(--joi-text-3)',
-                        border: `1px solid ${sel360 === i ? 'var(--joi-pink)' : 'rgba(255,255,255,.04)'}`,
-                        boxShadow: sel360 === i ? '0 0 12px rgba(99,102,241,.3)' : 'none',
-                      }}>{a.replace('°', '')}</button>
-                  )
-                })}
-
-                {/* Center person icon */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background:'var(--joi-bg-3)', border:'1px solid rgba(255,255,255,.04)' }}>
-                    <span className="text-xs opacity-50">{'\uD83E\uDDCD'}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-center text-[11px] font-mono mb-3" style={{ color:'var(--joi-pink)' }}>
-                {angleViews[sel360]}
+              <div className="joi-label mb-2">Ángulo de Cámara</div>
+              <div className="grid grid-cols-2 gap-1.5">
+                {angleViews.map((a, i) => (
+                  <button key={a} onClick={() => setSel360(i)}
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-all"
+                    style={{
+                      background: sel360 === i ? 'var(--joi-pink-soft)' : 'var(--joi-bg-3)',
+                      border: `1px solid ${sel360 === i ? 'var(--joi-border-h)' : 'rgba(255,255,255,.04)'}`,
+                      color: sel360 === i ? 'var(--joi-pink)' : 'var(--joi-text-2)',
+                    }}>
+                    <span className="text-sm">{['👤','↗️','➡️','↘️','🔄','↙️','⬅️','↖️'][i]}</span>
+                    <span className="text-[10px]">{a}</span>
+                  </button>
+                ))}
               </div>
             </div>
-
-            {/* Quick select all for full 360 */}
-            <div className="text-[9px] text-center" style={{ color:'var(--joi-text-3)' }}>
-              Selecciona un ángulo y presiona Aplicar para generar esa vista
+            <div className="text-[9px]" style={{ color:'var(--joi-text-3)' }}>
+              Selecciona un ángulo y presiona Aplicar. La cámara se moverá alrededor del sujeto.
             </div>
           </>}
 
