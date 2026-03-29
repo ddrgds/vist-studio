@@ -486,8 +486,16 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           resultUrls = [result.url]
         }
       } else if (activeTool === 'tryon' && garmentFile) {
-        const instruction = `VIRTUAL TRY-ON: IMAGE 1 is the PERSON — preserve this person completely: their exact face identity, facial features, skin tone, hair, body shape, pose, and background must remain 100% unchanged. IMAGE 2 is the GARMENT ONLY — extract just the clothing item and place it on the person from IMAGE 1. Do not copy the body, face, skin, hair, or background from IMAGE 2. Only the clothing changes. Reproduce every fabric detail, pattern, color, texture, and fit from IMAGE 2's garment exactly.`
-        resultUrls = await routeEdit(selectedEngine, inputFile, instruction, (p) => setProgress(p), undefined, garmentFile, true)
+        // Fixed NB2 with fallback. Try Gemini native first (supports reference image), then fallback chain.
+        const instruction = `VIRTUAL TRY-ON: Replace ONLY the clothing on this person with the garment from the reference image. Keep the person's face, hair, skin, body, pose, and background 100% unchanged. Reproduce every fabric detail, pattern, color, and texture from the reference garment exactly.`
+        try {
+          const results = await editImageWithAI({ baseImage: inputFile, referenceImage: garmentFile, instruction })
+          resultUrls = results
+        } catch (nb2Err) {
+          console.warn('NB2 try-on failed, trying fallback:', nb2Err)
+          const result = await runEditWithFallback(inputImage!, instruction, 'seedream', 'outfit')
+          resultUrls = [result.url]
+        }
       } else if (activeTool === 'expand') {
         const { expandWithBria } = await import('../services/replicateService')
         const expandedUrl = await expandWithBria(inputImage, expandDirection as 'up' | 'down' | 'left' | 'right' | 'all', expandPixels, (p: number) => setProgress(p))
@@ -632,7 +640,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           </h2>
           <div className="ml-auto relative">
             {(() => {
-              if (['reimagine','relight','rotate360','faceswap'].includes(activeTool)) return null // fixed engine tools
+              if (['reimagine','relight','rotate360','faceswap','tryon'].includes(activeTool)) return null // fixed engine tools
               const fk = TOOL_TO_FEATURE[activeTool]
               const fd = fk ? FEATURE_ENGINES[fk] : null
               const hasMultiple = fd ? fd.keys.length > 1 : true
