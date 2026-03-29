@@ -475,12 +475,15 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         const instruction = `${skinInstruction} Do not alter the face shape, features, expression, hair, outfit, pose, or background.`
         resultUrls = await routeEdit(selectedEngine, inputFile, instruction, (p) => setProgress(p))
       } else if (activeTool === 'faceswap' && faceSwapFile) {
-        if (selectedEngine === 'gemini:nb2' || selectedEngine === 'auto') {
+        // Fixed NB2 with fallback chain
+        try {
           const dataUrl = await faceSwapWithGemini(inputFile, faceSwapFile, (p) => setProgress(p))
           resultUrls = [dataUrl]
-        } else {
-          const instruction = `Swap the face: replace the face of the person in the first image with the face from the second image. Keep the original person's hair, body, pose, clothing, and background exactly the same. Only change the facial features to match the reference face.`
-          resultUrls = await routeEdit(selectedEngine, inputFile, instruction, (p) => setProgress(p), undefined, faceSwapFile)
+        } catch (nb2Err) {
+          console.warn('NB2 face swap failed, trying fallback chain:', nb2Err)
+          const instruction = `Replace the face of the person with the face from the reference image. Keep hair, body, pose, clothing, and background exactly the same. Only change facial features.`
+          const result = await runEditWithFallback(inputImage!, instruction, 'seedream', 'face-swap')
+          resultUrls = [result.url]
         }
       } else if (activeTool === 'tryon' && garmentFile) {
         const instruction = `VIRTUAL TRY-ON: IMAGE 1 is the PERSON — preserve this person completely: their exact face identity, facial features, skin tone, hair, body shape, pose, and background must remain 100% unchanged. IMAGE 2 is the GARMENT ONLY — extract just the clothing item and place it on the person from IMAGE 1. Do not copy the body, face, skin, hair, or background from IMAGE 2. Only the clothing changes. Reproduce every fabric detail, pattern, color, texture, and fit from IMAGE 2's garment exactly.`
@@ -629,7 +632,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           </h2>
           <div className="ml-auto relative">
             {(() => {
-              if (activeTool === 'reimagine' || activeTool === 'relight' || activeTool === 'rotate360') return null // fixed engine tools
+              if (['reimagine','relight','rotate360','faceswap'].includes(activeTool)) return null // fixed engine tools
               const fk = TOOL_TO_FEATURE[activeTool]
               const fd = fk ? FEATURE_ENGINES[fk] : null
               const hasMultiple = fd ? fd.keys.length > 1 : true
