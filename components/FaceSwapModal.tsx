@@ -116,28 +116,28 @@ const FaceSwapModal: React.FC<FaceSwapModalProps> = ({ targetItem, onClose, onSa
       </div>
 
       {/* ─── Right Inspector Panel ─── */}
-      <aside className="w-[450px] bg-zinc-950/95 backdrop-blur-3xl border-l border-white/5 flex flex-col shadow-2xl relative z-10">
+      <aside className="w-[450px] bg-white/95 backdrop-blur-3xl border-l border-black/5 flex flex-col shadow-2xl relative z-10">
         {/* Header */}
-        <div className="p-6 pb-5 border-b border-white/5 shrink-0">
+        <div className="p-6 pb-5 border-b border-gray-200 shrink-0">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <span className="text-xl">🔄</span>
-              <h2 className="text-lg font-bold text-white tracking-wide">Face Swap</h2>
+              <h2 className="text-lg font-bold text-gray-900 tracking-wide">Face Swap</h2>
             </div>
-            <span className="text-[10px] text-zinc-400 bg-white/5 px-2 py-1 rounded border border-white/10 uppercase tracking-widest">Inspector</span>
+            <span className="text-[10px] text-gray-500 bg-gray-100 px-2 py-1 rounded border border-gray-200 uppercase tracking-widest">Inspector</span>
           </div>
-          <p className="text-xs text-zinc-500 font-light">NB2 · Gemini Flash 2 · Multimodal</p>
+          <p className="text-xs text-gray-400 font-light">NB2 · Gemini Flash 2 · Multimodal</p>
         </div>
 
         <div className="overflow-y-auto flex-1 p-6 space-y-8 custom-scrollbar">
 
           {/* Source Face Upload */}
           <div className="space-y-3">
-            <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">
-              Reference Identity <span className="text-zinc-600 normal-case">(Source Face)</span>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
+              Reference Identity <span className="text-gray-400 normal-case">(Source Face)</span>
             </label>
             <div
-              className={`aspect-square rounded-2xl border border-dashed transition-all cursor-pointer flex flex-col items-center justify-center overflow-hidden bg-white/[0.02] ${sourceFacePreview ? 'border-purple-500/50' : 'border-white/10 hover:border-white/30 hover:bg-white/[0.04]'
+              className={`aspect-square rounded-2xl border border-dashed transition-all cursor-pointer flex flex-col items-center justify-center overflow-hidden bg-gray-50 ${sourceFacePreview ? 'border-purple-500/50' : 'border-gray-300 hover:border-gray-400 hover:bg-gray-100'
                 }`}
               onClick={() => fileInputRef.current?.click()}
               onDrop={handleDrop}
@@ -151,14 +151,14 @@ const FaceSwapModal: React.FC<FaceSwapModalProps> = ({ targetItem, onClose, onSa
                   </div>
                 </div>
               ) : (
-                <div className="text-center text-zinc-500 p-6 flex flex-col items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
+                <div className="text-center text-gray-400 p-6 flex flex-col items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
                     </svg>
                   </div>
-                  <p className="text-sm font-medium text-zinc-300">Upload Source Photo</p>
-                  <p className="text-xs text-zinc-600">Drag & drop or click to browse</p>
+                  <p className="text-sm font-medium text-gray-600">Upload Source Photo</p>
+                  <p className="text-xs text-gray-400">Drag & drop or click to browse</p>
                 </div>
               )}
             </div>
@@ -166,13 +166,13 @@ const FaceSwapModal: React.FC<FaceSwapModalProps> = ({ targetItem, onClose, onSa
           </div>
 
           {/* Actions Footer */}
-          <div className="pt-4 border-t border-white/5 flex flex-col gap-3">
+          <div className="pt-4 border-t border-gray-200 flex flex-col gap-3">
             {result ? (
               <div className="flex gap-3">
                 <button
                   onClick={handleGenerate}
                   disabled={loading}
-                  className="flex-1 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl text-sm font-medium transition-all"
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700 rounded-xl text-sm font-medium transition-all"
                 >
                   Retry Swap
                 </button>
@@ -187,7 +187,7 @@ const FaceSwapModal: React.FC<FaceSwapModalProps> = ({ targetItem, onClose, onSa
               <button
                 onClick={handleGenerate}
                 disabled={loading || !sourceFaceFile}
-                className="w-full py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:from-zinc-800 disabled:to-zinc-800 disabled:text-zinc-500 disabled:shadow-none text-white rounded-xl text-sm font-bold tracking-wide transition-all shadow-[0_0_20px_rgba(147,51,234,0.3)] active:scale-[0.98]"
+                className="w-full py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:from-gray-200 disabled:to-gray-200 disabled:text-gray-400 disabled:shadow-none text-white rounded-xl text-sm font-bold tracking-wide transition-all shadow-[0_0_20px_rgba(147,51,234,0.3)] active:scale-[0.98]"
               >
                 APPLY FACE SWAP
               </button>

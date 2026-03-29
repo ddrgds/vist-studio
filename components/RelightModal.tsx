@@ -460,11 +460,11 @@ const MultiLightGizmo: React.FC<GizmoProps> = ({
       {/* Readout */}
       {sel && (
         <div className="flex items-center gap-4 text-[9.5px] font-mono">
-          <span className="text-zinc-600">AZ <span className="text-zinc-300">{sel.azimuth > 0 ? '+' : ''}{Math.round(sel.azimuth)}°</span></span>
-          <span className={sel.elevation < 0 ? 'text-red-700' : 'text-zinc-600'}>
-            EL <span className={sel.elevation < 0 ? 'text-red-400' : 'text-zinc-300'}>{Math.round(sel.elevation)}°</span>
+          <span className="text-gray-400">AZ <span className="text-gray-700">{sel.azimuth > 0 ? '+' : ''}{Math.round(sel.azimuth)}°</span></span>
+          <span className={sel.elevation < 0 ? 'text-red-500' : 'text-gray-400'}>
+            EL <span className={sel.elevation < 0 ? 'text-red-500' : 'text-gray-700'}>{Math.round(sel.elevation)}°</span>
           </span>
-          <span className="text-zinc-600">Ø <span className="text-zinc-300">{Math.round(sel.spread * 100)}%</span></span>
+          <span className="text-gray-400">Ø <span className="text-gray-700">{Math.round(sel.spread * 100)}%</span></span>
         </div>
       )}
     </div>
@@ -486,19 +486,19 @@ const ParamSlider: React.FC<SliderProps> = ({ label, value, min, max, step = 0.0
   return (
     <div className="space-y-1">
       <div className="flex justify-between">
-        <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">{label}</span>
-        <span className="text-[10px] font-mono text-zinc-300">{formatValue ? formatValue(value) : value.toFixed(2)}</span>
+        <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">{label}</span>
+        <span className="text-[10px] font-mono text-gray-700">{formatValue ? formatValue(value) : value.toFixed(2)}</span>
       </div>
-      <div className="relative h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+      <div className="relative h-1.5 rounded-full bg-gray-200 overflow-hidden">
         {gradient
           ? <><div className="absolute inset-0 rounded-full" style={{ background: gradient }} />
               <div className="absolute inset-y-0 right-0 bg-black/55 rounded-full" style={{ width: `${100 - pct}%` }} /></>
-          : <div className="absolute inset-y-0 left-0 bg-zinc-500 rounded-full" style={{ width: `${pct}%` }} />
+          : <div className="absolute inset-y-0 left-0 bg-gray-500 rounded-full" style={{ width: `${pct}%` }} />
         }
         <input type="range" min={min} max={max} step={step} value={value}
           onChange={e => onChange(parseFloat(e.target.value))}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-        <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white shadow border border-zinc-400 pointer-events-none"
+        <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white shadow border border-gray-400 pointer-events-none"
           style={{ left: `calc(${pct}% - 6px)` }} />
       </div>
     </div>
@@ -522,21 +522,21 @@ interface LightCardProps {
 }
 
 const LightCard: React.FC<LightCardProps> = ({ light, onChange, onDelete }) => (
-  <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3 space-y-2.5">
+  <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 space-y-2.5">
     <div className="flex items-center gap-2">
       <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: LIGHT_TYPE_ACCENT[light.type] }} />
       <input value={light.label} onChange={e => onChange('label', e.target.value)}
-        className="flex-1 bg-transparent text-xs font-semibold text-white outline-none border-b border-transparent focus:border-zinc-600" />
+        className="flex-1 bg-transparent text-xs font-semibold text-gray-900 outline-none border-b border-transparent focus:border-gray-400" />
       <button onClick={() => onChange('enabled', !light.enabled)}
-        className={`px-2 py-0.5 rounded text-[9px] font-mono border transition-all ${light.enabled ? 'bg-white/8 border-zinc-600 text-zinc-300' : 'border-zinc-800 text-zinc-600'}`}>
+        className={`px-2 py-0.5 rounded text-[9px] font-mono border transition-all ${light.enabled ? 'bg-gray-200 border-gray-400 text-gray-700' : 'border-gray-200 text-gray-400'}`}>
         {light.enabled ? 'ON' : 'OFF'}
       </button>
-      <button onClick={onDelete} className="text-zinc-700 hover:text-red-400 transition-colors text-sm leading-none ml-1">×</button>
+      <button onClick={onDelete} className="text-gray-400 hover:text-red-500 transition-colors text-sm leading-none ml-1">×</button>
     </div>
     <div className="flex gap-1">
       {LIGHT_TYPES.map(({ type, icon }) => (
         <button key={type} onClick={() => onChange('type', type)} title={type}
-          className={`flex-1 py-1 rounded text-[10px] font-medium border transition-all ${light.type === type ? 'border-zinc-500 text-white bg-white/8' : 'border-zinc-800 text-zinc-600 hover:text-zinc-400'}`}>
+          className={`flex-1 py-1 rounded text-[10px] font-medium border transition-all ${light.type === type ? 'border-gray-400 text-gray-900 bg-gray-200' : 'border-gray-200 text-gray-400 hover:text-gray-600'}`}>
           {icon}
         </button>
       ))}
@@ -609,7 +609,7 @@ const LightsTab: React.FC<LightsTabProps> = ({ settings, selectedId, onSelectLig
           const accent = LIGHT_TYPE_ACCENT[l.type];
           return (
             <button key={l.id} onClick={() => onSelectLight(l.id)}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold border transition-all ${l.id === selectedId ? 'bg-white/10 border-zinc-500 text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-600'}`}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold border transition-all ${l.id === selectedId ? 'bg-gray-200 border-gray-400 text-gray-900' : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300'}`}
               style={l.id === selectedId ? { boxShadow: `0 0 8px ${accent}50` } : {}}>
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: l.enabled ? accent : '#444' }} />
               {l.label}
@@ -618,7 +618,7 @@ const LightsTab: React.FC<LightsTabProps> = ({ settings, selectedId, onSelectLig
         })}
         {settings.lights.length < 5 && (
           <button onClick={addLight}
-            className="px-2.5 py-1 rounded-full text-[10px] font-semibold border border-dashed border-zinc-700 text-zinc-600 hover:border-zinc-500 hover:text-zinc-400 transition-all">
+            className="px-2.5 py-1 rounded-full text-[10px] font-semibold border border-dashed border-gray-300 text-gray-400 hover:border-gray-400 hover:text-gray-600 transition-all">
             + Add
           </button>
         )}
@@ -643,7 +643,7 @@ const PresetsTab: React.FC<{ onApply: (p: StudioPreset) => void; activeId: strin
   <div className="space-y-4">
     {(['portrait', 'cinematic', 'stylized'] as const).map(cat => (
       <div key={cat} className="space-y-1.5">
-        <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">
+        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
           {{ portrait: 'Portrait', cinematic: 'Cinematic', stylized: 'Stylized' }[cat]}
         </p>
         <div className="grid grid-cols-2 gap-1.5">
@@ -651,13 +651,13 @@ const PresetsTab: React.FC<{ onApply: (p: StudioPreset) => void; activeId: strin
             <button key={preset.id} onClick={() => onApply(preset)}
               className={`flex items-start gap-2 p-2.5 rounded-xl border text-left transition-all ${
                 activeId === preset.id
-                  ? 'bg-white/8 border-zinc-500 text-white'
-                  : 'bg-zinc-900/60 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
+                  ? 'bg-gray-100 border-gray-400 text-gray-900'
+                  : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700'
               }`}>
               <span className="text-lg leading-none shrink-0">{preset.icon}</span>
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold text-zinc-200 truncate">{preset.name}</p>
-                <p className="text-[9px] text-zinc-600 mt-0.5 leading-tight line-clamp-2">{preset.description}</p>
+                <p className="text-[11px] font-semibold text-gray-700 truncate">{preset.name}</p>
+                <p className="text-[9px] text-gray-400 mt-0.5 leading-tight line-clamp-2">{preset.description}</p>
               </div>
             </button>
           ))}
@@ -676,7 +676,7 @@ const AdvancedTab: React.FC<{ global: GlobalParams; onChange: (g: GlobalParams) 
   return (
     <div className="space-y-4">
       <div className="space-y-2.5">
-        <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">Global Parameters</p>
+        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Global Parameters</p>
         <ParamSlider label="Ambient Level" value={global.ambientLevel} min={0} max={1} step={0.05}
           formatValue={v => `${Math.round(v * 100)}%`} onChange={v => set('ambientLevel', v)} />
         <ParamSlider label="Contrast" value={global.contrastBoost} min={-1} max={1} step={0.05}
@@ -687,10 +687,10 @@ const AdvancedTab: React.FC<{ global: GlobalParams; onChange: (g: GlobalParams) 
           formatValue={v => `${Math.round(v * 100)}%`} onChange={v => set('filmGrain', v)} />
       </div>
       <details className="group">
-        <summary className="text-[10px] font-semibold text-zinc-700 uppercase tracking-wider cursor-pointer group-open:text-zinc-500 transition-colors">
+        <summary className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider cursor-pointer group-open:text-gray-500 transition-colors">
           Prompt preview ▸
         </summary>
-        <p className="mt-2 text-[9px] text-zinc-600 leading-relaxed bg-zinc-900/50 rounded-lg p-3 border border-zinc-800/50">{prompt}</p>
+        <p className="mt-2 text-[9px] text-gray-500 leading-relaxed bg-gray-50 rounded-lg p-3 border border-gray-200">{prompt}</p>
       </details>
     </div>
   );
@@ -822,11 +822,11 @@ const RelightModal: React.FC<RelightModalProps> = ({ targetItem, onClose, onSave
         </button>
 
         {result && !loading && (
-          <div className="absolute top-6 left-1/2 -translate-x-1/2 flex items-center bg-zinc-900 border border-zinc-800 rounded-xl p-1 z-10">
+          <div className="absolute top-6 left-1/2 -translate-x-1/2 flex items-center bg-white border border-gray-200 rounded-xl p-1 z-10 shadow-lg">
             <button onClick={() => setShowResult(false)}
-              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${!showResult ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>Before</button>
+              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${!showResult ? 'bg-gray-200 text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>Before</button>
             <button onClick={() => setShowResult(true)}
-              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${showResult ? 'bg-amber-600 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>After</button>
+              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${showResult ? 'bg-amber-500 text-white' : 'text-gray-400 hover:text-gray-600'}`}>After</button>
           </div>
         )}
 
@@ -835,29 +835,29 @@ const RelightModal: React.FC<RelightModalProps> = ({ targetItem, onClose, onSave
       </div>
 
       {/* Inspector */}
-      <aside className="w-[420px] bg-zinc-950/98 backdrop-blur-3xl border-l border-white/5 flex flex-col shadow-2xl shrink-0">
+      <aside className="w-[420px] bg-white/98 backdrop-blur-3xl border-l border-black/5 flex flex-col shadow-2xl shrink-0">
 
         {/* Header */}
         <div className="p-5 pb-0 shrink-0">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2.5">
               <span className="text-xl leading-none">☀️</span>
-              <h2 className="text-base font-bold text-white tracking-wide">Relight Studio</h2>
+              <h2 className="text-base font-bold text-gray-900 tracking-wide">Relight Studio</h2>
               {activeCount > 0 && (
-                <span className="text-[9px] text-zinc-500 bg-white/5 px-1.5 py-0.5 rounded border border-white/10 font-mono">
+                <span className="text-[9px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200 font-mono">
                   {activeCount}L
                 </span>
               )}
             </div>
-            <span className="text-[9px] text-zinc-700 uppercase tracking-widest">Studio</span>
+            <span className="text-[9px] text-gray-400 uppercase tracking-widest">Studio</span>
           </div>
 
           {/* Tabs */}
-          <div className="flex mt-4 border-b border-zinc-800">
+          <div className="flex mt-4 border-b border-gray-200">
             {(['lights', 'presets', 'advanced'] as Tab[]).map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
                 className={`px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider transition-all border-b-2 -mb-px ${
-                  activeTab === tab ? 'border-amber-500 text-amber-400' : 'border-transparent text-zinc-600 hover:text-zinc-400'
+                  activeTab === tab ? 'border-amber-500 text-amber-600' : 'border-transparent text-gray-400 hover:text-gray-600'
                 }`}>
                 {tab === 'lights' ? 'Lights' : tab === 'presets' ? 'Presets' : 'Advanced'}
               </button>
@@ -882,17 +882,17 @@ const RelightModal: React.FC<RelightModalProps> = ({ targetItem, onClose, onSave
         </div>
 
         {/* Actions */}
-        <div className="p-5 border-t border-white/5 shrink-0 space-y-2.5">
+        <div className="p-5 border-t border-gray-200 shrink-0 space-y-2.5">
           {result && !loading ? (
             <>
               {/* Retry row */}
               <div className="flex gap-2">
                 <button onClick={handleManual} disabled={loading}
-                  className="flex-1 py-2.5 rounded-xl border border-zinc-700 text-zinc-300 hover:border-zinc-500 hover:text-white text-xs font-semibold transition-all flex items-center justify-center gap-1.5 disabled:opacity-40">
+                  className="flex-1 py-2.5 rounded-xl border border-gray-300 text-gray-600 hover:border-gray-400 hover:text-gray-900 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 disabled:opacity-40">
                   ⚡ Manual
                 </button>
                 <button onClick={handleAI} disabled={loading}
-                  className="flex-1 py-2.5 rounded-xl border border-amber-800/60 text-amber-400 hover:bg-amber-600/10 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 disabled:opacity-40">
+                  className="flex-1 py-2.5 rounded-xl border border-amber-300 text-amber-600 hover:bg-amber-50 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 disabled:opacity-40">
                   ✨ AI Retry
                 </button>
               </div>
@@ -904,14 +904,14 @@ const RelightModal: React.FC<RelightModalProps> = ({ targetItem, onClose, onSave
             </>
           ) : loading ? (
             <button onClick={() => { abortRef.current?.abort(); setLoading(false); }}
-              className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-white rounded-xl text-sm font-bold transition-all">
+              className="w-full py-3 bg-gray-200 hover:bg-gray-300 border border-gray-300 text-gray-700 rounded-xl text-sm font-bold transition-all">
               Cancel
             </button>
           ) : (
             <>
               <div className="flex gap-2">
                 <button onClick={handleManual}
-                  className="flex-1 py-3 rounded-xl border border-zinc-700 text-zinc-200 hover:border-zinc-500 hover:bg-white/5 text-sm font-semibold transition-all flex items-center justify-center gap-1.5">
+                  className="flex-1 py-3 rounded-xl border border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50 text-sm font-semibold transition-all flex items-center justify-center gap-1.5">
                   ⚡ Manual
                 </button>
                 <button onClick={handleAI}
@@ -919,7 +919,7 @@ const RelightModal: React.FC<RelightModalProps> = ({ targetItem, onClose, onSave
                   ✨ AI Relight
                 </button>
               </div>
-              <p className="text-center text-[9px] text-zinc-700">
+              <p className="text-center text-[9px] text-gray-400">
                 Manual: instant canvas blend · AI: FLUX Kontext, identity-preserving
               </p>
             </>

@@ -237,17 +237,17 @@ const InpaintingModal: React.FC<InpaintingModalProps> = ({ item, onClose, onSave
       </div>
 
       {/* ─── Right Inspector Panel ─── */}
-      <aside className="w-[450px] bg-zinc-950/95 backdrop-blur-3xl border-l border-white/5 flex flex-col shadow-2xl relative z-10">
+      <aside className="w-[450px] bg-white/95 backdrop-blur-3xl border-l border-black/5 flex flex-col shadow-2xl relative z-10">
         {/* Header */}
-        <div className="p-6 pb-5 border-b border-white/5 shrink-0">
+        <div className="p-6 pb-5 border-b border-gray-200 shrink-0">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <span className="text-xl">🖌️</span>
-              <h2 className="text-lg font-bold text-white tracking-wide">Inpaint</h2>
+              <h2 className="text-lg font-bold text-gray-900 tracking-wide">Inpaint</h2>
             </div>
-            <span className="text-[10px] text-zinc-400 bg-white/5 px-2 py-1 rounded border border-white/10 uppercase tracking-widest">Editor</span>
+            <span className="text-[10px] text-gray-500 bg-gray-100 px-2 py-1 rounded border border-gray-200 uppercase tracking-widest">Editor</span>
           </div>
-          <p className="text-xs text-zinc-500 font-light">Pinta sobre la zona que quieres reemplazar</p>
+          <p className="text-xs text-gray-400 font-light">Pinta sobre la zona que quieres reemplazar</p>
         </div>
 
         <div className="overflow-y-auto flex-1 p-6 space-y-8 custom-scrollbar">
@@ -256,8 +256,8 @@ const InpaintingModal: React.FC<InpaintingModalProps> = ({ item, onClose, onSave
           {!result && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Tamaño de Pincel</label>
-                <span className="text-xs text-zinc-500 font-mono">{brushSize}px</span>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Tamaño de Pincel</label>
+                <span className="text-xs text-gray-400 font-mono">{brushSize}px</span>
               </div>
               <input
                 type="range"
@@ -265,11 +265,11 @@ const InpaintingModal: React.FC<InpaintingModalProps> = ({ item, onClose, onSave
                 max="100"
                 value={brushSize}
                 onChange={e => setBrushSize(Number(e.target.value))}
-                className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500"
               />
               <button
                 onClick={clearMask}
-                className="w-full py-2.5 bg-white/5 hover:bg-white/10 border border-white/5 text-zinc-300 text-sm font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
+                className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
                 Limpiar Máscara
@@ -279,45 +279,45 @@ const InpaintingModal: React.FC<InpaintingModalProps> = ({ item, onClose, onSave
 
           {/* Engine Selector */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">Motor</label>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Motor</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setEngine('zimage')}
-                className={`py-2 px-3 rounded-xl text-xs font-medium border transition-colors text-left ${engine === 'zimage' ? 'bg-white/10 border-white/20 text-white' : 'bg-white/[0.02] border-white/5 text-zinc-500 hover:border-white/10 hover:text-zinc-300'}`}
+                className={`py-2 px-3 rounded-xl text-xs font-medium border transition-colors text-left ${engine === 'zimage' ? 'bg-gray-200 border-gray-300 text-gray-900' : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700'}`}
               >
                 <span className="block font-semibold">Z-Image Turbo</span>
-                <span className="block text-[10px] text-zinc-500 mt-0.5">Uncensored · fast · 8 steps</span>
+                <span className="block text-[10px] text-gray-400 mt-0.5">Uncensored · fast · 8 steps</span>
               </button>
               <button
                 onClick={() => setEngine('flux')}
-                className={`py-2 px-3 rounded-xl text-xs font-medium border transition-colors text-left ${engine === 'flux' ? 'bg-white/10 border-white/20 text-white' : 'bg-white/[0.02] border-white/5 text-zinc-500 hover:border-white/10 hover:text-zinc-300'}`}
+                className={`py-2 px-3 rounded-xl text-xs font-medium border transition-colors text-left ${engine === 'flux' ? 'bg-gray-200 border-gray-300 text-gray-900' : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700'}`}
               >
                 <span className="block font-semibold">FLUX Pro</span>
-                <span className="block text-[10px] text-zinc-500 mt-0.5">High quality · 28 steps</span>
+                <span className="block text-[10px] text-gray-400 mt-0.5">High quality · 28 steps</span>
               </button>
             </div>
           </div>
 
           {/* Prompt Input */}
           <div className="space-y-3">
-            <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">Prompt de Generación</label>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Prompt de Generación</label>
             <textarea
               value={prompt}
               onChange={e => setPrompt(e.target.value)}
               placeholder="Describe qué generar en la zona pintada (ej: 'un bolso rojo', 'lentes de sol')..."
               rows={4}
-              className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 outline-none focus:border-white/20 focus:bg-white/[0.04] transition-all resize-none shadow-inner"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300 focus:bg-gray-100 transition-all resize-none shadow-inner"
             />
           </div>
 
           {/* Actions Footer */}
-          <div className="pt-4 border-t border-white/5 flex flex-col gap-3">
+          <div className="pt-4 border-t border-gray-200 flex flex-col gap-3">
             {result ? (
               <div className="flex gap-3">
                 <button
                   onClick={handleGenerate}
                   disabled={loading}
-                  className="flex-1 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl text-sm font-medium transition-all"
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700 rounded-xl text-sm font-medium transition-all"
                 >
                   Reintentar
                 </button>
@@ -332,7 +332,7 @@ const InpaintingModal: React.FC<InpaintingModalProps> = ({ item, onClose, onSave
               <button
                 onClick={handleGenerate}
                 disabled={loading || !imageLoaded || imageError}
-                className="w-full py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:from-zinc-800 disabled:to-zinc-800 disabled:text-zinc-500 disabled:shadow-none text-white rounded-xl text-sm font-bold tracking-wide transition-all shadow-[0_0_20px_rgba(147,51,234,0.3)] active:scale-[0.98]"
+                className="w-full py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:from-gray-200 disabled:to-gray-200 disabled:text-gray-400 disabled:shadow-none text-white rounded-xl text-sm font-bold tracking-wide transition-all shadow-[0_0_20px_rgba(147,51,234,0.3)] active:scale-[0.98]"
               >
                 APLICAR INPAINT
               </button>

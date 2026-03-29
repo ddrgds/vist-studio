@@ -132,25 +132,25 @@ const TryOnModal: React.FC<TryOnModalProps> = ({ targetItem, onClose, onSave }) 
       </div>
 
       {/* ─── Right Inspector Panel ─── */}
-      <aside className="w-[420px] bg-zinc-950/95 backdrop-blur-3xl border-l border-white/5 flex flex-col shadow-2xl relative z-10">
+      <aside className="w-[420px] bg-white/95 backdrop-blur-3xl border-l border-black/5 flex flex-col shadow-2xl relative z-10">
 
         {/* Header */}
-        <div className="p-6 pb-5 border-b border-white/5 shrink-0">
+        <div className="p-6 pb-5 border-b border-gray-200 shrink-0">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <span className="text-xl">👗</span>
-              <h2 className="text-lg font-bold text-white tracking-wide">Virtual Try-On</h2>
+              <h2 className="text-lg font-bold text-gray-900 tracking-wide">Virtual Try-On</h2>
             </div>
-            <span className="text-[10px] text-zinc-400 bg-white/5 px-2 py-1 rounded border border-white/10 uppercase tracking-widest">Inspector</span>
+            <span className="text-[10px] text-gray-500 bg-gray-100 px-2 py-1 rounded border border-gray-200 uppercase tracking-widest">Inspector</span>
           </div>
-          <p className="text-xs text-zinc-500 font-light">IDM-VTON · Replicate · ~30s</p>
+          <p className="text-xs text-gray-400 font-light">IDM-VTON · Replicate · ~30s</p>
         </div>
 
         <div className="overflow-y-auto flex-1 p-6 space-y-6 custom-scrollbar">
 
           {/* Category */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">Garment Category</label>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Garment Category</label>
             <div className="grid grid-cols-3 gap-2">
               {CATEGORIES.map((c) => (
                 <button
@@ -158,13 +158,13 @@ const TryOnModal: React.FC<TryOnModalProps> = ({ targetItem, onClose, onSave }) 
                   onClick={() => setCategory(c.value)}
                   className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border text-center transition-all ${
                     category === c.value
-                      ? 'bg-white/10 border-white/25 text-white'
-                      : 'bg-white/[0.02] border-white/5 text-zinc-500 hover:border-white/15 hover:text-zinc-300'
+                      ? 'bg-gray-200 border-gray-300 text-gray-900'
+                      : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700'
                   }`}
                 >
                   <span className="text-xl leading-none">{c.icon}</span>
                   <span className="text-[11px] font-semibold">{c.label}</span>
-                  <span className="text-[9px] text-zinc-600 leading-tight">{c.hint}</span>
+                  <span className="text-[9px] text-gray-400 leading-tight">{c.hint}</span>
                 </button>
               ))}
             </div>
@@ -172,12 +172,12 @@ const TryOnModal: React.FC<TryOnModalProps> = ({ targetItem, onClose, onSave }) 
 
           {/* Garment image upload */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">
-              Garment Photo <span className="text-zinc-600 normal-case font-normal">(flat lay or worn)</span>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
+              Garment Photo <span className="text-gray-400 normal-case font-normal">(flat lay or worn)</span>
             </label>
             <div
-              className={`aspect-square rounded-2xl border border-dashed transition-all cursor-pointer flex flex-col items-center justify-center overflow-hidden bg-white/[0.02] ${
-                garmentPreview ? 'border-purple-500/50' : 'border-white/10 hover:border-white/30 hover:bg-white/[0.04]'
+              className={`aspect-square rounded-2xl border border-dashed transition-all cursor-pointer flex flex-col items-center justify-center overflow-hidden bg-gray-50 ${
+                garmentPreview ? 'border-purple-500/50' : 'border-gray-300 hover:border-gray-400 hover:bg-gray-100'
               }`}
               onClick={() => garmentInputRef.current?.click()}
               onDrop={handleDrop}
@@ -191,10 +191,10 @@ const TryOnModal: React.FC<TryOnModalProps> = ({ targetItem, onClose, onSave }) 
                   </div>
                 </div>
               ) : (
-                <div className="text-center text-zinc-500 p-6 flex flex-col items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-2xl">👕</div>
-                  <p className="text-sm font-medium text-zinc-300">Upload Garment Photo</p>
-                  <p className="text-xs text-zinc-600">Flat lay, hanger, or worn — PNG/JPG</p>
+                <div className="text-center text-gray-400 p-6 flex flex-col items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl">👕</div>
+                  <p className="text-sm font-medium text-gray-600">Upload Garment Photo</p>
+                  <p className="text-xs text-gray-400">Flat lay, hanger, or worn — PNG/JPG</p>
                 </div>
               )}
             </div>
@@ -203,25 +203,25 @@ const TryOnModal: React.FC<TryOnModalProps> = ({ targetItem, onClose, onSave }) 
 
           {/* Garment description */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">Garment Description</label>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Garment Description</label>
             <input
               type="text"
               value={garmentDesc}
               onChange={(e) => setGarmentDesc(e.target.value)}
               placeholder={category === 'upper_body' ? 'e.g. white oversized linen shirt' : category === 'lower_body' ? 'e.g. black slim-fit trousers' : 'e.g. floral midi dress with puff sleeves'}
-              className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 outline-none focus:border-white/20 transition-all"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300 transition-all"
             />
-            <p className="text-[10px] text-zinc-600">The model uses this to accurately place the garment on the person.</p>
+            <p className="text-[10px] text-gray-400">The model uses this to accurately place the garment on the person.</p>
           </div>
 
           {/* Actions */}
-          <div className="pt-2 border-t border-white/5 flex flex-col gap-3">
+          <div className="pt-2 border-t border-gray-200 flex flex-col gap-3">
             {result ? (
               <div className="flex gap-3">
                 <button
                   onClick={handleGenerate}
                   disabled={loading}
-                  className="flex-1 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl text-sm font-medium transition-all"
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700 rounded-xl text-sm font-medium transition-all"
                 >
                   Retry
                 </button>
@@ -236,12 +236,12 @@ const TryOnModal: React.FC<TryOnModalProps> = ({ targetItem, onClose, onSave }) 
               <button
                 onClick={handleGenerate}
                 disabled={loading || !garmentFile || !garmentDesc.trim()}
-                className="w-full py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:from-zinc-800 disabled:to-zinc-800 disabled:text-zinc-500 disabled:shadow-none text-white rounded-xl text-sm font-bold tracking-wide transition-all shadow-[0_0_20px_rgba(147,51,234,0.3)] active:scale-[0.98]"
+                className="w-full py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:from-gray-200 disabled:to-gray-200 disabled:text-gray-400 disabled:shadow-none text-white rounded-xl text-sm font-bold tracking-wide transition-all shadow-[0_0_20px_rgba(147,51,234,0.3)] active:scale-[0.98]"
               >
                 APPLY TRY-ON
               </button>
             )}
-            <p className="text-[10px] text-zinc-700 text-center">
+            <p className="text-[10px] text-gray-400 text-center">
               ⚠️ IDM-VTON is for non-commercial use only (CC BY-NC-SA 4.0)
             </p>
           </div>

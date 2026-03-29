@@ -146,24 +146,24 @@ OUTPUT: Return the complete photograph. Only the skin quality changes.`;
       </div>
 
       {/* ─── Right Inspector Panel ─── */}
-      <aside className="w-[420px] bg-zinc-950/95 backdrop-blur-3xl border-l border-white/5 flex flex-col shadow-2xl">
+      <aside className="w-[420px] bg-white/95 backdrop-blur-3xl border-l border-black/5 flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="p-6 pb-5 border-b border-white/5 shrink-0">
+        <div className="p-6 pb-5 border-b border-gray-200 shrink-0">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <span className="text-xl">✨</span>
-              <h2 className="text-lg font-bold text-white tracking-wide">Skin Enhancer</h2>
+              <h2 className="text-lg font-bold text-gray-900 tracking-wide">Skin Enhancer</h2>
             </div>
-            <span className="text-[10px] text-zinc-400 bg-white/5 px-2 py-1 rounded border border-white/10 uppercase tracking-widest">Inspector</span>
+            <span className="text-[10px] text-gray-500 bg-gray-100 px-2 py-1 rounded border border-gray-200 uppercase tracking-widest">Inspector</span>
           </div>
-          <p className="text-xs text-zinc-500 font-light">NB2 · Gemini Flash 2 · Portrait Retouching</p>
+          <p className="text-xs text-gray-400 font-light">NB2 · Gemini Flash 2 · Portrait Retouching</p>
         </div>
 
         <div className="overflow-y-auto flex-1 p-6 space-y-6 custom-scrollbar">
 
           {/* Intensity */}
           <div className="space-y-3">
-            <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
               Intensity
             </label>
             <div className="space-y-2">
@@ -173,16 +173,16 @@ OUTPUT: Return the complete photograph. Only the skin quality changes.`;
                   onClick={() => setIntensity(opt.value)}
                   className={`w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${
                     intensity === opt.value
-                      ? 'bg-white/8 border-zinc-400 text-white'
-                      : 'bg-zinc-900/60 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'
+                      ? 'bg-gray-100 border-gray-400 text-gray-900'
+                      : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700'
                   }`}
                 >
                   <div className={`w-3.5 h-3.5 rounded-full border-2 mt-0.5 flex-none transition-all ${
-                    intensity === opt.value ? 'border-white bg-white' : 'border-zinc-600'
+                    intensity === opt.value ? 'border-gray-900 bg-gray-900' : 'border-gray-300'
                   }`} />
                   <div>
                     <p className="text-[12px] font-semibold leading-none mb-1">{opt.label}</p>
-                    <p className="text-[11px] text-zinc-500 leading-relaxed">{opt.desc}</p>
+                    <p className="text-[11px] text-gray-400 leading-relaxed">{opt.desc}</p>
                   </div>
                 </button>
               ))}
@@ -191,17 +191,17 @@ OUTPUT: Return the complete photograph. Only the skin quality changes.`;
 
           {/* What changes */}
           <div className="space-y-2">
-            <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">What changes</p>
+            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">What changes</p>
             <div className="space-y-1.5">
               {['Skin texture & pores', 'Blemishes & redness', 'Skin tone evenness', 'Natural luminosity'].map(item => (
-                <div key={item} className="flex items-center gap-2 text-[11px] text-zinc-400">
+                <div key={item} className="flex items-center gap-2 text-[11px] text-gray-500">
                   <span className="text-emerald-500 text-[10px]">✓</span>{item}
                 </div>
               ))}
             </div>
-            <div className="mt-2 pt-2 border-t border-zinc-800/50 space-y-1.5">
+            <div className="mt-2 pt-2 border-t border-gray-200 space-y-1.5">
               {['Face structure & shape', 'Makeup & styling', 'Hair & clothing', 'Background & lighting'].map(item => (
-                <div key={item} className="flex items-center gap-2 text-[11px] text-zinc-600">
+                <div key={item} className="flex items-center gap-2 text-[11px] text-gray-400">
                   <span className="text-[10px]">🔒</span>{item}
                 </div>
               ))}
@@ -209,13 +209,13 @@ OUTPUT: Return the complete photograph. Only the skin quality changes.`;
           </div>
 
           {/* Actions */}
-          <div className="pt-4 border-t border-white/5 flex flex-col gap-3">
+          <div className="pt-4 border-t border-gray-200 flex flex-col gap-3">
             {result ? (
               <div className="flex gap-3">
                 <button
                   onClick={handleGenerate}
                   disabled={loading}
-                  className="flex-1 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl text-sm font-medium transition-all"
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700 rounded-xl text-sm font-medium transition-all"
                 >
                   Retry
                 </button>
@@ -230,7 +230,7 @@ OUTPUT: Return the complete photograph. Only the skin quality changes.`;
               <button
                 onClick={handleGenerate}
                 disabled={loading}
-                className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:from-zinc-800 disabled:to-zinc-800 disabled:text-zinc-500 disabled:shadow-none text-white rounded-xl text-sm font-bold tracking-wide transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-[0.98]"
+                className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:from-gray-200 disabled:to-gray-200 disabled:text-gray-400 disabled:shadow-none text-white rounded-xl text-sm font-bold tracking-wide transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-[0.98]"
               >
                 ENHANCE SKIN
               </button>

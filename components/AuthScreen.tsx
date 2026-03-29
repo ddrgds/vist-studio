@@ -121,29 +121,29 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
             <div className="mb-6">
               <button
                 onClick={() => switchMode('login')}
-                className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors mb-4"
+                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors mb-4"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6" /></svg>
                 Back to sign in
               </button>
-              <h2 className="text-lg font-semibold text-white">Reset password</h2>
-              <p className="text-xs text-zinc-500 mt-1">Enter your email and we'll send you a link.</p>
+              <h2 className="text-lg font-semibold text-gray-900">Reset password</h2>
+              <p className="text-xs text-gray-500 mt-1">Enter your email and we'll send you a link.</p>
             </div>
 
             {error && (
-              <div role="alert" className="mb-4 p-3 bg-red-900/20 border border-red-500/30 rounded-lg text-red-400 text-sm">
+              <div role="alert" className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
                 {error}
               </div>
             )}
             {successMessage && (
-              <div role="status" className="mb-4 p-3 bg-green-900/20 border border-green-500/30 rounded-lg text-green-400 text-sm">
+              <div role="status" className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-600 text-sm">
                 {successMessage}
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="auth-email-forgot" className="block text-xs font-medium text-zinc-400 mb-1.5">Email</label>
+                <label htmlFor="auth-email-forgot" className="block text-xs font-medium text-gray-500 mb-1.5">Email</label>
                 <input
                   id="auth-email-forgot"
                   type="email"
@@ -197,12 +197,12 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
 
             {/* Messages */}
             {error && (
-              <div role="alert" className="mb-4 p-3 bg-red-900/20 border border-red-500/30 rounded-lg text-red-400 text-sm">
+              <div role="alert" className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
                 {error}
               </div>
             )}
             {successMessage && (
-              <div role="status" className="mb-4 p-3 bg-green-900/20 border border-green-500/30 rounded-lg text-green-400 text-sm">
+              <div role="status" className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-600 text-sm">
                 {successMessage}
               </div>
             )}
@@ -210,7 +210,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="auth-email" className="block text-xs font-medium text-zinc-400 mb-1.5">
+                <label htmlFor="auth-email" className="block text-xs font-medium text-gray-500 mb-1.5">
                   Email
                 </label>
                 <input
@@ -226,7 +226,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
               </div>
 
               <div>
-                <label htmlFor="auth-password" className="block text-xs font-medium text-zinc-400 mb-1.5">
+                <label htmlFor="auth-password" className="block text-xs font-medium text-gray-500 mb-1.5">
                   Password
                 </label>
                 <div className="relative">
@@ -244,7 +244,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
                     type="button"
                     onClick={() => setShowPassword(v => !v)}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                   >
                     {showPassword ? (
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
@@ -261,7 +261,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
                   <button
                     type="button"
                     onClick={() => switchMode('forgot')}
-                    className="text-xs text-zinc-500 hover:text-pink-400 transition-colors"
+                    className="text-xs text-gray-500 hover:text-pink-500 transition-colors"
                   >
                     Forgot your password?
                   </button>
@@ -292,7 +292,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
                 <button
                   type="button"
                   onClick={(e) => { e.preventDefault(); onAuthenticated?.(); onClose?.(); }}
-                  className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 font-medium text-xs rounded-lg transition-colors border border-zinc-700 mt-2"
+                  className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-500 font-medium text-xs rounded-lg transition-colors border border-gray-200 mt-2"
                 >
                   [DEV] Skip Login
                 </button>
@@ -323,11 +323,11 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
 
   // Standalone page mode
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-950 p-4">
-      <div className="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-2xl">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
+      <div className="w-full max-w-sm bg-white border border-gray-200 rounded-2xl p-8 shadow-2xl">
         {formContent}
       </div>
-      <p className="mt-6 text-xs text-zinc-600 text-center">
+      <p className="mt-6 text-xs text-gray-400 text-center">
         Your images and presets are securely saved in the cloud.
       </p>
     </div>
