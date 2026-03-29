@@ -42,16 +42,30 @@ const tools = [
 
 // Relight presets — each has a light position on the sphere (azimuth/elevation in degrees) + color
 const relightPresets = [
-  { n:'Golden Hour',  c:'#f0b860', az: -60, el: 15,  prompt:'golden hour at 15 minutes before sunset, warm 3200K color temperature, long shadows at 15° elevation, Fresnel rim highlights on hair and shoulders, atmospheric haze diffusion, warm fill from ground bounce' },
-  { n:'Blue Hour',    c:'#6ba3d9', az: 0,   el: 30,  prompt:'civil twilight blue hour, cool 7500K ambient, no direct sun, diffused omnidirectional quality, deep blue sky reflecting on upward surfaces, warm artificial lights becoming prominent, contemplative mood' },
-  { n:'Studio',       c:'#e8e4dc', az: 0,   el: 45,  prompt:'professional beauty dish key light 45° camera-left, V-flat fill, 5500K neutral, hair light from above-behind with 10° grid, 3:1 ratio, catchlights at 10 o\'clock position' },
-  { n:'Neon Coral',   c:'#e8725c', az: 90,  el: 0,   prompt:'neon sign illumination in warm coral, hard colored light from right creating vivid color cast on skin, deep complementary teal shadows, wet surface reflections, urban night atmosphere' },
-  { n:'Dramatic',     c:'#d4603e', az: -45, el: 60,  prompt:'single hard key at 60° camera-left, Chiaroscuro lighting, 8:1 contrast ratio, minimal fill allowing true black shadows, Rembrandt triangle on shadow cheek, theatrical intensity' },
-  { n:'Moonlight',    c:'#9a90c4', az: 30,  el: 70,  prompt:'full moonlight at 4100K with blue-silver cast, very soft diffused quality, low intensity, gentle shadows with no hard edges, nocturnal atmosphere, cool silver tone on all surfaces' },
-  { n:'Sunset',       c:'#d9826a', az: -90, el: 10,  prompt:'late sunset warm amber-gold directional light at 10° elevation, extreme warm 2800K, long dramatic shadows, golden halo rim on hair, sky gradient peach to violet, nostalgic warmth' },
-  { n:'Cool White',   c:'#b8c9d9', az: 0,   el: 50,  prompt:'overcast daylight at 6500K, perfectly diffused shadowless illumination, neutral color rendering, even exposure across subject, clinical clean quality, fashion lookbook lighting' },
-  { n:'Ring Light',   c:'#f0e8e0', az: 0,   el: 0,   prompt:'LED ring light on camera axis creating circular catchlights in both eyes, flat front-fill with minimal shadow, beauty-influencer aesthetic, even face illumination, warm 4500K' },
-  { n:'Rembrandt',    c:'#c8a060', az: -40, el: 35,  prompt:'classic Rembrandt pattern, key 45° high creating illuminated triangle on shadow-side cheek below eye, nose shadow connecting to cheek shadow, painterly classical quality, 4:1 ratio' },
+  { n:'Golden Hour',  c:'#f0b860', prompt:'golden hour warm sunset lighting, warm 3200K, long soft shadows, golden rim highlights on hair and shoulders' },
+  { n:'Blue Hour',    c:'#6ba3d9', prompt:'blue hour twilight, cool 7500K ambient, no direct sun, diffused soft quality, contemplative mood' },
+  { n:'Studio',       c:'#e8e4dc', prompt:'professional studio lighting, beauty dish key, neutral 5500K, clean even illumination, fashion photography' },
+  { n:'Neon',         c:'#e8725c', prompt:'neon colored lighting, vivid color cast on skin, complementary shadows, urban night atmosphere' },
+  { n:'Dramatic',     c:'#d4603e', prompt:'dramatic chiaroscuro lighting, high contrast, deep shadows, single hard key light, theatrical intensity' },
+  { n:'Moonlight',    c:'#9a90c4', prompt:'soft moonlight, blue-silver cast, gentle shadows, nocturnal atmosphere, low intensity' },
+  { n:'Sunset',       c:'#d9826a', prompt:'late sunset amber-gold directional light, extreme warm 2800K, long dramatic shadows, golden halo on hair' },
+  { n:'Overcast',     c:'#b8c9d9', prompt:'overcast daylight, perfectly diffused shadowless illumination, neutral color, even exposure, clean quality' },
+  { n:'Ring Light',   c:'#f0e8e0', prompt:'ring light on camera axis, circular catchlights in eyes, flat front-fill, beauty-influencer aesthetic' },
+  { n:'Rembrandt',    c:'#c8a060', prompt:'classic Rembrandt lighting pattern, key light from 45° creating triangle on shadow cheek, painterly quality' },
+]
+
+const relightDirections = [
+  { id: 'left',   label: '← Izquierda', prompt: 'Light source from the left side' },
+  { id: 'front',  label: '↑ Frontal',   prompt: 'Light source from the front, facing the subject' },
+  { id: 'right',  label: 'Derecha →',   prompt: 'Light source from the right side' },
+  { id: 'above',  label: '↓ Arriba',    prompt: 'Light source from directly above' },
+  { id: 'behind', label: '↻ Contraluz', prompt: 'Backlight from behind the subject, rim lighting on edges' },
+]
+
+const relightIntensities = [
+  { id: 'subtle',   label: 'Sutil',     prompt: 'Apply the lighting change subtly, as a gentle shift in mood' },
+  { id: 'normal',   label: 'Normal',    prompt: 'Apply a clear, natural lighting change' },
+  { id: 'dramatic', label: 'Dramático', prompt: 'Apply an extreme, highly dramatic lighting change with strong contrast' },
 ]
 
 const angleViews = ['Front','Right 45°','Right 90°','Back Right','Back','Back Left','Left 90°','Left 45°']
@@ -175,10 +189,8 @@ const routeEdit = async (
 export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
   const [activeTool, setActiveTool] = useState('freeai')
   const [selPreset, setSelPreset] = useState(0)
-  const [relightAz, setRelightAz] = useState(relightPresets[0].az)
-  const [relightEl, setRelightEl] = useState(relightPresets[0].el)
-  const relightSphereRef = useRef<HTMLDivElement>(null)
-  const relightDragRef = useRef(false)
+  const [relightDir, setRelightDir] = useState('front')
+  const [relightIntensity, setRelightIntensity] = useState('normal')
   const [sel360, setSel360] = useState(0)
   const [selStyle, setSelStyle] = useState(0)
   const [selBg, setSelBg] = useState(0)
@@ -395,9 +407,10 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         resultUrls = await routeEdit(selectedEngine, inputFile, freePrompt.trim(), (p) => setProgress(p))
       } else if (activeTool === 'relight') {
         const preset = relightPresets[selPreset]
-        const dirHint = `Light source at azimuth ${relightAz}° (${relightAz < -45 ? 'left' : relightAz > 45 ? 'right' : 'front'}), elevation ${relightEl}° (${relightEl > 50 ? 'above' : relightEl < -10 ? 'below' : 'eye-level'}).`
-        const instruction = `Change ONLY the lighting to: ${preset.prompt}. ${dirHint} Keep the subject, outfit, pose, background, and scene completely identical — only lighting, shadows, and color temperature may change.`
-        resultUrls = await routeEdit(selectedEngine, inputFile, instruction, (p) => setProgress(p))
+        const dir = relightDirections.find(d => d.id === relightDir) || relightDirections[1]
+        const intensity = relightIntensities.find(i => i.id === relightIntensity) || relightIntensities[1]
+        const instruction = `Change ONLY the lighting to: ${preset.prompt}. ${dir.prompt}. ${intensity.prompt}. Keep the subject, outfit, pose, background, and scene completely identical — only lighting, shadows, and color temperature may change.`
+        resultUrls = await routeEdit('auto', inputFile, instruction, (p) => setProgress(p))
       } else if (activeTool === 'rotate360') {
         const view = angleViews[sel360]
         const envHints: Record<string, string> = {
@@ -611,7 +624,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           </h2>
           <div className="ml-auto relative">
             {(() => {
-              if (activeTool === 'reimagine') return null // Soul 2.0 fixed engine
+              if (activeTool === 'reimagine' || activeTool === 'relight') return null // fixed engine tools
               const fk = TOOL_TO_FEATURE[activeTool]
               const fd = fk ? FEATURE_ENGINES[fk] : null
               const hasMultiple = fd ? fd.keys.length > 1 : true
@@ -822,83 +835,12 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           </>}
 
           {activeTool === 'relight' && <>
-            {/* Light sphere visualization — draggable */}
-            <div>
-              <div className="joi-label mb-3">Posición de Luz <span className="text-[9px] font-normal" style={{ color: 'var(--joi-text-3)' }}>arrastra para mover</span></div>
-              <div
-                ref={relightSphereRef}
-                className="relative w-44 h-44 mx-auto mb-3 cursor-crosshair touch-none select-none"
-                onPointerDown={(e) => {
-                  relightDragRef.current = true
-                  ;(e.target as HTMLElement).setPointerCapture?.(e.pointerId)
-                  const rect = relightSphereRef.current?.getBoundingClientRect()
-                  if (!rect) return
-                  const nx = ((e.clientX - rect.left) / rect.width - 0.5) / 0.38
-                  const ny = (0.5 - (e.clientY - rect.top) / rect.height) / 0.38
-                  const clamp = (v: number) => Math.max(-1, Math.min(1, v))
-                  setRelightAz(Math.round(Math.asin(clamp(nx)) * 180 / Math.PI))
-                  setRelightEl(Math.round(Math.asin(clamp(ny)) * 180 / Math.PI))
-                }}
-                onPointerMove={(e) => {
-                  if (!relightDragRef.current) return
-                  const rect = relightSphereRef.current?.getBoundingClientRect()
-                  if (!rect) return
-                  const nx = ((e.clientX - rect.left) / rect.width - 0.5) / 0.38
-                  const ny = (0.5 - (e.clientY - rect.top) / rect.height) / 0.38
-                  const clamp = (v: number) => Math.max(-1, Math.min(1, v))
-                  setRelightAz(Math.round(Math.asin(clamp(nx)) * 180 / Math.PI))
-                  setRelightEl(Math.round(Math.asin(clamp(ny)) * 180 / Math.PI))
-                }}
-                onPointerUp={() => { relightDragRef.current = false }}
-                onPointerLeave={() => { relightDragRef.current = false }}
-              >
-                {/* Sphere background */}
-                <div className="absolute inset-0 rounded-full pointer-events-none" style={{
-                  background: 'radial-gradient(circle at 40% 35%, var(--joi-bg-3) 0%, var(--joi-bg-2) 70%, var(--joi-bg-1) 100%)',
-                  border: '1px solid rgba(255,255,255,.04)',
-                }} />
-                {/* Cross guides */}
-                <div className="absolute left-1/2 top-2 bottom-2 w-px pointer-events-none" style={{ background:'rgba(255,255,255,.04)' }} />
-                <div className="absolute top-1/2 left-2 right-2 h-px pointer-events-none" style={{ background:'rgba(255,255,255,.04)' }} />
-                {/* Ellipse equator */}
-                <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 h-[60%] rounded-[50%] pointer-events-none" style={{ border:'1px solid rgba(255,255,255,.04)' }} />
-
-                {/* Light position dot — from custom az/el */}
-                {(() => {
-                  const p = relightPresets[selPreset]
-                  const azRad = (relightAz * Math.PI) / 180
-                  const elRad = (relightEl * Math.PI) / 180
-                  const x = 50 + Math.sin(azRad) * Math.cos(elRad) * 38
-                  const y = 50 - Math.sin(elRad) * 38
-                  return (
-                    <div className="absolute w-5 h-5 rounded-full pointer-events-none"
-                      style={{
-                        left: `${x}%`, top: `${y}%`, transform: 'translate(-50%,-50%)',
-                        background: p.c,
-                        boxShadow: `0 0 20px ${p.c}80, 0 0 40px ${p.c}30`,
-                        transition: relightDragRef.current ? 'none' : 'all 0.5s',
-                      }} />
-                  )
-                })()}
-
-                {/* Center face icon */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <span className="text-lg opacity-30">{'\uD83D\uDDE3\uFE0F'}</span>
-                </div>
-              </div>
-              {/* Readout */}
-              <div className="flex justify-center gap-4 text-[9px] font-mono" style={{ color: 'var(--joi-text-3)' }}>
-                <span>AZ <span style={{ color: 'var(--joi-text-2)' }}>{relightAz > 0 ? '+' : ''}{relightAz}°</span></span>
-                <span>EL <span style={{ color: 'var(--joi-text-2)' }}>{relightEl}°</span></span>
-              </div>
-            </div>
-
             {/* Preset grid */}
             <div>
-              <div className="joi-label mb-2">Presets de Iluminación</div>
+              <div className="joi-label mb-2">Tipo de Iluminación</div>
               <div className="grid grid-cols-2 gap-1.5">
                 {relightPresets.map((p, i) => (
-                  <button key={p.n} onClick={() => { setSelPreset(i); setRelightAz(p.az); setRelightEl(p.el) }}
+                  <button key={p.n} onClick={() => setSelPreset(i)}
                     className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-all"
                     style={{
                       background: selPreset === i ? `${p.c}12` : 'var(--joi-bg-3)',
@@ -907,6 +849,38 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                     <div className="w-3.5 h-3.5 rounded-full shrink-0" style={{ background: p.c, boxShadow: `0 0 8px ${p.c}50` }} />
                     <span className="text-[10px]" style={{ color: selPreset === i ? p.c : 'var(--joi-text-2)' }}>{p.n}</span>
                   </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Light direction */}
+            <div>
+              <div className="joi-label mb-2">Dirección</div>
+              <div className="flex flex-wrap gap-1.5">
+                {relightDirections.map(d => (
+                  <button key={d.id} onClick={() => setRelightDir(d.id)}
+                    className="px-3 py-1.5 rounded-lg text-[10px] transition-all"
+                    style={{
+                      background: relightDir === d.id ? 'var(--joi-pink-soft)' : 'var(--joi-bg-3)',
+                      border: `1px solid ${relightDir === d.id ? 'var(--joi-border-h)' : 'rgba(255,255,255,.04)'}`,
+                      color: relightDir === d.id ? 'var(--joi-pink)' : 'var(--joi-text-2)',
+                    }}>{d.label}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Intensity */}
+            <div>
+              <div className="joi-label mb-2">Intensidad</div>
+              <div className="flex gap-1.5">
+                {relightIntensities.map(i => (
+                  <button key={i.id} onClick={() => setRelightIntensity(i.id)}
+                    className="flex-1 px-3 py-1.5 rounded-lg text-[10px] text-center transition-all"
+                    style={{
+                      background: relightIntensity === i.id ? 'var(--joi-pink-soft)' : 'var(--joi-bg-3)',
+                      border: `1px solid ${relightIntensity === i.id ? 'var(--joi-border-h)' : 'rgba(255,255,255,.04)'}`,
+                      color: relightIntensity === i.id ? 'var(--joi-pink)' : 'var(--joi-text-2)',
+                    }}>{i.label}</button>
                 ))}
               </div>
             </div>

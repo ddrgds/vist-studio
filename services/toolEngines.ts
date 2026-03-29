@@ -35,7 +35,7 @@ export interface ToolResult {
 // ─── Default engine per tool (from A/B testing) ──
 
 export const TOOL_ENGINE_DEFAULTS: Record<ToolId, EngineId> = {
-  'relight': 'grok',          // Precise lighting adjustments
+  'relight': 'nb2',            // NB2 best for precise lighting, fallback seedream
   'scene': 'kontext',         // Kontext designed for background swap while preserving subject
   'outfit': 'seedream',       // Multi-ref changes clothes without altering face
   'face-swap': 'seedream',    // Multi-ref = more face context
@@ -268,7 +268,7 @@ async function runEngine(engine: EngineId, imageUrl: string, prompt: string): Pr
 // Fallback triggers: HTTP 5xx, content policy rejection, or timeout >30s.
 // Failed attempts do NOT charge credits. Chain: Grok -> NB Pro -> Pruna.
 
-const EDIT_FALLBACK_CHAIN: EngineId[] = ['seedream', 'grok', 'nb-pro', 'pruna'];
+const EDIT_FALLBACK_CHAIN: EngineId[] = ['nb2', 'seedream', 'grok', 'nb-pro', 'pruna'];
 
 /** 30-second timeout wrapper -- works with any async function */
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -295,6 +295,7 @@ export async function runEditWithFallback(
     try {
       let engineCall: Promise<string>;
       switch (engine) {
+        case 'nb2': engineCall = nb2Edit(imageUrl, getEnginePrompt(engine)); break;
         case 'seedream': engineCall = seedreamEdit(imageUrl, getEnginePrompt(engine)); break;
         case 'grok': engineCall = grokEdit(imageUrl, getEnginePrompt(engine)); break;
         case 'nb-pro': engineCall = nbProEdit(imageUrl, getEnginePrompt(engine)); break;
