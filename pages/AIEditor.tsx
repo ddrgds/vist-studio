@@ -1455,21 +1455,21 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           <div className="flex gap-1 rounded-xl overflow-hidden" style={{ border:'1px solid rgba(255,255,255,.06)' }}>
             <div className="relative" style={{ transform: `scale(${canvasZoom}) translate(${canvasPan.x / canvasZoom}px, ${canvasPan.y / canvasZoom}px)`, transition: isPanning ? 'none' : 'transform 0.15s ease' }}>
               <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[9px] font-mono z-10" style={{ background:'rgba(0,0,0,.6)', color:'var(--joi-text-2)' }}>ANTES</div>
-              <img src={inputImage} className="max-h-[70vh] object-contain select-none" draggable={false} alt="Before" />
+              <img src={inputImage} className="max-h-[65vh] max-w-[45vw] object-contain select-none" draggable={false} alt="Before" />
             </div>
             <div className="w-px shrink-0" style={{ background:'var(--joi-pink)' }} />
             <div className="relative" style={{ transform: `scale(${canvasZoom}) translate(${canvasPan.x / canvasZoom}px, ${canvasPan.y / canvasZoom}px)`, transition: isPanning ? 'none' : 'transform 0.15s ease' }}>
               <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[9px] font-mono z-10" style={{ background:'rgba(99,102,241,.3)', color:'white' }}>DESPUÉS</div>
-              <img src={resultImage} className="max-h-[70vh] object-contain select-none" draggable={false} alt="After" />
+              <img src={resultImage} className="max-h-[65vh] max-w-[45vw] object-contain select-none" draggable={false} alt="After" />
             </div>
           </div>
           ) : (
           <>
           <div className="text-center" style={{ transform: `scale(${canvasZoom}) translate(${canvasPan.x / canvasZoom}px, ${canvasPan.y / canvasZoom}px)`, transition: isPanning ? 'none' : 'transform 0.15s ease' }}>
             <div className="joi-label mb-2">Original</div>
-            <div className="w-[min(340px,_90vw)] h-[min(420px,_60vh)] rounded-xl flex items-center justify-center overflow-hidden joi-glass"
-              style={{ border:'1px solid rgba(255,255,255,.04)' }}>
-              <img src={inputImage} className="w-full h-full object-cover rounded-xl select-none" draggable={false} alt="Original" />
+            <div className="w-[min(420px,_45vw)] h-[min(520px,_65vh)] rounded-xl flex items-center justify-center overflow-hidden"
+              style={{ background: 'var(--joi-bg-2)', border:'1px solid rgba(255,255,255,.04)' }}>
+              <img src={inputImage} className="w-full h-full object-contain rounded-xl select-none" draggable={false} alt="Original" />
             </div>
           </div>
 
@@ -1477,10 +1477,12 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
 
           <div className="text-center" style={{ transform: `scale(${canvasZoom}) translate(${canvasPan.x / canvasZoom}px, ${canvasPan.y / canvasZoom}px)`, transition: isPanning ? 'none' : 'transform 0.15s ease' }}>
             <div className="joi-label mb-2" style={{ color:'var(--joi-pink)' }}>Resultado AI</div>
-            <div className="w-[min(340px,_90vw)] h-[min(420px,_60vh)] rounded-xl flex items-center justify-center overflow-hidden joi-glass joi-border-glow"
-              style={{ border:'1px solid rgba(255,255,255,.04)', boxShadow:'0 0 30px rgba(99,102,241,.06)' }}>
+            <div className="w-[min(420px,_45vw)] h-[min(520px,_65vh)] rounded-xl flex items-center justify-center overflow-hidden"
+              style={{ background: 'var(--joi-bg-2)', border:'1px solid rgba(255,255,255,.04)', boxShadow:'0 0 30px rgba(99,102,241,.06)' }}>
               {resultImage ? (
-                <img src={resultImage} className="w-full h-full object-cover rounded-xl select-none" draggable={false} alt="Result" />
+                <>
+                  <img src={resultImage} className="w-full h-full object-contain rounded-xl select-none" draggable={false} alt="Result" />
+                </>
               ) : (
                 <div className="text-center">
                   <span className="text-2xl block mb-2 joi-breathe">{'\u2726'}</span>
@@ -1488,6 +1490,13 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                 </div>
               )}
             </div>
+            {resultImage && (
+              <button onClick={() => { setInputImage(resultImage); setResultImage(null); setInputFile(null); toast.success('Resultado cargado como nueva base') }}
+                className="mt-2 px-4 py-2 rounded-lg text-[11px] font-medium transition-all"
+                style={{ background: 'var(--joi-pink-soft)', color: 'var(--joi-pink)', border: '1px solid var(--joi-border-h)' }}>
+                Seguir editando este resultado →
+              </button>
+            )}
           </div>
           </>
           )
@@ -1498,8 +1507,10 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           <span className="text-[9px] font-mono shrink-0 mr-1" style={{ color:'var(--joi-text-3)' }}>HISTORIAL</span>
           {editHistory.slice(0, 10).map((url, i) => (
             <div key={i} onClick={() => { setResultImage(url) }}
+              onDoubleClick={() => { setInputImage(url); setResultImage(null); setInputFile(null); toast.success('Cargado como nueva base') }}
               className="w-12 h-12 rounded-lg shrink-0 cursor-pointer hover:scale-105 transition-transform overflow-hidden"
-              style={{ border:'1px solid rgba(255,255,255,.04)' }}>
+              title="Clic: ver · Doble clic: usar como base"
+              style={{ border: resultImage === url ? '2px solid var(--joi-pink)' : '1px solid rgba(255,255,255,.04)' }}>
               <img src={url} className="w-full h-full object-cover" alt="" />
             </div>
           ))}
