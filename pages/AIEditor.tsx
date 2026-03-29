@@ -475,24 +475,34 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         const instruction = `${skinInstruction} Do not alter the face shape, features, expression, hair, outfit, pose, or background.`
         resultUrls = await routeEdit(selectedEngine, inputFile, instruction, (p) => setProgress(p))
       } else if (activeTool === 'faceswap' && faceSwapFile) {
-        // Fixed NB2 with fallback to Seedream (multi-image)
+        // NB2 → Seedream → Grok (all support multi-image for face reference)
+        const faceInstruction = `Replace the face of the person in the base image with the face from the reference image. Keep hair, body, pose, clothing, and background exactly the same. Only change facial features.`
         try {
           const dataUrl = await faceSwapWithGemini(inputFile, faceSwapFile, (p) => setProgress(p))
           resultUrls = [dataUrl]
         } catch (nb2Err) {
-          console.warn('NB2 face swap failed, trying Seedream with reference:', nb2Err)
-          const instruction = `Replace the face of the person in the base image with the face from the reference image. Keep hair, body, pose, clothing, and background exactly the same. Only change facial features.`
-          resultUrls = await editImageWithSeedream5(inputFile, instruction, [faceSwapFile], (p) => setProgress(p))
+          console.warn('NB2 face swap failed, trying Seedream:', nb2Err)
+          try {
+            resultUrls = await editImageWithSeedream5(inputFile, faceInstruction, [faceSwapFile], (p) => setProgress(p))
+          } catch (sdErr) {
+            console.warn('Seedream face swap failed, trying Grok:', sdErr)
+            resultUrls = await editImageWithGrokFal(inputFile, faceInstruction, (p) => setProgress(p), undefined, [faceSwapFile], true)
+          }
         }
       } else if (activeTool === 'tryon' && garmentFile) {
-        // Fixed NB2 with fallback to Seedream (multi-image, passes garment reference)
-        const instruction = `VIRTUAL TRY-ON: Replace ONLY the clothing on this person with the garment from the reference image. Keep the person's face, hair, skin, body, pose, and background 100% unchanged. Reproduce every fabric detail, pattern, color, and texture from the reference garment exactly.`
+        // NB2 → Seedream → Grok (all support multi-image for garment reference)
+        const tryonInstruction = `VIRTUAL TRY-ON: Replace ONLY the clothing on this person with the garment from the reference image. Keep the person's face, hair, skin, body, pose, and background 100% unchanged. Reproduce every fabric detail, pattern, color, and texture from the reference garment exactly.`
         try {
-          const results = await editImageWithAI({ baseImage: inputFile, referenceImage: garmentFile, instruction })
+          const results = await editImageWithAI({ baseImage: inputFile, referenceImage: garmentFile, instruction: tryonInstruction })
           resultUrls = results
         } catch (nb2Err) {
-          console.warn('NB2 try-on failed, trying Seedream with garment reference:', nb2Err)
-          resultUrls = await editImageWithSeedream5(inputFile, instruction, [garmentFile], (p) => setProgress(p))
+          console.warn('NB2 try-on failed, trying Seedream:', nb2Err)
+          try {
+            resultUrls = await editImageWithSeedream5(inputFile, tryonInstruction, [garmentFile], (p) => setProgress(p))
+          } catch (sdErr) {
+            console.warn('Seedream try-on failed, trying Grok:', sdErr)
+            resultUrls = await editImageWithGrokFal(inputFile, tryonInstruction, (p) => setProgress(p), undefined, [garmentFile], true)
+          }
         }
       } else if (activeTool === 'expand') {
         const { expandWithBria } = await import('../services/replicateService')
