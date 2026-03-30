@@ -11,6 +11,7 @@ import { editWithSoulReference } from '../services/higgsfieldService'
 import { editWithPruna } from '../services/replicateService'
 import { ENGINE_METADATA, FEATURE_ENGINES, AIProvider, AspectRatio, CREDIT_COSTS } from '../types'
 import { runEditWithFallback, generateCharacterSheet, enhanceSheetWithGrok, type SheetType } from '../services/toolEngines'
+import { SOUL_STYLES, SOUL_STYLE_CATEGORIES, type SoulStyleCategory } from '../data/soulStyles'
 import { useNavigationStore } from '../stores/navigationStore'
 import { usePipelineStore } from '../stores/pipelineStore'
 import { PipelineCTA } from '../components/PipelineCTA'
@@ -25,7 +26,7 @@ const ImageEditor = lazy(() => import('../components/ImageEditor'))
 const tools = [
   // Primary tools (visible by default)
   { id:'freeai', label:'AI Edit', icon:'\u2728', desc:'Edita con cualquier instrucción en lenguaje natural' },
-  // reimagine removed — redundant with freeai (NB2) which is more reliable than Soul 2.0
+  { id:'reimagine', label:'Reimaginar', icon:'\u2726', desc:'Crea una foto nueva con 100+ estilos' },
   { id:'relight', label:'Reiluminar', icon:'\uD83D\uDCA1', desc:'Cambia la iluminación de cualquier foto' },
   { id:'faceswap', label:'Cambio de Rostro', icon:'\uD83C\uDFAD', desc:'Intercambia rostros entre imágenes' },
   { id:'tryon', label:'Try-On Virtual', icon:'\uD83D\uDC57', desc:'Prueba ropa y accesorios' },
@@ -201,7 +202,9 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
   const [selBg, setSelBg] = useState(0)
   const [bgMode, setBgMode] = useState<'Preset'|'Upload'|'Prompt'>('Preset')
   const [freePrompt, setFreePrompt] = useState('')
-  const [reimaginePrompt, setReimaginePrompt] = useState('')
+  const [reimagineStyleId, setReimagineStyleId] = useState<string | null>(null)
+  const [reimagineCategory, setReimagineCategory] = useState<SoulStyleCategory | 'all'>('all')
+  const [reimagineCustom, setReimagineCustom] = useState('')
 
   // Composite / Scene tool state
   const [sceneImage, setSceneImage] = useState<string | null>(null)
@@ -259,7 +262,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
 
   // Visible cost for the Apply button (shared with handleApply logic)
   const displayCost = useMemo(() => {
-    // reimagine removed
+    if (activeTool === 'reimagine') return 8
     const eng = selectedEngine !== 'auto' ? ENGINE_METADATA.find(e => e.key === selectedEngine) : null
     if (eng) return eng.creditCost
     return activeTool === 'rotate360' ? 10 : 8
@@ -368,7 +371,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
     }
 
     // Reimagine needs a prompt
-    if (false) { // reimagine removed
+    if (activeTool === 'reimagine' && !reimagineStyleId && !reimagineCustom.trim()) {
       return
     }
 
@@ -526,6 +529,12 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
       } else if (activeTool === 'rembg') {
         const bgRemovedUrl = await removeBackground(inputImage, (p) => setProgress(p))
         resultUrls = [bgRemovedUrl]
+      } else if (activeTool === 'reimagine') {
+        const selectedStyle = SOUL_STYLES.find(s => s.id === reimagineStyleId)
+        const direction = reimagineCustom.trim() || (selectedStyle ? selectedStyle.name : 'editorial fashion')
+        const instruction = `Reimagine this person in a completely new photo with ${direction} aesthetic. Create a NEW composition — new pose, new lighting, new environment matching the style. The person's face and identity must remain recognizable but everything else changes to match the ${direction} direction.`
+        const result = await runEditWithFallback(inputImage!, instruction, 'nb2', 'ai-edit')
+        resultUrls = [result.url]
       }
 
       const validUrls = resultUrls.filter(Boolean)
@@ -655,7 +664,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           </h2>
           <div className="ml-auto relative">
             {(() => {
-              if (['relight','rotate360','faceswap','tryon','composite','style','freeai'].includes(activeTool)) return null // fixed engine tools
+              if (['reimagine','relight','rotate360','faceswap','tryon','composite','style','freeai'].includes(activeTool)) return null // fixed engine tools
               const fk = TOOL_TO_FEATURE[activeTool]
               const fd = fk ? FEATURE_ENGINES[fk] : null
               const hasMultiple = fd ? fd.keys.length > 1 : true
@@ -854,6 +863,53 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                   className="px-2.5 py-1 rounded-lg text-[9px] transition-all"
                   style={{ background: freePrompt === q ? 'rgba(99,102,241,.08)' : 'var(--joi-bg-3)', border: `1px solid ${freePrompt === q ? 'rgba(99,102,241,.2)' : 'rgba(255,255,255,.04)'}`, color: freePrompt === q ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>{q}</button>
               ))}
+            </div>
+          </>}
+
+          {activeTool === 'reimagine' && <>
+            {/* Category filter */}
+            <div>
+              <div className="joi-label mb-2">Categoría</div>
+              <div className="flex gap-1 flex-wrap">
+                <button onClick={() => setReimagineCategory('all')}
+                  className="px-2.5 py-1 rounded-lg text-[9px] transition-all"
+                  style={{ background: reimagineCategory === 'all' ? 'var(--joi-pink-soft)' : 'var(--joi-bg-3)', border: `1px solid ${reimagineCategory === 'all' ? 'var(--joi-border-h)' : 'rgba(255,255,255,.04)'}`, color: reimagineCategory === 'all' ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>Todos</button>
+                {(Object.entries(SOUL_STYLE_CATEGORIES) as [SoulStyleCategory, { label: string; icon: string }][]).map(([key, cat]) => (
+                  <button key={key} onClick={() => setReimagineCategory(key)}
+                    className="px-2.5 py-1 rounded-lg text-[9px] transition-all"
+                    style={{ background: reimagineCategory === key ? 'var(--joi-pink-soft)' : 'var(--joi-bg-3)', border: `1px solid ${reimagineCategory === key ? 'var(--joi-border-h)' : 'rgba(255,255,255,.04)'}`, color: reimagineCategory === key ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>{cat.icon} {cat.label}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Style grid */}
+            <div>
+              <div className="joi-label mb-2">Estilo ({SOUL_STYLES.filter(s => reimagineCategory === 'all' || s.category === reimagineCategory).length})</div>
+              <div className="grid grid-cols-2 gap-1 max-h-[280px] overflow-y-auto joi-scroll">
+                {SOUL_STYLES.filter(s => reimagineCategory === 'all' || s.category === reimagineCategory).map(style => (
+                  <button key={style.id} onClick={() => { setReimagineStyleId(reimagineStyleId === style.id ? null : style.id); setReimagineCustom('') }}
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-all"
+                    style={{
+                      background: reimagineStyleId === style.id ? 'var(--joi-pink-soft)' : 'var(--joi-bg-3)',
+                      border: `1px solid ${reimagineStyleId === style.id ? 'var(--joi-border-h)' : 'rgba(255,255,255,.04)'}`,
+                      color: reimagineStyleId === style.id ? 'var(--joi-pink)' : 'var(--joi-text-2)',
+                    }}>
+                    <span className="text-sm">{style.icon}</span>
+                    <span className="text-[10px] truncate">{style.name}</span>
+                    {style.featured && <span className="text-[7px] ml-auto" style={{ color: 'var(--joi-pink)' }}>★</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom prompt */}
+            <div>
+              <div className="joi-label mb-1.5">O describe tu dirección</div>
+              <textarea rows={2} value={reimagineCustom}
+                onChange={e => { setReimagineCustom(e.target.value); if (e.target.value.trim()) setReimagineStyleId(null) }}
+                placeholder="Ej.: editorial de moda en París, sunset dreamy vibes..."
+                className="w-full px-3 py-2 rounded-xl text-[11px] border outline-none resize-none"
+                style={{ background:'var(--joi-bg-2)', borderColor:'rgba(255,255,255,.04)', color:'var(--joi-text-1)' }} />
             </div>
           </>}
 
