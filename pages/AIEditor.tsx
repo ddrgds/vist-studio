@@ -307,6 +307,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
     if (pendingTarget === 'editor' && pendingImage) {
       setInputImage(pendingImage)
       setResultImage(null)
+      detectAndSetCharacter(pendingImage)
       urlToFile(pendingImage, 'from-gallery.png')
         .then(file => setInputFile(file))
         .catch(() => setInputFile(null))
@@ -318,6 +319,13 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
   const pipelineHeroUrl = usePipelineStore(s => s.heroShotUrl)
   const pipelineCharId = usePipelineStore(s => s.characterId)
   const pipelineSetEditedHero = usePipelineStore(s => s.setEditedHero)
+  const pipelineSetCharacter = usePipelineStore(s => s.setCharacter)
+
+  // Auto-detect character from image URL — when loading a gallery image, check if it belongs to a character
+  const detectAndSetCharacter = (imageUrl: string) => {
+    const item = galleryItems.find(i => i.url === imageUrl && i.characterId)
+    if (item?.characterId) pipelineSetCharacter(item.characterId)
+  }
 
   // Get character reference files for identity preservation
   const getCharRefFiles = async (): Promise<File[]> => {
@@ -856,6 +864,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                   {galleryItems.filter(i => i.characterId === editorCharFilter && i.url).slice(0, 12).map(item => (
                     <button key={item.id} onClick={async () => {
                       setInputImage(item.url); setResultImage(null)
+                      if (editorCharFilter) pipelineSetCharacter(editorCharFilter)
                       try { setInputFile(await urlToFile(item.url, 'gallery.png')) } catch { setInputFile(null) }
                     }}
                       className="aspect-square rounded-lg overflow-hidden transition-all hover:opacity-80"
@@ -875,6 +884,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
               {galleryItems.filter(i => i.url && !editorCharFilter).slice(0, 9).map(item => (
                 <button key={item.id} onClick={async () => {
                   setInputImage(item.url); setResultImage(null)
+                  detectAndSetCharacter(item.url)
                   try { setInputFile(await urlToFile(item.url, 'gallery.png')) } catch { setInputFile(null) }
                 }}
                   className="aspect-square rounded-lg overflow-hidden transition-all hover:opacity-80"
