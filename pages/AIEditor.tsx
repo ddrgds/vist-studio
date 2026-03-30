@@ -25,7 +25,7 @@ const ImageEditor = lazy(() => import('../components/ImageEditor'))
 const tools = [
   // Primary tools (visible by default)
   { id:'freeai', label:'AI Edit', icon:'\u2728', desc:'Edita con cualquier instrucción en lenguaje natural' },
-  { id:'reimagine', label:'Reimaginar', icon:'\u2726', desc:'Reimagina con Soul 2.0 — variaciones de calidad editorial' },
+  // reimagine removed — redundant with freeai (NB2) which is more reliable than Soul 2.0
   { id:'relight', label:'Reiluminar', icon:'\uD83D\uDCA1', desc:'Cambia la iluminación de cualquier foto' },
   { id:'faceswap', label:'Cambio de Rostro', icon:'\uD83C\uDFAD', desc:'Intercambia rostros entre imágenes' },
   { id:'tryon', label:'Try-On Virtual', icon:'\uD83D\uDC57', desc:'Prueba ropa y accesorios' },
@@ -195,6 +195,8 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
   const [sel360, setSel360] = useState(0)
   const [sheetGenerating, setSheetGenerating] = useState<SheetType | null>(null)
   const [sheetResult, setSheetResult] = useState<string | null>(null)
+  const [editorCharFilter, setEditorCharFilter] = useState<string | null>(null)
+  const [editorLightbox, setEditorLightbox] = useState<string | null>(null)
   const [selStyle, setSelStyle] = useState(0)
   const [selBg, setSelBg] = useState(0)
   const [bgMode, setBgMode] = useState<'Preset'|'Upload'|'Prompt'>('Preset')
@@ -257,7 +259,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
 
   // Visible cost for the Apply button (shared with handleApply logic)
   const displayCost = useMemo(() => {
-    if (activeTool === 'reimagine') return 14 // Soul 2.0 fixed cost
+    // reimagine removed
     const eng = selectedEngine !== 'auto' ? ENGINE_METADATA.find(e => e.key === selectedEngine) : null
     if (eng) return eng.creditCost
     return activeTool === 'rotate360' ? 10 : 8
@@ -366,8 +368,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
     }
 
     // Reimagine needs a prompt
-    if (activeTool === 'reimagine' && !reimaginePrompt.trim()) {
-      toast.error('Describe cómo reimaginar esta imagen')
+    if (false) { // reimagine removed
       return
     }
 
@@ -395,8 +396,8 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
 
     // Resolve engine and cost — use engine's credit cost when a specific engine is selected
     const eng = selectedEngine !== 'auto' ? ENGINE_METADATA.find(e => e.key === selectedEngine) : null
-    const baseCost = activeTool === 'reimagine' ? 14 : activeTool === 'rotate360' ? 10 : 8
-    const cost = activeTool === 'reimagine' ? 14 : eng ? eng.creditCost : baseCost
+    const baseCost = activeTool === 'rotate360' ? 10 : 8
+    const cost = eng ? eng.creditCost : baseCost
     const ok = await decrementCredits(cost)
     if (!ok) { toast.error('Créditos insuficientes'); setProcessing(false); return }
 
@@ -525,14 +526,6 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
       } else if (activeTool === 'rembg') {
         const bgRemovedUrl = await removeBackground(inputImage, (p) => setProgress(p))
         resultUrls = [bgRemovedUrl]
-      } else if (activeTool === 'reimagine') {
-        const soulResults = await editWithSoulReference(
-          inputFile!,
-          reimaginePrompt.trim(),
-          AspectRatio.Square,
-          (p) => setProgress(p),
-        )
-        resultUrls = soulResults
       }
 
       const validUrls = resultUrls.filter(Boolean)
@@ -662,7 +655,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           </h2>
           <div className="ml-auto relative">
             {(() => {
-              if (['reimagine','relight','rotate360','faceswap','tryon','composite','style','freeai'].includes(activeTool)) return null // fixed engine tools
+              if (['relight','rotate360','faceswap','tryon','composite','style','freeai'].includes(activeTool)) return null // fixed engine tools
               const fk = TOOL_TO_FEATURE[activeTool]
               const fd = fk ? FEATURE_ENGINES[fk] : null
               const hasMultiple = fd ? fd.keys.length > 1 : true
@@ -793,32 +786,54 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
             </div>
           </div>
 
-          {/* Character selector */}
+          {/* Source: Character photos */}
           {characters.length > 0 && (
             <div>
-              <div className="joi-label mb-2">O usa un personaje</div>
-              <div className="flex gap-1.5 flex-wrap">
+              <div className="joi-label mb-2">Fotos de Personaje</div>
+              <div className="flex gap-1.5 flex-wrap mb-2">
                 {characters.map(ch => (
                   <button key={ch.id}
-                    onClick={async () => {
-                      if (ch.thumbnail) {
-                        setInputImage(ch.thumbnail)
-                        setResultImage(null)
-                        try {
-                          const file = await urlToFile(ch.thumbnail, `${ch.name}.png`)
-                          setInputFile(file)
-                        } catch { setInputFile(null) }
-                      }
-                    }}
+                    onClick={() => setEditorCharFilter(editorCharFilter === ch.id ? null : ch.id)}
                     className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[10px] transition-all"
-                    style={{ background: inputImage === ch.thumbnail ? 'rgba(99,102,241,.08)' : 'var(--joi-bg-3)', border: `1px solid ${inputImage === ch.thumbnail ? 'rgba(99,102,241,.2)' : 'rgba(255,255,255,.04)'}`, color: inputImage === ch.thumbnail ? 'var(--joi-pink)' : 'var(--joi-text-2)' }}>
+                    style={{ background: editorCharFilter === ch.id ? 'var(--joi-pink-soft)' : 'var(--joi-bg-3)', border: `1px solid ${editorCharFilter === ch.id ? 'var(--joi-border-h)' : 'rgba(255,255,255,.04)'}`, color: editorCharFilter === ch.id ? 'var(--joi-pink)' : 'var(--joi-text-2)' }}>
                     {ch.thumbnail && <img src={ch.thumbnail} className="w-5 h-5 rounded-full object-cover" alt="" />}
                     {ch.name}
                   </button>
                 ))}
               </div>
+              {editorCharFilter && (
+                <div className="grid grid-cols-3 gap-1 max-h-[140px] overflow-y-auto joi-scroll rounded-lg">
+                  {galleryItems.filter(i => i.characterId === editorCharFilter && i.url).slice(0, 12).map(item => (
+                    <button key={item.id} onClick={async () => {
+                      setInputImage(item.url); setResultImage(null)
+                      try { setInputFile(await urlToFile(item.url, 'gallery.png')) } catch { setInputFile(null) }
+                    }}
+                      className="aspect-square rounded-lg overflow-hidden transition-all hover:opacity-80"
+                      style={{ border: inputImage === item.url ? '2px solid var(--joi-pink)' : '1px solid rgba(255,255,255,.04)' }}>
+                      <img src={item.url} className="w-full h-full object-cover" alt="" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
+
+          {/* Source: Recent gallery */}
+          <div>
+            <div className="joi-label mb-2">Galería Reciente</div>
+            <div className="grid grid-cols-3 gap-1 max-h-[140px] overflow-y-auto joi-scroll rounded-lg">
+              {galleryItems.filter(i => i.url && !editorCharFilter).slice(0, 9).map(item => (
+                <button key={item.id} onClick={async () => {
+                  setInputImage(item.url); setResultImage(null)
+                  try { setInputFile(await urlToFile(item.url, 'gallery.png')) } catch { setInputFile(null) }
+                }}
+                  className="aspect-square rounded-lg overflow-hidden transition-all hover:opacity-80"
+                  style={{ border: inputImage === item.url ? '2px solid var(--joi-pink)' : '1px solid rgba(255,255,255,.04)' }}>
+                  <img src={item.url} className="w-full h-full object-cover" alt="" />
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* Free AI tool */}
           {activeTool === 'freeai' && <>
@@ -839,36 +854,6 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                   className="px-2.5 py-1 rounded-lg text-[9px] transition-all"
                   style={{ background: freePrompt === q ? 'rgba(99,102,241,.08)' : 'var(--joi-bg-3)', border: `1px solid ${freePrompt === q ? 'rgba(99,102,241,.2)' : 'rgba(255,255,255,.04)'}`, color: freePrompt === q ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>{q}</button>
               ))}
-            </div>
-          </>}
-
-          {activeTool === 'reimagine' && <>
-            <div>
-              <div className="joi-label mb-2">Dirección de Reimaginación</div>
-              <textarea
-                rows={3}
-                value={reimaginePrompt}
-                onChange={e => setReimaginePrompt(e.target.value)}
-                placeholder="Describe la versión reimaginada...&#10;&#10;Ej.: portada de revista editorial, playa al atardecer, retrato cyberpunk neón"
-                className="w-full px-3 py-2.5 rounded-xl text-[11px] border outline-none resize-none"
-                style={{ background:'var(--joi-bg-2)', borderColor:'rgba(255,255,255,.04)', color:'var(--joi-text-1)', backdropFilter:'blur(8px)' }}
-              />
-            </div>
-            <div className="flex gap-1.5 flex-wrap">
-              {['Editorial magazine cover','Golden hour beach','Studio fashion portrait','Cyberpunk neon','Vintage film aesthetic','Luxury lifestyle'].map(q => (
-                <button key={q} onClick={() => setReimaginePrompt(q)}
-                  className="px-2.5 py-1 rounded-lg text-[9px] transition-all"
-                  style={{ background: reimaginePrompt === q ? 'rgba(99,102,241,.08)' : 'var(--joi-bg-3)', border: `1px solid ${reimaginePrompt === q ? 'rgba(99,102,241,.2)' : 'rgba(255,255,255,.04)'}`, color: reimaginePrompt === q ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>{q}</button>
-              ))}
-            </div>
-            <div className="rounded-xl p-3 mt-1" style={{ background: 'rgba(99,102,241,.04)', border: '1px solid rgba(99,102,241,.1)' }}>
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="text-sm">{'\u2726'}</span>
-                <span className="text-[11px] font-semibold" style={{ color: 'var(--joi-pink)' }}>Soul 2.0</span>
-              </div>
-              <p className="text-[9px] leading-relaxed" style={{ color: 'var(--joi-text-3)' }}>
-                Reimaginación AI de calidad editorial. Mantiene la identidad mientras transforma el estilo, escenario y atmósfera de tu imagen con resultados de nivel profesional.
-              </p>
             </div>
           </>}
 
@@ -1398,28 +1383,17 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
 
       {/* Canvas */}
       <div className="flex-1 flex flex-col joi-mesh">
-        <div className="h-11 flex items-center px-4 gap-1.5 shrink-0" style={{ borderBottom:'1px solid rgba(255,255,255,.04)', background:'var(--joi-bg-glass)' }}>
-          <button title="Deshacer" className="px-2.5 py-1 rounded-lg text-[11px] hover:bg-white/5 transition-colors" style={{ color:'var(--joi-text-2)' }}>{'\u21BA'}</button>
-          <button title="Rehacer" className="px-2.5 py-1 rounded-lg text-[11px] hover:bg-white/5 transition-colors" style={{ color:'var(--joi-text-2)' }}>{'\u21BB'}</button>
-          <button title="Comparar antes y después" onClick={() => { setCompareMode(!compareMode); setCanvasZoom(1); setCanvasPan({ x: 0, y: 0 }) }}
-            className="px-2.5 py-1 rounded-lg text-[11px] transition-colors"
-            style={{ color: compareMode ? 'var(--joi-pink)' : 'var(--joi-text-2)', background: compareMode ? 'rgba(99,102,241,.1)' : 'transparent' }}>Antes/Después</button>
-          <button title="Acercar" onClick={() => { setCanvasZoom(z => Math.min(z + 0.25, 5)); setCanvasPan({ x: 0, y: 0 }) }}
-            className="px-2.5 py-1 rounded-lg text-[11px] hover:bg-white/5 transition-colors" style={{ color:'var(--joi-text-2)' }}>Acercar</button>
-          <button title="Alejar" onClick={() => { const nz = Math.max(canvasZoom - 0.25, 0.5); setCanvasZoom(nz); if (nz <= 1) setCanvasPan({ x: 0, y: 0 }) }}
-            className="px-2.5 py-1 rounded-lg text-[11px] hover:bg-white/5 transition-colors" style={{ color:'var(--joi-text-2)' }}>Alejar</button>
-          {canvasZoom !== 1 && <button title="Restablecer zoom" onClick={() => { setCanvasZoom(1); setCanvasPan({ x: 0, y: 0 }) }}
-            className="px-2.5 py-1 rounded-lg text-[11px] hover:bg-white/5 transition-colors" style={{ color:'var(--joi-pink)' }}>Restablecer</button>}
-          <button title="Exportar imagen" className="px-2.5 py-1 rounded-lg text-[11px] hover:bg-white/5 transition-colors" style={{ color:'var(--joi-text-2)' }}>Exportar</button>
+        <div className="h-11 flex items-center px-4 gap-1.5 shrink-0" style={{ borderBottom:'1px solid var(--border)', background:'var(--bg-1)' }}>
+          {inputImage && resultImage && (
+            <button title="Comparar antes y después" onClick={() => setCompareMode(!compareMode)}
+              className="px-3 py-1.5 rounded-lg text-[11px] transition-colors"
+              style={{ color: compareMode ? 'var(--accent)' : 'var(--text-2)', background: compareMode ? 'rgba(0,0,0,.05)' : 'transparent', border: compareMode ? '1px solid var(--border)' : '1px solid transparent' }}>Antes/Después</button>
+          )}
           <div className="flex-1" />
-          <span className="text-[10px] font-mono" style={{ color:'var(--joi-text-3)' }}>Zoom: {Math.round(canvasZoom * 100)}%</span>
+          {inputImage && <span className="text-[10px]" style={{ color:'var(--text-3)' }}>Clic en imagen para ver en grande</span>}
         </div>
 
         <div ref={canvasContainerRef} className="flex-1 flex items-center justify-center p-6 gap-6"
-          onPointerDown={(e) => { if (canvasZoom <= 1 || !inputImage) return; setIsPanning(true); panStart.current = { x: e.clientX, y: e.clientY, panX: canvasPan.x, panY: canvasPan.y }; (e.target as HTMLElement).setPointerCapture?.(e.pointerId) }}
-          onPointerMove={(e) => { if (!isPanning) return; setCanvasPan({ x: panStart.current.panX + (e.clientX - panStart.current.x), y: panStart.current.panY + (e.clientY - panStart.current.y) }) }}
-          onPointerUp={() => setIsPanning(false)}
-          style={{ cursor: canvasZoom > 1 ? (isPanning ? 'grabbing' : 'grab') : 'default' }}
         >
           {!inputImage ? (
             /* ── Empty canvas: tool showcase ── */
@@ -1452,48 +1426,48 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           /* ── Normal before/after canvas ── */
           compareMode && resultImage ? (
           /* ── Side-by-side compare mode ── */
-          <div className="flex gap-1 rounded-xl overflow-hidden" style={{ border:'1px solid rgba(255,255,255,.06)' }}>
-            <div className="relative" style={{ transform: `scale(${canvasZoom}) translate(${canvasPan.x / canvasZoom}px, ${canvasPan.y / canvasZoom}px)`, transition: isPanning ? 'none' : 'transform 0.15s ease' }}>
-              <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[9px] font-mono z-10" style={{ background:'rgba(0,0,0,.6)', color:'var(--joi-text-2)' }}>ANTES</div>
+          <div className="flex gap-1 rounded-xl overflow-hidden" style={{ border:'1px solid var(--border)' }}>
+            <div className="relative cursor-pointer" onClick={() => setEditorLightbox(inputImage)}>
+              <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[9px] font-mono z-10" style={{ background:'rgba(0,0,0,.6)', color:'white' }}>ANTES</div>
               <img src={inputImage} className="max-h-[65vh] max-w-[45vw] object-contain select-none" draggable={false} alt="Before" />
             </div>
-            <div className="w-px shrink-0" style={{ background:'var(--joi-pink)' }} />
-            <div className="relative" style={{ transform: `scale(${canvasZoom}) translate(${canvasPan.x / canvasZoom}px, ${canvasPan.y / canvasZoom}px)`, transition: isPanning ? 'none' : 'transform 0.15s ease' }}>
-              <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[9px] font-mono z-10" style={{ background:'rgba(99,102,241,.3)', color:'white' }}>DESPUÉS</div>
+            <div className="w-px shrink-0" style={{ background:'var(--accent)' }} />
+            <div className="relative cursor-pointer" onClick={() => setEditorLightbox(resultImage)}>
+              <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[9px] font-mono z-10" style={{ background:'var(--accent)', color:'white' }}>DESPUÉS</div>
               <img src={resultImage} className="max-h-[65vh] max-w-[45vw] object-contain select-none" draggable={false} alt="After" />
             </div>
           </div>
           ) : (
           <>
-          <div className="text-center" style={{ transform: `scale(${canvasZoom}) translate(${canvasPan.x / canvasZoom}px, ${canvasPan.y / canvasZoom}px)`, transition: isPanning ? 'none' : 'transform 0.15s ease' }}>
+          <div className="text-center">
             <div className="joi-label mb-2">Original</div>
-            <div className="w-[min(420px,_45vw)] h-[min(520px,_65vh)] rounded-xl flex items-center justify-center overflow-hidden"
-              style={{ background: 'var(--joi-bg-2)', border:'1px solid rgba(255,255,255,.04)' }}>
+            <div className="w-[min(420px,_45vw)] h-[min(520px,_65vh)] rounded-xl flex items-center justify-center overflow-hidden cursor-pointer"
+              onClick={() => setEditorLightbox(inputImage)}
+              style={{ background: 'var(--bg-0)', border:'1px solid var(--border)' }}>
               <img src={inputImage} className="w-full h-full object-contain rounded-xl select-none" draggable={false} alt="Original" />
             </div>
           </div>
 
-          <div className="text-2xl" style={{ color:'var(--joi-pink)' }}>{'\u2192'}</div>
+          <div className="text-2xl" style={{ color:'var(--accent)' }}>{'\u2192'}</div>
 
-          <div className="text-center" style={{ transform: `scale(${canvasZoom}) translate(${canvasPan.x / canvasZoom}px, ${canvasPan.y / canvasZoom}px)`, transition: isPanning ? 'none' : 'transform 0.15s ease' }}>
-            <div className="joi-label mb-2" style={{ color:'var(--joi-pink)' }}>Resultado AI</div>
-            <div className="w-[min(420px,_45vw)] h-[min(520px,_65vh)] rounded-xl flex items-center justify-center overflow-hidden"
-              style={{ background: 'var(--joi-bg-2)', border:'1px solid rgba(255,255,255,.04)', boxShadow:'0 0 30px rgba(99,102,241,.06)' }}>
+          <div className="text-center">
+            <div className="joi-label mb-2" style={{ color:'var(--accent)' }}>Resultado AI</div>
+            <div className="w-[min(420px,_45vw)] h-[min(520px,_65vh)] rounded-xl flex items-center justify-center overflow-hidden cursor-pointer"
+              onClick={() => resultImage && setEditorLightbox(resultImage)}
+              style={{ background: 'var(--bg-0)', border:'1px solid var(--border)' }}>
               {resultImage ? (
-                <>
-                  <img src={resultImage} className="w-full h-full object-contain rounded-xl select-none" draggable={false} alt="Result" />
-                </>
+                <img src={resultImage} className="w-full h-full object-contain rounded-xl select-none" draggable={false} alt="Result" />
               ) : (
                 <div className="text-center">
-                  <span className="text-2xl block mb-2 joi-breathe">{'\u2726'}</span>
-                  <span className="text-[11px]" style={{ color:'var(--joi-text-3)' }}>El resultado aparecerá aquí</span>
+                  <span className="text-2xl block mb-2">{'\u2726'}</span>
+                  <span className="text-[11px]" style={{ color:'var(--text-3)' }}>El resultado aparecerá aquí</span>
                 </div>
               )}
             </div>
             {resultImage && (
               <button onClick={() => { setInputImage(resultImage); setResultImage(null); setInputFile(null); toast.success('Resultado cargado como nueva base') }}
                 className="mt-2 px-4 py-2 rounded-lg text-[11px] font-medium transition-all"
-                style={{ background: 'var(--joi-pink-soft)', color: 'var(--joi-pink)', border: '1px solid var(--joi-border-h)' }}>
+                style={{ background: 'rgba(0,0,0,.04)', color: 'var(--accent)', border: '1px solid var(--border)' }}>
                 Seguir editando este resultado →
               </button>
             )}
@@ -1564,6 +1538,13 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         </Suspense>
       )}
 
+      {/* Lightbox */}
+      {editorLightbox && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9998, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)' }} onClick={() => setEditorLightbox(null)}>
+          <button onClick={() => setEditorLightbox(null)} style={{ position: 'absolute', top: 24, right: 24, width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
+          <img src={editorLightbox} onClick={e => e.stopPropagation()} style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: 12, boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }} />
+        </div>
+      )}
     </div>
   )
 }
