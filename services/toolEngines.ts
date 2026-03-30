@@ -464,8 +464,8 @@ export async function generateAngles(
 // ─── Angle prompts (exported for use by caller) ─
 
 export const ANGLE_PROMPTS = {
-  face: 'A 360 turnaround view of the subject, Close up shot of face in 4 different angles on a 2x2 grid. Top-left: front view. Top-right: right profile. Bottom-left: left profile. Bottom-right: three-quarter view. All white background. High resolution, sharp detail.',
-  body: 'A 360 turnaround full body view of the subject in 4 different angles side by side. Front view, half turn, side profile, back view. Full-body shots, all white background. High resolution, sharp detail.',
+  face: 'A 2x2 grid of 4 CLOSE-UP HEAD SHOTS ONLY of the subject from different angles. CROP: from shoulders up ONLY — do NOT show torso, arms, hands, or body. Top-left: front face looking at camera. Top-right: right profile (90° side view of face). Bottom-left: left profile (90° side view of face). Bottom-right: three-quarter view. All white background. Same person in every frame, same lighting, same distance. DO NOT add any text, labels, or captions. DO NOT show body below the shoulders.',
+  body: 'A horizontal strip of 4 FULL BODY shots of the subject from head to toe in different angles, side by side. From left to right: front view facing camera, half turn (45° angle), side profile (90°), back view. Show the COMPLETE body from head to feet in every frame. All white background. Same person, same outfit, same lighting. DO NOT add any text or labels.',
   expressions: 'An expression sheet of the subject showing 9 different facial expressions in a 3x3 grid. Row 1: genuine happy smile, tears streaming down face looking sad, mouth open wide eyes shocked. Row 2: furrowed brows clenched jaw furious, head thrown back belly laughing, stern deadpan no emotion. Row 3: one eye closed playful smirk, nose scrunched up lip curled in disgust, eyes gently closed serene peaceful. Close-up headshots only, all white background, same person in every frame. DO NOT add any text, labels, captions, or words anywhere on the image.',
 };
 

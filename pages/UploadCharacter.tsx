@@ -316,6 +316,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
         numberOfImages: 1,
         realistic: style.id === 'photorealistic',
         imageBoost: style.id !== 'photorealistic' ? style.prompt : undefined,
+        negativePrompt: 'brand names, branded products, Coca-Cola, corporate logos, product placement, holding random objects, holding drinks, holding food, holding phone',
       }
 
       const genResults = await routeGeneration(params)
