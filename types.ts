@@ -244,6 +244,10 @@ export interface SavedCharacter {
   referencePhotoUrls?: string[];
   // Cloud URLs for model images — populated when loaded from Supabase (no blob download)
   modelImageUrls?: string[];
+  // Pipeline redesign fields
+  renderStyle?: string;
+  soulStyleId?: string;
+  personalityTraits?: string[];
 }
 
 export interface BatchOutfitItem {
