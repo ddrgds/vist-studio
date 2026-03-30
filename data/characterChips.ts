@@ -523,6 +523,29 @@ export function buildPromptFromChips(selections: Record<string, string[]>): stri
   if (fashion) spec.outfit = fashion
   if (accessories) spec.accessories = accessories
 
-  // Return as JSON block — NB2 treats this as structured semantic data
-  return `CHARACTER SPECIFICATION:\n${JSON.stringify(spec, null, 2)}`
+  // Build flat version for non-NB2 models (Seedream, Grok)
+  const flatParts: string[] = []
+  for (const [, val] of Object.entries(spec)) {
+    if (typeof val === 'string') flatParts.push(val)
+    else if (typeof val === 'object') {
+      for (const v of Object.values(val as Record<string, string>)) {
+        if (typeof v === 'string') flatParts.push(v)
+      }
+    }
+  }
+  const flatDescription = flatParts.join(', ')
+
+  // Return JSON block with flat fallback appended
+  // NB2 uses the JSON structure, other models use the flat description
+  return `CHARACTER SPECIFICATION:\n${JSON.stringify(spec, null, 2)}\n\nFLAT DESCRIPTION: ${flatDescription}`
+}
+
+/** Extract flat text description from a JSON-structured characteristics string.
+ *  For non-NB2 models that don't understand JSON prompting. */
+export function flattenCharacteristics(characteristics: string): string {
+  if (!characteristics) return ''
+  const flatMatch = characteristics.match(/FLAT DESCRIPTION: (.+)$/s)
+  if (flatMatch) return flatMatch[1].trim()
+  // If no flat section, strip JSON and return as-is
+  return characteristics.replace(/CHARACTER SPECIFICATION:\n[\s\S]*?\n\n/g, '').trim() || characteristics
 }

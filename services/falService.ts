@@ -2,6 +2,7 @@ import { fal } from '@fal-ai/client';
 import { InfluencerParams, FalModel, AspectRatio, PoseModificationParams } from '../types';
 import { proxyUrl } from './apiAuth';
 import { FACE_LOCK_PROMPT, OUTFIT_PRESERVE_PROMPT, FACE_CHECK_PROMPT } from '../data/sessionPresets';
+import { flattenCharacteristics } from '../data/characterChips';
 import { compilePrompt } from './promptCompiler';
 
 // ─────────────────────────────────────────────
@@ -175,7 +176,7 @@ export const generateWithKontextMulti = async (
   // Key: name subject by specific features, not pronouns. Explicitly list what must NOT change.
   // Reddit r/FluxAI: "88% character consistency" requires anchoring with feature-by-feature identity sheet.
   const subjectAnchor = character.characteristics
-    ? `the character described as: ${character.characteristics}`
+    ? `the character described as: ${flattenCharacteristics(character.characteristics)}`
     : 'the exact person shown in the reference images';
 
   const isKontextStylized = params.realistic === false
@@ -349,7 +350,7 @@ export const generateWithFluxKontextMulti = async (
   let prompt = 'An ultra-photorealistic fashion editorial photograph of the exact person shown in the reference images. The photo is taken with a Sony A7R V camera and an 85mm f/1.4 portrait lens, shot in RAW with Vogue magazine quality.';
   prompt += ' Preserve the exact facial features, skin tone, and identity from the reference photos.';
 
-  if (character.characteristics) prompt += ` The person is described as: ${character.characteristics}.`;
+  if (character.characteristics) prompt += ` The person is described as: ${flattenCharacteristics(character.characteristics)}.`;
   if (character.outfitDescription) {
     prompt += ` They are wearing ${character.outfitDescription}.`;
   } else if (character.outfitImages && character.outfitImages.length > 0) {
@@ -1167,7 +1168,7 @@ export const generateWithPulidV2 = async (
   if (onProgress) onProgress(30);
 
   let prompt = 'Ultra-photorealistic editorial photograph of the exact person shown in the face reference.';
-  if (character.characteristics) prompt += ` The person is described as: ${character.characteristics}.`;
+  if (character.characteristics) prompt += ` The person is described as: ${flattenCharacteristics(character.characteristics)}.`;
   if (character.outfitDescription) {
     prompt += ` Wearing: ${character.outfitDescription}.`;
   } else if (character.outfitImages && character.outfitImages.length > 0) {
@@ -1250,7 +1251,7 @@ export const generateWithFluxPro = async (
   if (onProgress) onProgress(30);
 
   let prompt = 'Ultra-photorealistic editorial photograph. Preserve the exact identity, facial features, and skin tone from the reference image.';
-  if (character.characteristics) prompt += ` The person is described as: ${character.characteristics}.`;
+  if (character.characteristics) prompt += ` The person is described as: ${flattenCharacteristics(character.characteristics)}.`;
   if (character.outfitDescription) {
     prompt += ` Wearing: ${character.outfitDescription}.`;
   } else if (character.outfitImages && character.outfitImages.length > 0) {
