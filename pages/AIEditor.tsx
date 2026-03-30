@@ -443,9 +443,22 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
       let resultUrls: string[] = []
 
       if (activeTool === 'freeai') {
-        // NB2 with fallback chain
-        const result = await runEditWithFallback(inputImage!, freePrompt.trim(), 'nb2', 'ai-edit', outputOpts)
-        resultUrls = [result.url]
+        // NB2 → Seedream → Grok with character refs for identity
+        const charRefs = await getCharRefFiles()
+        const instruction = freePrompt.trim()
+        try {
+          const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio })
+          if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
+          resultUrls = results
+        } catch (nb2Err) {
+          console.warn('NB2 freeai failed, trying Seedream:', nb2Err)
+          try {
+            resultUrls = await editImageWithSeedream5(inputFile!, instruction, charRefs, (p) => setProgress(p))
+          } catch (sdErr) {
+            console.warn('Seedream freeai failed, trying Grok:', sdErr)
+            resultUrls = await editImageWithGrokFal(inputFile!, instruction, (p) => setProgress(p), undefined, charRefs)
+          }
+        }
       } else if (activeTool === 'relight') {
         const preset = relightPresets[selPreset]
         const dir = relightDirections.find(d => d.id === relightDir) || relightDirections[1]
