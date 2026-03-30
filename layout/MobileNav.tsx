@@ -3,12 +3,13 @@ import type { Page } from '../App';
 
 const TABS: { id: Page; icon: string; label: string }[] = [
   { id: 'studio',     icon: '✦',  label: 'Studio' },
-  { id: 'gallery',    icon: '▦',  label: 'Galería' },
+  { id: 'editor',     icon: '✎',  label: 'Editor' },
   { id: 'create',     icon: '+',  label: 'Crear' },
-  { id: 'characters', icon: '◉',  label: 'Personas' },
+  { id: 'gallery',    icon: '▦',  label: 'Galería' },
 ];
 
 const MORE_ITEMS: { id: Page; icon: string; label: string }[] = [
+  { id: 'characters', icon: '◉',  label: 'Personas' },
   { id: 'video', icon: '▶', label: 'Video' },
   { id: 'pricing', icon: '◇', label: 'Precios' },
   { id: 'profile', icon: '⚙', label: 'Perfil' },
