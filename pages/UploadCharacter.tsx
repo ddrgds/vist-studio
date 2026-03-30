@@ -1041,11 +1041,11 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                   <div>
                     <label className="joi-label block mb-2">Accesorios <span style={{ color: 'var(--joi-text-3)', fontWeight: 400 }}>(máx 6)</span></label>
                     <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5 mt-3" style={{ color: 'var(--joi-text-3)' }}>Cotidianos</div>
-                    <ChipSelector options={ACCESSORIES.filter(a => ['sunglasses','piercings','tattoos','jewelry','hat','scarf','watch','choker'].includes(a.id))} selected={selAccessories}
-                      onSelect={setSelAccessories} maxSelect={6} color="var(--joi-blue)" />
+                    <ChipSelector options={ACCESSORIES.filter(a => !a.promptText.includes('mystical') && !a.promptText.includes('wings') && !a.promptText.includes('horns') && !a.promptText.includes('fangs') && !a.promptText.includes('halo') && !a.promptText.includes('demon') && !a.promptText.includes('mermaid') && !a.promptText.includes('cyber') && !a.promptText.includes('crystal') && !a.promptText.includes('fire') && !a.promptText.includes('ice') && !a.promptText.includes('shadow') && !a.promptText.includes('butterfly') && !a.promptText.includes('antlers') && !a.promptText.includes('orbs') && !a.promptText.includes('mechanical') && !a.promptText.includes('elf'))} selected={selAccessories}
+                      onSelect={setSelAccessories} maxSelect={8} color="var(--joi-blue)" />
                     <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5 mt-3" style={{ color: 'var(--joi-text-3)' }}>Fantasía</div>
-                    <ChipSelector options={ACCESSORIES.filter(a => ['crown','mask','wings','horns','elf-ears','tail'].includes(a.id))} selected={selAccessories}
-                      onSelect={setSelAccessories} maxSelect={6} color="var(--joi-blue)" />
+                    <ChipSelector options={ACCESSORIES.filter(a => a.promptText.includes('mystical') || a.promptText.includes('wings') || a.promptText.includes('horns') || a.promptText.includes('fangs') || a.promptText.includes('halo') || a.promptText.includes('demon') || a.promptText.includes('mermaid') || a.promptText.includes('cyber') || a.promptText.includes('crystal') || a.promptText.includes('fire') || a.promptText.includes('ice') || a.promptText.includes('shadow') || a.promptText.includes('butterfly') || a.promptText.includes('antlers') || a.promptText.includes('orbs') || a.promptText.includes('mechanical') || a.promptText.includes('elf'))} selected={selAccessories}
+                      onSelect={setSelAccessories} maxSelect={8} color="var(--joi-blue)" />
                   </div>
                 </div>
 
