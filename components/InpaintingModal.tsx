@@ -29,42 +29,59 @@ const InpaintingModal: React.FC<InpaintingModalProps> = ({ item, onClose, onSave
   const [imageError, setImageError] = useState(false);
   const [canvasSize, setCanvasSize] = useState({ w: 512, h: 512 });
 
-  // Load image onto background canvas and size everything
+  // Load image onto background canvas — fetch as blob to avoid CORS canvas taint
   useEffect(() => {
     setImageLoaded(false);
     setImageError(false);
-    const img = new Image();
-    img.onload = () => {
-      const maxW = Math.min(512, window.innerWidth - 80);
-      const ratio = img.height / img.width;
-      const w = maxW;
-      const h = Math.round(w * ratio);
-      setCanvasSize({ w, h });
-      setImageLoaded(true);
+    let cancelled = false;
 
-      requestAnimationFrame(() => {
-        const imgCanvas = imageCanvasRef.current;
-        const maskCanvas = maskCanvasRef.current;
-        if (!imgCanvas || !maskCanvas) return;
+    (async () => {
+      try {
+        // Fetch image as blob to get a clean object URL (no CORS issues with canvas)
+        const res = await fetch(item.url);
+        const blob = await res.blob();
+        const objectUrl = URL.createObjectURL(blob);
 
-        imgCanvas.width = w;
-        imgCanvas.height = h;
-        maskCanvas.width = w;
-        maskCanvas.height = h;
+        const img = new Image();
+        img.onload = () => {
+          if (cancelled) { URL.revokeObjectURL(objectUrl); return; }
+          const maxW = Math.min(512, window.innerWidth - 80);
+          const ratio = img.height / img.width;
+          const w = maxW;
+          const h = Math.round(w * ratio);
+          setCanvasSize({ w, h });
+          setImageLoaded(true);
 
-        const imgCtx = imgCanvas.getContext('2d');
-        if (imgCtx) imgCtx.drawImage(img, 0, 0, w, h);
+          requestAnimationFrame(() => {
+            const imgCanvas = imageCanvasRef.current;
+            const maskCanvas = maskCanvasRef.current;
+            if (!imgCanvas || !maskCanvas) return;
 
-        const maskCtx = maskCanvas.getContext('2d');
-        if (maskCtx) {
-          maskCtx.clearRect(0, 0, w, h);
-        }
-      });
-    };
-    img.onerror = () => {
-      setImageError(true);
-    };
-    img.src = item.url;
+            imgCanvas.width = w;
+            imgCanvas.height = h;
+            maskCanvas.width = w;
+            maskCanvas.height = h;
+
+            const imgCtx = imgCanvas.getContext('2d');
+            if (imgCtx) imgCtx.drawImage(img, 0, 0, w, h);
+
+            const maskCtx = maskCanvas.getContext('2d');
+            if (maskCtx) maskCtx.clearRect(0, 0, w, h);
+
+            URL.revokeObjectURL(objectUrl);
+          });
+        };
+        img.onerror = () => {
+          if (!cancelled) setImageError(true);
+          URL.revokeObjectURL(objectUrl);
+        };
+        img.src = objectUrl;
+      } catch {
+        if (!cancelled) setImageError(true);
+      }
+    })();
+
+    return () => { cancelled = true; };
   }, [item.url]);
 
   const getPos = useCallback((e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
