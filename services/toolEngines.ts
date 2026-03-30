@@ -207,18 +207,19 @@ async function qwenEdit(imageUrl: string, prompt: string): Promise<string> {
 }
 
 /** NB2 (Gemini) edit — URL→File bridge, then structured prompt via editImageWithAI */
-async function nb2Edit(imageUrl: string, prompt: string): Promise<string> {
-  // Fetch image URL and convert to File (NB2 uses base64 inline data, not URLs)
+async function nb2Edit(imageUrl: string, prompt: string, options?: { imageSize?: string; aspectRatio?: string }): Promise<string> {
   const response = await fetch(imageUrl);
   const blob = await response.blob();
   const ext = blob.type.split('/')[1] || 'jpeg';
   const file = new File([blob], `input.${ext}`, { type: blob.type });
 
-  // editImageWithAI wraps with its own PRESERVATION RULE + INTEGRATION RULES template
-  // Our prompt goes into the EDIT INSTRUCTION section
-  const results = await editImageWithAI({ baseImage: file, instruction: prompt });
+  const results = await editImageWithAI({
+    baseImage: file, instruction: prompt,
+    ...(options?.imageSize && { imageSize: options.imageSize as any }),
+    ...(options?.aspectRatio && { aspectRatio: options.aspectRatio as any }),
+  });
   if (!results || results.length === 0) throw new Error('NB2 returned no images');
-  return results[0]; // base64 data URL
+  return results[0];
 }
 
 /** NB Pro (Gemini Pro) edit — higher quality than NB2, uses GeminiImageModel.Pro */
@@ -285,6 +286,7 @@ export async function runEditWithFallback(
   prompt: string,
   preferredEngine: EngineId,
   toolId: ToolId,
+  options?: { imageSize?: string; aspectRatio?: string },
 ): Promise<ToolResult> {
   // Build ordered chain starting from preferred engine
   const chain = [preferredEngine, ...EDIT_FALLBACK_CHAIN.filter(e => e !== preferredEngine)];
@@ -295,7 +297,7 @@ export async function runEditWithFallback(
     try {
       let engineCall: Promise<string>;
       switch (engine) {
-        case 'nb2': engineCall = nb2Edit(imageUrl, getEnginePrompt(engine)); break;
+        case 'nb2': engineCall = nb2Edit(imageUrl, getEnginePrompt(engine), options); break;
         case 'seedream': engineCall = seedreamEdit(imageUrl, getEnginePrompt(engine)); break;
         case 'grok': engineCall = grokEdit(imageUrl, getEnginePrompt(engine)); break;
         case 'nb-pro': engineCall = nbProEdit(imageUrl, getEnginePrompt(engine)); break;

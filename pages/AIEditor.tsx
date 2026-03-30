@@ -198,6 +198,8 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
   const [sheetResult, setSheetResult] = useState<string | null>(null)
   const [editorCharFilter, setEditorCharFilter] = useState<string | null>(null)
   const [editorLightbox, setEditorLightbox] = useState<string | null>(null)
+  const [editorResolution, setEditorResolution] = useState('2k')
+  const [editorAspectRatio, setEditorAspectRatio] = useState<AspectRatio>(AspectRatio.Portrait)
   const [selStyle, setSelStyle] = useState(0)
   const [selBg, setSelBg] = useState(0)
   const [bgMode, setBgMode] = useState<'Preset'|'Upload'|'Prompt'>('Preset')
@@ -430,6 +432,8 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
     const ok = await decrementCredits(cost)
     if (!ok) { toast.error('Créditos insuficientes'); setProcessing(false); return }
 
+    const outputOpts = { imageSize: editorResolution === '4k' ? '4K' : editorResolution === '1k' ? '1K' : '2K', aspectRatio: editorAspectRatio }
+
     // Resolve engine label for gallery
     const engineLabel = eng?.userFriendlyName || (selectedEngine === 'auto' ? 'Auto' : selectedEngine)
 
@@ -438,7 +442,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
 
       if (activeTool === 'freeai') {
         // NB2 with fallback chain
-        const result = await runEditWithFallback(inputImage!, freePrompt.trim(), 'nb2', 'ai-edit')
+        const result = await runEditWithFallback(inputImage!, freePrompt.trim(), 'nb2', 'ai-edit', outputOpts)
         resultUrls = [result.url]
       } else if (activeTool === 'relight') {
         const preset = relightPresets[selPreset]
@@ -446,7 +450,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         const intensity = relightIntensities.find(i => i.id === relightIntensity) || relightIntensities[1]
         const instruction = `${preset.prompt}. ${dir.prompt}. ${intensity.prompt}`
         // Fixed NB2 with fallback chain (nb2 → seedream → grok → nb-pro → pruna)
-        const result = await runEditWithFallback(inputImage!, instruction, 'nb2', 'relight')
+        const result = await runEditWithFallback(inputImage!, instruction, 'nb2', 'relight', outputOpts)
         resultUrls = [result.url]
       } else if (activeTool === 'rotate360') {
         const view = angleViews[sel360]
@@ -463,7 +467,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         const envHint = envHints[view] || 'background changes naturally to match the new camera position'
         const instruction = `Create a new photograph of this person from a ${view.toLowerCase()} camera angle. The camera has moved around the subject. Keep exact same person, clothing, hairstyle, body. Background MUST change: ${envHint}. Render from the new camera perspective.`
         // Fixed NB2 with fallback chain
-        const result = await runEditWithFallback(inputImage!, instruction, 'nb2', 'angles')
+        const result = await runEditWithFallback(inputImage!, instruction, 'nb2', 'angles', outputOpts)
         resultUrls = [result.url]
       } else if (activeTool === 'composite') {
         let sceneInstruction: string
@@ -477,7 +481,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         // NB2 → Seedream → Grok fallback (with scene reference + character identity refs)
         const charRefs = await getCharRefFiles()
         try {
-          const results = await editImageWithAI({ baseImage: inputFile, referenceImage: sceneFile ?? charRefs[0] ?? undefined, instruction: sceneInstruction })
+          const results = await editImageWithAI({ baseImage: inputFile, referenceImage: sceneFile ?? charRefs[0] ?? undefined, instruction: sceneInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio })
           resultUrls = results
         } catch (nb2Err) {
           console.warn('NB2 scene failed, trying Seedream:', nb2Err)
@@ -496,13 +500,13 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         const charRefs = await getCharRefFiles()
         if (charRefs.length > 0) {
           try {
-            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0], instruction })
+            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0], instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio })
             resultUrls = results
           } catch {
             resultUrls = await editImageWithSeedream5(inputFile!, instruction, charRefs, (p) => setProgress(p))
           }
         } else {
-          const result = await runEditWithFallback(inputImage!, instruction, 'nb2', 'style-transfer')
+          const result = await runEditWithFallback(inputImage!, instruction, 'nb2', 'style-transfer', outputOpts)
           resultUrls = [result.url]
         }
       } else if (activeTool === 'realskin') {
@@ -549,7 +553,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         // NB2 → Seedream → Grok (all support multi-image for garment reference)
         const tryonInstruction = `VIRTUAL TRY-ON: Replace ONLY the clothing on this person with the garment from the reference image. Keep the person's face, hair, skin, body, pose, and background 100% unchanged. Reproduce every fabric detail, pattern, color, and texture from the reference garment exactly.`
         try {
-          const results = await editImageWithAI({ baseImage: inputFile, referenceImage: garmentFile, instruction: tryonInstruction })
+          const results = await editImageWithAI({ baseImage: inputFile, referenceImage: garmentFile, instruction: tryonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio })
           resultUrls = results
         } catch (nb2Err) {
           console.warn('NB2 try-on failed, trying Seedream:', nb2Err)
@@ -575,7 +579,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         const charRefs = await getCharRefFiles()
         if (charRefs.length > 0) {
           try {
-            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0], instruction })
+            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0], instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio })
             resultUrls = results
           } catch {
             resultUrls = [await editImageWithSeedream5(inputFile!, instruction, charRefs, (p) => setProgress(p)).then(r => r[0])]
@@ -891,6 +895,25 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                   style={{ border: inputImage === item.url ? '2px solid var(--joi-pink)' : '1px solid rgba(255,255,255,.04)' }}>
                   <img src={item.url} className="w-full h-full object-cover" alt="" />
                 </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Output settings */}
+          <div>
+            <div className="joi-label mb-2">Salida</div>
+            <div className="flex gap-1.5 mb-2">
+              {(['1k', '2k', '4k'] as const).map(r => (
+                <button key={r} onClick={() => setEditorResolution(r)}
+                  className="flex-1 py-1.5 rounded-lg text-[9px] font-mono text-center transition-all"
+                  style={{ background: editorResolution === r ? 'var(--joi-pink-soft)' : 'var(--joi-bg-3)', border: `1px solid ${editorResolution === r ? 'var(--joi-border-h)' : 'rgba(255,255,255,.04)'}`, color: editorResolution === r ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>{r.toUpperCase()}</button>
+              ))}
+            </div>
+            <div className="flex gap-1 flex-wrap">
+              {[{ ar: AspectRatio.Portrait, label: 'Publicación' }, { ar: AspectRatio.Square, label: 'Cuadrado' }, { ar: AspectRatio.Landscape, label: 'Portada' }, { ar: AspectRatio.Wide, label: 'Banner' }, { ar: AspectRatio.Tall, label: 'Historia' }].map(({ ar, label }) => (
+                <button key={ar} onClick={() => setEditorAspectRatio(ar)}
+                  className="px-2 py-1 rounded-lg text-[9px] transition-all"
+                  style={{ background: editorAspectRatio === ar ? 'var(--joi-pink-soft)' : 'var(--joi-bg-3)', border: `1px solid ${editorAspectRatio === ar ? 'var(--joi-border-h)' : 'rgba(255,255,255,.04)'}`, color: editorAspectRatio === ar ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>{label}</button>
               ))}
             </div>
           </div>
