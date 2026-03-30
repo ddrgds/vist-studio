@@ -352,6 +352,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
     if (pipelineHeroUrl && !inputImage && !pendingImage) {
       setInputImage(pipelineHeroUrl)
       setResultImage(null)
+      detectAndSetCharacter(pipelineHeroUrl)
       setIsLoadingFile(true)
       urlToFile(pipelineHeroUrl, 'pipeline-hero.png')
         .then(file => setInputFile(file))

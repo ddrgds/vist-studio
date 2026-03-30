@@ -331,6 +331,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
     const ok = await decrementCredits(cost)
     if (!ok) { toast.error('Créditos insuficientes'); return }
     setGeneratingHero(true); setHeroProgress(0); abortHeroRef.current = new AbortController()
+    let poseCreditsDeducted = false
 
     try {
       const charRefFiles = await fetchUrlsAsFiles(getCharacterReferenceUrls())
@@ -344,7 +345,10 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
 
       if (poseRef) {
         const okPose = await decrementCredits(5)
-        if (okPose) { try { const u = await fal.storage.upload(poseRef.file); const c = await runControlNet(u, params.scenario || ''); if (c) params.scenario = `${params.scenario} [POSE_REF: ${c}]` } catch { restoreCredits(5) } }
+        if (okPose) {
+          poseCreditsDeducted = true
+          try { const u = await fal.storage.upload(poseRef.file); const c = await runControlNet(u, params.scenario || ''); if (c) params.scenario = `${params.scenario} [POSE_REF: ${c}]` } catch { restoreCredits(5); poseCreditsDeducted = false }
+        }
       }
 
       let results: string[]
@@ -359,9 +363,12 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
         useGalleryStore.getState().addItems(results.map(url => ({ id: crypto.randomUUID(), url, prompt: scenario || 'Studio hero shot', model: eng?.userFriendlyName || 'gemini-nb2', timestamp: Date.now(), type: 'create' as const, characterId: selectedChar?.id, tags: ['studio', 'hero-shot'], source: 'director' as const })))
         if (selectedChar) useCharacterStore.getState().incrementUsage(selectedChar.id)
         toast.success('Hero shot generado')
+      } else {
+        restoreCredits(cost + (poseCreditsDeducted ? 5 : 0))
+        toast.error('Generación fallida — intenta de nuevo')
       }
     } catch (err: any) {
-      if (err?.name !== 'AbortError') { restoreCredits(cost + (poseRef ? 5 : 0)); toast.error('Error al generar'); console.error(err) }
+      if (err?.name !== 'AbortError') { restoreCredits(cost + (poseCreditsDeducted ? 5 : 0)); toast.error('Error al generar'); console.error(err) }
     } finally { setGeneratingHero(false); setHeroProgress(0) }
   }
 
@@ -436,6 +443,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
         } else { failCount++ }
       } catch (err: any) {
         if (err?.name === 'AbortError') return
+        if (abortSessionRef.current?.signal.aborted) return // check before fallback
         // Fallback to Grok
         try {
           const grokRes = await generatePhotoSessionWithGrok(heroFile, 1, {
@@ -446,7 +454,10 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
             setRevealedCells(prev => new Set([...prev, idx]))
             successCount++
           } else { failCount++ }
-        } catch { failCount++ }
+        } catch (grokErr: any) {
+          if ((grokErr as any)?.name === 'AbortError') return // don't count aborted as fail
+          failCount++
+        }
       }
       setSessionProgress(Math.round(((successCount + failCount) / photoCount) * 100))
     }
@@ -456,9 +467,12 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
     for (let i = 0; i < items.length; i += 3) {
       const batch = items.slice(i, i + 3)
       await Promise.all(batch.map(({ pose, idx }) => generateShot(pose, idx)))
+      if (abortSessionRef.current?.signal.aborted) break // stop launching new batches
     }
 
-    if (failCount > 0) restoreCredits(failCount * costPerShot)
+    // Restore credits for non-successful shots (failed + aborted)
+    const unresolved = photoCount - successCount
+    if (unresolved > 0) restoreCredits(unresolved * costPerShot)
     triggerFlash(); setGeneratingSession(false); setSessionProgress(0)
     if (successCount > 0) toast.success(`${successCount} foto${successCount > 1 ? 's' : ''} generada${successCount > 1 ? 's' : ''}${failCount > 0 ? ` (${failCount} fallaron)` : ''}`)
     else toast.error('No se generaron fotos')
@@ -467,9 +481,9 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
   // Save selected photos to gallery
   const handleSaveSelected = () => {
     if (selectedCells.size === 0) return
-    const items: GalleryItem[] = Array.from(selectedCells).filter(idx => gridCells[idx]).map(idx => ({
+    const items: GalleryItem[] = Array.from(selectedCells).filter(idx => gridCells[idx]).map((idx, i) => ({
       id: crypto.randomUUID(), url: gridCells[idx], prompt: `Session: ${scenario || 'Studio'} · ${cellVibeMap[idx] || 'Photo'}`,
-      model: 'gemini-nb2', timestamp: Date.now(), type: 'create' as const,
+      model: 'gemini-nb2', timestamp: Date.now() + i, type: 'create' as const,
       characterId: selectedChar?.id, tags: ['studio', 'session', `vibe:${cellVibeMap[idx]}`], source: 'director' as const,
     }))
     useGalleryStore.getState().addItems(items)

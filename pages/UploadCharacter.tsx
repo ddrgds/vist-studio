@@ -410,13 +410,17 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
       : buildPromptFromChips(chipSelections)
 
     // Photos from character creation become the default reference photos.
-    // User can later change them in CharacterGallery.
     const defaultRefs = allPhotoUrls.filter(Boolean)
+
+    // Convert first blob to data URL for thumbnail (remote URLs expire)
+    const thumbnailDataUrl = modelImageBlobs[0]
+      ? await new Promise<string>(res => { const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(modelImageBlobs[0]) })
+      : allPhotoUrls[0]
 
     const char: SavedCharacter = {
       id: crypto.randomUUID(),
       name: name.trim(),
-      thumbnail: allPhotoUrls[0],
+      thumbnail: thumbnailDataUrl,
       modelImageBlobs: allBlobs.slice(0, 5),
       outfitBlob: null,
       outfitDescription: selFashion.map(id => FASHION_STYLES.find(f => f.id === id)?.promptText || '').filter(Boolean).join(', '),
