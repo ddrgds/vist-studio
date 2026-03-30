@@ -368,7 +368,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
         toast.error('Generación fallida — intenta de nuevo')
       }
     } catch (err: any) {
-      if (err?.name !== 'AbortError') { restoreCredits(cost + (poseCreditsDeducted ? 5 : 0)); toast.error('Error al generar'); console.error(err) }
+      if (err?.name !== 'AbortError') { restoreCredits(cost + (poseCreditsDeducted ? 5 : 0)); toast.error(`Error: ${(err?.message || '').slice(0, 120)}`); console.error(err) }
     } finally { setGeneratingHero(false); setHeroProgress(0) }
   }
 

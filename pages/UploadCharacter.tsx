@@ -328,9 +328,11 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
         toast.error('Generación fallida — intenta de nuevo')
         setGenerationPhase('idle')
       }
-    } catch {
+    } catch (err: any) {
       restoreCredits(cost)
-      toast.error('Generación fallida — intenta de nuevo')
+      const msg = err?.message || err?.toString() || 'Error desconocido'
+      toast.error(`Error: ${msg.slice(0, 120)}`)
+      console.error('Character generation error:', err)
       setGenerationPhase('idle')
     }
 
