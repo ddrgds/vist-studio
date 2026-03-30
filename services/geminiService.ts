@@ -423,28 +423,46 @@ export const generateInfluencerImage = async (
   // (promptlibrary.space 3-step workflow + godofprompt.ai JSON prompt guide)
   const hasFaceRefs = effectiveCharacters.some(c => c.modelImages && c.modelImages.length > 0);
 
-  const characterSpecs = effectiveCharacters.map((ch, i) => ({
+  const characterSpecs = effectiveCharacters.map((ch, i) => {
+    // Parse structured JSON spec if present (from character creator JSON prompting)
+    let charSpec: Record<string, any> | null = null;
+    if (ch.characteristics?.startsWith('CHARACTER SPECIFICATION:')) {
+      try {
+        charSpec = JSON.parse(ch.characteristics.replace('CHARACTER SPECIFICATION:\n', ''));
+      } catch { /* fall back to string traits */ }
+    }
+
+    return {
     character: i + 1,
     identity: (ch.modelImages && ch.modelImages.length > 0)
       ? {
           source: `[CHARACTER ${i + 1} — FACE/IDENTITY REFERENCE]`,
           face_lock: "ABSOLUTE — reproduce faithfully, same person recognizable instantly",
           preserve: ["bone_structure", "eye_shape", "eye_color", "nose_form", "lip_shape", "skin_tone", "skin_texture", "hair_color", "hair_texture"],
-          ...(ch.characteristics ? { traits: ch.characteristics } : {}),
+          ...(charSpec?.identity || {}),
+          ...(charSpec?.face ? { face_details: charSpec.face } : {}),
+          ...(charSpec?.body ? { body_proportions: charSpec.body } : {}),
+          ...(charSpec?.appearance || {}),
+          ...(!charSpec && ch.characteristics ? { traits: ch.characteristics } : {}),
         }
       : {
-          description: ch.characteristics || "photorealistic person",
-          ...(ch.characteristics ? { traits: ch.characteristics } : {}),
+          ...(charSpec ? {
+            ...charSpec.identity,
+            face_details: charSpec.face,
+            body_proportions: charSpec.body,
+            ...charSpec.appearance,
+          } : { description: ch.characteristics || "photorealistic person" }),
         },
     costume: {
       source: (ch.outfitImages?.length ?? 0) > 0
         ? `[CHARACTER ${i + 1} — OUTFIT REFERENCE] — reproduce every detail exactly`
-        : (ch.outfitDescription || "stylish editorial outfit"),
+        : (ch.outfitDescription || charSpec?.outfit || "stylish editorial outfit"),
       rule: "Replace any clothing visible in FACE reference entirely",
     },
     pose: ch.pose || "natural confident editorial stance",
-    ...(ch.accessory ? { accessory: ch.accessory } : {}),
-  }));
+    ...(ch.accessory ? { accessory: ch.accessory } : charSpec?.accessories ? { accessory: charSpec.accessories } : {}),
+    ...(charSpec?.personality ? { personality: charSpec.personality } : {}),
+  }});
 
   const sceneSpec = {
     style: styleDirective,
