@@ -461,7 +461,10 @@ export const generateInfluencerImage = async (
       focus: "sharp on faces and eyes",
     },
     quality: technicalQuality,
-    ...(params.negativePrompt ? { exclude: params.negativePrompt } : {}),
+    exclude: [
+      'extra limbs, duplicate arms, duplicate hands, extra fingers, fused fingers, malformed hands, mutated body parts, deformed anatomy, blurry face, crossed eyes, asymmetric eyes, text, watermark, signature, logo, frame, border',
+      params.negativePrompt || '',
+    ].filter(Boolean).join(', '),
   };
 
   const charCount = effectiveCharacters.length;
@@ -1040,6 +1043,8 @@ INTEGRATION RULES:
 - Do NOT add extra elements not mentioned in the instruction
 - Do NOT alter the subject's face, skin, hair, or clothing unless explicitly instructed
 
+AVOID (global): extra limbs, duplicate arms, duplicate hands, extra fingers, fused fingers, malformed hands, mutated body parts, deformed anatomy, blurry face, crossed eyes, asymmetric eyes, text, watermark, signature, logo, frame, border.
+
 OUTPUT: Return the complete edited photograph at the same quality and composition as the Base Image, with only the instructed addition or modification applied.
 `;
 
@@ -1152,6 +1157,7 @@ BACKGROUND: ${envDesc || (isRealistic ? 'Real environment with natural clutter â
 The camera has physically moved. Background MUST change â€” different walls, depth, objects visible.
 
 ONE photo only. No collages or grids. Ultra-photorealistic, natural skin, sharp focus.
+AVOID: extra limbs, duplicate arms, duplicate hands, extra fingers, fused fingers, malformed hands, mutated body parts, deformed anatomy, blurry face, crossed eyes, text, watermark, logo.
 ${options.imageBoost ? `\nQUALITY: ${options.imageBoost}.` : ''}${options.negativePrompt ? `\nAVOID: ${options.negativePrompt}.` : ''}
 
 ${FACE_CHECK_PROMPT}`;
