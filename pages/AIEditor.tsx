@@ -574,9 +574,9 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         resultUrls = [bgRemovedUrl]
       } else if (activeTool === 'reimagine') {
         const selectedStyles = SOUL_STYLES.filter(s => reimagineStyleIds.has(s.id))
-        const styleNames = selectedStyles.map(s => s.name).join(' + ')
-        const direction = reimagineCustom.trim() || styleNames || 'editorial fashion'
-        const instruction = `Reimagine this person in a completely new photo with ${direction} aesthetic. Create a NEW composition — new pose, new lighting, new outfit, new environment matching the ${direction} style. Use reference images ONLY for face and body proportions identity — IGNORE their clothing, background, and pose. The outfit must match the ${direction} aesthetic, NOT the reference images' outfit.`
+        const styleDescriptions = selectedStyles.map(s => s.hint || s.name)
+        const direction = reimagineCustom.trim() || styleDescriptions.join('. Also: ') || 'editorial fashion'
+        const instruction = `Reimagine this person in a completely new photo with ${direction} aesthetic. Create a NEW composition — new pose, new lighting, new outfit, new environment matching this style. Use reference images ONLY for face and body proportions identity — IGNORE their clothing, background, and pose. The outfit must match the aesthetic, NOT the reference images' outfit. DO NOT add any text, words, letters, labels, watermarks, or captions anywhere on the image.`
         // NB2 → Seedream → Grok (all pass character refs for identity)
         const charRefs = await getCharRefFiles()
         try {

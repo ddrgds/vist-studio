@@ -5,11 +5,12 @@
 // ─────────────────────────────────────────────
 
 export interface SoulStyle {
-  id: string;       // UUID for API
+  id: string;       // UUID for API or custom ID
   name: string;     // Display name
   category: SoulStyleCategory;
   icon: string;     // Emoji
   featured?: boolean; // Top-tier styles shown first with a badge
+  hint?: string;    // Detailed prompt hint — when present, used instead of just the name
 }
 
 export type SoulStyleCategory =
@@ -74,16 +75,16 @@ export const SOUL_STYLES: SoulStyle[] = [
   { id: '71fecd8c-6696-42df-b5eb-f69e4150ca01', name: '0.5 Outfit', category: 'fashion', icon: '👔' },
 
   // ── Photography ──
-  { id: '1b798b54-03da-446a-93bf-12fcba1050d7', name: 'iPhone', category: 'photo', icon: '📱', featured: true },
-  { id: 'ca4e6ad3-3e93-4e03-81a0-d1722d2c128b', name: 'DigitalCam', category: 'photo', icon: '📷' },
-  { id: 'f5c094c7-4671-4d86-90d2-369c8fdbd7a5', name: '90s Grain', category: 'photo', icon: '🎞️' },
-  { id: '83caff04-691c-468c-b4a0-fd6bbabe062b', name: 'Vintage PhotoBooth', category: 'photo', icon: '🎰' },
-  { id: 'cc4e7248-dcfe-4c93-b264-2ab418a7556b', name: 'Fisheye', category: 'photo', icon: '🐟' },
-  { id: 'd8a35238-ba42-48a0-a76a-186a97734b9d', name: 'Overexposed', category: 'photo', icon: '☀️' },
-  { id: '181b3796-008a-403b-b31e-a9b760219f17', name: '2000s Cam', category: 'photo', icon: '📸' },
-  { id: '294bb3ee-eaef-4d2a-93e3-164268803db4', name: '360 Cam', category: 'photo', icon: '🔄' },
-  { id: '811de7ab-7aaf-4a6b-b352-cdea6c34c8f1', name: 'Movie', category: 'photo', icon: '🎬' },
-  { id: '40ff999c-f576-443c-b5b3-c7d1391a666e', name: 'Spotlight', category: 'photo', icon: '💡' },
+  { id: '1b798b54-03da-446a-93bf-12fcba1050d7', name: 'iPhone', category: 'photo', icon: '📱', featured: true, hint: 'shot on iPhone, natural phone camera quality, slight lens softness, shallow DOF, casual authentic feel' },
+  { id: 'ca4e6ad3-3e93-4e03-81a0-d1722d2c128b', name: 'DigitalCam', category: 'photo', icon: '📷', hint: 'shot on early digital camera, slight pixelation, flash, red-eye, 2000s digital camera aesthetic' },
+  { id: 'f5c094c7-4671-4d86-90d2-369c8fdbd7a5', name: '90s Grain', category: 'photo', icon: '🎞️', hint: '1990s film photography, heavy organic grain, warm amber cast, faded colors, analog imperfections' },
+  { id: '83caff04-691c-468c-b4a0-fd6bbabe062b', name: 'Vintage PhotoBooth', category: 'photo', icon: '🎰', hint: 'photo booth strip, slightly washed out, flash lighting, curtain background, fun candid poses' },
+  { id: 'cc4e7248-dcfe-4c93-b264-2ab418a7556b', name: 'Fisheye', category: 'photo', icon: '🐟', hint: 'fisheye lens distortion, extreme wide angle, barrel distortion, skater/hip-hop aesthetic' },
+  { id: 'd8a35238-ba42-48a0-a76a-186a97734b9d', name: 'Overexposed', category: 'photo', icon: '☀️', hint: 'intentionally overexposed, blown highlights, dreamy washed-out look, ethereal bright atmosphere' },
+  { id: '181b3796-008a-403b-b31e-a9b760219f17', name: '2000s Cam', category: 'photo', icon: '📸', hint: 'early 2000s digital camera, flash, low resolution feel, MySpace era, party photos aesthetic' },
+  { id: '294bb3ee-eaef-4d2a-93e3-164268803db4', name: '360 Cam', category: 'photo', icon: '🔄', hint: '360 camera tiny planet effect, extreme wide angle, distorted perspective, action camera feel' },
+  { id: '811de7ab-7aaf-4a6b-b352-cdea6c34c8f1', name: 'Movie', category: 'photo', icon: '🎬', hint: 'cinematic movie still, 2.39:1 letterbox, anamorphic bokeh, film color grading, dramatic lighting' },
+  { id: '40ff999c-f576-443c-b5b3-c7d1391a666e', name: 'Spotlight', category: 'photo', icon: '💡', hint: 'single hard spotlight from above, dark background, dramatic pool of light, theatrical' },
   { id: 'd4775423-d214-4862-b061-47baa1978208', name: 'Fish-eye Twin', category: 'photo', icon: '👯' },
 
   // ── Selfie ──
@@ -272,16 +273,16 @@ export const SOUL_STYLES: SoulStyle[] = [
   { id: 'custom-fash-powersuit', name: 'Power Suit', category: 'fashion', icon: '👔' },
 
   // ── Photography (expanded) ──
-  { id: 'custom-photo-polaroid', name: 'Polaroid', category: 'photo', icon: '📸' },
-  { id: 'custom-photo-medium', name: 'Medium Format', category: 'photo', icon: '🎞️' },
-  { id: 'custom-photo-drone', name: 'Drone Aerial', category: 'photo', icon: '🛸' },
-  { id: 'custom-photo-disposable', name: 'Disposable Camera', category: 'photo', icon: '📷' },
-  { id: 'custom-photo-infrared', name: 'Infrared', category: 'photo', icon: '🔴' },
-  { id: 'custom-photo-longexpo', name: 'Long Exposure', category: 'photo', icon: '💫' },
-  { id: 'custom-photo-tiltshift', name: 'Tilt-Shift', category: 'photo', icon: '🔍' },
-  { id: 'custom-photo-double', name: 'Double Exposure', category: 'photo', icon: '👥' },
-  { id: 'custom-photo-noir', name: 'Film Noir', category: 'photo', icon: '🎬' },
-  { id: 'custom-photo-paparazzi', name: 'Paparazzi', category: 'photo', icon: '📸' },
+  { id: 'custom-photo-polaroid', name: 'Polaroid', category: 'photo', icon: '📸', hint: 'shot on Polaroid instant camera, washed-out warm colors, soft focus, slight vignette, cyan shadows, warm highlights, vintage dreamy quality — NOT a polaroid frame, apply the FILM LOOK' },
+  { id: 'custom-photo-medium', name: 'Medium Format', category: 'photo', icon: '🎞️', hint: 'shot on Hasselblad medium format, extreme sharpness, creamy bokeh, rich colors, shallow depth of field, professional studio quality' },
+  { id: 'custom-photo-drone', name: 'Drone Aerial', category: 'photo', icon: '🛸', hint: 'aerial drone shot from above, bird\'s eye view, person small in frame, dramatic landscape visible, deep depth of field' },
+  { id: 'custom-photo-disposable', name: 'Disposable Camera', category: 'photo', icon: '📷', hint: 'shot on disposable camera, flash on, red-eye, grainy, slightly blurry, authentic party vibes, warm cast, light leaks' },
+  { id: 'custom-photo-infrared', name: 'Infrared', category: 'photo', icon: '🔴', hint: 'infrared photography, white foliage, red/magenta sky, surreal colors, dream-like atmosphere' },
+  { id: 'custom-photo-longexpo', name: 'Long Exposure', category: 'photo', icon: '💫', hint: 'long exposure photography, motion blur on moving elements, light trails, silky water, person sharp against blurred surroundings' },
+  { id: 'custom-photo-tiltshift', name: 'Tilt-Shift', category: 'photo', icon: '🔍', hint: 'tilt-shift miniature effect, selective focus band, everything looks like a tiny model, saturated colors' },
+  { id: 'custom-photo-double', name: 'Double Exposure', category: 'photo', icon: '👥', hint: 'double exposure photography, person\'s silhouette blended with landscape or texture, artistic overlay, ethereal' },
+  { id: 'custom-photo-noir', name: 'Film Noir', category: 'photo', icon: '🎬', hint: 'film noir style, black and white, harsh shadows, Venetian blinds lighting, dramatic contrast, detective movie atmosphere' },
+  { id: 'custom-photo-paparazzi', name: 'Paparazzi', category: 'photo', icon: '📸', hint: 'paparazzi telephoto shot, flash burst, caught off-guard, slightly blurry motion, nighttime, flash reflecting in eyes' },
 
   // ── Selfie (expanded) ──
   { id: 'custom-selfie-pool', name: 'Pool Selfie', category: 'selfie', icon: '🏊' },
