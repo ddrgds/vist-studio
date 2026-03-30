@@ -431,42 +431,98 @@ export const ACCESSORIES: ChipOption[] = [
 ]
 
 // ─── Build prompt from chip selections ───────────────────────────────
+
+const ALL_CHIP_MAPS: Record<string, ChipOption[]> = {
+  ethnicity: ETHNICITIES, hairStyle: HAIR_STYLES, hairColor: HAIR_COLORS,
+  skinTone: SKIN_TONES, eyeColor: EYE_COLORS, eyeShape: EYE_SHAPES,
+  noseType: NOSE_TYPES, lipShape: LIP_SHAPES, faceShape: FACE_SHAPES,
+  jawline: JAWLINES, eyebrows: EYEBROWS, bodyType: BODY_TYPES,
+  height: HEIGHTS, bust: BUST_SIZES, hips: HIP_SIZES,
+  musculature: MUSCULATURE, facialHair: FACIAL_HAIR, skinTexture: SKIN_TEXTURES,
+  gender: GENDERS, age: AGE_RANGES, personality: PERSONALITY_TRAITS,
+  fashion: FASHION_STYLES, accessories: ACCESSORIES,
+}
+
+function getSelected(selections: Record<string, string[]>, category: string): string | undefined {
+  const ids = selections[category]
+  if (!ids || ids.length === 0) return undefined
+  const chips = ALL_CHIP_MAPS[category]
+  if (!chips) return undefined
+  return ids.map(id => chips.find(c => c.id === id)?.promptText).filter(Boolean).join(', ')
+}
+
+/**
+ * Build a JSON-structured prompt for NB2.
+ * NB2 processes JSON blocks as distinct semantic units — fields don't bleed into each other.
+ */
 export function buildPromptFromChips(selections: Record<string, string[]>): string {
-  const allChips: Record<string, ChipOption[]> = {
-    ethnicity:    ETHNICITIES,
-    hairStyle:    HAIR_STYLES,
-    hairColor:    HAIR_COLORS,
-    skinTone:     SKIN_TONES,
-    eyeColor:     EYE_COLORS,
-    eyeShape:     EYE_SHAPES,
-    noseType:     NOSE_TYPES,
-    lipShape:     LIP_SHAPES,
-    faceShape:    FACE_SHAPES,
-    jawline:      JAWLINES,
-    eyebrows:     EYEBROWS,
-    bodyType:     BODY_TYPES,
-    height:       HEIGHTS,
-    bust:         BUST_SIZES,
-    hips:         HIP_SIZES,
-    musculature:  MUSCULATURE,
-    facialHair:   FACIAL_HAIR,
-    skinTexture:  SKIN_TEXTURES,
-    gender:       GENDERS,
-    age:          AGE_RANGES,
-    personality:  PERSONALITY_TRAITS,
-    fashion:      FASHION_STYLES,
-    accessories:  ACCESSORIES,
-  }
+  const identity: Record<string, string> = {}
+  const face: Record<string, string> = {}
+  const body: Record<string, string> = {}
+  const appearance: Record<string, string> = {}
 
-  const parts: string[] = []
-  for (const [category, selectedIds] of Object.entries(selections)) {
-    const chips = allChips[category]
-    if (!chips) continue
-    for (const id of selectedIds) {
-      const chip = chips.find(c => c.id === id)
-      if (chip) parts.push(chip.promptText)
-    }
-  }
+  // Identity
+  const gender = getSelected(selections, 'gender')
+  const age = getSelected(selections, 'age')
+  const ethnicity = getSelected(selections, 'ethnicity')
+  if (gender) identity.gender = gender
+  if (age) identity.age = age
+  if (ethnicity) identity.ethnicity = ethnicity
 
-  return parts.join(', ')
+  // Face
+  const faceShape = getSelected(selections, 'faceShape')
+  const eyeColor = getSelected(selections, 'eyeColor')
+  const eyeShape = getSelected(selections, 'eyeShape')
+  const noseType = getSelected(selections, 'noseType')
+  const lipShape = getSelected(selections, 'lipShape')
+  const jawline = getSelected(selections, 'jawline')
+  const eyebrows = getSelected(selections, 'eyebrows')
+  const facialHair = getSelected(selections, 'facialHair')
+  if (faceShape) face.shape = faceShape
+  if (eyeColor) face.eye_color = eyeColor
+  if (eyeShape) face.eye_shape = eyeShape
+  if (noseType) face.nose = noseType
+  if (lipShape) face.lips = lipShape
+  if (jawline) face.jawline = jawline
+  if (eyebrows) face.eyebrows = eyebrows
+  if (facialHair) face.facial_hair = facialHair
+
+  // Body
+  const bodyType = getSelected(selections, 'bodyType')
+  const height = getSelected(selections, 'height')
+  const bust = getSelected(selections, 'bust')
+  const hips = getSelected(selections, 'hips')
+  const musculature = getSelected(selections, 'musculature')
+  if (bodyType) body.type = bodyType
+  if (height) body.height = height
+  if (bust) body.bust = bust
+  if (hips) body.hips = hips
+  if (musculature) body.musculature = musculature
+
+  // Appearance
+  const hairStyle = getSelected(selections, 'hairStyle')
+  const hairColor = getSelected(selections, 'hairColor')
+  const skinTone = getSelected(selections, 'skinTone')
+  const skinTexture = getSelected(selections, 'skinTexture')
+  if (hairStyle) appearance.hair_style = hairStyle
+  if (hairColor) appearance.hair_color = hairColor
+  if (skinTone) appearance.skin_tone = skinTone
+  if (skinTexture) appearance.skin_texture = skinTexture
+
+  // Extras
+  const personality = getSelected(selections, 'personality')
+  const fashion = getSelected(selections, 'fashion')
+  const accessories = getSelected(selections, 'accessories')
+
+  const spec: Record<string, any> = {}
+  if (Object.keys(identity).length > 0) spec.identity = identity
+  if (Object.keys(face).length > 0) spec.face = face
+  if (Object.keys(body).length > 0) spec.body = body
+  if (Object.keys(appearance).length > 0) spec.appearance = appearance
+  if (personality) spec.personality = personality
+  if (fashion) spec.outfit = fashion
+  if (accessories) spec.accessories = accessories
+
+  // Return as JSON block — NB2 treats this as structured semantic data
+  return `CHARACTER SPECIFICATION:\n${JSON.stringify(spec, null, 2)}`
 }
