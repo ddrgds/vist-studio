@@ -206,6 +206,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
   const [freePrompt, setFreePrompt] = useState('')
   const [reimagineStyleIds, setReimagineStyleIds] = useState<Set<string>>(new Set())
   const [reimagineCategory, setReimagineCategory] = useState<SoulStyleCategory | 'all'>('all')
+  const [reimagineSearch, setReimagineSearch] = useState('')
   const [reimagineCustom, setReimagineCustom] = useState('')
 
   // Composite / Scene tool state
@@ -943,7 +944,16 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           </>}
 
           {activeTool === 'reimagine' && <>
+            {/* Search */}
+            <div>
+              <input value={reimagineSearch} onChange={e => setReimagineSearch(e.target.value)}
+                placeholder="Buscar preset..."
+                className="w-full px-3 py-2 rounded-xl text-[11px] border outline-none"
+                style={{ background: 'var(--joi-bg-2)', borderColor: 'rgba(255,255,255,.04)', color: 'var(--joi-text-1)' }} />
+            </div>
+
             {/* Category filter */}
+            {!reimagineSearch.trim() && (
             <div>
               <div className="joi-label mb-2">Categoría</div>
               <div className="flex gap-1 flex-wrap">
@@ -957,12 +967,19 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                 ))}
               </div>
             </div>
+            )}
 
             {/* Style grid */}
             <div>
-              <div className="joi-label mb-2">Estilo ({SOUL_STYLES.filter(s => reimagineCategory === 'all' || s.category === reimagineCategory).length})</div>
+              {(() => {
+                const q = reimagineSearch.trim().toLowerCase()
+                const filtered = q
+                  ? SOUL_STYLES.filter(s => s.name.toLowerCase().includes(q) || s.category.includes(q))
+                  : SOUL_STYLES.filter(s => reimagineCategory === 'all' || s.category === reimagineCategory)
+                return <>
+              <div className="joi-label mb-2">{q ? `Resultados (${filtered.length})` : `Estilo (${filtered.length})`}</div>
               <div className="grid grid-cols-2 gap-1 max-h-[280px] overflow-y-auto joi-scroll">
-                {SOUL_STYLES.filter(s => reimagineCategory === 'all' || s.category === reimagineCategory).map(style => (
+                {filtered.map(style => (
                   <button key={style.id} onClick={() => { setReimagineStyleIds(prev => { const n = new Set(prev); n.has(style.id) ? n.delete(style.id) : n.add(style.id); return n }); setReimagineCustom('') }}
                     className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-all"
                     style={{
@@ -977,6 +994,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
                   </button>
                 ))}
               </div>
+              </>})()}
             </div>
 
             {/* Custom prompt */}
