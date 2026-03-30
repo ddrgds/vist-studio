@@ -6,9 +6,7 @@ import { GoogleGenAI } from '@google/genai';
 import { getRuleForModel } from '../data/modelRules';
 import { proxyUrl } from './apiAuth';
 
-const GEMINI_BASE = import.meta.env.PROD
-  ? proxyUrl('gemini', '')
-  : `${window.location.origin}/gemini-api`;
+const GEMINI_BASE = `${window.location.origin}/gemini-api`;
 
 const createCompilerClient = () =>
   new GoogleGenAI({ apiKey: 'PROXIED', httpOptions: { baseUrl: GEMINI_BASE } });

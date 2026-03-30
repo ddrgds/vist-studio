@@ -7,10 +7,8 @@ import { FACE_LOCK_PROMPT, OUTFIT_PRESERVE_PROMPT, FACE_CHECK_PROMPT } from '../
 import { compilePrompt } from './promptCompiler';
 
 // In dev, proxyUrl returns relative path — needs origin prefix.
-// In prod, proxyUrl returns full Worker URL — use as-is.
-const GEMINI_BASE = import.meta.env.PROD
-  ? proxyUrl('gemini', '')
-  : `${window.location.origin}/gemini-api`;
+// Always use same-origin Pages Functions — no external Worker needed
+const GEMINI_BASE = `${window.location.origin}/gemini-api`;
 
 // API key is injected server-side by the proxy (Vite in dev, Cloudflare Worker in prod).
 // We pass a placeholder apiKey (the SDK requires a non-empty string)
