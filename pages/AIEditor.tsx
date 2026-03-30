@@ -319,6 +319,24 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
   const pipelineCharId = usePipelineStore(s => s.characterId)
   const pipelineSetEditedHero = usePipelineStore(s => s.setEditedHero)
 
+  // Get character reference files for identity preservation
+  const getCharRefFiles = async (): Promise<File[]> => {
+    if (!pipelineCharId) return []
+    const char = characters.find(c => c.id === pipelineCharId)
+    if (!char) return []
+    const urls = char.referencePhotoUrls?.slice(0, 4) || char.modelImageUrls?.slice(0, 4) || []
+    if (urls.length === 0) return []
+    const files: File[] = []
+    await Promise.allSettled(urls.map(async (url, i) => {
+      try {
+        const res = await fetch(url)
+        const blob = await res.blob()
+        files.push(new File([blob], `char-ref-${i}.jpg`, { type: blob.type || 'image/jpeg' }))
+      } catch {}
+    }))
+    return files
+  }
+
   useEffect(() => {
     if (pipelineHeroUrl && !inputImage && !pendingImage) {
       setInputImage(pipelineHeroUrl)
@@ -448,25 +466,37 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         } else {
           sceneInstruction = `Change the background/scene to: ${scenePrompt.trim()}. Keep person's face, body, outfit, pose identical. Match lighting and color grading to the new scene.`
         }
-        // NB2 → Seedream → Grok fallback (with scene reference if available)
+        // NB2 → Seedream → Grok fallback (with scene reference + character identity refs)
+        const charRefs = await getCharRefFiles()
         try {
-          const results = await editImageWithAI({ baseImage: inputFile, referenceImage: sceneFile ?? undefined, instruction: sceneInstruction })
+          const results = await editImageWithAI({ baseImage: inputFile, referenceImage: sceneFile ?? charRefs[0] ?? undefined, instruction: sceneInstruction })
           resultUrls = results
         } catch (nb2Err) {
           console.warn('NB2 scene failed, trying Seedream:', nb2Err)
+          const allRefs = [...(sceneFile ? [sceneFile] : []), ...charRefs]
           try {
-            resultUrls = await editImageWithSeedream5(inputFile, sceneInstruction, sceneFile ? [sceneFile] : [], (p) => setProgress(p))
+            resultUrls = await editImageWithSeedream5(inputFile, sceneInstruction, allRefs, (p) => setProgress(p))
           } catch (sdErr) {
             console.warn('Seedream scene failed, trying Grok:', sdErr)
-            resultUrls = await editImageWithGrokFal(inputFile, sceneInstruction, (p) => setProgress(p), undefined, sceneFile ? [sceneFile] : [])
+            resultUrls = await editImageWithGrokFal(inputFile, sceneInstruction, (p) => setProgress(p), undefined, allRefs)
           }
         }
       } else if (activeTool === 'style') {
         const style = styleTransfers[selStyle]
-        const instruction = `Transform the entire image into ${style.name} style. ${style.prompt}. The person's face must remain recognizable but the visual rendering should change to match this aesthetic.`
-        // NB2 → Seedream → Grok fallback
-        const result = await runEditWithFallback(inputImage!, instruction, 'nb2', 'style-transfer')
-        resultUrls = [result.url]
+        const instruction = `Transform the entire image into ${style.name} style. ${style.prompt}. The person's face must remain recognizable but the visual rendering should change to match this aesthetic. Use reference images ONLY for face identity.`
+        // Pass character refs for identity, NB2 → Seedream → Grok fallback
+        const charRefs = await getCharRefFiles()
+        if (charRefs.length > 0) {
+          try {
+            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0], instruction })
+            resultUrls = results
+          } catch {
+            resultUrls = await editImageWithSeedream5(inputFile!, instruction, charRefs, (p) => setProgress(p))
+          }
+        } else {
+          const result = await runEditWithFallback(inputImage!, instruction, 'nb2', 'style-transfer')
+          resultUrls = [result.url]
+        }
       } else if (activeTool === 'realskin') {
         const SKIN_PRESET_INSTRUCTIONS: Record<string, string> = {
           soft: 'Add barely-visible, very subtle pores with zero imperfections, a smooth dewy skin texture, and gentle diffused subsurface scattering. The result should look beautifully retouched but still natural.',
@@ -532,9 +562,20 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
       } else if (activeTool === 'reimagine') {
         const selectedStyle = SOUL_STYLES.find(s => s.id === reimagineStyleId)
         const direction = reimagineCustom.trim() || (selectedStyle ? selectedStyle.name : 'editorial fashion')
-        const instruction = `Reimagine this person in a completely new photo with ${direction} aesthetic. Create a NEW composition — new pose, new lighting, new environment matching the style. The person's face and identity must remain recognizable but everything else changes to match the ${direction} direction.`
-        const result = await runEditWithFallback(inputImage!, instruction, 'nb2', 'ai-edit')
-        resultUrls = [result.url]
+        const instruction = `Reimagine this person in a completely new photo with ${direction} aesthetic. Create a NEW composition — new pose, new lighting, new outfit, new environment matching the ${direction} style. Use reference images ONLY for face/identity — IGNORE their clothing, background, and pose. The outfit must match the ${direction} aesthetic, NOT the reference images' outfit.`
+        // Pass character refs for identity preservation
+        const charRefs = await getCharRefFiles()
+        if (charRefs.length > 0) {
+          try {
+            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0], instruction })
+            resultUrls = results
+          } catch {
+            resultUrls = [await editImageWithSeedream5(inputFile!, instruction, charRefs, (p) => setProgress(p)).then(r => r[0])]
+          }
+        } else {
+          const result = await runEditWithFallback(inputImage!, instruction, 'nb2', 'ai-edit')
+          resultUrls = [result.url]
+        }
       }
 
       const validUrls = resultUrls.filter(Boolean)
