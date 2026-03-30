@@ -239,29 +239,29 @@ export const HEIGHTS: ChipOption[] = [
 
 // ─── Bust / Chest ──────────────────────────────────────────────────
 export const BUST_SIZES: ChipOption[] = [
-  { id: 'flat',        label: 'Plano',        emoji: '▫️', promptText: 'flat chest, no bust' },
-  { id: 'small-bust',  label: 'Pequeño',      emoji: '🔹', promptText: 'small bust, subtle chest' },
-  { id: 'medium-bust', label: 'Mediano',      emoji: '🔷', promptText: 'medium bust, proportional chest' },
-  { id: 'large-bust',  label: 'Grande',       emoji: '💎', promptText: 'large full bust, prominent chest' },
-  { id: 'very-large',  label: 'Muy grande',   emoji: '⭐', promptText: 'very large bust, voluptuous figure' },
+  { id: 'flat',        label: 'Plano',        emoji: '▫️', promptText: 'BODY PROPORTION: completely flat chest, no bust at all, very slim upper body' },
+  { id: 'small-bust',  label: 'Pequeño',      emoji: '🔹', promptText: 'BODY PROPORTION: small A-cup bust, subtle petite chest' },
+  { id: 'medium-bust', label: 'Mediano',      emoji: '🔷', promptText: 'BODY PROPORTION: medium B/C-cup bust, proportional balanced chest' },
+  { id: 'large-bust',  label: 'Grande',       emoji: '💎', promptText: 'BODY PROPORTION: large D-cup bust, full prominent chest clearly visible in clothing' },
+  { id: 'very-large',  label: 'Muy grande',   emoji: '⭐', promptText: 'BODY PROPORTION: very large DD+ bust, voluptuous prominent chest that defines the silhouette' },
 ]
 
 // ─── Hips / Glutes ─────────────────────────────────────────────────
 export const HIP_SIZES: ChipOption[] = [
-  { id: 'narrow-hips',  label: 'Estrechas',   emoji: '▫️', promptText: 'narrow slim hips, straight silhouette' },
-  { id: 'medium-hips',  label: 'Medianas',    emoji: '🔹', promptText: 'medium proportional hips' },
-  { id: 'wide-hips',    label: 'Anchas',      emoji: '🔷', promptText: 'wide hips, pronounced hip curve' },
-  { id: 'round-glutes', label: 'Glúteos marcados', emoji: '🍑', promptText: 'round prominent glutes, defined rear' },
-  { id: 'full-hips',    label: 'Voluptuosas', emoji: '💎', promptText: 'full wide hips and round glutes, voluptuous lower body' },
+  { id: 'narrow-hips',  label: 'Estrechas',   emoji: '▫️', promptText: 'BODY PROPORTION: narrow slim hips, straight rectangular silhouette, minimal hip curve' },
+  { id: 'medium-hips',  label: 'Medianas',    emoji: '🔹', promptText: 'BODY PROPORTION: medium proportional hips, moderate natural curve' },
+  { id: 'wide-hips',    label: 'Anchas',      emoji: '🔷', promptText: 'BODY PROPORTION: wide hips, pronounced feminine hip curve, visible waist-to-hip ratio' },
+  { id: 'round-glutes', label: 'Glúteos marcados', emoji: '🍑', promptText: 'BODY PROPORTION: round prominent glutes, defined sculpted rear, athletic lower body' },
+  { id: 'full-hips',    label: 'Voluptuosas', emoji: '💎', promptText: 'BODY PROPORTION: full wide hips and large round glutes, dramatic hourglass lower body, very pronounced curves' },
 ]
 
 // ─── Musculature ───────────────────────────────────────────────────
 export const MUSCULATURE: ChipOption[] = [
-  { id: 'soft',         label: 'Suave',        emoji: '☁️', promptText: 'soft body, no visible muscle definition' },
-  { id: 'toned-light',  label: 'Ligeramente tonificado', emoji: '🌿', promptText: 'lightly toned, subtle muscle definition, healthy look' },
-  { id: 'toned-defined',label: 'Definido',     emoji: '💪', promptText: 'well defined muscles, visible abs and arm definition, fitness model' },
-  { id: 'muscular',     label: 'Musculoso/a',  emoji: '🏋️', promptText: 'muscular build, large defined muscles, bodybuilder physique' },
-  { id: 'shredded',     label: 'Marcado (seco)',emoji: '⚡', promptText: 'shredded low body fat, extreme muscle definition, vascularity visible' },
+  { id: 'soft',         label: 'Suave',        emoji: '☁️', promptText: 'BODY PROPORTION: soft body with no visible muscle definition, smooth rounded limbs' },
+  { id: 'toned-light',  label: 'Ligeramente tonificado', emoji: '🌿', promptText: 'BODY PROPORTION: lightly toned body, subtle muscle definition visible on arms and legs, healthy fit look' },
+  { id: 'toned-defined',label: 'Definido',     emoji: '💪', promptText: 'BODY PROPORTION: well defined muscles clearly visible, visible abs and arm definition, fitness model physique' },
+  { id: 'muscular',     label: 'Musculoso/a',  emoji: '🏋️', promptText: 'BODY PROPORTION: muscular build, large defined muscles on arms chest and legs, bodybuilder physique' },
+  { id: 'shredded',     label: 'Marcado (seco)',emoji: '⚡', promptText: 'BODY PROPORTION: shredded extremely low body fat, extreme muscle definition with vascularity visible, competition-ready body' },
 ]
 
 // ─── Facial Hair (masculine) ───────────────────────────────────────

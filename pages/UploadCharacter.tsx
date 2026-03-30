@@ -186,6 +186,23 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     setSheetGenerating(null)
   }
 
+  const resetAll = () => {
+    resetGeneration()
+    setName('')
+    setStep(0)
+    setSelGender(null)
+    setSelRenderStyle(0)
+    setChipSelections({
+      ethnicity: [], hairStyle: [], hairColor: [], skinTone: [], eyeColor: [],
+      eyeShape: [], noseType: [], lipShape: [], faceShape: [], jawline: [], eyebrows: [],
+      bodyType: [], height: [], bust: [], hips: [], musculature: [], facialHair: [], skinTexture: [],
+    })
+    setSelFashion([])
+    setSelAccessories([])
+    setSelPersonality([])
+    setReferenceFiles([])
+  }
+
   // ─── Helpers ──────────────────────────────────────────────────────
   const updateChip = (category: string, ids: string[]) => {
     setChipSelections(prev => ({ ...prev, [category]: ids }))
@@ -1239,11 +1256,16 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                     )}
 
                     {characterSaved && onNav && (
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <div className="text-center text-[12px] font-medium" style={{ color: 'var(--joi-mint, var(--joi-pink))' }}>
                           {'\u2713'} Personaje guardado!
                         </div>
-                        <PipelineCTA label="Crear Foto Principal en Director" targetPage="studio" onNav={onNav} icon="\u{1F3AC}" />
+                        <PipelineCTA label="Crear Foto Principal en Studio" targetPage="studio" onNav={onNav} icon="\u{1F3AC}" />
+                        <button onClick={resetAll}
+                          className="w-full py-2.5 rounded-xl text-[12px] font-medium transition-all"
+                          style={{ background: 'var(--joi-bg-3)', border: '1px solid var(--joi-border)', color: 'var(--joi-text-2)' }}>
+                          + Crear Nuevo Personaje
+                        </button>
                       </div>
                     )}
                   </div>
