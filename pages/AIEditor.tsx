@@ -483,7 +483,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         }
       } else if (activeTool === 'style') {
         const style = styleTransfers[selStyle]
-        const instruction = `Transform the entire image into ${style.name} style. ${style.prompt}. The person's face must remain recognizable but the visual rendering should change to match this aesthetic. Use reference images ONLY for face identity.`
+        const instruction = `Transform the entire image into ${style.name} style. ${style.prompt}. The person's face must remain recognizable but the visual rendering should change to match this aesthetic. Use reference images ONLY for face and body proportions identity — IGNORE their clothing.`
         // Pass character refs for identity, NB2 → Seedream → Grok fallback
         const charRefs = await getCharRefFiles()
         if (charRefs.length > 0) {
@@ -562,7 +562,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
       } else if (activeTool === 'reimagine') {
         const selectedStyle = SOUL_STYLES.find(s => s.id === reimagineStyleId)
         const direction = reimagineCustom.trim() || (selectedStyle ? selectedStyle.name : 'editorial fashion')
-        const instruction = `Reimagine this person in a completely new photo with ${direction} aesthetic. Create a NEW composition — new pose, new lighting, new outfit, new environment matching the ${direction} style. Use reference images ONLY for face/identity — IGNORE their clothing, background, and pose. The outfit must match the ${direction} aesthetic, NOT the reference images' outfit.`
+        const instruction = `Reimagine this person in a completely new photo with ${direction} aesthetic. Create a NEW composition — new pose, new lighting, new outfit, new environment matching the ${direction} style. Use reference images ONLY for face and body proportions identity — IGNORE their clothing, background, and pose. The outfit must match the ${direction} aesthetic, NOT the reference images' outfit.`
         // Pass character refs for identity preservation
         const charRefs = await getCharRefFiles()
         if (charRefs.length > 0) {
