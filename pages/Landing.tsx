@@ -59,7 +59,7 @@ export default function Landing({ onAuth }: LandingProps) {
       <header style={{
         position: 'sticky', top: 0, zIndex: 50,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 80px', height: '64px',
+        padding: '0 clamp(16px, 5vw, 80px)', height: '64px',
         background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)',
         borderBottom: '1px solid rgba(0,0,0,0.08)',
       }}>
@@ -70,7 +70,7 @@ export default function Landing({ onAuth }: LandingProps) {
           <span style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.02em' }}>VIST Studio</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '36px' }}>
-          <nav style={{ display: 'flex', gap: '36px' }}>
+          <nav className="hidden md:flex" style={{ gap: '36px' }}>
             {[{ label: 'Funciones', href: '#features' }, { label: 'Cómo Funciona', href: '#how-it-works' }, { label: 'Galería', href: '#showcase' }].map(l => (
               <a key={l.label} href={l.href} style={{
                 fontSize: '14px', fontWeight: 500, color: C.text3,
@@ -81,12 +81,12 @@ export default function Landing({ onAuth }: LandingProps) {
               >{l.label}</a>
             ))}
           </nav>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button onClick={onAuth} style={{
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={onAuth} className="hidden sm:block" style={{
               background: 'transparent', color: '#111111',
               border: '1px solid rgba(0,0,0,0.15)',
-              borderRadius: '999px', padding: '0 24px', height: '40px',
-              fontSize: '14px', fontWeight: 600, cursor: 'pointer',
+              borderRadius: '999px', padding: '0 16px', height: '36px',
+              fontSize: '13px', fontWeight: 600, cursor: 'pointer',
             }}>Iniciar Sesión</button>
             <button onClick={onAuth} style={{
               background: '#111111', color: '#FFFFFF', border: 'none',
@@ -117,7 +117,7 @@ export default function Landing({ onAuth }: LandingProps) {
       />
 
       {/* ── Features ──────────────────────────────────────── */}
-      <section id="features" style={{ padding: '100px 80px', maxWidth: '1200px', margin: '0 auto' }}>
+      <section id="features" style={{ padding: 'clamp(40px, 8vw, 100px) clamp(16px, 5vw, 80px)', maxWidth: '1200px', margin: '0 auto' }}>
         <Reveal>
           <div style={{ textAlign: 'center', marginBottom: '48px' }}>
             <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: '12px' }}>
@@ -129,7 +129,7 @@ export default function Landing({ onAuth }: LandingProps) {
           </div>
         </Reveal>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
           {[
             { icon: '💡', title: 'Creatividad Sin Límites', desc: 'Genera conceptos, estéticas e ideas de campaña ilimitadas que encajan perfecto con la personalidad única de tu influencer virtual.' },
             { icon: '📸', title: 'Generación Hiperrealista', desc: 'Nuestros modelos de IA de última generación crean fotos y videos cortos hiperrealistas, imposibles de distinguir de la realidad.' },
@@ -166,13 +166,13 @@ export default function Landing({ onAuth }: LandingProps) {
 
       {/* ── Split Section — Character + Value Props ─────────── */}
       <section style={{
-        padding: '80px 80px', maxWidth: '1200px', margin: '0 auto',
-        display: 'flex', alignItems: 'center', gap: '60px',
+        padding: 'clamp(40px, 8vw, 80px) clamp(16px, 5vw, 80px)', maxWidth: '1200px', margin: '0 auto',
+        display: 'flex', flexWrap: 'wrap' as const, alignItems: 'center', gap: 'clamp(24px, 4vw, 60px)',
       }}>
         {/* Left — Character Image */}
         <Reveal>
           <div style={{
-            width: '400px', flexShrink: 0, borderRadius: '24px', overflow: 'hidden',
+            width: 'clamp(280px, 40vw, 400px)', flexShrink: 0, borderRadius: '24px', overflow: 'hidden',
             boxShadow: '0 30px 80px rgba(0,0,0,0.1)',
             border: '1px solid rgba(0,0,0,0.08)',
           }}>
@@ -230,7 +230,7 @@ export default function Landing({ onAuth }: LandingProps) {
       </section>
 
       {/* ── Instagram Phone Mockup ────────────────────────── */}
-      <section style={{ padding: '80px 80px', maxWidth: '1200px', margin: '0 auto' }}>
+      <section style={{ padding: 'clamp(40px, 8vw, 80px) clamp(16px, 5vw, 80px)', maxWidth: '1200px', margin: '0 auto' }}>
         <Reveal>
           <div style={{ textAlign: 'center', marginBottom: '40px' }}>
             <h2 style={{ fontSize: 'clamp(1.8rem, 3.5vw, 2.5rem)', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: '12px' }}>
@@ -328,7 +328,7 @@ export default function Landing({ onAuth }: LandingProps) {
       </section>
 
       {/* ── How it Works ──────────────────────────────────── */}
-      <section id="how-it-works" style={{ padding: '80px 80px', maxWidth: '800px', margin: '0 auto' }}>
+      <section id="how-it-works" style={{ padding: 'clamp(40px, 8vw, 80px) clamp(16px, 5vw, 80px)', maxWidth: '800px', margin: '0 auto' }}>
         <Reveal>
           <div style={{ textAlign: 'center', marginBottom: '48px' }}>
             <h2 style={{ fontSize: 'clamp(1.8rem, 3.5vw, 2.5rem)', fontWeight: 700, marginBottom: '8px' }}>Cómo Funciona</h2>
@@ -369,7 +369,7 @@ export default function Landing({ onAuth }: LandingProps) {
       </section>
 
       {/* ── Showcase ──────────────────────────────────────── */}
-      <section id="showcase" style={{ padding: '80px 80px', maxWidth: '1200px', margin: '0 auto' }}>
+      <section id="showcase" style={{ padding: 'clamp(40px, 8vw, 80px) clamp(16px, 5vw, 80px)', maxWidth: '1200px', margin: '0 auto' }}>
         <Reveal>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '32px' }}>
             <div>
@@ -418,7 +418,7 @@ export default function Landing({ onAuth }: LandingProps) {
       </section>
 
       {/* ── Final CTA ─────────────────────────────────────── */}
-      <section style={{ padding: '120px 80px', textAlign: 'center', position: 'relative' }}>
+      <section style={{ padding: 'clamp(60px, 10vw, 120px) clamp(16px, 5vw, 80px)', textAlign: 'center', position: 'relative' }}>
         <div style={{
           position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
           width: '50%', height: '100%', borderRadius: '50%',
