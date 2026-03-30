@@ -1095,7 +1095,7 @@ const SESSION_ANGLES = [
 export const generatePhotoSession = async (
   referenceImage: File,
   count: number,
-  options: { scenario?: string; lighting?: string; aspectRatio?: string; imageSize?: string; angles?: string[]; realistic?: boolean; negativePrompt?: string; imageBoost?: string } = {},
+  options: { scenario?: string; lighting?: string; aspectRatio?: string; imageSize?: string; angles?: string[]; realistic?: boolean; negativePrompt?: string; imageBoost?: string; identityRefs?: File[] } = {},
   onProgress?: (percent: number) => void,
   abortSignal?: AbortSignal
 ): Promise<PoseGenerationResult[]> => {
@@ -1165,8 +1165,15 @@ ${FACE_CHECK_PROMPT}`;
     const parts: any[] = [
       refPart,
       { text: '[BASE IMAGE] Source for Identity, Face, Hair, Outfit, and Clothing. Copy the person\'s face with pixel-perfect fidelity. Preserve the outfit exactly. Ignore the background and camera angle — only the pose changes.' },
-      { text: prompt },
     ];
+    // Add identity reference images for better face/body consistency
+    if (options.identityRefs && options.identityRefs.length > 0 && index === 0) {
+      for (const ref of options.identityRefs.slice(0, 4)) {
+        parts.push(await fileToPart(ref));
+      }
+      parts.push({ text: '[IDENTITY REFERENCE] Additional face and body proportions reference — use ONLY for identity preservation, IGNORE clothing and background from these images.' });
+    }
+    parts.push({ text: prompt });
 
     if (onProgress) onProgress(Math.round(15 + ((index + 1) / clampedCount) * 75));
 

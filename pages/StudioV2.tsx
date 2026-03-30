@@ -414,6 +414,9 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       heroFile = new File([heroBlob], 'hero.jpg', { type: heroBlob.type || 'image/jpeg' })
     } catch { restoreCredits(totalCost); toast.error('Error cargando imagen base'); setGeneratingSession(false); return }
 
+    // Load character identity refs for better consistency across session photos
+    const identityRefs = await fetchUrlsAsFiles(getCharacterReferenceUrls())
+
     let successCount = 0; let failCount = 0
 
     // Generate each photo individually with concurrency limit
@@ -423,6 +426,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
         const results = await generatePhotoSession(heroFile, 1, {
           scenario: sceneContext, realistic: charStyleInfo.isRealistic,
           aspectRatio: arMap[sessionAspectRatio] || '3:4', imageSize: imgSize, angles: [pose],
+          identityRefs: identityRefs.length > 0 ? identityRefs : undefined,
         }, undefined, abortSessionRef.current!.signal)
 
         if (results.length > 0 && results[0].url) {
