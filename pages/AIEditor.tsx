@@ -204,7 +204,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
   const [selBg, setSelBg] = useState(0)
   const [bgMode, setBgMode] = useState<'Preset'|'Upload'|'Prompt'>('Preset')
   const [freePrompt, setFreePrompt] = useState('')
-  const [reimagineStyleId, setReimagineStyleId] = useState<string | null>(null)
+  const [reimagineStyleIds, setReimagineStyleIds] = useState<Set<string>>(new Set())
   const [reimagineCategory, setReimagineCategory] = useState<SoulStyleCategory | 'all'>('all')
   const [reimagineCustom, setReimagineCustom] = useState('')
 
@@ -399,7 +399,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
     }
 
     // Reimagine needs a prompt
-    if (activeTool === 'reimagine' && !reimagineStyleId && !reimagineCustom.trim()) {
+    if (activeTool === 'reimagine' && reimagineStyleIds.size === 0 && !reimagineCustom.trim()) {
       return
     }
 
@@ -572,8 +572,9 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         const bgRemovedUrl = await removeBackground(inputImage, (p) => setProgress(p))
         resultUrls = [bgRemovedUrl]
       } else if (activeTool === 'reimagine') {
-        const selectedStyle = SOUL_STYLES.find(s => s.id === reimagineStyleId)
-        const direction = reimagineCustom.trim() || (selectedStyle ? selectedStyle.name : 'editorial fashion')
+        const selectedStyles = SOUL_STYLES.filter(s => reimagineStyleIds.has(s.id))
+        const styleNames = selectedStyles.map(s => s.name).join(' + ')
+        const direction = reimagineCustom.trim() || styleNames || 'editorial fashion'
         const instruction = `Reimagine this person in a completely new photo with ${direction} aesthetic. Create a NEW composition — new pose, new lighting, new outfit, new environment matching the ${direction} style. Use reference images ONLY for face and body proportions identity — IGNORE their clothing, background, and pose. The outfit must match the ${direction} aesthetic, NOT the reference images' outfit.`
         // Pass character refs for identity preservation
         const charRefs = await getCharRefFiles()
@@ -961,16 +962,17 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
               <div className="joi-label mb-2">Estilo ({SOUL_STYLES.filter(s => reimagineCategory === 'all' || s.category === reimagineCategory).length})</div>
               <div className="grid grid-cols-2 gap-1 max-h-[280px] overflow-y-auto joi-scroll">
                 {SOUL_STYLES.filter(s => reimagineCategory === 'all' || s.category === reimagineCategory).map(style => (
-                  <button key={style.id} onClick={() => { setReimagineStyleId(reimagineStyleId === style.id ? null : style.id); setReimagineCustom('') }}
+                  <button key={style.id} onClick={() => { setReimagineStyleIds(prev => { const n = new Set(prev); n.has(style.id) ? n.delete(style.id) : n.add(style.id); return n }); setReimagineCustom('') }}
                     className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-all"
                     style={{
-                      background: reimagineStyleId === style.id ? 'var(--joi-pink-soft)' : 'var(--joi-bg-3)',
-                      border: `1px solid ${reimagineStyleId === style.id ? 'var(--joi-border-h)' : 'rgba(255,255,255,.04)'}`,
-                      color: reimagineStyleId === style.id ? 'var(--joi-pink)' : 'var(--joi-text-2)',
+                      background: reimagineStyleIds.has(style.id) ? 'var(--joi-pink-soft)' : 'var(--joi-bg-3)',
+                      border: `1px solid ${reimagineStyleIds.has(style.id) ? 'var(--joi-border-h)' : 'rgba(255,255,255,.04)'}`,
+                      color: reimagineStyleIds.has(style.id) ? 'var(--joi-pink)' : 'var(--joi-text-2)',
                     }}>
                     <span className="text-sm">{style.icon}</span>
                     <span className="text-[10px] truncate">{style.name}</span>
-                    {style.featured && <span className="text-[7px] ml-auto" style={{ color: 'var(--joi-pink)' }}>★</span>}
+                    {style.featured && !reimagineStyleIds.has(style.id) && <span className="text-[7px] ml-auto" style={{ color: 'var(--joi-pink)' }}>★</span>}
+                    {reimagineStyleIds.has(style.id) && <span className="text-[8px] ml-auto" style={{ color: 'var(--joi-pink)' }}>✓</span>}
                   </button>
                 ))}
               </div>
@@ -978,9 +980,19 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
 
             {/* Custom prompt */}
             <div>
+            {/* Selected combination */}
+            {reimagineStyleIds.size > 0 && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[9px] font-mono" style={{ color: 'var(--joi-pink)' }}>
+                  {SOUL_STYLES.filter(s => reimagineStyleIds.has(s.id)).map(s => s.name).join(' + ')}
+                </span>
+                <button onClick={() => setReimagineStyleIds(new Set())} className="text-[9px] px-1.5 py-0.5 rounded" style={{ color: 'var(--joi-text-3)', background: 'var(--joi-bg-3)' }}>Limpiar</button>
+              </div>
+            )}
+
               <div className="joi-label mb-1.5">O describe tu dirección</div>
               <textarea rows={2} value={reimagineCustom}
-                onChange={e => { setReimagineCustom(e.target.value); if (e.target.value.trim()) setReimagineStyleId(null) }}
+                onChange={e => { setReimagineCustom(e.target.value); if (e.target.value.trim()) setReimagineStyleIds(new Set()) }}
                 placeholder="Ej.: editorial de moda en París, sunset dreamy vibes..."
                 className="w-full px-3 py-2 rounded-xl text-[11px] border outline-none resize-none"
                 style={{ background:'var(--joi-bg-2)', borderColor:'rgba(255,255,255,.04)', color:'var(--joi-text-1)' }} />
