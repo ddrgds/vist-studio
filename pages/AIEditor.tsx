@@ -664,7 +664,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
   }
 
   return (
-    <div className="h-full flex" style={{ background: 'var(--joi-bg-0)' }}>
+    <div className="h-full flex flex-col lg:flex-row" style={{ background: 'var(--joi-bg-0)' }}>
       {/* Hidden file inputs */}
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
         onChange={(e) => {
@@ -734,7 +734,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
       </div>
 
       {/* Tool Panel */}
-      <div className="w-full lg:w-[300px] shrink-0 flex flex-col joi-scroll" style={{ background:'var(--joi-bg-1)', borderRight:'1px solid rgba(255,255,255,.04)', backdropFilter:'blur(16px)' }}>
+      <div className="w-full lg:w-[300px] shrink-0 flex flex-col max-h-[40vh] lg:max-h-full overflow-y-auto joi-scroll" style={{ background:'var(--joi-bg-1)', borderRight:'1px solid var(--border)', backdropFilter:'blur(16px)' }}>
         <div className="px-4 h-14 flex items-center shrink-0" style={{ borderBottom:'1px solid rgba(255,255,255,.04)' }}>
           <h2 className="text-sm font-bold" style={{ color:'var(--joi-text-1)' }}>
             {tools.find(t=>t.id===activeTool)?.icon} {tools.find(t=>t.id===activeTool)?.label}

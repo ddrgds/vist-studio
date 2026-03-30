@@ -188,13 +188,13 @@ function AuthenticatedApp() {
 
       {/* Global AI Editor Overlay — accessible from any page */}
       {editorOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'rgba(8,7,12,.95)', backdropFilter: 'blur(12px)' }}>
+        <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'var(--bg-0)' }}>
           <div className="shrink-0 flex items-center justify-between px-5 py-2.5"
-            style={{ borderBottom: '1px solid rgba(255,255,255,.06)', background: 'var(--joi-bg-1)' }}>
-            <span className="text-xs font-semibold" style={{ color: 'var(--joi-text-2)' }}>AI Editor</span>
+            style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-1)' }}>
+            <span className="text-xs font-semibold" style={{ color: 'var(--text-2)' }}>AI Editor</span>
             <button onClick={closeEditor}
               className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
-              style={{ color: 'var(--joi-text-3)' }}>
+              style={{ color: 'var(--text-3)' }}>
               ✕
             </button>
           </div>
