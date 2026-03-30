@@ -483,6 +483,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         const charRefs = await getCharRefFiles()
         try {
           const results = await editImageWithAI({ baseImage: inputFile, referenceImage: sceneFile ?? charRefs[0] ?? undefined, instruction: sceneInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio })
+          if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
           console.warn('NB2 scene failed, trying Seedream:', nb2Err)
@@ -502,6 +503,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         if (charRefs.length > 0) {
           try {
             const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0], instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio })
+            if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
             resultUrls = results
           } catch {
             resultUrls = await editImageWithSeedream5(inputFile!, instruction, charRefs, (p) => setProgress(p))
@@ -540,6 +542,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         const faceInstruction = `Replace the face of the person in the base image with the face from the reference image. Keep hair, body, pose, clothing, and background exactly the same. Only change facial features.`
         try {
           const dataUrl = await faceSwapWithGemini(inputFile, faceSwapFile, (p) => setProgress(p))
+          if (!dataUrl) throw new Error('NB2 face swap returned empty')
           resultUrls = [dataUrl]
         } catch (nb2Err) {
           console.warn('NB2 face swap failed, trying Seedream:', nb2Err)
@@ -555,6 +558,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         const tryonInstruction = `VIRTUAL TRY-ON: Replace ONLY the clothing on this person with the garment from the reference image. Keep the person's face, hair, skin, body, pose, and background 100% unchanged. Reproduce every fabric detail, pattern, color, and texture from the reference garment exactly.`
         try {
           const results = await editImageWithAI({ baseImage: inputFile, referenceImage: garmentFile, instruction: tryonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio })
+          if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
           console.warn('NB2 try-on failed, trying Seedream:', nb2Err)
@@ -581,11 +585,14 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         const charRefs = await getCharRefFiles()
         try {
           const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio })
+          if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
           console.warn('NB2 reimagine failed, trying Seedream:', nb2Err)
           try {
-            resultUrls = await editImageWithSeedream5(inputFile!, instruction, charRefs, (p) => setProgress(p))
+            const sdResults = await editImageWithSeedream5(inputFile!, instruction, charRefs, (p) => setProgress(p))
+            if (!sdResults || sdResults.filter(Boolean).length === 0) throw new Error('Seedream returned empty')
+            resultUrls = sdResults
           } catch (sdErr) {
             console.warn('Seedream reimagine failed, trying Grok:', sdErr)
             resultUrls = await editImageWithGrokFal(inputFile!, instruction, (p) => setProgress(p), undefined, charRefs)
