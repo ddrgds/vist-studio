@@ -460,7 +460,7 @@ export const generateInfluencerImage = async (
     },
     quality: technicalQuality,
     exclude: [
-      'extra limbs, duplicate arms, duplicate hands, extra fingers, fused fingers, malformed hands, mutated body parts, deformed anatomy, blurry face, crossed eyes, asymmetric eyes, text, watermark, signature, logo, frame, border',
+      'extra limbs, duplicate arms, duplicate hands, extra fingers, fused fingers, malformed hands, mutated body parts, deformed anatomy, blurry face, crossed eyes, asymmetric eyes, text, watermark, signature, logo, frame, border, brand names, branded products, Coca-Cola, corporate logos, product placement, holding random objects',
       params.negativePrompt || '',
     ].filter(Boolean).join(', '),
   };
@@ -1041,7 +1041,7 @@ INTEGRATION RULES:
 - Do NOT add extra elements not mentioned in the instruction
 - Do NOT alter the subject's face, skin, hair, or clothing unless explicitly instructed
 
-AVOID (global): extra limbs, duplicate arms, duplicate hands, extra fingers, fused fingers, malformed hands, mutated body parts, deformed anatomy, blurry face, crossed eyes, asymmetric eyes, text, watermark, signature, logo, frame, border.
+AVOID (global): extra limbs, duplicate arms, duplicate hands, extra fingers, fused fingers, malformed hands, mutated body parts, deformed anatomy, blurry face, crossed eyes, asymmetric eyes, text, watermark, signature, logo, frame, border, brand names, branded products, Coca-Cola, corporate logos, product placement, holding random objects.
 
 OUTPUT: Return the complete edited photograph at the same quality and composition as the Base Image, with only the instructed addition or modification applied.
 `;
@@ -1155,7 +1155,7 @@ BACKGROUND: ${envDesc || (isRealistic ? 'Real environment with natural clutter â
 The camera has physically moved. Background MUST change â€” different walls, depth, objects visible.
 
 ONE photo only. No collages or grids. Ultra-photorealistic, natural skin, sharp focus.
-AVOID: extra limbs, duplicate arms, duplicate hands, extra fingers, fused fingers, malformed hands, mutated body parts, deformed anatomy, blurry face, crossed eyes, text, watermark, logo.
+AVOID: extra limbs, duplicate arms, duplicate hands, extra fingers, fused fingers, malformed hands, mutated body parts, deformed anatomy, blurry face, crossed eyes, text, watermark, logo, brand names, branded products, product placement, holding random objects.
 ${options.imageBoost ? `\nQUALITY: ${options.imageBoost}.` : ''}${options.negativePrompt ? `\nAVOID: ${options.negativePrompt}.` : ''}
 
 ${FACE_CHECK_PROMPT}`;
