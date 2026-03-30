@@ -576,18 +576,19 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         const styleNames = selectedStyles.map(s => s.name).join(' + ')
         const direction = reimagineCustom.trim() || styleNames || 'editorial fashion'
         const instruction = `Reimagine this person in a completely new photo with ${direction} aesthetic. Create a NEW composition — new pose, new lighting, new outfit, new environment matching the ${direction} style. Use reference images ONLY for face and body proportions identity — IGNORE their clothing, background, and pose. The outfit must match the ${direction} aesthetic, NOT the reference images' outfit.`
-        // Pass character refs for identity preservation
+        // NB2 → Seedream → Grok (all pass character refs for identity)
         const charRefs = await getCharRefFiles()
-        if (charRefs.length > 0) {
+        try {
+          const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio })
+          resultUrls = results
+        } catch (nb2Err) {
+          console.warn('NB2 reimagine failed, trying Seedream:', nb2Err)
           try {
-            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0], instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio })
-            resultUrls = results
-          } catch {
-            resultUrls = [await editImageWithSeedream5(inputFile!, instruction, charRefs, (p) => setProgress(p)).then(r => r[0])]
+            resultUrls = await editImageWithSeedream5(inputFile!, instruction, charRefs, (p) => setProgress(p))
+          } catch (sdErr) {
+            console.warn('Seedream reimagine failed, trying Grok:', sdErr)
+            resultUrls = await editImageWithGrokFal(inputFile!, instruction, (p) => setProgress(p), undefined, charRefs)
           }
-        } else {
-          const result = await runEditWithFallback(inputImage!, instruction, 'nb2', 'ai-edit')
-          resultUrls = [result.url]
         }
       }
 

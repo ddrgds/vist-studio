@@ -25,13 +25,15 @@ export type SoulStyleCategory =
   | 'social'
   | 'lifestyle'
   | 'pose'
-  | 'profession';
+  | 'profession'
+  | 'expression';
 
 export const SOUL_STYLE_CATEGORIES: Record<SoulStyleCategory, { label: string; icon: string }> = {
   general: { label: 'General', icon: '✦' },
   fashion: { label: 'Fashion', icon: '👗' },
   photo: { label: 'Fotografía', icon: '📷' },
   selfie: { label: 'Selfie', icon: '🤳' },
+  expression: { label: 'Expresión', icon: '😏' },
   mood: { label: 'Mood', icon: '🌙' },
   concept: { label: 'Concepto', icon: '🎭' },
   location: { label: 'Locación', icon: '🗺️' },
@@ -395,17 +397,17 @@ export const SOUL_STYLES: SoulStyle[] = [
   { id: 'custom-exp-neonoutline', name: 'Neon Outline', category: 'experimental', icon: '💜' },
   { id: 'custom-exp-clone', name: 'Clone Army', category: 'experimental', icon: '👯' },
 
-  // ── Expressions / Face Gestures (new category mapped to concept) ──
-  { id: 'custom-expr-bitinglip', name: 'Biting Lip', category: 'concept', icon: '😏' },
-  { id: 'custom-expr-sideeye', name: 'Side Eye', category: 'concept', icon: '👀' },
-  { id: 'custom-expr-tongueout', name: 'Tongue Out', category: 'concept', icon: '😛' },
-  { id: 'custom-expr-wink', name: 'Wink', category: 'concept', icon: '😉' },
-  { id: 'custom-expr-smirk', name: 'Smirk', category: 'concept', icon: '😼' },
-  { id: 'custom-expr-surprised', name: 'Surprised / Wow', category: 'concept', icon: '😲' },
-  { id: 'custom-expr-eyeroll', name: 'Eye Roll', category: 'concept', icon: '🙄' },
-  { id: 'custom-expr-bubble', name: 'Blowing Bubble', category: 'concept', icon: '🫧' },
-  { id: 'custom-expr-bitingnail', name: 'Biting Nail', category: 'concept', icon: '💅' },
-  { id: 'custom-expr-whispering', name: 'Whispering', category: 'concept', icon: '🤫' },
+  // ── Expressions / Face Gestures ──
+  { id: 'custom-expr-bitinglip', name: 'Biting Lip', category: 'expression', icon: '😏' },
+  { id: 'custom-expr-sideeye', name: 'Side Eye', category: 'expression', icon: '👀' },
+  { id: 'custom-expr-tongueout', name: 'Tongue Out', category: 'expression', icon: '😛' },
+  { id: 'custom-expr-wink', name: 'Wink', category: 'expression', icon: '😉' },
+  { id: 'custom-expr-smirk', name: 'Smirk', category: 'expression', icon: '😼' },
+  { id: 'custom-expr-surprised', name: 'Surprised / Wow', category: 'expression', icon: '😲' },
+  { id: 'custom-expr-eyeroll', name: 'Eye Roll', category: 'expression', icon: '🙄' },
+  { id: 'custom-expr-bubble', name: 'Blowing Bubble', category: 'expression', icon: '🫧' },
+  { id: 'custom-expr-bitingnail', name: 'Biting Nail', category: 'expression', icon: '💅' },
+  { id: 'custom-expr-whispering', name: 'Whispering', category: 'expression', icon: '🤫' },
 
   // ── Coquette / Sensual Poses ──
   { id: 'custom-coq-shoulder', name: 'Over the Shoulder', category: 'pose', icon: '🔙' },
