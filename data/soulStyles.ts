@@ -20,17 +20,27 @@ export type SoulStyleCategory =
   | 'location'
   | 'experimental'
   | 'selfie'
-  | 'general';
+  | 'general'
+  | 'era'
+  | 'social'
+  | 'lifestyle'
+  | 'pose'
+  | 'profession';
 
 export const SOUL_STYLE_CATEGORIES: Record<SoulStyleCategory, { label: string; icon: string }> = {
   general: { label: 'General', icon: '✦' },
   fashion: { label: 'Fashion', icon: '👗' },
-  photo: { label: 'Photography', icon: '📷' },
-  mood: { label: 'Mood', icon: '🌙' },
-  concept: { label: 'Concept', icon: '🎭' },
-  location: { label: 'Location', icon: '🗺️' },
-  experimental: { label: 'Experimental', icon: '🔮' },
+  photo: { label: 'Fotografía', icon: '📷' },
   selfie: { label: 'Selfie', icon: '🤳' },
+  mood: { label: 'Mood', icon: '🌙' },
+  concept: { label: 'Concepto', icon: '🎭' },
+  location: { label: 'Locación', icon: '🗺️' },
+  era: { label: 'Época', icon: '⏳' },
+  social: { label: 'Redes', icon: '📱' },
+  lifestyle: { label: 'Lifestyle', icon: '🌿' },
+  pose: { label: 'Pose', icon: '🧍' },
+  profession: { label: 'Profesión', icon: '💼' },
+  experimental: { label: 'Experimental', icon: '🔮' },
 };
 
 export const SOUL_STYLES: SoulStyle[] = [
@@ -152,6 +162,82 @@ export const SOUL_STYLES: SoulStyle[] = [
   { id: '2a1898d0-548f-4433-8503-5721157b93a1', name: 'Double Take', category: 'experimental', icon: '👀' },
   { id: 'a13917c7-02a4-450f-b007-e72d53151980', name: 'Street View', category: 'location', icon: '🛣️' },
   { id: '12eda704-18e5-4783-aa0f-deba5296cc83', name: 'Long Legs', category: 'experimental', icon: '🦵' },
+
+  // ── Selfie (expanded) ──
+  { id: 'custom-selfie-mirror', name: 'Mirror Selfie', category: 'selfie', icon: '🪞', featured: true },
+  { id: 'custom-selfie-gym', name: 'Gym Mirror Selfie', category: 'selfie', icon: '💪' },
+  { id: 'custom-selfie-car', name: 'Car Selfie', category: 'selfie', icon: '🚗' },
+  { id: 'custom-selfie-bathroom', name: 'Bathroom Selfie', category: 'selfie', icon: '🚿' },
+  { id: 'custom-selfie-bed', name: 'Bed Selfie', category: 'selfie', icon: '🛏️' },
+  { id: 'custom-selfie-group', name: 'Group Selfie', category: 'selfie', icon: '👯' },
+  { id: 'custom-selfie-sunset', name: 'Sunset Selfie', category: 'selfie', icon: '🌅' },
+  { id: 'custom-selfie-closeup', name: 'Extreme Close-up', category: 'selfie', icon: '👁️' },
+  { id: 'custom-selfie-laughing', name: 'Laughing Selfie', category: 'selfie', icon: '😂' },
+  { id: 'custom-selfie-pout', name: 'Duck Face / Pout', category: 'selfie', icon: '💋' },
+
+  // ── Era / Época ──
+  { id: 'custom-era-50s', name: '1950s Pin-Up', category: 'era', icon: '🎀', featured: true },
+  { id: 'custom-era-60s', name: '1960s Mod', category: 'era', icon: '🌼' },
+  { id: 'custom-era-70s', name: '1970s Disco', category: 'era', icon: '🪩' },
+  { id: 'custom-era-80s', name: '1980s Neon', category: 'era', icon: '📼' },
+  { id: 'custom-era-90s', name: '1990s Grunge', category: 'era', icon: '🎸' },
+  { id: 'custom-era-2000s', name: '2000s Y2K', category: 'era', icon: '💿' },
+  { id: 'custom-era-victorian', name: 'Victorian', category: 'era', icon: '🏰' },
+  { id: 'custom-era-roaring20s', name: 'Roaring 20s', category: 'era', icon: '🥂' },
+  { id: 'custom-era-future', name: 'Futuristic 2080', category: 'era', icon: '🚀' },
+  { id: 'custom-era-medieval', name: 'Medieval Fantasy', category: 'era', icon: '⚔️' },
+
+  // ── Social / Redes ──
+  { id: 'custom-social-instagram', name: 'Instagram Editorial', category: 'social', icon: '📸', featured: true },
+  { id: 'custom-social-tiktok', name: 'TikTok Viral', category: 'social', icon: '🎵' },
+  { id: 'custom-social-pinterest', name: 'Pinterest Aesthetic', category: 'social', icon: '📌' },
+  { id: 'custom-social-linkedin', name: 'LinkedIn Professional', category: 'social', icon: '💼' },
+  { id: 'custom-social-dating', name: 'Dating App Profile', category: 'social', icon: '❤️' },
+  { id: 'custom-social-ugc', name: 'UGC Creator', category: 'social', icon: '📦' },
+  { id: 'custom-social-unboxing', name: 'Unboxing Content', category: 'social', icon: '📦' },
+  { id: 'custom-social-storytime', name: 'Story Time', category: 'social', icon: '📱' },
+  { id: 'custom-social-ootd', name: 'OOTD (Outfit of the Day)', category: 'social', icon: '👗' },
+  { id: 'custom-social-grwm', name: 'GRWM (Get Ready)', category: 'social', icon: '💄' },
+
+  // ── Lifestyle ──
+  { id: 'custom-life-coffee', name: 'Coffee Shop', category: 'lifestyle', icon: '☕', featured: true },
+  { id: 'custom-life-cooking', name: 'Cooking at Home', category: 'lifestyle', icon: '🍳' },
+  { id: 'custom-life-reading', name: 'Reading a Book', category: 'lifestyle', icon: '📚' },
+  { id: 'custom-life-yoga', name: 'Yoga / Meditation', category: 'lifestyle', icon: '🧘' },
+  { id: 'custom-life-shopping', name: 'Shopping Spree', category: 'lifestyle', icon: '🛍️' },
+  { id: 'custom-life-brunch', name: 'Brunch Date', category: 'lifestyle', icon: '🥂' },
+  { id: 'custom-life-roadtrip', name: 'Road Trip', category: 'lifestyle', icon: '🚗' },
+  { id: 'custom-life-picnic', name: 'Picnic in the Park', category: 'lifestyle', icon: '🧺' },
+  { id: 'custom-life-spa', name: 'Spa Day', category: 'lifestyle', icon: '🧖' },
+  { id: 'custom-life-nightout', name: 'Night Out', category: 'lifestyle', icon: '🌃' },
+  { id: 'custom-life-concert', name: 'At a Concert', category: 'lifestyle', icon: '🎤' },
+  { id: 'custom-life-beach', name: 'Beach Day', category: 'lifestyle', icon: '🏖️' },
+  { id: 'custom-life-ski', name: 'Ski Resort', category: 'lifestyle', icon: '⛷️' },
+  { id: 'custom-life-camping', name: 'Camping', category: 'lifestyle', icon: '⛺' },
+
+  // ── Pose ──
+  { id: 'custom-pose-sitting-cafe', name: 'Sitting at Café', category: 'pose', icon: '☕' },
+  { id: 'custom-pose-walking-street', name: 'Walking Down Street', category: 'pose', icon: '🚶' },
+  { id: 'custom-pose-leaning-wall', name: 'Leaning on Wall', category: 'pose', icon: '🧱' },
+  { id: 'custom-pose-lying-bed', name: 'Lying in Bed', category: 'pose', icon: '🛌' },
+  { id: 'custom-pose-dancing', name: 'Dancing', category: 'pose', icon: '💃' },
+  { id: 'custom-pose-running', name: 'Running / Jogging', category: 'pose', icon: '🏃' },
+  { id: 'custom-pose-looking-away', name: 'Looking Away (Candid)', category: 'pose', icon: '👀' },
+  { id: 'custom-pose-backview', name: 'Back View (Over Shoulder)', category: 'pose', icon: '↩️' },
+  { id: 'custom-pose-crouching', name: 'Crouching / Low Angle', category: 'pose', icon: '🧎' },
+  { id: 'custom-pose-jumping', name: 'Jumping / Mid-Air', category: 'pose', icon: '🦘' },
+
+  // ── Profession ──
+  { id: 'custom-prof-ceo', name: 'CEO / Executive', category: 'profession', icon: '👔' },
+  { id: 'custom-prof-doctor', name: 'Doctor', category: 'profession', icon: '🩺' },
+  { id: 'custom-prof-chef', name: 'Chef', category: 'profession', icon: '👨‍🍳' },
+  { id: 'custom-prof-artist', name: 'Artist / Painter', category: 'profession', icon: '🎨' },
+  { id: 'custom-prof-musician', name: 'Musician', category: 'profession', icon: '🎸' },
+  { id: 'custom-prof-athlete', name: 'Athlete', category: 'profession', icon: '🏅' },
+  { id: 'custom-prof-pilot', name: 'Pilot', category: 'profession', icon: '✈️' },
+  { id: 'custom-prof-scientist', name: 'Scientist', category: 'profession', icon: '🔬' },
+  { id: 'custom-prof-teacher', name: 'Teacher', category: 'profession', icon: '📖' },
+  { id: 'custom-prof-firefighter', name: 'Firefighter', category: 'profession', icon: '🚒' },
 ];
 
 /**
