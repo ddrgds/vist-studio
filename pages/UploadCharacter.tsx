@@ -26,7 +26,6 @@ import { generateCharacterSheet, enhanceSheetWithGrok, type SheetType } from '..
 const CHARACTER_ENGINES = [
   { id: 'gemini:nb2', label: 'Nano Banana 2', desc: 'Rápido, gratis, buena consistencia', badge: 'Recomendado' },
   { id: 'fal:seedream50', label: 'Seedream 5.0', desc: 'Alta calidad, multi-referencia', badge: null },
-  { id: 'replicate:grok', label: 'Grok Imagine', desc: 'Creativo, buena adherencia al prompt', badge: null },
   { id: 'gemini:pro', label: 'NB Pro', desc: 'Máxima calidad Gemini', badge: null },
 ] as const;
 
