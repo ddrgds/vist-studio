@@ -504,7 +504,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       <input ref={faceInputRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f && faceRefs.length < 3) setFaceRefs(prev => [...prev, { file: f, preview: URL.createObjectURL(f) }]); e.target.value = '' }} />
 
       {/* ── LEFT PANEL ── */}
-      <div className="w-full lg:w-[360px] shrink-0 flex flex-col lg:h-full overflow-y-auto" style={{ background: 'var(--bg-1)', borderRight: '1px solid var(--border)', backdropFilter: 'blur(20px)', boxShadow: '0 8px 32px rgba(0,0,0,0.03)' }}>
+      <div className="w-full max-h-[60vh] lg:max-h-none lg:w-[360px] shrink-0 flex flex-col lg:h-full overflow-y-auto" style={{ background: 'var(--bg-1)', borderRight: '1px solid var(--border)', backdropFilter: 'blur(20px)', boxShadow: '0 8px 32px rgba(0,0,0,0.03)' }}>
 
         {phase === 'hero' ? (
           <div className="flex flex-col h-full">
