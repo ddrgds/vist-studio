@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIST Director - Real Layout Pro Mockup</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #F9FAFB;
+            --card: rgba(255,255,255,0.95);
+            --card-solid: #FFFFFF;
+            --accent: #1A1A1A;
+            --text-main: #1A1A1A;
+            --text-sec: #555555;
+            --text-mut: #999999;
+            --border: rgba(0,0,0,0.06);
+            --shadow: 0 4px 20px rgba(0,0,0,0.03);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text-main); font-family: 'DM Sans', sans-serif; display: flex; height: 100vh; overflow: hidden; }
+
+        .serif { font-family: 'Instrument Serif', serif; font-weight: 400; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Header & Main Layout */
+        .app-container { display: flex; width: 100%; height: 100%; }
+
+        /* Left Panel - Pro Controls */
+        .panel-left {
+            width: 380px;
+            background: var(--card);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            box-shadow: 2px 0 12px rgba(0,0,0,0.02);
+        }
+
+        .header {
+            height: 64px;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            background: var(--card-solid);
+            shrink: 0;
+        }
+        .brand { font-size: 1.25rem; font-family: 'Instrument Serif', serif; color: var(--accent); }
+
+        .settings-btn {
+            font-size: 0.75rem;
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #F3F4F6;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .settings-btn:hover { background: #E5E7EB; }
+
+        /* Collapsible Sections */
+        .sections-scroll { flex: 1; overflow-y: auto; padding-bottom: 24px; }
+        .accordion {
+            border-bottom: 1px solid var(--border);
+        }
+        .accordion-header {
+            width: 100%;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-sec);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: background 0.2s;
+        }
+        .accordion-header:hover { background: rgba(0,0,0,0.02); color: var(--accent); }
+        .accordion-content { padding: 0 24px 20px 24px; display: none; }
+        .accordion.open .accordion-content { display: block; }
+        .accordion.open .accordion-header { color: var(--accent); }
+
+        /* Inputs */
+        .input-group { margin-bottom: 16px; }
+        .input-group:last-child { margin-bottom: 0; }
+        .label-sm { font-size: 0.7rem; font-weight: 600; color: var(--text-sec); margin-bottom: 6px; display: block; }
+        
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #F9FAFB;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            color: var(--accent);
+            resize: none;
+            outline: none;
+            transition: border 0.2s;
+        }
+        textarea:focus, input[type="text"]:focus { border-color: var(--accent); background: white; }
+
+        /* Chips & Selectors */
+        .chip-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+        .chip {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            background: white;
+            border: 1px solid var(--border);
+            color: var(--text-sec);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .chip:hover { border-color: #ccc; color: var(--accent); }
+        .chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+        .char-avatar {
+            width: 40px; height: 40px; border-radius: 50%; border: 2px solid transparent; object-fit: cover; cursor: pointer;
+        }
+        .char-avatar.active { border-color: var(--accent); padding: 2px; }
+
+        /* File Upload Slot */
+        .upload-slot {
+            width: 64px; height: 64px; border-radius: 12px; border: 1px dashed #ccc; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: var(--text-mut); font-size: 0.7rem; transition: background 0.2s;
+        }
+        .upload-slot:hover { background: #f0f0f0; }
+        .upload-slot.active { border: 1px solid var(--border); border-style: solid; padding: 2px; }
+        .upload-slot.active img { width: 100%; height: 100%; border-radius: 8px; object-fit: cover; }
+
+        /* Enhance Button */
+        .enhance-btn {
+            font-size: 0.7rem; padding: 4px 8px; border-radius: 6px; border: 1px solid #E5E7EB; background: white; cursor: pointer; color: var(--text-sec); display: inline-flex; align-items: center; gap: 4px;
+        }
+        .enhance-btn:hover { background: #F3F4F6; }
+
+        /* Bottom Generation Bar */
+        .generate-bar {
+            padding: 20px 24px;
+            border-top: 1px solid var(--border);
+            background: var(--card-solid);
+            shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .img-count-selector {
+            display: flex; gap: 4px; background: #F3F4F6; padding: 4px; border-radius: 12px;
+        }
+        .img-count-btn {
+            flex: 1; text-align: center; font-size: 0.8rem; padding: 6px 0; border-radius: 8px; cursor: pointer; color: var(--text-sec); transition: all 0.2s;
+        }
+        .img-count-btn.active { background: white; color: var(--accent); box-shadow: var(--shadow); font-weight: 500; }
+
+        .cta-btn {
+            width: 100%; background: var(--accent); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }
+        .cta-btn:hover { background: #000; transform: translateY(-1px); }
+
+        /* Center Canvas */
+        .center-canvas {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #E5E7EB;
+            position: relative;
+        }
+        .canvas-bg-texture {
+            position: absolute; inset: 0; opacity: 0.4; pointer-events: none;
+            background-image: radial-gradient(#d1d5db 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        .canvas-header {
+            height: 64px; padding: 0 40px; display: flex; align-items: center; justify-content: space-between; z-index: 10; pointer-events: none;
+        }
+
+        .preview-area {
+            flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px; z-index: 10;
+        }
+        .hero-img-container {
+            width: 420px; height: 560px; background: white; border-radius: 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 24px 64px rgba(0,0,0,0.08); position: relative; transition: all 0.4s ease; border: 1px solid rgba(0,0,0,0.05);
+        }
+        .hero-img-container.empty { background: transparent; border: 2px dashed #CBD5E1; box-shadow: none; }
+        .empty-content { text-align: center; color: #9CA3AF; }
+        .hero-img-container img { width: 100%; height: 100%; object-fit: cover; border-radius: 14px; opacity: 0; transition: opacity 0.5s; }
+        .hero-img-container.filled img { opacity: 1; }
+
+        /* Image Action Bar (Glass) */
+        .img-action-bar {
+            position: absolute; bottom: 20px; background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.5); padding: 8px; border-radius: 100px; display: flex; gap: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); opacity: 0; pointer-events: none; transition: opacity 0.3s; transform: translateY(10px);
+        }
+        .hero-img-container.filled:hover .img-action-bar { opacity: 1; pointer-events: auto; transform: translateY(0); }
+        .img-action-btn {
+            padding: 8px 16px; border-radius: 100px; font-size: 0.8rem; font-weight: 500; cursor: pointer; border: none; background: transparent; color: var(--accent); transition: all 0.2s;
+        }
+        .img-action-btn:hover { background: rgba(0,0,0,0.05); }
+        .img-action-btn.primary { background: var(--accent); color: white; }
+        .img-action-btn.primary:hover { background: #000; }
+
+        /* Filmstrip Bottom */
+        .filmstrip {
+            height: 100px; background: white; border-top: 1px solid var(--border); display: flex; align-items: center; padding: 0 40px; gap: 12px; z-index: 10;
+        }
+        .strip-slot {
+            width: 60px; height: 60px; border-radius: 10px; background: #F3F4F6; border: 1px solid var(--border); overflow: hidden; cursor: pointer; transition: all 0.2s;
+        }
+        .strip-slot.active { border: 2px solid var(--accent); padding: 2px; }
+        .strip-slot img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        
+        <!-- LEFT PANEL: The Pro Tools -->
+        <div class="panel-left">
+            <div class="header">
+                <div class="brand">Director.</div>
+                <div class="settings-btn" title="Opciones de Motor y Formato">
+                    ⚙️ Auto <span class="mono">2K 3:4</span>
+                </div>
+            </div>
+
+            <div class="sections-scroll">
+                
+                <!-- 1. IDENTIDAD -->
+                <div class="accordion open" onclick="this.classList.toggle('open')">
+                    <button class="accordion-header">👤 Identidad <span style="font-size:0.6rem;opacity:0.5">▼</span></button>
+                    <div class="accordion-content" onclick="event.stopPropagation()">
+                        <div class="input-group">
+                            <span class="label-sm">Modelo Principal</span>
+                            <div class="chip-grid" style="margin-bottom: 12px;">
+                                <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80" class="char-avatar active">
+                                <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&q=80" class="char-avatar">
+                                <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100&q=80" class="char-avatar">
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <span class="label-sm">Referencias Faciales (Opcional 0/3)</span>
+                            <div style="display:flex;gap:8px">
+                                <div class="upload-slot">+ Rostro</div>
+                            </div>
+                        </div>
+                        <details>
+                            <summary style="font-size:0.75rem; color:var(--text-mut); cursor:pointer; margin-top:8px;">Editar características (Prompt)</summary>
+                            <textarea rows="2" class="mt-2" placeholder="Características base..."></textarea>
+                        </details>
+                    </div>
+                </div>
+
+                <!-- 2. ESCENARIO -->
+                <div class="accordion open" onclick="this.classList.toggle('open')">
+                    <button class="accordion-header">🎬 Escenario <span style="font-size:0.6rem;opacity:0.5">▼</span></button>
+                    <div class="accordion-content" onclick="event.stopPropagation()">
+                        <div class="input-group">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                                <span class="label-sm" style="margin:0">Prompt Principal</span>
+                                <button class="enhance-btn">✨ Enhance (2cr)</button>
+                            </div>
+                            <textarea rows="3">editorial fashion shoot, clean studio background, professional quality</textarea>
+                        </div>
+                        <div class="input-group">
+                            <span class="label-sm">Inspiraciones (Quick Styles)</span>
+                            <div class="chip-grid">
+                                <div class="chip active">✨ Editorial</div>
+                                <div class="chip">🌿 Lifestyle</div>
+                                <div class="chip">🌆 Night Out</div>
+                                <div class="chip">🤳 Selfie</div>
+                            </div>
+                        </div>
+                        <div class="input-group" style="display:flex;gap:12px;align-items:center">
+                            <div class="upload-slot">+ Ref</div>
+                            <div>
+                                <span class="label-sm">Imagen de Escenario</span>
+                                <span style="font-size:0.7rem;color:var(--text-mut)">Guía compositiva</span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <span class="label-sm">Props / Objetos</span>
+                            <input type="text" placeholder="ej: sosteniendo un café...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. OUTFIT -->
+                <div class="accordion open" onclick="this.classList.toggle('open')">
+                    <button class="accordion-header">👔 Vestuario <span style="font-size:0.6rem;opacity:0.5">▼</span></button>
+                    <div class="accordion-content" onclick="event.stopPropagation()">
+                        <div style="display:flex;gap:12px">
+                            <div class="upload-slot">+ Ropa</div>
+                            <textarea rows="2" placeholder="O describe la prenda textualmente..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. POSE -->
+                <div class="accordion open" onclick="this.classList.toggle('open')">
+                    <button class="accordion-header">🧍 Pose <span style="font-size:0.6rem;opacity:0.5">▼</span></button>
+                    <div class="accordion-content" onclick="event.stopPropagation()">
+                        <div style="display:flex;gap:12px;margin-bottom:12px">
+                            <div class="upload-slot" title="Activa ControlNet">+ Pose</div>
+                            <div>
+                                <span class="label-sm">ControlNet Pose (+5cr)</span>
+                                <span style="font-size:0.7rem;color:var(--text-mut); line-height:1.2; display:block">Sube una carta para clonar la estructura esquelética exacta.</span>
+                            </div>
+                        </div>
+                        <div class="chip-grid" style="margin-bottom:12px">
+                            <div class="chip">De pie</div>
+                            <div class="chip">Sentada</div>
+                            <div class="chip">Caminando</div>
+                            <div class="chip">Apoyada</div>
+                        </div>
+                        <input type="text" placeholder="O escribe pose manual...">
+                    </div>
+                </div>
+
+                <!-- 5. ADVANCED (Camera, Lighting, Neg) -->
+                <div class="accordion" onclick="this.classList.toggle('open')">
+                    <button class="accordion-header">⚙️ Ajustes Avanzados <span style="font-size:0.6rem;opacity:0.5">▼</span></button>
+                    <div class="accordion-content" onclick="event.stopPropagation()">
+                        <div class="input-group">
+                            <span class="label-sm">Cámara (Lente / Ángulo)</span>
+                            <div class="chip-grid" style="margin-bottom:8px">
+                                <div class="chip active">Portrait 85mm</div>
+                                <div class="chip">Wide 24mm</div>
+                                <div class="chip">Macro</div>
+                            </div>
+                            <input type="text" placeholder="Custom camera...">
+                        </div>
+                        <div class="input-group">
+                            <span class="label-sm">Iluminación</span>
+                            <div class="chip-grid" style="margin-bottom:8px">
+                                <div class="chip active">Natural Soft</div>
+                                <div class="chip">Studio Hard</div>
+                                <div class="chip">Neon</div>
+                            </div>
+                            <input type="text" placeholder="Custom lighting...">
+                        </div>
+                        <div class="input-group">
+                            <span class="label-sm">Prompt Negativo</span>
+                            <textarea rows="2" placeholder="Borroso, baja calidad, artefactos..."></textarea>
+                        </div>
+                        <div class="input-group" style="display:flex;justify-content:space-between;align-items:center">
+                            <div>
+                                <span class="label-sm" style="margin:0">Automático: Image Boost</span>
+                                <span style="font-size:0.7rem;color:var(--text-mut)">Agrega tags de hyperrealismo HQ</span>
+                            </div>
+                            <!-- Toggle Switch UI -->
+                            <div style="width:36px;height:20px;background:var(--accent);border-radius:10px;position:relative;cursor:pointer">
+                                <div style="width:16px;height:16px;background:white;border-radius:50%;position:absolute;top:2px;right:2px"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Bottom Generation Control -->
+            <div class="generate-bar">
+                <div style="display:flex; justify-content:space-between; align-items:center">
+                    <span class="label-sm" style="margin:0">Variaciones</span>
+                    <div class="img-count-selector" style="width:140px">
+                        <div class="img-count-btn active" onclick="selectCount(this, 1)">1</div>
+                        <div class="img-count-btn" onclick="selectCount(this, 2)">2</div>
+                        <div class="img-count-btn" onclick="selectCount(this, 3)">3</div>
+                        <div class="img-count-btn" onclick="selectCount(this, 4)">4</div>
+                    </div>
+                </div>
+                <button class="cta-btn" id="btn-generate" onclick="simulateGeneration()">
+                    ✨ Generar Foto Principal <span class="mono" style="opacity:0.8;font-size:0.8rem;margin-left:4px">· <span id="costo">6</span>cr</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- CENTER CANVAS: The Results -->
+        <div class="center-canvas">
+            <div class="canvas-bg-texture"></div>
+            
+            <div class="canvas-header">
+                <span class="label-sm" style="margin:0;font-family:'JetBrains Mono',monospace">MODO DIRECTOR</span>
+                <span class="label-sm" style="margin:0;color:var(--text-mut)">Gemini 1.5 + Seedream V5</span>
+            </div>
+
+            <div class="preview-area">
+                <div class="hero-img-container empty" id="main-preview">
+                    <div class="empty-content">
+                        <div class="serif" style="font-size:1.5rem; margin-bottom:8px; color:var(--accent)">Lienzo Vacío</div>
+                        <div style="font-size:0.85rem">Configura tus parámetros a la izquierda<br>y presiona generar.</div>
+                    </div>
+                    <img src="" id="result-img">
+                    
+                    <div class="img-action-bar">
+                        <button class="img-action-btn" title="Hacer variaciones rápidas (PhotoSession)">📸 Session</button>
+                        <button class="img-action-btn">✏️ Editar</button>
+                        <button class="img-action-btn">📥 Descargar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Filmstrip -->
+            <div class="filmstrip" id="filmstrip">
+                <span class="label-sm" style="margin:0;margin-right:12px">Lote Actual</span>
+                <div class="strip-slot"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let imagesPerRun = 1;
+        const costPerImg = 6;
+
+        function selectCount(el, n) {
+            document.querySelectorAll('.img-count-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            imagesPerRun = n;
+            document.getElementById('costo').innerText = n * costPerImg;
+        }
+
+        function simulateGeneration() {
+            const btn = document.getElementById('btn-generate');
+            const prev = document.getElementById('main-preview');
+            const img = document.getElementById('result-img');
+            const strip = document.getElementById('filmstrip');
+            
+            btn.innerHTML = `⏳ Generando lote...`;
+            btn.style.opacity = '0.7';
+            btn.style.pointerEvents = 'none';
+            prev.classList.add('empty');
+            prev.classList.remove('filled');
+
+            const images = [
+                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&q=80',
+                'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&q=80',
+                'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&q=80',
+                'https://images.unsplash.com/photo-1542206395-9feb3edaa68d?w=800&q=80'
+            ];
+
+            setTimeout(() => {
+                btn.innerHTML = `✨ Generar Foto Principal <span class="mono" style="opacity:0.8;font-size:0.8rem;margin-left:4px">· <span id="costo">${imagesPerRun * costPerImg}</span>cr</span>`;
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+
+                prev.classList.remove('empty');
+                prev.classList.add('filled');
+                img.src = images[0];
+
+                // Fill strip
+                strip.innerHTML = '<span class="label-sm" style="margin:0;margin-right:12px">Lote Actual</span>';
+                for(let i=0; i<imagesPerRun; i++) {
+                    strip.innerHTML += `<div class="strip-slot ${i===0?'active':''}" onclick="switchImg('${images[i]}', this)"><img src="${images[i]}"></div>`;
+                }
+
+            }, 1500);
+        }
+
+        window.switchImg = function(src, el) {
+            document.getElementById('result-img').src = src;
+            document.querySelectorAll('.strip-slot').forEach(s => s.classList.remove('active'));
+            el.classList.add('active');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIST — Character Creator Redesign</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #F3F4F6;
+            --card: #FFFFFF;
+            --accent: #1A1A1A;
+            --text-1: #111111;
+            --text-2: #555555;
+            --text-3: #999999;
+            --border: rgba(0,0,0,0.06);
+            --border-h: rgba(0,0,0,0.15);
+            --shadow: 0 8px 32px rgba(0,0,0,0.03);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--text-1); min-height: 100vh; padding: 40px; display: flex; gap: 40px; overflow-x: auto; }
+
+        h1, h2, .serif { font-family: 'Instrument Serif', serif; font-weight: 400; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .label { font-size: 0.7rem; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; display: block; }
+
+        .phase { min-width: 480px; display: flex; flex-direction: column; gap: 0; height: calc(100vh - 80px); }
+        .phase-title { font-family: 'Instrument Serif', serif; font-size: 1.3rem; color: var(--text-2); margin-bottom: 16px; }
+
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; box-shadow: var(--shadow); }
+
+        /* Step indicator */
+        .steps { display: flex; gap: 0; margin-bottom: 24px; background: var(--bg); border-radius: 12px; padding: 4px; border: 1px solid var(--border); }
+        .step { flex: 1; text-align: center; padding: 10px 16px; border-radius: 8px; font-size: 0.8rem; font-weight: 500; cursor: pointer; color: var(--text-3); transition: all 0.2s; position: relative; }
+        .step.active { background: var(--accent); color: white; }
+        .step.done { color: var(--text-1); }
+        .step .num { font-size: 0.65rem; font-weight: 700; margin-right: 6px; }
+
+        /* Chips */
+        .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+        .chip { padding: 7px 14px; border-radius: 20px; font-size: 0.78rem; cursor: pointer; border: 1px solid var(--border); background: white; color: var(--text-2); transition: all 0.2s; }
+        .chip:hover { border-color: var(--border-h); }
+        .chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+        .chip .emoji { margin-right: 4px; }
+
+        /* Color chips */
+        .color-chip { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
+        .color-chip.active { border-color: var(--accent); padding: 2px; }
+
+        /* Input */
+        .input { width: 100%; background: #F9FAFB; border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; font-size: 0.85rem; font-family: 'DM Sans', sans-serif; color: var(--text-1); outline: none; resize: none; }
+        .input:focus { border-color: var(--border-h); }
+
+        /* Render style cards */
+        .render-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .render-card { padding: 16px; border-radius: 12px; cursor: pointer; border: 1px solid var(--border); background: white; transition: all 0.2s; text-align: center; }
+        .render-card:hover { border-color: var(--border-h); }
+        .render-card.active { border-color: var(--accent); background: #F9FAFB; }
+        .render-card .icon { font-size: 1.5rem; margin-bottom: 6px; }
+        .render-card .name { font-size: 0.75rem; font-weight: 600; color: var(--text-1); }
+        .render-card .desc { font-size: 0.6rem; color: var(--text-3); margin-top: 2px; }
+
+        /* Buttons */
+        .btn-primary { width: 100%; background: var(--accent); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 0.95rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; }
+        .btn-primary:hover { background: #000; }
+        .btn-ghost { background: white; border: 1px solid var(--border); color: var(--text-2); padding: 10px 16px; border-radius: 10px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+        .btn-ghost:hover { border-color: var(--border-h); }
+
+        /* Canvas */
+        .canvas-area { width: 280px; height: 350px; border-radius: 16px; background: var(--bg); border: 1px dashed #ccc; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; position: relative; overflow: hidden; }
+        .canvas-area.filled { border: none; box-shadow: var(--shadow); }
+        .canvas-area img { width: 100%; height: 100%; object-fit: cover; border-radius: 16px; }
+
+        /* Variants strip */
+        .variants { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0; }
+        .variant { width: 64px; height: 80px; border-radius: 8px; background: #E5E7EB; flex-shrink: 0; cursor: pointer; border: 2px solid transparent; overflow: hidden; transition: all 0.2s; }
+        .variant.active { border-color: var(--accent); }
+        .variant img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Sheet buttons */
+        .sheet-btn { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border); background: white; cursor: pointer; width: 100%; text-align: left; transition: all 0.2s; }
+        .sheet-btn:hover { border-color: var(--border-h); }
+        .sheet-btn .icon { font-size: 1.2rem; }
+        .sheet-btn .info .title { font-size: 0.8rem; font-weight: 600; color: var(--text-1); }
+        .sheet-btn .info .sub { font-size: 0.65rem; color: var(--text-3); }
+        .sheet-btn .cost { margin-left: auto; font-size: 0.7rem; color: var(--text-3); font-family: 'JetBrains Mono', monospace; }
+
+        /* Disclosure */
+        .disclosure { font-size: 0.75rem; color: var(--text-3); cursor: pointer; background: none; border: none; font-weight: 500; padding: 4px 0; }
+        .disclosure:hover { color: var(--text-1); }
+
+        /* Section groups */
+        .section { margin-bottom: 20px; }
+        .scroll-area { flex: 1; overflow-y: auto; padding: 24px; }
+
+        /* Two panel layout */
+        .creator-layout { display: flex; gap: 24px; height: calc(100vh - 80px); min-width: 900px; }
+        .creator-left { width: 400px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--card); border-radius: 20px; border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; }
+        .creator-right { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
+    </style>
+</head>
+<body>
+
+<!-- ===================== STEP 1: Base ===================== -->
+<div class="creator-layout">
+    <div class="creator-left">
+        <!-- Steps -->
+        <div style="padding: 20px 24px 0">
+            <div class="steps">
+                <div class="step active"><span class="num">1</span>Base</div>
+                <div class="step"><span class="num">2</span>Apariencia</div>
+                <div class="step"><span class="num">3</span>Generar</div>
+            </div>
+        </div>
+
+        <div class="scroll-area">
+            <!-- Render Style -->
+            <div class="section">
+                <span class="label">Estilo de Render</span>
+                <div class="render-grid">
+                    <div class="render-card active">
+                        <div class="icon">📷</div>
+                        <div class="name">Fotorrealista</div>
+                        <div class="desc">Fotografía de estudio</div>
+                    </div>
+                    <div class="render-card">
+                        <div class="icon">🎨</div>
+                        <div class="name">Anime</div>
+                        <div class="desc">Animación japonesa</div>
+                    </div>
+                    <div class="render-card">
+                        <div class="icon">🖥️</div>
+                        <div class="name">3D Render</div>
+                        <div class="desc">CGI, Pixar, juegos</div>
+                    </div>
+                    <div class="render-card">
+                        <div class="icon">✍️</div>
+                        <div class="name">Ilustración</div>
+                        <div class="desc">Concept art</div>
+                    </div>
+                    <div class="render-card">
+                        <div class="icon">✨</div>
+                        <div class="name">Estilizado</div>
+                        <div class="desc">Arcane, Spider-Verse</div>
+                    </div>
+                    <div class="render-card">
+                        <div class="icon">🟨</div>
+                        <div class="name">Pixel Art</div>
+                        <div class="desc">Retro 8-bit / 16-bit</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Name -->
+            <div class="section">
+                <span class="label">Nombre <span style="color:var(--accent)">*</span></span>
+                <input class="input" placeholder="Ej.: Luna Vex" value="Valentina" />
+            </div>
+
+            <!-- Gender -->
+            <div class="section">
+                <span class="label">Género <span style="color:var(--accent)">*</span></span>
+                <div class="chips">
+                    <div class="chip active"><span class="emoji">♀️</span>Femenino</div>
+                    <div class="chip"><span class="emoji">♂️</span>Masculino</div>
+                    <div class="chip"><span class="emoji">⚧️</span>No binario</div>
+                </div>
+            </div>
+
+            <!-- Age -->
+            <div class="section">
+                <span class="label">Edad</span>
+                <div class="chips">
+                    <div class="chip">18-22</div>
+                    <div class="chip active">23-28</div>
+                    <div class="chip">29-35</div>
+                    <div class="chip">36-45</div>
+                    <div class="chip">45+</div>
+                </div>
+            </div>
+
+            <!-- Ethnicity -->
+            <div class="section">
+                <span class="label">Origen / Etnicidad</span>
+                <div class="chips">
+                    <div class="chip active"><span class="emoji">🌺</span>Latina</div>
+                    <div class="chip"><span class="emoji">🫒</span>Mediterránea</div>
+                    <div class="chip"><span class="emoji">🌸</span>Asiática (Este)</div>
+                    <div class="chip"><span class="emoji">❄️</span>Nórdica</div>
+                    <div class="chip"><span class="emoji">✨</span>Africana</div>
+                    <div class="chip"><span class="emoji">🌈</span>Mixta</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Preview -->
+    <div class="creator-right">
+        <div class="phase-title">Paso 1 de 3 — Base</div>
+        <div class="canvas-area">
+            <span style="font-size: 2rem; opacity: 0.2;">📷</span>
+            <span class="serif" style="font-size: 1rem; color: #999; font-style: italic;">Tu personaje aparecerá aquí</span>
+        </div>
+        <button class="btn-ghost" style="opacity: 0.4;">Siguiente →</button>
+    </div>
+</div>
+
+<!-- Spacer -->
+<div style="width: 60px; flex-shrink: 0;"></div>
+
+<!-- ===================== STEP 2: Appearance ===================== -->
+<div class="creator-layout">
+    <div class="creator-left">
+        <div style="padding: 20px 24px 0">
+            <div class="steps">
+                <div class="step done"><span class="num">✓</span>Base</div>
+                <div class="step active"><span class="num">2</span>Apariencia</div>
+                <div class="step"><span class="num">3</span>Generar</div>
+            </div>
+        </div>
+
+        <div class="scroll-area">
+            <!-- Hair Style -->
+            <div class="section">
+                <span class="label">Estilo de Cabello</span>
+                <div class="chips">
+                    <div class="chip"><span class="emoji">💇</span>Liso largo</div>
+                    <div class="chip active"><span class="emoji">🌊</span>Ondulado largo</div>
+                    <div class="chip"><span class="emoji">➰</span>Rizado</div>
+                    <div class="chip"><span class="emoji">💁</span>Bob</div>
+                    <div class="chip"><span class="emoji">✂️</span>Pixie</div>
+                    <div class="chip"><span class="emoji">🎀</span>Trenzas</div>
+                </div>
+            </div>
+
+            <!-- Hair Color -->
+            <div class="section">
+                <span class="label">Color de Cabello</span>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <div class="color-chip" style="background: #0A0A14;"></div>
+                    <div class="color-chip" style="background: #3B1F0F;"></div>
+                    <div class="color-chip active" style="background: #6B3D1E;"></div>
+                    <div class="color-chip" style="background: #9B6B3A;"></div>
+                    <div class="color-chip" style="background: #D4A347;"></div>
+                    <div class="color-chip" style="background: #EED27A;"></div>
+                    <div class="color-chip" style="background: #922B21;"></div>
+                    <div class="color-chip" style="background: #C45828;"></div>
+                    <div class="color-chip" style="background: #FF69B4;"></div>
+                    <div class="color-chip" style="background: #8B5CF6;"></div>
+                </div>
+            </div>
+
+            <!-- Body Type -->
+            <div class="section">
+                <span class="label">Tipo de Cuerpo</span>
+                <div class="chips">
+                    <div class="chip">Delgada</div>
+                    <div class="chip">Atlética</div>
+                    <div class="chip active">Con curvas</div>
+                    <div class="chip">Reloj de arena</div>
+                    <div class="chip">Plus size</div>
+                </div>
+            </div>
+
+            <!-- Body proportions -->
+            <div class="section">
+                <span class="label">Busto / Pecho</span>
+                <div class="chips">
+                    <div class="chip">Plano</div>
+                    <div class="chip">Pequeño</div>
+                    <div class="chip active">Mediano</div>
+                    <div class="chip">Grande</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <span class="label">Cadera / Glúteos</span>
+                <div class="chips">
+                    <div class="chip">Estrechas</div>
+                    <div class="chip active">Medianas</div>
+                    <div class="chip">Anchas</div>
+                    <div class="chip">Voluptuosas</div>
+                </div>
+            </div>
+
+            <!-- Disclosure: face details -->
+            <button class="disclosure">+ Más detalles faciales →</button>
+            <div style="margin-top: 8px; padding: 12px; background: #F9FAFB; border-radius: 10px; border: 1px solid var(--border);">
+                <div class="section" style="margin-bottom: 12px;">
+                    <span class="label">Forma de Cara</span>
+                    <div class="chips">
+                        <div class="chip active">Ovalada</div>
+                        <div class="chip">Redonda</div>
+                        <div class="chip">Corazón</div>
+                        <div class="chip">Cuadrada</div>
+                    </div>
+                </div>
+                <div class="section" style="margin-bottom: 0;">
+                    <span class="label">Color de Ojos</span>
+                    <div style="display: flex; gap: 6px;">
+                        <div class="color-chip active" style="background: #5B3A1E; width: 24px; height: 24px;"></div>
+                        <div class="color-chip" style="background: #4A7A4A; width: 24px; height: 24px;"></div>
+                        <div class="color-chip" style="background: #4A7AB5; width: 24px; height: 24px;"></div>
+                        <div class="color-chip" style="background: #8B7355; width: 24px; height: 24px;"></div>
+                        <div class="color-chip" style="background: #333333; width: 24px; height: 24px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Preview with tabs -->
+    <div class="creator-right">
+        <div class="phase-title">Paso 2 de 3 — Apariencia</div>
+
+        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+            <button class="btn-ghost" style="background: var(--accent); color: white; border-color: var(--accent);">Builder</button>
+            <button class="btn-ghost">Prompt Libre</button>
+        </div>
+
+        <div class="canvas-area">
+            <span style="font-size: 2rem; opacity: 0.2;">🧍</span>
+            <span class="serif" style="font-size: 1rem; color: #999; font-style: italic;">Configura y genera</span>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+            <button class="btn-ghost">← Anterior</button>
+            <button class="btn-primary" style="width: auto; padding: 12px 32px;">Generar Personaje <span class="mono" style="font-size: 0.8rem; opacity: 0.6;">· 6cr</span></button>
+        </div>
+    </div>
+</div>
+
+<!-- Spacer -->
+<div style="width: 60px; flex-shrink: 0;"></div>
+
+<!-- ===================== STEP 3: Generate & Sheets ===================== -->
+<div class="creator-layout">
+    <div class="creator-left">
+        <div style="padding: 20px 24px 0">
+            <div class="steps">
+                <div class="step done"><span class="num">✓</span>Base</div>
+                <div class="step done"><span class="num">✓</span>Apariencia</div>
+                <div class="step active"><span class="num">3</span>Generar</div>
+            </div>
+        </div>
+
+        <div class="scroll-area">
+            <!-- Variants -->
+            <div class="section">
+                <span class="label">Variantes Generadas</span>
+                <div class="variants">
+                    <div class="variant active" style="background: linear-gradient(135deg, #ddd, #bbb);"></div>
+                    <div class="variant" style="background: linear-gradient(135deg, #ccc, #aaa);"></div>
+                    <div class="variant" style="background: linear-gradient(135deg, #ddd, #bbb);"></div>
+                    <div class="variant" style="background: linear-gradient(135deg, #ccc, #aaa);"></div>
+                </div>
+                <button class="btn-ghost" style="width: 100%; margin-top: 8px;">↻ Regenerar Variantes <span class="mono" style="font-size: 0.7rem;">· 6cr</span></button>
+            </div>
+
+            <!-- Character Sheets -->
+            <div class="section">
+                <span class="label">Hojas de Referencia</span>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div class="sheet-btn">
+                        <span class="icon">👤</span>
+                        <div class="info">
+                            <div class="title">Ángulos de Rostro</div>
+                            <div class="sub">4 vistas (frente, perfil, ¾)</div>
+                        </div>
+                        <span class="cost">6cr</span>
+                    </div>
+                    <div class="sheet-btn">
+                        <span class="icon">🧍</span>
+                        <div class="info">
+                            <div class="title">Ángulos de Cuerpo</div>
+                            <div class="sub">4 vistas completas</div>
+                        </div>
+                        <span class="cost">6cr</span>
+                    </div>
+                    <div class="sheet-btn">
+                        <span class="icon">😊</span>
+                        <div class="info">
+                            <div class="title">Expresiones</div>
+                            <div class="sub">9 expresiones faciales</div>
+                        </div>
+                        <span class="cost">6cr</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fashion -->
+            <div class="section">
+                <span class="label">Moda</span>
+                <div class="chips">
+                    <div class="chip active">Streetwear</div>
+                    <div class="chip">Casual</div>
+                    <div class="chip">Formal</div>
+                    <div class="chip">Deportivo</div>
+                </div>
+            </div>
+
+            <!-- Personality -->
+            <div class="section">
+                <span class="label">Personalidad</span>
+                <div class="chips">
+                    <div class="chip active">Confiada</div>
+                    <div class="chip active">Elegante</div>
+                    <div class="chip">Rebelde</div>
+                    <div class="chip">Dulce</div>
+                    <div class="chip">Misteriosa</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save button pinned -->
+        <div style="padding: 16px 24px; border-top: 1px solid var(--border);">
+            <button class="btn-primary">
+                💾 Guardar Personaje
+            </button>
+        </div>
+    </div>
+
+    <!-- Right: Final preview -->
+    <div class="creator-right">
+        <div class="phase-title">Paso 3 de 3 — Finalizar</div>
+
+        <div class="canvas-area filled" style="background: linear-gradient(135deg, #e8e4e0, #d4cec8); width: 320px; height: 400px;">
+            <!-- Placeholder for generated character -->
+            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f0ece8, #e4ddd6); border-radius: 16px;">
+                <span style="font-size: 3rem; opacity: 0.3;">🧍‍♀️</span>
+            </div>
+        </div>
+
+        <!-- Sheet previews -->
+        <div style="display: flex; gap: 8px;">
+            <div style="width: 80px; height: 80px; background: #E5E7EB; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: var(--text-3); border: 1px solid var(--border);">Rostro</div>
+            <div style="width: 80px; height: 80px; background: #E5E7EB; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: var(--text-3); border: 1px solid var(--border);">Cuerpo</div>
+            <div style="width: 80px; height: 80px; background: #E5E7EB; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: var(--text-3); border: 1px solid var(--border);">Expresiones</div>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+            <button class="btn-ghost">← Anterior</button>
+            <button class="btn-primary" style="width: auto; padding: 12px 32px;">Ir al Studio →</button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
