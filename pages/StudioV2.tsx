@@ -524,6 +524,22 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
                 ))}
               </div>
 
+              {/* Gallery source — pick from existing photos */}
+              {sourceTab === 'galeria' && (
+                <div>
+                  <span style={labelStyle}>Elegir de Galería</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, maxHeight: 200, overflowY: 'auto' }}>
+                    {galleryItems.filter(i => i.url).slice(0, 12).map(item => (
+                      <button key={item.id} onClick={() => handleGallerySelect(item.url)}
+                        style={{ aspectRatio: '3/4', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)', cursor: 'pointer', padding: 0, background: 'none' }}>
+                        <img src={item.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </button>
+                    ))}
+                  </div>
+                  {galleryItems.length === 0 && <span style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>Sin fotos en galería</span>}
+                </div>
+              )}
+
               {/* Character row */}
               <div>
                 <span style={labelStyle}>Protagonista</span>
@@ -684,7 +700,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
             {/* CTA */}
             <div style={{ marginTop: 'auto', padding: '0 24px 24px' }}>
               <button onClick={handleHeroGenerate} disabled={generatingHero} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 16, borderRadius: 12, fontSize: '1rem', fontWeight: 500, cursor: generatingHero ? 'wait' : 'pointer', opacity: generatingHero ? 0.6 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-                {generatingHero ? <><div style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /> Generando... {heroProgress}%</> : <>⚡ Generar Hero <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.85rem' }}>· {CREDIT_COSTS['grok-edit']}cr</span></>}
+                {generatingHero ? <><div style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /> Generando... {Math.round(heroProgress)}%</> : <>⚡ Generar Hero <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.85rem' }}>· {CREDIT_COSTS['grok-edit']}cr</span></>}
               </button>
             </div>
           </div>
@@ -749,7 +765,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
             {/* CTA */}
             <div style={{ marginTop: 'auto', padding: '0 24px 24px', display: 'flex', flexDirection: 'column', gap: 8 }}>
               <button onClick={handleSessionGenerate} disabled={generatingSession} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 16, borderRadius: 12, fontSize: '1rem', fontWeight: 500, cursor: generatingSession ? 'wait' : 'pointer', opacity: generatingSession ? 0.6 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-                {generatingSession ? <><div style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /> Revelando... {sessionProgress}%</> : <>📸 Disparar {photoCount} Fotos <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.85rem' }}>· {photoCount * CREDIT_COSTS['grok-edit']}cr</span></>}
+                {generatingSession ? <><div style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /> Revelando... {Math.round(sessionProgress)}%</> : <>📸 Disparar {photoCount} Fotos <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.85rem' }}>· {photoCount * CREDIT_COSTS['grok-edit']}cr</span></>}
               </button>
               <button onClick={() => setPhase('hero')} style={{ background: 'none', border: 'none', fontSize: '0.75rem', color: 'var(--text-3)', cursor: 'pointer', textAlign: 'center' }}>← Volver al hero</button>
             </div>
@@ -771,7 +787,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
               {generatingHero && (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
                   <div style={{ width: 32, height: 32, border: '3px solid rgba(0,0,0,0.1)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>Generando... {heroProgress}%</span>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>Generando... {Math.round(heroProgress)}%</span>
                 </div>
               )}
               {heroImage && (
@@ -802,7 +818,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
             {generatingSession && gridCells.length === 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
                 <div style={{ width: 32, height: 32, border: '3px solid rgba(0,0,0,0.1)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>Revelando... {sessionProgress}%</span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>Revelando... {Math.round(sessionProgress)}%</span>
               </div>
             )}
             {(gridCells.length > 0 || (generatingSession && gridCells.length === 0)) && gridCells.length > 0 && (
