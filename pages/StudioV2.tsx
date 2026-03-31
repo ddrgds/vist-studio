@@ -214,6 +214,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
   const characters = useCharacterStore(s => s.characters)
   const galleryItems = useGalleryStore(s => s.items)
   const pipelineCharId = usePipelineStore(s => s.characterId)
+  const pipelineHeroUrl = usePipelineStore(s => s.heroShotUrl)
   const pipelineSetHeroShot = usePipelineStore(s => s.setHeroShot)
   const { decrementCredits, restoreCredits } = useProfile()
   const toast = useToast()
@@ -275,6 +276,9 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
     else if (characters.length > 0 && !selectedCharId) setSelectedCharId(characters[0].id)
   }, [characters, selectedCharId, pipelineCharId])
   useEffect(() => { if (selectedChar) setCharacteristics(selectedChar.characteristics || '') }, [selectedChar?.id])
+
+  // Restore hero from pipeline store on mount (persists across page changes)
+  useEffect(() => { if (pipelineHeroUrl && !heroImage) setHeroImage(pipelineHeroUrl) }, [])
 
   const handleSelectCharacter = (id: string) => {
     setSelectedCharId(id)
@@ -391,8 +395,9 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
     setSourceTab('crear') // go back to create tab
   }
 
-  // Gallery modal for larger view
+  // Gallery modal + fullscreen preview
   const [showGalleryModal, setShowGalleryModal] = useState(false)
+  const [galleryFullscreen, setGalleryFullscreen] = useState<string | null>(null)
 
   // Session output controls
   const [sessionResolution, setSessionResolution] = useState('2k')
@@ -796,7 +801,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
               )}
               {heroImage && (
                 <>
-                  <img src={heroImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={heroImage} onClick={() => setGalleryFullscreen(heroImage)} style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }} title="Clic para ampliar" />
                   <div style={{ position: 'absolute', bottom: 24, background: 'white', borderRadius: 20, padding: 8, display: 'flex', gap: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.08)', border: '1px solid var(--border)' }}>
                     <button onClick={() => onEditImage?.(heroImage)} style={{ padding: '8px 16px', borderRadius: 12, fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer', border: 'none', background: 'transparent', color: 'var(--text-1)' }}>✏️ Editar</button>
                     <button onClick={handleSessionTransition} style={{ padding: '8px 16px', borderRadius: 12, fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer', border: 'none', background: 'var(--accent)', color: 'white' }}>📸 Sesión</button>
@@ -879,6 +884,14 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
         </div>
       )}
 
+      {/* Fullscreen image preview (gallery or hero) */}
+      {galleryFullscreen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setGalleryFullscreen(null)}>
+          <button onClick={() => setGalleryFullscreen(null)} style={{ position: 'absolute', top: 16, right: 16, width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
+          <img src={galleryFullscreen} style={{ maxWidth: '95vw', maxHeight: '95vh', objectFit: 'contain', borderRadius: 8 }} />
+        </div>
+      )}
+
       {/* Gallery Modal */}
       {showGalleryModal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9998, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }} onClick={() => setShowGalleryModal(false)}>
@@ -888,8 +901,12 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
               <button onClick={() => setShowGalleryModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: 'var(--text-3)' }}>✕</button>
             </div>
             <div style={{ padding: 16, overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-              {galleryItems.filter(i => i.url).map(item => (
-                <button key={item.id} onClick={() => { handleGallerySelect(item.url); setShowGalleryModal(false) }}
+              {galleryItems.filter(i => i.url && !i.tags?.includes('sheet')).map(item => (
+                <button key={item.id}
+                  onClick={() => {
+                    if (heroImage === item.url) { setGalleryFullscreen(item.url) } // second click = fullscreen
+                    else { handleGallerySelect(item.url) } // first click = select
+                  }}
                   style={{ aspectRatio: '3/4', borderRadius: 10, overflow: 'hidden', border: heroImage === item.url ? '3px solid var(--accent)' : '1px solid var(--border)', cursor: 'pointer', padding: 0, background: '#F0F0F1' }}>
                   <img src={item.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </button>
