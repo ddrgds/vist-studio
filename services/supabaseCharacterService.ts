@@ -120,7 +120,7 @@ export const updateCharacterInCloud = async (
 export const loadCharactersFromCloud = async (userId: string): Promise<SavedCharacter[]> => {
   const { data, error } = await supabase
     .from('characters')
-    .select('*')
+    .select('id, name, thumbnail, model_image_urls, outfit_description, characteristics, accessory, lora_url, lora_training_status, lora_trained_at, created_at, updated_at, usage_count, reference_photo_urls, render_style')
     .eq('user_id', userId)
     .order('updated_at', { ascending: false });
 

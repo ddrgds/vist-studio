@@ -65,7 +65,8 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
       if (userId) {
         try {
           chars = await loadCharactersFromCloud(userId);
-        } catch {
+        } catch (cloudErr) {
+          console.error('Cloud character load failed:', cloudErr);
           // Cloud failed — fall back to local IndexedDB
           chars = await loadCharacters();
         }
