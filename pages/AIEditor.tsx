@@ -594,22 +594,47 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         const selectedStyles = SOUL_STYLES.filter(s => reimagineStyleIds.has(s.id))
         const styleDescriptions = selectedStyles.map(s => s.hint || s.name)
         const direction = reimagineCustom.trim() || styleDescriptions.join('. Also: ') || 'editorial fashion'
-        const instruction = `Reimagine this person in a completely new photo with ${direction} aesthetic. Create a NEW composition — new pose, new lighting, new outfit, new environment matching this style. Use reference images ONLY for face and body proportions identity — IGNORE their clothing, background, and pose. The outfit must match the aesthetic, NOT the reference images' outfit. DO NOT add any text, words, letters, labels, watermarks, or captions anywhere on the image.`
+
+        // JSON structured prompt for NB2 — each aspect as separate semantic unit
+        const reimagineSpec = {
+          task: 'REIMAGINE — Create a completely NEW photo of this person',
+          identity: {
+            source: 'Base Image + Reference Images',
+            preserve: ['face', 'bone_structure', 'eye_shape', 'skin_tone', 'body_proportions'],
+            rule: 'Person must be instantly recognizable as the SAME individual',
+          },
+          creative_direction: {
+            style: direction,
+            composition: 'NEW pose, NEW angle, NEW framing — do NOT copy the original photo layout',
+            outfit: `Clothing must match the ${selectedStyles.map(s => s.name).join(' + ') || 'requested'} aesthetic — IGNORE clothing from reference images`,
+            environment: 'NEW setting and background matching the style direction',
+            lighting: 'Match the mood and atmosphere of the style direction',
+          },
+          rules: {
+            change_everything_except_identity: true,
+            never_add: ['text', 'words', 'letters', 'labels', 'watermarks', 'brand names', 'logos'],
+          },
+        }
+        const jsonInstruction = `REIMAGINE SPECIFICATION:\n${JSON.stringify(reimagineSpec, null, 2)}`
+
+        // Flat version for fallback models (Seedream, Grok)
+        const flatInstruction = `Reimagine this person in a completely new photo with ${direction} aesthetic. New pose, lighting, outfit, environment. Preserve face and body identity ONLY. Outfit matches the aesthetic, NOT reference images. NO text, watermarks, brand names.`
+
         // NB2 → Seedream → Grok (all pass character refs for identity)
         const charRefs = await getCharRefFiles()
         try {
-          const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio })
+          const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction: jsonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio })
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
           console.warn('NB2 reimagine failed, trying Seedream:', nb2Err)
           try {
-            const sdResults = await editImageWithSeedream5(inputFile!, instruction, charRefs, (p) => setProgress(p))
+            const sdResults = await editImageWithSeedream5(inputFile!, flatInstruction, charRefs, (p) => setProgress(p))
             if (!sdResults || sdResults.filter(Boolean).length === 0) throw new Error('Seedream returned empty')
             resultUrls = sdResults
           } catch (sdErr) {
             console.warn('Seedream reimagine failed, trying Grok:', sdErr)
-            resultUrls = await editImageWithGrokFal(inputFile!, instruction, (p) => setProgress(p), undefined, charRefs)
+            resultUrls = await editImageWithGrokFal(inputFile!, flatInstruction, (p) => setProgress(p), undefined, charRefs)
           }
         }
       }
