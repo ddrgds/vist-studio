@@ -277,6 +277,16 @@ export const FACIAL_HAIR: ChipOption[] = [
   { id: 'sideburns',    label: 'Patillas',     emoji: '🔲', promptText: 'prominent sideburns, retro style' },
 ]
 
+// ─── Leg Proportions ────────────────────────────────────────────────
+export const LEG_PROPORTIONS: ChipOption[] = [
+  { id: 'short-legs',    label: 'Piernas cortas', emoji: '🦵', promptText: 'BODY PROPORTION: short legs relative to torso, compact lower body' },
+  { id: 'average-legs',  label: 'Piernas medias', emoji: '🧍', promptText: 'BODY PROPORTION: average leg length, balanced proportions' },
+  { id: 'long-legs',     label: 'Piernas largas', emoji: '📏', promptText: 'BODY PROPORTION: long legs, elongated lower body, model-like leg length' },
+  { id: 'thick-legs',    label: 'Piernas gruesas',emoji: '💪', promptText: 'BODY PROPORTION: thick muscular legs, strong thighs and calves' },
+  { id: 'slim-legs',     label: 'Piernas delgadas',emoji: '🦩', promptText: 'BODY PROPORTION: slim slender legs, thin thighs and calves' },
+  { id: 'athletic-legs', label: 'Piernas atléticas',emoji:'🏃', promptText: 'BODY PROPORTION: athletic toned legs, defined quad and calf muscles, runner body' },
+]
+
 // ─── Skin Textures (fantastical) ─────────────────────────────────────
 export const SKIN_TEXTURES: ChipOption[] = [
   { id: 'human',       label: 'Humana',    emoji: '🧑', promptText: 'natural human skin texture with visible pores and subtle imperfections' },
@@ -438,7 +448,7 @@ const ALL_CHIP_MAPS: Record<string, ChipOption[]> = {
   noseType: NOSE_TYPES, lipShape: LIP_SHAPES, faceShape: FACE_SHAPES,
   jawline: JAWLINES, eyebrows: EYEBROWS, bodyType: BODY_TYPES,
   height: HEIGHTS, bust: BUST_SIZES, hips: HIP_SIZES,
-  musculature: MUSCULATURE, facialHair: FACIAL_HAIR, skinTexture: SKIN_TEXTURES,
+  musculature: MUSCULATURE, legs: LEG_PROPORTIONS, facialHair: FACIAL_HAIR, skinTexture: SKIN_TEXTURES,
   gender: GENDERS, age: AGE_RANGES, personality: PERSONALITY_TRAITS,
   fashion: FASHION_STYLES, accessories: ACCESSORIES,
 }
@@ -493,11 +503,13 @@ export function buildPromptFromChips(selections: Record<string, string[]>): stri
   const bust = getSelected(selections, 'bust')
   const hips = getSelected(selections, 'hips')
   const musculature = getSelected(selections, 'musculature')
+  const legs = getSelected(selections, 'legs')
   if (bodyType) body.type = bodyType
   if (height) body.height = height
   if (bust) body.bust = bust
   if (hips) body.hips = hips
   if (musculature) body.musculature = musculature
+  if (legs) body.legs = legs
 
   // Appearance
   const hairStyle = getSelected(selections, 'hairStyle')

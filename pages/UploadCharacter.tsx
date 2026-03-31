@@ -16,7 +16,7 @@ import { PipelineCTA } from '../components/PipelineCTA'
 import {
   type ChipOption, ETHNICITIES, HAIR_STYLES, HAIR_COLORS, SKIN_TONES, EYE_COLORS,
   EYE_SHAPES, NOSE_TYPES, LIP_SHAPES, FACE_SHAPES, JAWLINES, EYEBROWS,
-  BODY_TYPES, HEIGHTS, BUST_SIZES, HIP_SIZES, MUSCULATURE, FACIAL_HAIR, SKIN_TEXTURES, GENDERS, AGE_RANGES,
+  BODY_TYPES, HEIGHTS, BUST_SIZES, HIP_SIZES, MUSCULATURE, LEG_PROPORTIONS, FACIAL_HAIR, SKIN_TEXTURES, GENDERS, AGE_RANGES,
   PERSONALITY_TRAITS, FASHION_STYLES, ACCESSORIES, buildPromptFromChips,
 } from '../data/characterChips'
 import { SOUL_STYLES, SOUL_STYLES_CURATED, SOUL_STYLE_CATEGORIES, type SoulStyleCategory } from '../data/soulStyles'
@@ -114,7 +114,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   const [chipSelections, setChipSelections] = useState<Record<string, string[]>>({
     ethnicity: [], hairStyle: [], hairColor: [], skinTone: [], eyeColor: [],
     eyeShape: [], noseType: [], lipShape: [], faceShape: [], jawline: [], eyebrows: [],
-    bodyType: [], height: [], bust: [], hips: [], musculature: [], facialHair: [], skinTexture: [],
+    bodyType: [], height: [], bust: [], hips: [], musculature: [], legs: [], facialHair: [], skinTexture: [],
   })
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [promptText, setPromptText] = useState('')
@@ -195,7 +195,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     setChipSelections({
       ethnicity: [], hairStyle: [], hairColor: [], skinTone: [], eyeColor: [],
       eyeShape: [], noseType: [], lipShape: [], faceShape: [], jawline: [], eyebrows: [],
-      bodyType: [], height: [], bust: [], hips: [], musculature: [], facialHair: [], skinTexture: [],
+      bodyType: [], height: [], bust: [], hips: [], musculature: [], legs: [], facialHair: [], skinTexture: [],
     })
     setSelFashion([])
     setSelAccessories([])
@@ -846,7 +846,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                       <div>
                         <label className="joi-label block mb-2">Tipo de Cuerpo</label>
                         <ChipSelector options={BODY_TYPES} selected={chipSelections.bodyType}
-                          onSelect={ids => updateChip('bodyType', ids)} color="var(--joi-blue)" />
+                          onSelect={ids => updateChip('bodyType', ids)} maxSelect={3} color="var(--joi-blue)" />
                       </div>
                       <div>
                         <label className="joi-label block mb-2">Altura</label>
@@ -867,6 +867,11 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                         <label className="joi-label block mb-2">Musculatura</label>
                         <ChipSelector options={MUSCULATURE} selected={chipSelections.musculature}
                           onSelect={ids => updateChip('musculature', ids)} />
+                      </div>
+                      <div>
+                        <label className="joi-label block mb-2">Piernas</label>
+                        <ChipSelector options={LEG_PROPORTIONS} selected={chipSelections.legs}
+                          onSelect={ids => updateChip('legs', ids)} />
                       </div>
                       <div>
                         <label className="joi-label block mb-2">Vello Facial</label>

@@ -1647,7 +1647,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
               )}
             </div>
             {resultImage && (
-              <button onClick={() => { setInputImage(resultImage); setResultImage(null); setInputFile(null); toast.success('Resultado cargado como nueva base') }}
+              <button onClick={async () => { setInputImage(resultImage); setResultImage(null); try { setInputFile(await urlToFile(resultImage!, 'result.png')) } catch { setInputFile(null) }; toast.success('Resultado cargado como nueva base') }}
                 className="mt-2 px-4 py-2 rounded-lg text-[11px] font-medium transition-all"
                 style={{ background: 'rgba(0,0,0,.04)', color: 'var(--accent)', border: '1px solid var(--border)' }}>
                 Seguir editando este resultado →
@@ -1663,7 +1663,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           <span className="text-[9px] font-mono shrink-0 mr-1" style={{ color:'var(--joi-text-3)' }}>HISTORIAL</span>
           {editHistory.slice(0, 10).map((url, i) => (
             <div key={i} onClick={() => { setResultImage(url) }}
-              onDoubleClick={() => { setInputImage(url); setResultImage(null); setInputFile(null); toast.success('Cargado como nueva base') }}
+              onDoubleClick={async () => { setInputImage(url); setResultImage(null); try { setInputFile(await urlToFile(url, 'history.png')) } catch { setInputFile(null) }; toast.success('Cargado como nueva base') }}
               className="w-12 h-12 rounded-lg shrink-0 cursor-pointer hover:scale-105 transition-transform overflow-hidden"
               title="Clic: ver · Doble clic: usar como base"
               style={{ border: resultImage === url ? '2px solid var(--joi-pink)' : '1px solid rgba(255,255,255,.04)' }}>
