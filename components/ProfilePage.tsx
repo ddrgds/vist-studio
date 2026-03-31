@@ -118,7 +118,7 @@ const ProfilePage: React.FC = () => {
     .join('');
 
   const memberSince = profile?.createdAt
-    ? new Date(profile.createdAt).toLocaleDateString('es-MX', { month: 'long', year: 'numeric' })
+    ? new Date(profile.createdAt).toLocaleDateString('es-MX', { month: 'short', year: 'numeric' })
     : '—';
 
   if (isLoading) {

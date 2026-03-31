@@ -293,7 +293,8 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                 border: `1px solid ${batchMode ? 'rgba(99,102,241,.2)' : 'rgba(255,255,255,.04)'}`,
                 color: batchMode ? 'var(--joi-pink)' : 'var(--joi-text-2)',
               }}>
-              {batchMode ? 'Salir de Lote' : 'Editar en Lote'}
+              <span className="hidden sm:inline">{batchMode ? 'Salir de Lote' : 'Editar en Lote'}</span>
+              <span className="sm:hidden">{batchMode ? '✕' : '⊞'}</span>
             </button>
           )}
           {galleryTab === 'gallery' && batchMode && (

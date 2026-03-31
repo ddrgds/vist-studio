@@ -665,7 +665,7 @@ export function Director({ onNav, onEditImage, onExportImage, uploadedImageUrl, 
       <input ref={faceInputRef} type="file" accept="image/*" className="hidden" onChange={handleFaceRefUpload} />
 
       {/* ── Left Panel — Frosted Glass ── */}
-      <div className="w-full lg:w-[400px] shrink-0 flex flex-col lg:h-full" style={{
+      <div className="w-full max-h-[60vh] overflow-y-auto lg:max-h-none lg:overflow-y-visible lg:w-[400px] shrink-0 flex flex-col lg:h-full" style={{
         background: 'var(--joi-bg-1)',
         borderRight: '1px solid var(--joi-border)',
       }}>
