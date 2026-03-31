@@ -25,7 +25,7 @@ const Landing = lazy(() => import('./pages/Landing'));
 // ── Extra ──
 const PricingPage = lazy(() => import('./components/PricingPage'));
 const ProfilePage = lazy(() => import('./components/ProfilePage'));
-const AIEditor = lazy(() => import('./pages/AIEditor'));
+const AIEditor = lazy(() => import('./pages/AIEditorV2'));
 const ExportModal = lazy(() => import('./features/export/ExportModal'));
 const PhotoSession = lazy(() => import('./pages/PhotoSession'));
 const VideoStudio = lazy(() => import('./pages/VideoStudio'));
