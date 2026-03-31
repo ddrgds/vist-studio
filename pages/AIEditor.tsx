@@ -569,7 +569,22 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         }
       } else if (activeTool === 'tryon' && garmentFile) {
         // NB2 → Seedream → Grok (all support multi-image for garment reference)
-        const tryonInstruction = `VIRTUAL TRY-ON: Replace ONLY the clothing on this person with the garment from the reference image. Keep the person's face, hair, skin, body, pose, and background 100% unchanged. Reproduce every fabric detail, pattern, color, and texture from the reference garment exactly.`
+        const tryonSpec = {
+          task: 'VIRTUAL TRY-ON',
+          image_1_BASE: {
+            role: 'THE PERSON — this is the subject to keep',
+            preserve: ['face', 'hair', 'skin_tone', 'body_shape', 'pose', 'background', 'lighting'],
+            rule: 'Do NOT change ANYTHING about this person except their clothing',
+          },
+          image_2_REFERENCE: {
+            role: 'GARMENT ONLY — extract the clothing item from this image',
+            extract: 'clothing, fabric, pattern, color, texture, fit',
+            ignore: 'COMPLETELY ignore the person/model wearing the garment — their face, body, skin, hair are IRRELEVANT',
+          },
+          output: 'The PERSON from Image 1 wearing the GARMENT from Image 2. Same face, same body, same pose, same background. Only the clothing changes.',
+        }
+        const tryonInstruction = `TRY-ON SPECIFICATION:\n${JSON.stringify(tryonSpec, null, 2)}`
+        const tryonFlatInstruction = 'Replace ONLY the clothing. IMAGE 1 is the PERSON (keep everything). IMAGE 2 is the GARMENT ONLY (extract clothing, IGNORE the model wearing it). Same face, body, pose, background.'
         try {
           const results = await editImageWithAI({ baseImage: inputFile, referenceImage: garmentFile, instruction: tryonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio })
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
@@ -577,10 +592,10 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         } catch (nb2Err) {
           console.warn('NB2 try-on failed, trying Seedream:', nb2Err)
           try {
-            resultUrls = await editImageWithSeedream5(inputFile, tryonInstruction, [garmentFile], (p) => setProgress(p))
+            resultUrls = await editImageWithSeedream5(inputFile, tryonFlatInstruction, [garmentFile], (p) => setProgress(p))
           } catch (sdErr) {
             console.warn('Seedream try-on failed, trying Grok:', sdErr)
-            resultUrls = await editImageWithGrokFal(inputFile, tryonInstruction, (p) => setProgress(p), undefined, [garmentFile], true)
+            resultUrls = await editImageWithGrokFal(inputFile, tryonFlatInstruction, (p) => setProgress(p), undefined, [garmentFile], true)
           }
         }
       } else if (activeTool === 'expand') {
