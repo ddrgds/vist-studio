@@ -32,13 +32,13 @@ const C = {
 };
 
 /* ── Phone carousel images ─────────────────────────────────── */
-const phoneImages = ['/phone/1.png', '/phone/2.png', '/phone/3.png', '/phone/4.png', '/phone/5.png'];
+const phoneImages = ['/landing/1.png', '/landing/2.png', '/landing/3.png', '/landing/4.png', '/landing/5.png', '/landing/6.png'];
 
 /* ── Showcase images (reuse from phone + more) ─────────────── */
 const showcaseImages = [
-  { src: '/phone/1.png', name: '@luna_virtual', time: '15s' },
-  { src: '/phone/4.png', name: '@vex.ai', time: '12s' },
-  { src: '/phone/3.png', name: '@nova.x', time: '18s' },
+  { src: '/landing/7.png', name: '@luna_virtual', time: '15s' },
+  { src: '/landing/8.png', name: '@vex.ai', time: '12s' },
+  { src: '/landing/9.png', name: '@nova.x', time: '18s' },
 ];
 
 /* ════════════════════════════════════════════════════════════
@@ -176,7 +176,7 @@ export default function Landing({ onAuth }: LandingProps) {
             boxShadow: '0 30px 80px rgba(0,0,0,0.1)',
             border: '1px solid rgba(0,0,0,0.08)',
           }}>
-            <img src="/phone/hero-split.png" alt="AI influencer" style={{
+            <img src="/landing/hero.png" alt="AI influencer" style={{
               width: '100%', display: 'block',
             }} />
           </div>
@@ -271,7 +271,7 @@ export default function Landing({ onAuth }: LandingProps) {
                   background: 'linear-gradient(135deg, #333333, #666666)',
                   padding: '2px',
                 }}>
-                  <img src="/phone/2.png" alt="" style={{
+                  <img src="/landing/10.png" alt="" style={{
                     width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover',
                     border: '2px solid #111',
                   }} />
