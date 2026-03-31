@@ -33,6 +33,7 @@ const C = {
 
 /* ── Phone carousel images ─────────────────────────────────── */
 const phoneImages = ['/landing/s1.png', '/landing/s2.png', '/landing/s3.png', '/landing/s4.png', '/landing/s5.png', '/landing/s6.png', '/landing/s7.png'];
+const igPhoneImages = ['/landing/phone1.png', '/landing/phone2.png', '/landing/phone3.png', '/landing/phone4.png'];
 
 /* ── Showcase images (reuse from phone + more) ─────────────── */
 const showcaseImages = [
@@ -48,7 +49,7 @@ export default function Landing({ onAuth }: LandingProps) {
   // phoneIdx for the IG mockup section (hero carousel manages its own state)
   const [phoneIdx, setPhoneIdx] = useState(0);
   useEffect(() => {
-    const t = setInterval(() => setPhoneIdx(i => (i + 1) % phoneImages.length), 3000);
+    const t = setInterval(() => setPhoneIdx(i => (i + 1) % igPhoneImages.length), 3000);
     return () => clearInterval(t);
   }, []);
 
@@ -285,7 +286,7 @@ export default function Landing({ onAuth }: LandingProps) {
 
               {/* Post Image — carousel */}
               <div style={{ position: 'relative', aspectRatio: '4/5', overflow: 'hidden', background: C.n800 }}>
-                {phoneImages.map((src, i) => (
+                {igPhoneImages.map((src, i) => (
                   <img key={i} src={src} alt="" style={{
                     position: 'absolute', inset: 0, width: '100%', height: '100%',
                     objectFit: 'cover',
