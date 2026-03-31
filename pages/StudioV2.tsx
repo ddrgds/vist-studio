@@ -13,6 +13,7 @@ import { fal } from '@fal-ai/client'
 import { runControlNet } from '../services/controlNetService'
 // gridSplitter no longer used — session generates individual photos
 import { useProfile } from '../contexts/ProfileContext'
+import { useNavigationStore } from '../stores/navigationStore'
 import { useToast } from '../contexts/ToastContext'
 import { ImageSize, AspectRatio, ENGINE_METADATA, CREDIT_COSTS, AIProvider } from '../types'
 import type { InfluencerParams } from '../types'
@@ -280,6 +281,16 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
   // Restore hero from pipeline store on mount (persists across page changes)
   useEffect(() => { if (pipelineHeroUrl && !heroImage) setHeroImage(pipelineHeroUrl) }, [])
 
+  // Consume pending image from gallery selection mode
+  const { pendingImage: navPendingImage, pendingTarget: navPendingTarget, consume: consumeNav } = useNavigationStore()
+  useEffect(() => {
+    if (navPendingTarget === 'studio' && navPendingImage) {
+      setHeroImage(navPendingImage)
+      setSourceTab('crear')
+      consumeNav()
+    }
+  }, [navPendingTarget, navPendingImage])
+
   const handleSelectCharacter = (id: string) => {
     setSelectedCharId(id)
     const char = characters.find(c => c.id === id)
@@ -538,14 +549,13 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
                 ))}
               </div>
 
-              {/* Gallery source — opens modal for better viewing */}
+              {/* Gallery source — navigates to real gallery in selection mode */}
               {sourceTab === 'galeria' && (
                 <div>
                   <span style={labelStyle}>Elegir de Galería</span>
-                  <button onClick={() => setShowGalleryModal(true)} style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--bg-0)', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                    🖼 Abrir Galería ({galleryItems.filter(i => i.url).length} fotos)
+                  <button onClick={() => { useNavigationStore.getState().openGalleryForSelection('studio'); onNav?.('gallery') }} style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--bg-0)', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    🖼 Ir a Galería para elegir foto
                   </button>
-                  {galleryItems.length === 0 && <span style={{ fontSize: '0.75rem', color: 'var(--text-3)', marginTop: 8, display: 'block' }}>Sin fotos en galería</span>}
                 </div>
               )}
 

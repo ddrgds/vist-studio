@@ -67,7 +67,7 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
   const storyboardIds = useGalleryStore(s => s.storyboardIds)
   const setReuseParams = useGalleryStore(s => s.setReuseParams)
   const { addToast } = useToast()
-  const { navigateToEditor, navigateToSession, navigateToUpload } = useNavigationStore()
+  const { navigateToEditor, navigateToSession, navigateToUpload, selectFor, selectFromGallery } = useNavigationStore()
 
   const [galleryTab, setGalleryTab] = useState<'gallery'|'storyboard'>('gallery')
   const [activeFilter, setActiveFilter] = useState('Todas')
@@ -257,6 +257,13 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
 
   return (
     <div className="min-h-screen joi-mesh">
+      {/* Selection mode banner */}
+      {selectFor && (
+        <div style={{ background: 'var(--accent)', color: 'white', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', fontWeight: 500 }}>
+          <span>Selecciona una foto para {selectFor === 'studio' ? 'Studio' : 'Editor'}</span>
+          <button onClick={() => { useNavigationStore.getState().consume(); onNav?.(selectFor === 'editor' ? 'editor' : 'studio') }} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', padding: '4px 12px', borderRadius: 8, fontSize: '0.8rem', cursor: 'pointer' }}>Cancelar</button>
+        </div>
+      )}
       <div className="px-4 lg:px-8 pt-8 pb-2 flex flex-wrap items-end justify-between gap-2">
         <div>
           <h1 className="joi-heading joi-glow--subtle" style={{ fontSize: '1.75rem' }}>
@@ -445,6 +452,11 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
               <div
                 key={img.id}
                 onClick={() => {
+                  if (selectFor) {
+                    selectFromGallery(img.url)
+                    onNav?.(selectFor === 'editor' ? 'editor' : 'studio')
+                    return
+                  }
                   if (batchMode) { toggleSelect(img.id) }
                   else { setEditorSrc(img.url); setEditorItem(img) }
                 }}
