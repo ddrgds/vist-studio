@@ -32,7 +32,7 @@ const C = {
 };
 
 /* ── Phone carousel images ─────────────────────────────────── */
-const phoneImages = ['/landing/s1.png', '/landing/s2.png', '/landing/s3.png', '/landing/s4.png', '/landing/s5.png', '/landing/s6.png'];
+const phoneImages = ['/landing/s1.png', '/landing/s2.png', '/landing/s3.png', '/landing/s4.png', '/landing/s5.png', '/landing/s6.png', '/landing/s7.png'];
 
 /* ── Showcase images (reuse from phone + more) ─────────────── */
 const showcaseImages = [

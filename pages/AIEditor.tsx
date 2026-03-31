@@ -787,8 +787,8 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         </button>
       </div>
 
-      {/* Tool Panel — compact on mobile */}
-      <div className="w-full lg:w-[300px] shrink-0 flex flex-col max-h-[35vh] lg:max-h-full overflow-y-auto border-b lg:border-b-0 lg:border-r" style={{ background:'var(--bg-1)', borderColor:'var(--border)' }}>
+      {/* Tool Panel — hidden on mobile when no image, compact when image loaded */}
+      <div className={`w-full lg:w-[300px] shrink-0 flex flex-col lg:max-h-full overflow-y-auto border-b lg:border-b-0 lg:border-r ${inputImage ? 'max-h-[30vh]' : 'hidden lg:flex'}`} style={{ background:'var(--bg-1)', borderColor:'var(--border)' }}>
         <div className="px-4 h-14 flex items-center shrink-0" style={{ borderBottom:'1px solid rgba(255,255,255,.04)' }}>
           <h2 className="text-sm font-bold" style={{ color:'var(--joi-text-1)' }}>
             {tools.find(t=>t.id===activeTool)?.icon} {tools.find(t=>t.id===activeTool)?.label}
