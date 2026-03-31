@@ -120,9 +120,10 @@ export const updateCharacterInCloud = async (
 export const loadCharactersFromCloud = async (userId: string): Promise<SavedCharacter[]> => {
   const { data, error } = await supabase
     .from('characters')
-    .select('id, name, thumbnail, model_image_urls, outfit_description, characteristics, accessory, lora_url, lora_training_status, lora_trained_at, created_at, updated_at, usage_count, reference_photo_urls, render_style')
+    .select('id, name, model_image_urls, characteristics, accessory, created_at, updated_at, usage_count, reference_photo_urls, render_style')
     .eq('user_id', userId)
-    .order('updated_at', { ascending: false });
+    .order('updated_at', { ascending: false })
+    .limit(20);
 
   if (error) throw new Error(`loadCharactersFromCloud failed: ${error.message}`);
 
@@ -131,16 +132,13 @@ export const loadCharactersFromCloud = async (userId: string): Promise<SavedChar
   return rows.map((row) => ({
     id: row.id as string,
     name: row.name as string,
-    thumbnail: row.thumbnail as string,
-    modelImageBlobs: [],   // not downloaded — use modelImageUrls for lazy fetch
-    outfitBlob: null,      // not downloaded — outfit_url available if needed
+    thumbnail: ((row.model_image_urls as string[]) ?? [])[0] ?? '',
+    modelImageBlobs: [],
+    outfitBlob: null,
     modelImageUrls: (row.model_image_urls as string[]) ?? [],
-    outfitDescription: (row.outfit_description as string) ?? '',
+    outfitDescription: '',
     characteristics: (row.characteristics as string) ?? '',
     accessory: (row.accessory as string) ?? '',
-    loraUrl: row.lora_url as string | undefined,
-    loraTrainingStatus: (row.lora_training_status as SavedCharacter['loraTrainingStatus']) ?? 'idle',
-    loraTrainedAt: row.lora_trained_at as number | undefined,
     createdAt: row.created_at as number,
     updatedAt: row.updated_at as number,
     usageCount: (row.usage_count as number) ?? 0,
