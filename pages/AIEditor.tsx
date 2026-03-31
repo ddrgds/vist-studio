@@ -756,8 +756,8 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         }}
       />
 
-      {/* Tool sidebar */}
-      <div className="w-[84px] shrink-0 flex flex-col items-center py-4 gap-1" style={{ background:'var(--joi-bg-1)', borderRight:'1px solid var(--joi-border)' }}>
+      {/* Tool sidebar — horizontal scroll on mobile, vertical on desktop */}
+      <div className="w-full lg:w-[84px] shrink-0 flex lg:flex-col items-center py-2 lg:py-4 gap-1 overflow-x-auto lg:overflow-x-visible overflow-y-hidden lg:overflow-y-auto border-b lg:border-b-0 lg:border-r" style={{ background:'var(--bg-1)', borderColor:'var(--border)' }}>
         {(showAllTools ? tools : tools.slice(0, 6)).map(t => (
           <button key={t.id} onClick={()=>setActiveTool(t.id)}
             className={`w-14 h-14 rounded-xl flex flex-col items-center justify-center transition-all group relative`}
@@ -797,8 +797,8 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         </button>
       </div>
 
-      {/* Tool Panel */}
-      <div className="w-full lg:w-[300px] shrink-0 flex flex-col max-h-[40vh] lg:max-h-full overflow-y-auto joi-scroll" style={{ background:'var(--joi-bg-1)', borderRight:'1px solid var(--border)', backdropFilter:'blur(16px)' }}>
+      {/* Tool Panel — compact on mobile */}
+      <div className="w-full lg:w-[300px] shrink-0 flex flex-col max-h-[35vh] lg:max-h-full overflow-y-auto border-b lg:border-b-0 lg:border-r" style={{ background:'var(--bg-1)', borderColor:'var(--border)' }}>
         <div className="px-4 h-14 flex items-center shrink-0" style={{ borderBottom:'1px solid rgba(255,255,255,.04)' }}>
           <h2 className="text-sm font-bold" style={{ color:'var(--joi-text-1)' }}>
             {tools.find(t=>t.id===activeTool)?.icon} {tools.find(t=>t.id===activeTool)?.label}
@@ -1639,7 +1639,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           {inputImage && <span className="text-[10px]" style={{ color:'var(--text-3)' }}>Clic en imagen para ver en grande</span>}
         </div>
 
-        <div ref={canvasContainerRef} className="flex-1 flex items-center justify-center p-6 gap-6"
+        <div ref={canvasContainerRef} className="flex-1 flex flex-col lg:flex-row items-center justify-center p-3 lg:p-6 gap-3 lg:gap-6 overflow-y-auto"
         >
           {!inputImage ? (
             /* ── Empty canvas: tool showcase ── */
@@ -1675,19 +1675,19 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
           <div className="flex gap-1 rounded-xl overflow-hidden" style={{ border:'1px solid var(--border)' }}>
             <div className="relative cursor-pointer" onClick={() => setEditorLightbox(inputImage)}>
               <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[9px] font-mono z-10" style={{ background:'rgba(0,0,0,.6)', color:'white' }}>ANTES</div>
-              <img src={inputImage} className="max-h-[65vh] max-w-[45vw] object-contain select-none" draggable={false} alt="Before" />
+              <img src={inputImage} className="max-h-[35vh] lg:max-h-[65vh] max-w-[45vw] object-contain select-none" draggable={false} alt="Before" />
             </div>
             <div className="w-px shrink-0" style={{ background:'var(--accent)' }} />
             <div className="relative cursor-pointer" onClick={() => setEditorLightbox(resultImage)}>
               <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[9px] font-mono z-10" style={{ background:'var(--accent)', color:'white' }}>DESPUÉS</div>
-              <img src={resultImage} className="max-h-[65vh] max-w-[45vw] object-contain select-none" draggable={false} alt="After" />
+              <img src={resultImage} className="max-h-[35vh] lg:max-h-[65vh] max-w-[45vw] object-contain select-none" draggable={false} alt="After" />
             </div>
           </div>
           ) : (
           <>
           <div className="text-center">
             <div className="joi-label mb-2">Original</div>
-            <div className="w-[min(420px,_45vw)] h-[min(520px,_65vh)] rounded-xl flex items-center justify-center overflow-hidden cursor-pointer"
+            <div className="w-[min(280px,_90vw)] lg:w-[min(420px,_45vw)] h-[min(350px,_40vh)] lg:h-[min(520px,_65vh)] rounded-xl flex items-center justify-center overflow-hidden cursor-pointer"
               onClick={() => setEditorLightbox(inputImage)}
               style={{ background: 'var(--bg-0)', border:'1px solid var(--border)' }}>
               <img src={inputImage} className="w-full h-full object-contain rounded-xl select-none" draggable={false} alt="Original" />
@@ -1698,7 +1698,7 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
 
           <div className="text-center">
             <div className="joi-label mb-2" style={{ color:'var(--accent)' }}>Resultado AI</div>
-            <div className="w-[min(420px,_45vw)] h-[min(520px,_65vh)] rounded-xl flex items-center justify-center overflow-hidden cursor-pointer"
+            <div className="w-[min(280px,_90vw)] lg:w-[min(420px,_45vw)] h-[min(350px,_40vh)] lg:h-[min(520px,_65vh)] rounded-xl flex items-center justify-center overflow-hidden cursor-pointer"
               onClick={() => resultImage && setEditorLightbox(resultImage)}
               style={{ background: 'var(--bg-0)', border:'1px solid var(--border)' }}>
               {resultImage ? (
