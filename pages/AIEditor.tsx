@@ -758,35 +758,25 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
 
       {/* Tool sidebar — horizontal scroll on mobile, vertical on desktop */}
       <div className="w-full lg:w-[84px] shrink-0 flex lg:flex-col items-center py-2 lg:py-4 gap-1 overflow-x-auto lg:overflow-x-visible overflow-y-hidden lg:overflow-y-auto border-b lg:border-b-0 lg:border-r" style={{ background:'var(--bg-1)', borderColor:'var(--border)' }}>
-        {(showAllTools ? tools : tools.slice(0, 6)).map(t => (
+        {tools.map(t => (
           <button key={t.id} onClick={()=>setActiveTool(t.id)}
-            className={`w-14 h-14 rounded-xl flex flex-col items-center justify-center transition-all group relative`}
+            className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl flex flex-col items-center justify-center transition-all shrink-0"
             style={{
-              background: activeTool===t.id ? 'var(--joi-pink-soft)' : 'transparent',
-              border: `1px solid ${activeTool===t.id ? 'var(--joi-border-h)' : 'transparent'}`,
+              background: activeTool===t.id ? 'rgba(0,0,0,.06)' : 'transparent',
+              border: `1px solid ${activeTool===t.id ? 'var(--border)' : 'transparent'}`,
             }}>
-            <span className="text-lg">{t.icon}</span>
-            <span className="text-[9px] mt-0.5 font-medium leading-tight text-center px-0.5" style={{ color: activeTool===t.id ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>
+            <span className="text-base lg:text-lg">{t.icon}</span>
+            <span className="text-[8px] lg:text-[9px] mt-0.5 font-medium leading-tight text-center px-0.5" style={{ color: activeTool===t.id ? 'var(--accent)' : 'var(--text-3)' }}>
               {t.label.split(' ')[0]}
             </span>
-            <div className="absolute left-full ml-2 px-2 py-1 rounded-lg text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50"
-              style={{ background:'var(--joi-bg-3)', color:'var(--joi-text-1)', border:'1px solid var(--joi-border)' }}>
-              {t.desc}
-            </div>
           </button>
         ))}
-        <button onClick={() => { setShowAllTools(v => { const next = !v; try { localStorage.setItem('vist-editor-all-tools', String(next)) } catch {} return next }) }}
-          className="w-14 h-7 rounded-xl flex items-center justify-center transition-all mt-1"
-          style={{ background: 'var(--joi-bg-3)', border: '1px solid var(--joi-border)', color: 'var(--joi-text-3)' }}
-          title={showAllTools ? 'Mostrar menos herramientas' : 'Mostrar más herramientas'}>
-          <span className="text-[9px] font-medium">{showAllTools ? '▲ Menos' : '▼ Más'}</span>
-        </button>
-        <div className="w-12 h-px my-1" style={{ background: 'var(--joi-border)' }} />
+        <div className="hidden lg:block w-12 h-px my-1" style={{ background: 'var(--border)' }} />
         <button onClick={() => inputImage && setShowBasicEditor(true)}
-          className="w-14 h-14 rounded-xl flex flex-col items-center justify-center transition-all group relative"
+          className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl flex flex-col items-center justify-center transition-all shrink-0"
           style={{
-            background: showBasicEditor ? 'var(--joi-pink-soft)' : 'transparent',
-            border: `1px solid ${showBasicEditor ? 'var(--joi-border-h)' : 'transparent'}`,
+            background: showBasicEditor ? 'rgba(0,0,0,.06)' : 'transparent',
+            border: `1px solid ${showBasicEditor ? 'var(--border)' : 'transparent'}`,
             opacity: inputImage ? 1 : 0.3,
           }}
           title="Editor Básico — recorte, filtros, ajustes (sin AI)">
