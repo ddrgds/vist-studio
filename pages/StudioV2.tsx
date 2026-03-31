@@ -381,9 +381,18 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
   const handleUploadSource = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return
     const reader = new FileReader()
-    reader.onload = () => { setHeroImage(reader.result as string); setSelectedVibes(new Set(DEFAULT_VIBES)); setAutoVibes(new Set(DEFAULT_VIBES)); setPhase('session') }
+    reader.onload = () => { setHeroImage(reader.result as string) }
     reader.readAsDataURL(file); e.target.value = ''
   }
+
+  // Gallery select — sets hero image without jumping to session
+  const handleGallerySelect = (url: string) => {
+    setHeroImage(url)
+    setSourceTab('crear') // go back to create tab
+  }
+
+  // Gallery modal for larger view
+  const [showGalleryModal, setShowGalleryModal] = useState(false)
 
   // Session output controls
   const [sessionResolution, setSessionResolution] = useState('2k')
@@ -524,19 +533,14 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
                 ))}
               </div>
 
-              {/* Gallery source — pick from existing photos */}
+              {/* Gallery source — opens modal for better viewing */}
               {sourceTab === 'galeria' && (
                 <div>
                   <span style={labelStyle}>Elegir de Galería</span>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, maxHeight: 200, overflowY: 'auto' }}>
-                    {galleryItems.filter(i => i.url).slice(0, 12).map(item => (
-                      <button key={item.id} onClick={() => handleGallerySelect(item.url)}
-                        style={{ aspectRatio: '3/4', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)', cursor: 'pointer', padding: 0, background: 'none' }}>
-                        <img src={item.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      </button>
-                    ))}
-                  </div>
-                  {galleryItems.length === 0 && <span style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>Sin fotos en galería</span>}
+                  <button onClick={() => setShowGalleryModal(true)} style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--bg-0)', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    🖼 Abrir Galería ({galleryItems.filter(i => i.url).length} fotos)
+                  </button>
+                  {galleryItems.length === 0 && <span style={{ fontSize: '0.75rem', color: 'var(--text-3)', marginTop: 8, display: 'block' }}>Sin fotos en galería</span>}
                 </div>
               )}
 
@@ -870,6 +874,29 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
               <button onClick={() => { setSelectedCells(prev => { const n = new Set(prev); n.has(lightboxIdx!) ? n.delete(lightboxIdx!) : n.add(lightboxIdx!); return n }) }} style={{ background: selectedCells.has(lightboxIdx) ? 'white' : 'rgba(255,255,255,0.15)', color: selectedCells.has(lightboxIdx) ? 'var(--accent)' : 'white', border: 'none', padding: '6px 16px', borderRadius: 8, fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer' }}>
                 {selectedCells.has(lightboxIdx) ? '✓ Seleccionada' : 'Seleccionar'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Gallery Modal */}
+      {showGalleryModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9998, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }} onClick={() => setShowGalleryModal(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: 16, width: '90vw', maxWidth: 600, maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Elegir de Galería</span>
+              <button onClick={() => setShowGalleryModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: 'var(--text-3)' }}>✕</button>
+            </div>
+            <div style={{ padding: 16, overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+              {galleryItems.filter(i => i.url).map(item => (
+                <button key={item.id} onClick={() => { handleGallerySelect(item.url); setShowGalleryModal(false) }}
+                  style={{ aspectRatio: '3/4', borderRadius: 10, overflow: 'hidden', border: heroImage === item.url ? '3px solid var(--accent)' : '1px solid var(--border)', cursor: 'pointer', padding: 0, background: '#F0F0F1' }}>
+                  <img src={item.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </button>
+              ))}
+              {galleryItems.filter(i => i.url).length === 0 && (
+                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 40, color: 'var(--text-3)', fontSize: '0.85rem' }}>Sin fotos en galería</div>
+              )}
             </div>
           </div>
         </div>
