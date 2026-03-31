@@ -485,28 +485,52 @@ export function AIEditor({ onNav }: { onNav?: (page: string) => void }) {
         const result = await runEditWithFallback(inputImage!, instruction, 'nb2', 'angles', outputOpts)
         resultUrls = [result.url]
       } else if (activeTool === 'composite') {
-        let sceneInstruction: string
-        if (sceneImage && scenePrompt.trim()) {
-          sceneInstruction = `Place this person into the scene shown in the reference image. Additional: ${scenePrompt.trim()}. Keep person's face, body, outfit, pose identical. Match lighting, shadows, color grading to the scene.`
-        } else if (sceneImage) {
-          sceneInstruction = `Place this person into the exact scene/location shown in the reference image. Keep person's face, body, outfit, pose identical. Match lighting, shadows, color grading.`
-        } else {
-          sceneInstruction = `Change the background/scene to: ${scenePrompt.trim()}. Keep person's face, body, outfit, pose identical. Match lighting and color grading to the new scene.`
+        const sceneDesc = scenePrompt.trim()
+        const hasSceneRef = !!sceneImage
+
+        // JSON for NB2
+        const sceneSpec = {
+          task: 'SCENE CHANGE — Place person into new environment',
+          image_1_BASE: {
+            role: 'THE PERSON — subject to preserve completely',
+            preserve: ['face', 'hair', 'skin', 'body', 'outfit', 'pose'],
+            rule: 'Do NOT alter the person in any way',
+          },
+          ...(hasSceneRef ? {
+            image_2_REFERENCE: {
+              role: 'SCENE REFERENCE — the target environment',
+              use: 'location, architecture, colors, atmosphere, lighting mood',
+              ignore: 'Any people visible in the scene reference — they are NOT the subject',
+            },
+          } : {}),
+          scene: {
+            description: sceneDesc || (hasSceneRef ? 'Match the reference scene exactly' : 'professional studio'),
+            integration: 'Match lighting direction, color temperature, shadows, and color grading so person looks naturally photographed in this location',
+          },
         }
+        const jsonSceneInstruction = `SCENE SPECIFICATION:\n${JSON.stringify(sceneSpec, null, 2)}`
+
+        // Flat for fallbacks
+        const flatSceneInstruction = hasSceneRef && sceneDesc
+          ? `Place this person into the reference scene. Additional: ${sceneDesc}. Keep person identical. Match lighting and color grading.`
+          : hasSceneRef
+          ? `Place this person into the exact scene from the reference image. Keep person identical. Match lighting.`
+          : `Change background/scene to: ${sceneDesc}. Keep person identical. Match lighting and color grading.`
+
         // NB2 → Seedream → Grok fallback (with scene reference + character identity refs)
         const charRefs = await getCharRefFiles()
         try {
-          const results = await editImageWithAI({ baseImage: inputFile, referenceImage: sceneFile ?? charRefs[0] ?? undefined, instruction: sceneInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio })
+          const results = await editImageWithAI({ baseImage: inputFile, referenceImage: sceneFile ?? charRefs[0] ?? undefined, instruction: jsonSceneInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio })
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
           console.warn('NB2 scene failed, trying Seedream:', nb2Err)
           const allRefs = [...(sceneFile ? [sceneFile] : []), ...charRefs]
           try {
-            resultUrls = await editImageWithSeedream5(inputFile, sceneInstruction, allRefs, (p) => setProgress(p))
+            resultUrls = await editImageWithSeedream5(inputFile, flatSceneInstruction, allRefs, (p) => setProgress(p))
           } catch (sdErr) {
             console.warn('Seedream scene failed, trying Grok:', sdErr)
-            resultUrls = await editImageWithGrokFal(inputFile, sceneInstruction, (p) => setProgress(p), undefined, allRefs)
+            resultUrls = await editImageWithGrokFal(inputFile, flatSceneInstruction, (p) => setProgress(p), undefined, allRefs)
           }
         }
       } else if (activeTool === 'style') {
