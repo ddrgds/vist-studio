@@ -30,7 +30,8 @@ export type SoulStyleCategory =
   | 'expression'
   | 'aesthetic'
   | 'content'
-  | 'place';
+  | 'place'
+  | 'spicy';
 
 export const SOUL_STYLE_CATEGORIES: Record<SoulStyleCategory, { label: string; icon: string }> = {
   general: { label: 'General', icon: '✦' },
@@ -50,6 +51,7 @@ export const SOUL_STYLE_CATEGORIES: Record<SoulStyleCategory, { label: string; i
   lifestyle: { label: 'Lifestyle', icon: '🌿' },
   profession: { label: 'Profesión', icon: '💼' },
   experimental: { label: 'Experimental', icon: '🔮' },
+  spicy: { label: 'Spicy', icon: '🔥' },
 };
 
 export const SOUL_STYLES: SoulStyle[] = [
@@ -548,6 +550,28 @@ export const SOUL_STYLES: SoulStyle[] = [
   { id: 'custom-place-motorcycle', name: 'Motorcycle', category: 'place', icon: '🏍️', hint: 'sitting on or standing beside a motorcycle, leather jacket, urban street or open road, chrome and metal details, rebellious and free, biker aesthetic' },
   { id: 'custom-place-yacht', name: 'Yacht', category: 'place', icon: '🛥️', hint: 'on the deck of a luxury yacht, ocean stretching to horizon, white boat surface, nautical ropes and rails, bright sea light, wealthy and exclusive' },
   { id: 'custom-place-privatejet', name: 'Private Jet', category: 'place', icon: '✈️', hint: 'inside a private jet cabin, cream leather seats, champagne glass, oval window with clouds, luxury and exclusivity, jet-setter lifestyle, warm cabin light' },
+
+  // ── Spicy 🔥 ──
+  { id: 'custom-spicy-boudoir', name: 'Boudoir', category: 'spicy', icon: '🛏️', featured: true, hint: 'intimate boudoir photography, soft bed with silk sheets, warm golden light, lingerie or sheer fabric, sensual but elegant, soft focus, romantic mood' },
+  { id: 'custom-spicy-wetlook', name: 'Wet Look', category: 'spicy', icon: '💦', hint: 'wet hair and skin glistening, water droplets on body, shower or rain setting, steam, dramatic lighting on wet skin, raw and bold' },
+  { id: 'custom-spicy-silhouette', name: 'Silhouette', category: 'spicy', icon: '🌑', hint: 'dramatic backlit silhouette, body outline against bright window or sunset, mysterious and suggestive, figure visible through sheer fabric, artistic' },
+  { id: 'custom-spicy-bedsheet', name: 'Wrapped in Sheets', category: 'spicy', icon: '🤍', hint: 'wrapped loosely in white bed sheets, bare shoulders visible, lying in bed, morning light streaming through curtains, intimate and natural, soft cotton textures' },
+  { id: 'custom-spicy-mirror', name: 'Mirror Reflection', category: 'spicy', icon: '🪞', hint: 'caught in mirror reflection while getting dressed or undressed, candid intimate moment, partial outfit, bedroom mirror, warm private lighting' },
+  { id: 'custom-spicy-poolside', name: 'Poolside', category: 'spicy', icon: '🏊', hint: 'lounging poolside in swimwear, wet skin glistening in sun, luxury pool setting, tropical plants, sun-kissed body, confident and relaxed' },
+  { id: 'custom-spicy-bathrobe', name: 'Bathrobe', category: 'spicy', icon: '🧖', hint: 'wearing only a loosely tied bathrobe or towel, fresh from shower, steam, wet hair, bare legs, luxury bathroom, intimate self-care moment' },
+  { id: 'custom-spicy-bodysuit', name: 'Bodysuit', category: 'spicy', icon: '🖤', hint: 'wearing a form-fitting bodysuit or catsuit, body contours highlighted, sleek and powerful, editorial lighting, confident pose, dark background' },
+  { id: 'custom-spicy-backless', name: 'Backless', category: 'spicy', icon: '🔙', hint: 'backless dress or top, back fully exposed, looking over shoulder, elegant and sensual, low-cut back revealing spine, sophisticated lighting' },
+  { id: 'custom-spicy-oversizedshirt', name: 'Oversized Shirt', category: 'spicy', icon: '👔', hint: 'wearing only an oversized white button-up shirt, bare legs, morning-after aesthetic, soft bed or kitchen setting, casual and intimate, GF aesthetic' },
+  { id: 'custom-spicy-corset', name: 'Corset', category: 'spicy', icon: '🩱', hint: 'wearing a lace-up corset, cinched waist, dramatic hourglass, Victorian or gothic setting, dark moody lighting, powerful and seductive' },
+  { id: 'custom-spicy-tanlines', name: 'Tan Lines', category: 'spicy', icon: '☀️', hint: 'visible tan lines on sun-kissed skin, bikini marks, golden hour light on warm skin, beach or balcony setting, natural and summery' },
+  { id: 'custom-spicy-fishnets', name: 'Fishnets', category: 'spicy', icon: '🕸️', hint: 'wearing fishnet stockings or tights, edgy and bold, club or concert aesthetic, dark lighting with neon accents, rebellious energy' },
+  { id: 'custom-spicy-lace', name: 'Lace & Sheer', category: 'spicy', icon: '🤍', hint: 'delicate lace garment or sheer fabric, intricate patterns on skin, soft diffused lighting, feminine and elegant, boudoir aesthetic' },
+  { id: 'custom-spicy-candlelight', name: 'Candlelight', category: 'spicy', icon: '🕯️', hint: 'lit only by candles, warm flickering golden light on skin, dark intimate room, romantic and mysterious atmosphere, shadows dancing' },
+  { id: 'custom-spicy-steam', name: 'Steam Room', category: 'spicy', icon: '♨️', hint: 'in a steam room or sauna, visible steam and moisture, towel wrapped, dewy skin, warm ambient light, relaxed and sensual' },
+  { id: 'custom-spicy-chains', name: 'Chains & Jewelry', category: 'spicy', icon: '⛓️', hint: 'body chains and layered jewelry draped over bare skin, gold or silver metalwork, dramatic editorial lighting, bold and luxurious' },
+  { id: 'custom-spicy-red', name: 'Red Room', category: 'spicy', icon: '❤️', hint: 'deep red lighting and red decor, velvet textures, roses, red lingerie or dress, passionate and intense mood, cinematic red tones' },
+  { id: 'custom-spicy-blackwhite', name: 'B&W Intimate', category: 'spicy', icon: '🖤', hint: 'black and white intimate portrait, high contrast, dramatic shadows on body, artistic nude-adjacent, fine art photography aesthetic' },
+  { id: 'custom-spicy-yoga', name: 'Yoga / Stretch', category: 'spicy', icon: '🧘', hint: 'yoga pose or deep stretch in minimal activewear, flexible body, natural lighting, serene but showing body lines, athletic sensuality' },
 ];
 
 /**
