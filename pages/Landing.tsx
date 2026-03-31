@@ -32,7 +32,7 @@ const C = {
 };
 
 /* ── Phone carousel images ─────────────────────────────────── */
-const phoneImages = ['/landing/1.png', '/landing/2.png', '/landing/3.png', '/landing/4.png', '/landing/5.png', '/landing/6.png'];
+const phoneImages = ['/landing/1.png', '/landing/2.png', '/landing/3.png', '/landing/4.png', '/landing/5.png', '/landing/6.png', '/landing/7.png', '/landing/8.png'];
 
 /* ── Showcase images (reuse from phone + more) ─────────────── */
 const showcaseImages = [
@@ -176,7 +176,7 @@ export default function Landing({ onAuth }: LandingProps) {
             boxShadow: '0 30px 80px rgba(0,0,0,0.1)',
             border: '1px solid rgba(0,0,0,0.08)',
           }}>
-            <img src="/landing/hero.png" alt="AI influencer" style={{
+            <img src="/landing/10.png" alt="AI influencer" style={{
               width: '100%', display: 'block',
             }} />
           </div>
