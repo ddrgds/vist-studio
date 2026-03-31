@@ -6,7 +6,7 @@ import { generateInfluencerImage, enhancePrompt } from '../services/geminiServic
 import { generateWithSoul } from '../services/higgsfieldService'
 import { generateWithReplicate } from '../services/replicateService'
 import { generateWithOpenAI } from '../services/openaiService'
-import { generateWithFal } from '../services/falService'
+import { generateWithFal, editImageWithGrokFal } from '../services/falService'
 import { ImageSize, AspectRatio, ENGINE_METADATA, FEATURE_ENGINES, AIProvider } from '../types'
 import type { InfluencerParams } from '../types'
 import { useNavigationStore } from '../stores/navigationStore'
@@ -27,6 +27,7 @@ const CHARACTER_ENGINES = [
   { id: 'gemini:nb2', label: 'Nano Banana 2', desc: 'Rápido, gratis, buena consistencia', badge: 'Recomendado' },
   { id: 'fal:seedream50', label: 'Seedream 5.0', desc: 'Alta calidad, multi-referencia', badge: null },
   { id: 'gemini:pro', label: 'NB Pro', desc: 'Máxima calidad Gemini', badge: null },
+  { id: 'grok-enhance', label: 'NB2 + Grok', desc: 'Genera con NB2, mejora con Grok', badge: 'Ultra' },
 ] as const;
 
 // ─── Render styles ───────────────────────────────────────────────────
@@ -269,6 +270,27 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   const costPerVariant = engineMeta?.creditCost ?? 2
 
   const routeGeneration = async (params: InfluencerParams): Promise<string[]> => {
+    // NB2 + Grok hybrid: generate with NB2, then enhance with Grok
+    if (selectedEngine === 'grok-enhance') {
+      const nb2Results = await generateInfluencerImage(params, () => {})
+      if (nb2Results.length === 0) return []
+      const enhanced: string[] = []
+      for (const url of nb2Results) {
+        try {
+          const res = await fetch(url)
+          const blob = await res.blob()
+          const file = new File([blob], 'nb2-result.jpg', { type: blob.type || 'image/jpeg' })
+          const grokResult = await editImageWithGrokFal(
+            file,
+            'Enhance this portrait to be more photorealistic and detailed. Add natural skin texture, pores, fine hair detail, realistic eye reflections, and subtle skin imperfections. Keep the exact same person, pose, and composition. Make it look like a professional studio photograph.',
+          )
+          enhanced.push(grokResult[0] || url)
+        } catch {
+          enhanced.push(url) // fallback to NB2 result if Grok fails
+        }
+      }
+      return enhanced
+    }
     if (!engineMeta || selectedEngine === 'auto') {
       return generateInfluencerImage(params, () => {})
     }
