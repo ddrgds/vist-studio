@@ -191,6 +191,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     setName('')
     setStep(0)
     setSelGender(null)
+    setSelAge(null)
     setSelRenderStyle(0)
     setChipSelections({
       ethnicity: [], hairStyle: [], hairColor: [], skinTone: [], eyeColor: [],
@@ -201,6 +202,10 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     setSelAccessories([])
     setSelPersonality([])
     setReferenceFiles([])
+    setPromptText('')
+    setSelectedSoulStyle(null)
+    setSoulStyleCategory('all')
+    setShowAllStyles(false)
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────
