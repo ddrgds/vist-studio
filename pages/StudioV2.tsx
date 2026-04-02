@@ -384,7 +384,8 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
         toast.error('Generación fallida — intenta de nuevo')
       }
     } catch (err: any) {
-      if (err?.name !== 'AbortError') { restoreCredits(cost + (poseCreditsDeducted ? 5 : 0)); toast.error(`Error: ${(err?.message || '').slice(0, 120)}`); console.error(err) }
+      restoreCredits(cost + (poseCreditsDeducted ? 5 : 0))
+      if (err?.name !== 'AbortError') { toast.error(`Error: ${(err?.message || '').slice(0, 120)}`); console.error(err) }
     } finally { setGeneratingHero(false); setHeroProgress(0) }
   }
 
@@ -824,7 +825,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
                 <div style={{ position: 'sticky', bottom: 20, width: '100%', maxWidth: 600, background: 'white', borderRadius: 16, padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 12px 48px rgba(0,0,0,0.08)', border: '1px solid var(--border)', zIndex: 20, marginTop: 16 }}>
                   <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-2)' }}>{selectedCells.size} de {gridCells.filter(Boolean).length} seleccionadas</span>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={handleSessionGenerate} style={{ background: 'white', border: '1px solid var(--border)', padding: '10px 16px', borderRadius: 10, cursor: 'pointer', fontSize: '0.8rem', color: 'var(--text-2)' }}>↻ Regenerar</button>
+                    <button onClick={handleSessionGenerate} disabled={generatingSession} style={{ background: 'white', border: '1px solid var(--border)', padding: '10px 16px', borderRadius: 10, cursor: generatingSession ? 'not-allowed' : 'pointer', fontSize: '0.8rem', color: 'var(--text-2)', opacity: generatingSession ? 0.5 : 1 }}>↻ Regenerar</button>
                     <button onClick={handleSaveSelected} disabled={selectedCells.size === 0} style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '10px 20px', borderRadius: 10, cursor: selectedCells.size === 0 ? 'not-allowed' : 'pointer', fontSize: '0.85rem', fontWeight: 500, opacity: selectedCells.size === 0 ? 0.5 : 1 }}>💾 Guardar {selectedCells.size > 0 ? selectedCells.size : ''} en Galería</button>
                   </div>
                 </div>
@@ -962,7 +963,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
           {/* Bottom bar */}
           {gridCells.length > 0 && (
             <div style={{ padding: '12px 16px', background: 'white', borderTop: '1px solid var(--border)', display: 'flex', gap: 8, flexShrink: 0 }}>
-              <button onClick={handleSessionGenerate} style={{ flex: 1, background: 'white', border: '1px solid var(--border)', padding: 12, borderRadius: 12, cursor: 'pointer', fontSize: '0.8rem', color: 'var(--text-2)' }}>↻ Regenerar</button>
+              <button onClick={handleSessionGenerate} disabled={generatingSession} style={{ flex: 1, background: 'white', border: '1px solid var(--border)', padding: 12, borderRadius: 12, cursor: generatingSession ? 'not-allowed' : 'pointer', fontSize: '0.8rem', color: 'var(--text-2)', opacity: generatingSession ? 0.5 : 1 }}>↻ Regenerar</button>
               <button onClick={handleSaveSelected} disabled={selectedCells.size === 0} style={{ flex: 2, background: 'var(--accent)', color: 'white', border: 'none', padding: 12, borderRadius: 12, cursor: selectedCells.size === 0 ? 'not-allowed' : 'pointer', fontSize: '0.85rem', fontWeight: 600, opacity: selectedCells.size === 0 ? 0.5 : 1 }}>💾 Guardar {selectedCells.size > 0 ? selectedCells.size : ''}</button>
             </div>
           )}
