@@ -416,7 +416,7 @@ export async function styleTransfer(
 /** Upscale — increase resolution (AuraSR only) */
 export async function upscale(
   imageUrl: string,
-  engine: 'recraft' | 'aura-sr' = 'recraft',
+  engine: 'recraft' | 'aura-sr' = 'aura-sr',
 ): Promise<ToolResult> {
   if (engine === 'aura-sr') {
     const result = await fal.subscribe('fal-ai/aura-sr', {
@@ -482,8 +482,12 @@ export type SheetType = 'face' | 'body' | 'expressions';
 export async function generateCharacterSheet(
   approvedImageUrl: string,
   sheetType: SheetType,
+  physicalTraits?: string,
 ): Promise<string> {
-  const prompt = ANGLE_PROMPTS[sheetType];
+  let prompt = ANGLE_PROMPTS[sheetType];
+  if (physicalTraits && sheetType === 'body') {
+    prompt = `${prompt}\n\nCRITICAL — The subject's body MUST match these EXACT physical characteristics (do NOT deviate): ${physicalTraits}. These proportions are non-negotiable and must be clearly visible in every angle.`;
+  }
   return nb2Edit(approvedImageUrl, prompt);
 }
 

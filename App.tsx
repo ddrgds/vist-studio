@@ -173,11 +173,21 @@ function AuthenticatedApp() {
             Loading...
           </div>
         }>
-          {pages[page]}
+          {/* Keep main pages mounted to preserve state */}
+          {(['studio', 'editor', 'gallery', 'create'] as Page[]).map(p => (
+            <div key={p} style={{ display: page === p ? 'contents' : 'none' }}>
+              {pages[p]}
+            </div>
+          ))}
+          {/* Lazy pages — mount only when active */}
+          {!['studio', 'editor', 'gallery', 'create'].includes(page) && pages[page]}
         </Suspense>
       </main>
 
       <MobileNav page={page} onNav={handleNav} />
+
+      {/* Credit balance badge — always visible on mobile */}
+      <CreditBadge onNav={handleNav} />
 
       {/* Global Export Modal — accessible from any page */}
       {exportImageUrl && (
@@ -216,6 +226,32 @@ import { useAuth } from './contexts/AuthContext';
 import { useCharacterStore } from './stores/characterStore';
 import { useGalleryStore } from './stores/galleryStore';
 import { usePipelineStore } from './stores/pipelineStore';
+
+function CreditBadge({ onNav }: { onNav: (p: Page) => void }) {
+  const { profile } = useProfile();
+  const credits = profile?.creditsRemaining ?? 0;
+  const isLow = credits < 20;
+  return (
+    <button
+      onClick={() => onNav('pricing')}
+      className="fixed top-3 right-3 lg:hidden z-[55] flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all"
+      style={{
+        background: isLow ? 'rgba(248,113,113,0.12)' : 'rgba(255,255,255,0.9)',
+        backdropFilter: 'blur(12px)',
+        border: `1px solid ${isLow ? 'rgba(248,113,113,0.3)' : 'rgba(0,0,0,0.06)'}`,
+        boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+        color: isLow ? '#DC2626' : '#1A1A1A',
+      }}
+      title="Créditos disponibles"
+    >
+      <span style={{ fontSize: '0.7rem' }}>✦</span>
+      <span style={{ fontSize: '0.75rem', fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>{credits}</span>
+      <span style={{ fontSize: '0.6rem', color: isLow ? '#DC2626' : '#999' }}>cr</span>
+    </button>
+  );
+}
+
+import { useProfile } from './contexts/ProfileContext';
 
 function StoreHydrator() {
   const { user } = useAuth();

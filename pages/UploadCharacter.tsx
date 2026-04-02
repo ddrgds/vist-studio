@@ -60,12 +60,12 @@ const renderStyles = [
 
 // ─── Chip Selector component ────────────────────────────────────────
 const ChipSelector = ({
-  options, selected, onSelect, maxSelect = 1, color = 'var(--joi-pink)',
+  options, selected, onSelect, maxSelect = 1,
 }: {
   options: ChipOption[]; selected: string[]; onSelect: (ids: string[]) => void;
   maxSelect?: number; color?: string;
 }) => (
-  <div className="flex flex-wrap gap-2">
+  <div className="flex flex-wrap gap-1.5">
     {options.map(chip => {
       const active = selected.includes(chip.id)
       return (
@@ -79,16 +79,16 @@ const ChipSelector = ({
             )
           }
         }}
-          className="px-3 py-2 rounded-xl text-[11px] font-medium transition-all flex items-center gap-1.5"
+          className="px-3 rounded-lg text-[11px] font-medium transition-all flex items-center gap-1.5"
           style={{
-            background: active ? `${color}12` : 'var(--joi-bg-3)',
-            border: `1px solid ${active ? `${color}30` : 'rgba(255,255,255,.04)'}`,
-            color: active ? color : 'var(--joi-text-2)',
-            backdropFilter: 'blur(8px)',
+            background: active ? '#1A1A1A' : 'white',
+            border: `1px solid ${active ? '#1A1A1A' : 'rgba(0,0,0,0.08)'}`,
+            color: active ? '#FFF' : '#444',
+            minHeight: 44,
           }}>
           {chip.color
-            ? <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: chip.color, border: '1px solid rgba(255,255,255,.25)', flexShrink: 0 }} />
-            : <span className="text-sm">{chip.emoji}</span>
+            ? <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: chip.color, border: active ? '1px solid rgba(255,255,255,.5)' : '1px solid rgba(0,0,0,.1)', flexShrink: 0 }} />
+            : <span className="text-[12px]">{chip.emoji}</span>
           }
           {chip.label}
         </button>
@@ -391,7 +391,12 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     setGenerationPhase('sheet')
 
     try {
-      const url = await generateCharacterSheet(variants[selectedVariant], type)
+      // Extract physical traits for body sheet accuracy
+      const bodyChipMap: Record<string, ChipOption[]> = { bodyType: BODY_TYPES, height: HEIGHTS, bust: BUST_SIZES, hips: HIP_SIZES, musculature: MUSCULATURE, legs: LEG_PROPORTIONS }
+      const physicalTraits = Object.entries(bodyChipMap)
+        .flatMap(([key, options]) => (chipSelections[key] || []).map(id => options.find(o => o.id === id)?.promptText).filter(Boolean))
+        .join('. ')
+      const url = await generateCharacterSheet(variants[selectedVariant], type, physicalTraits || undefined)
       setSheetResults(prev => ({ ...prev, [type]: url }))
     } catch {
       restoreCredits(SHEET_CREDIT_COST)
@@ -601,25 +606,24 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
   // ─── Render ───────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen joi-mesh">
+    <div className="min-h-screen" style={{ background: '#F3F4F6' }}>
       <div className="px-4 md:px-8 pt-8 pb-2">
-        <h1 className="joi-heading joi-glow text-2xl font-bold">
-          <span style={{ color: 'var(--joi-pink)' }}>Crear</span>{' '}
-          <span style={{ color: 'var(--joi-text-1)' }}>Personaje</span>
+        <h1 className="text-2xl font-bold" style={{ color: '#1A1A1A' }}>
+          Crear Personaje
         </h1>
-        <p className="joi-label mt-1" style={{ color: 'var(--joi-cyan-warm)' }}>Crea desde cero o importa imágenes de referencia</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider mt-1" style={{ color: '#999' }}>Crea desde cero o importa imágenes de referencia</p>
       </div>
 
       {/* Mode Toggle */}
       <div className="px-4 md:px-8 py-4">
-        <div className="flex w-full md:w-auto md:inline-flex rounded-xl p-1" style={{ background: 'var(--joi-bg-2)', backdropFilter: 'blur(8px)' }}>
+        <div className="flex w-full md:w-auto md:inline-flex rounded-xl p-1" style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)' }}>
           {(['create', 'import'] as const).map(m => (
             <button key={m} onClick={() => { setMode(m); setCharacterSaved(false) }}
               className="px-5 py-2 rounded-xl text-sm font-medium transition-all"
               style={{
-                background: mode === m ? 'var(--joi-bg-3)' : 'transparent',
-                color: mode === m ? 'var(--joi-text-1)' : 'var(--joi-text-3)',
-                boxShadow: mode === m ? '0 2px 8px rgba(0,0,0,.2)' : 'none',
+                background: mode === m ? '#1A1A1A' : 'transparent',
+                color: mode === m ? '#fff' : '#999',
+                boxShadow: mode === m ? '0 2px 8px rgba(0,0,0,.08)' : 'none',
               }}>
               {m === 'create' ? '\u2295 Crear desde Cero' : '\u2191 Importar Imágenes'}
             </button>
@@ -635,18 +639,18 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
           <div className="flex-1">
             <input ref={fileInputRef} type="file" multiple accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleFileSelect} />
             {/* Drop Zone */}
-            <div className="p-8 text-center cursor-pointer transition-all mb-5 rounded-xl joi-glass"
-              style={{ border: '1px dashed var(--joi-border)', borderColor: dragOver ? 'var(--joi-pink)' : undefined }}
+            <div className="p-8 text-center cursor-pointer transition-all mb-5 rounded-xl"
+              style={{ background: 'white', border: `1px dashed ${dragOver ? '#1A1A1A' : 'rgba(0,0,0,0.15)'}`, borderRadius: 12 }}
               onClick={() => fileInputRef.current?.click()}
               onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
               onDragEnter={(e) => { e.preventDefault(); setDragOver(true) }}
               onDragLeave={() => setDragOver(false)}
               onDrop={handleFileDrop}>
-              <div className="text-4xl mb-3" style={{ color: 'var(--joi-pink)' }}>{'\u2191'}</div>
-              <div className="text-sm font-semibold mb-1" style={{ color: 'var(--joi-text-1)' }}>Sube 1-5 fotos claras de un rostro</div>
-              <div className="text-[11px]" style={{ color: 'var(--joi-text-3)' }}>JPG, PNG, WEBP · Resolución mín: 512×512px · Máx 10MB c/u</div>
+              <div className="text-4xl mb-3" style={{ color: '#1A1A1A' }}>{'\u2191'}</div>
+              <div className="text-sm font-semibold mb-1" style={{ color: '#111' }}>Sube 1-5 fotos claras de un rostro</div>
+              <div className="text-[11px]" style={{ color: '#999' }}>JPG, PNG, WEBP · Resolución mín: 512×512px · Máx 10MB c/u</div>
               <div className="text-[11px] mt-2 px-3 py-1.5 rounded-xl inline-block"
-                style={{ background: 'rgba(99,102,241,.1)', color: 'var(--joi-pink)' }}>
+                style={{ background: '#F3F4F6', color: '#1A1A1A' }}>
                 o haz clic para seleccionar archivos
               </div>
             </div>
@@ -654,13 +658,13 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
             {/* Uploaded preview grid */}
             {importFiles.length > 0 && (
               <div className="mb-5">
-                <div className="text-[10px] font-mono uppercase tracking-wider mb-2" style={{ color: 'var(--joi-text-3)' }}>
+                <div className="text-[10px] font-mono uppercase tracking-wider mb-2" style={{ color: '#999' }}>
                   Subidas ({importFiles.length}/20)
                 </div>
                 <div className="grid grid-cols-5 gap-3">
                   {importFiles.map((f, i) => (
                     <div key={i} className="aspect-square rounded-xl overflow-hidden relative group"
-                      style={{ background: 'var(--joi-bg-3)', border: '1px solid var(--joi-border-h)' }}>
+                      style={{ background: '#F9FAFB', border: '1px solid rgba(0,0,0,0.08)' }}>
                       <img src={URL.createObjectURL(f)} className="w-full h-full object-cover" alt={f.name} />
                       <button onClick={(e) => { e.stopPropagation(); setImportFiles(prev => prev.filter((_, j) => j !== i)) }}
                         className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
@@ -672,22 +676,23 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
             )}
 
             {/* Name + Description */}
-            <div className="p-5 space-y-4 rounded-xl joi-glass">
+            <div className="p-5 space-y-4 rounded-xl" style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 12 }}>
               <div>
-                <label className="joi-label block mb-1.5">Nombre</label>
+                <label className="text-[11px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Nombre</label>
                 <input value={importName} onChange={e => setImportName(e.target.value)} placeholder="Nombre del personaje"
                   className="w-full px-3 py-2 rounded-xl text-xs border outline-none transition-colors"
-                  style={{ background: 'var(--joi-bg-2)', borderColor: 'rgba(255,255,255,.04)', color: 'var(--joi-text-1)' }} />
+                  style={{ background: '#F9FAFB', borderColor: 'rgba(0,0,0,0.06)', color: '#111' }} />
               </div>
               <div>
-                <label className="joi-label block mb-1.5">Descripción (opcional)</label>
+                <label className="text-[11px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Descripción (opcional)</label>
                 <textarea value={importBio} onChange={e => setImportBio(e.target.value)} rows={3}
                   placeholder="Describe al personaje para mejor consistencia con AI..."
                   className="w-full px-3 py-2 rounded-xl text-xs border outline-none transition-colors resize-none"
-                  style={{ background: 'var(--joi-bg-2)', borderColor: 'rgba(255,255,255,.04)', color: 'var(--joi-text-1)' }} />
+                  style={{ background: '#F9FAFB', borderColor: 'rgba(0,0,0,0.06)', color: '#111' }} />
               </div>
               <button onClick={handleImport} disabled={generating}
-                className={`joi-btn-solid w-full py-3 text-sm${!generating ? ' joi-breathe' : ''}`}>
+                className="w-full py-3 text-sm font-semibold rounded-xl transition-all"
+                style={{ background: '#1A1A1A', color: 'white', borderRadius: 12, opacity: generating ? 0.6 : 1 }}>
                 {generating ? '\u21BB Importando...' : '\u2726 Importar Personaje'}
               </button>
               {characterSaved && onNav && (
@@ -698,16 +703,16 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
           {/* Right: Preview */}
           <div className="hidden md:block md:w-[300px] shrink-0">
-            <div className="p-5 sticky top-8 rounded-xl joi-glass">
-              <div className="joi-label text-center mb-3">Vista Previa</div>
-              <div className="aspect-[3/4] rounded-xl overflow-hidden" style={{ background: 'var(--joi-bg-3)', border: '1px solid rgba(255,255,255,.04)' }}>
+            <div className="p-5 sticky top-8 rounded-xl" style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 12 }}>
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-center mb-3" style={{ color: '#555' }}>Vista Previa</div>
+              <div className="aspect-[3/4] rounded-xl overflow-hidden" style={{ background: '#F9FAFB', border: '1px solid rgba(0,0,0,0.06)' }}>
                 {importFiles.length > 0 ? (
                   <img src={URL.createObjectURL(importFiles[0])} className="w-full h-full object-cover" alt="Vista previa" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <div className="text-center">
-                      <div className="text-3xl mb-2" style={{ color: 'var(--joi-text-3)' }}>{'\u25C8'}</div>
-                      <div className="text-[11px]" style={{ color: 'var(--joi-text-3)' }}>Sube imágenes para<br />generar vista previa</div>
+                      <div className="text-3xl mb-2" style={{ color: '#999' }}>{'\u25C8'}</div>
+                      <div className="text-[11px]" style={{ color: '#999' }}>Sube imágenes para<br />generar vista previa</div>
                     </div>
                   </div>
                 )}
@@ -719,22 +724,22 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
         /* ═══════════════════════════════════════════════════════════
            CREATE MODE — 3 step wizard
            ═══════════════════════════════════════════════════════════ */
-        <div className="px-4 md:px-8 pb-20 md:pb-8 flex flex-col md:flex-row gap-6">
-          <div className="flex-1 max-w-2xl">
+        <div className={`px-4 md:px-8 pb-20 md:pb-8 ${variants.length > 0 || generating ? 'flex flex-col md:flex-row gap-6' : 'max-w-3xl mx-auto'}`}>
+          <div className="flex-1">
             {/* Steps Navigation */}
             <div className="flex gap-1 mb-6 overflow-x-auto pb-1">
               {steps.map((s, i) => (
                 <button key={s} onClick={() => setStep(i)}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-medium transition-all shrink-0"
                   style={{
-                    background: step === i ? 'rgba(99,102,241,.08)' : 'transparent',
-                    color: step === i ? 'var(--joi-pink)' : step > i ? 'var(--joi-magenta)' : 'var(--joi-text-3)',
-                    border: step === i ? '1px solid rgba(99,102,241,.2)' : '1px solid transparent',
+                    background: step === i ? 'rgba(26,26,26,.06)' : 'transparent',
+                    color: step === i ? '#1A1A1A' : step > i ? '#555' : '#999',
+                    border: step === i ? '1px solid rgba(0,0,0,0.1)' : '1px solid transparent',
                   }}>
                   <span className="rounded-full flex items-center justify-center text-[9px] font-bold"
                     style={{
-                      background: step >= i ? (step === i ? 'var(--joi-pink)' : 'var(--joi-magenta)') : 'var(--joi-bg-3)',
-                      color: step >= i ? '#fff' : 'var(--joi-text-3)',
+                      background: step >= i ? '#1A1A1A' : '#E5E7EB',
+                      color: step >= i ? '#fff' : '#999',
                       width: 18, height: 18,
                     }}>
                     {step > i ? '\u2713' : i + 1}
@@ -746,11 +751,12 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               {/* Engine wrench button */}
               <div className="relative shrink-0 ml-auto">
                 <button onClick={() => setShowEngineModal(v => !v)}
-                  className="joi-btn-ghost w-8 h-8 rounded-xl flex items-center justify-center text-sm relative"
+                  className="w-8 h-8 rounded-xl flex items-center justify-center text-sm relative"
+                  style={{ background: 'white', border: '1px solid rgba(0,0,0,0.08)', color: '#555' }}
                   title="Motor de Generación">
                   🔧
                   {selectedEngine !== 'auto' && (
-                    <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full" style={{ background: 'var(--joi-pink)' }} />
+                    <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full" style={{ background: '#1A1A1A' }} />
                   )}
                 </button>
               </div>
@@ -758,44 +764,43 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
             {/* ─── Step 0: Base ───────────────────────────────────── */}
             {step === 0 && (
-              <div className="p-6 space-y-5 rounded-xl joi-glass">
+              <div className="p-6 space-y-5 rounded-xl" style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 12 }}>
                 <div>
-                  <label className="joi-label block mb-3">Estilo de Render</label>
+                  <label className="text-[11px] font-semibold uppercase tracking-wider block mb-3" style={{ color: '#555' }}>Estilo de Render</label>
                   <div className="grid grid-cols-3 gap-3">
                     {renderStyles.map((rs, i) => (
                       <button key={rs.id} onClick={() => setSelRenderStyle(i)}
-                        className="p-4 rounded-xl text-left transition-all hover:scale-[1.02] joi-border-glow"
+                        className="p-4 rounded-xl text-left transition-all hover:scale-[1.02]"
                         style={{
-                          background: selRenderStyle === i ? rs.bg : 'var(--joi-bg-3)',
-                          border: `1.5px solid ${selRenderStyle === i ? 'rgba(99,102,241,.3)' : 'rgba(255,255,255,.04)'}`,
-                          boxShadow: selRenderStyle === i ? '0 0 20px rgba(99,102,241,.08)' : 'none',
-                          backdropFilter: 'blur(8px)',
+                          background: selRenderStyle === i ? '#F9FAFB' : 'white',
+                          border: `1.5px solid ${selRenderStyle === i ? '#1A1A1A' : 'rgba(0,0,0,0.06)'}`,
+                          boxShadow: selRenderStyle === i ? '0 0 0 1px #1A1A1A' : 'none',
                         }}>
                         <span className="text-xl block mb-1.5">{rs.icon}</span>
-                        <div className="text-[12px] font-semibold" style={{ color: selRenderStyle === i ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{rs.label}</div>
-                        <div className="text-[9px] mt-0.5" style={{ color: 'var(--joi-text-3)' }}>{rs.desc}</div>
+                        <div className="text-[12px] font-semibold" style={{ color: selRenderStyle === i ? '#1A1A1A' : '#555' }}>{rs.label}</div>
+                        <div className="text-[9px] mt-0.5" style={{ color: '#999' }}>{rs.desc}</div>
                       </button>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <label className="joi-label block mb-1.5">Nombre <span style={{ color: 'var(--joi-pink)' }}>*</span></label>
+                  <label className="text-[11px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Nombre <span style={{ color: '#1A1A1A' }}>*</span></label>
                   <input value={name} onChange={e => setName(e.target.value)} placeholder="Ej.: Luna Vex"
-                    className="w-full px-4 py-3 rounded-xl text-sm border outline-none focus:border-[rgba(99,102,241,.4)] transition-colors"
-                    style={{ background: 'var(--joi-bg-2)', borderColor: 'rgba(255,255,255,.04)', color: 'var(--joi-text-1)', backdropFilter: 'blur(8px)' }} />
+                    className="w-full px-4 py-3 rounded-xl text-sm border outline-none focus:border-[rgba(0,0,0,.2)] transition-colors"
+                    style={{ background: '#F9FAFB', borderColor: 'rgba(0,0,0,0.06)', color: '#111' }} />
                 </div>
 
                 <div>
-                  <label className="joi-label block mb-2">Género <span style={{ color: 'var(--joi-pink)' }}>*</span></label>
+                  <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Género <span style={{ color: '#1A1A1A' }}>*</span></label>
                   <ChipSelector options={GENDERS} selected={selGender ? [selGender] : []}
                     onSelect={ids => setSelGender(ids[0] || null)} />
                 </div>
 
                 <div>
-                  <label className="joi-label block mb-2">Edad <span style={{ color: 'var(--joi-pink)' }}>*</span></label>
+                  <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Edad <span style={{ color: '#1A1A1A' }}>*</span></label>
                   <ChipSelector options={AGE_RANGES} selected={selAge ? [selAge] : []}
-                    onSelect={ids => setSelAge(ids[0] || null)} color="var(--joi-magenta)" />
+                    onSelect={ids => setSelAge(ids[0] || null)} />
                 </div>
               </div>
             )}
@@ -804,141 +809,150 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
             {step === 1 && (
               <div className="space-y-4">
                 {/* Builder / Prompt tabs */}
-                <div className="inline-flex rounded-xl p-1" style={{ background: 'var(--joi-bg-2)', backdropFilter: 'blur(8px)' }}>
+                <div className="inline-flex rounded-xl p-1" style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)' }}>
                   {(['builder', 'prompt'] as const).map(tab => (
                     <button key={tab} onClick={() => handleTabSwitch(tab)}
                       className="px-4 py-1.5 rounded-xl text-[12px] font-medium transition-all capitalize"
                       style={{
-                        background: activeTab === tab ? 'var(--joi-bg-3)' : 'transparent',
-                        color: activeTab === tab ? 'var(--joi-pink)' : 'var(--joi-text-3)',
-                        boxShadow: activeTab === tab ? '0 2px 8px rgba(0,0,0,.2)' : 'none',
+                        background: activeTab === tab ? '#1A1A1A' : 'transparent',
+                        color: activeTab === tab ? '#fff' : '#999',
+                        boxShadow: activeTab === tab ? '0 2px 8px rgba(0,0,0,.08)' : 'none',
                       }}>
                       {tab === 'builder' ? '\u{1F9E9} Constructor' : '\u270D\uFE0F Prompt'}
                     </button>
                   ))}
                 </div>
 
-                <div className="p-6 space-y-5 rounded-xl joi-glass">
+                <div className="p-6 space-y-5 rounded-xl" style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 12 }}>
                   {activeTab === 'builder' ? (
                     /* ─── Builder Tab ─── */
                     <>
-                      {/* ── Básico ── */}
+                      {/* ── Rasgos primarios (siempre visibles) ── */}
                       <div>
-                        <label className="joi-label block mb-2">Origen / Etnia</label>
+                        <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Origen / Etnia</label>
                         <ChipSelector options={ETHNICITIES} selected={chipSelections.ethnicity}
                           onSelect={ids => updateChip('ethnicity', ids)} />
                       </div>
                       <div>
-                        <label className="joi-label block mb-2">Estilo de Cabello</label>
+                        <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Estilo de Cabello</label>
                         <ChipSelector options={HAIR_STYLES} selected={chipSelections.hairStyle}
                           onSelect={ids => updateChip('hairStyle', ids)} />
                       </div>
                       <div>
-                        <label className="joi-label block mb-2">Color de Cabello</label>
+                        <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Color de Cabello</label>
                         <ChipSelector options={HAIR_COLORS} selected={chipSelections.hairColor}
-                          onSelect={ids => updateChip('hairColor', ids)} color="var(--joi-magenta)" />
+                          onSelect={ids => updateChip('hairColor', ids)} />
                       </div>
                       <div>
-                        <label className="joi-label block mb-2">Tono de Piel</label>
+                        <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Tono de Piel</label>
                         <ChipSelector options={SKIN_TONES} selected={chipSelections.skinTone}
-                          onSelect={ids => updateChip('skinTone', ids)} color="var(--joi-blue)" />
+                          onSelect={ids => updateChip('skinTone', ids)} />
                       </div>
                       <div>
-                        <label className="joi-label block mb-2">Tipo de Cuerpo</label>
+                        <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Tipo de Cuerpo <span className="text-[9px] font-normal normal-case tracking-normal" style={{ color: '#999' }}>(hasta 3)</span></label>
                         <ChipSelector options={BODY_TYPES} selected={chipSelections.bodyType}
-                          onSelect={ids => updateChip('bodyType', ids)} maxSelect={3} color="var(--joi-blue)" />
+                          onSelect={ids => updateChip('bodyType', ids)} maxSelect={3} />
                       </div>
                       <div>
-                        <label className="joi-label block mb-2">Altura</label>
+                        <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Altura</label>
                         <ChipSelector options={HEIGHTS} selected={chipSelections.height}
                           onSelect={ids => updateChip('height', ids)} />
                       </div>
-                      <div>
-                        <label className="joi-label block mb-2">Busto / Pecho</label>
-                        <ChipSelector options={BUST_SIZES} selected={chipSelections.bust}
-                          onSelect={ids => updateChip('bust', ids)} />
-                      </div>
-                      <div>
-                        <label className="joi-label block mb-2">Cadera / Glúteos</label>
-                        <ChipSelector options={HIP_SIZES} selected={chipSelections.hips}
-                          onSelect={ids => updateChip('hips', ids)} />
-                      </div>
-                      <div>
-                        <label className="joi-label block mb-2">Musculatura</label>
-                        <ChipSelector options={MUSCULATURE} selected={chipSelections.musculature}
-                          onSelect={ids => updateChip('musculature', ids)} />
-                      </div>
-                      <div>
-                        <label className="joi-label block mb-2">Piernas</label>
-                        <ChipSelector options={LEG_PROPORTIONS} selected={chipSelections.legs}
-                          onSelect={ids => updateChip('legs', ids)} />
-                      </div>
-                      <div>
-                        <label className="joi-label block mb-2">Vello Facial</label>
-                        <ChipSelector options={FACIAL_HAIR} selected={chipSelections.facialHair}
-                          onSelect={ids => updateChip('facialHair', ids)} />
-                      </div>
 
-                      {/* ── Detalles faciales (avanzado) ── */}
+                      {/* ── Ajustes detallados (colapsado por defecto) ── */}
                       <button
                         onClick={() => setShowAdvanced(v => !v)}
-                        className="flex items-center gap-2 text-[11px] font-medium w-full py-1"
-                        style={{ color: 'var(--joi-text-3)' }}>
-                        <span style={{ display: 'inline-block', transition: 'transform .2s', transform: showAdvanced ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
-                        {showAdvanced ? 'Ocultar detalles faciales' : 'Más detalles faciales →'}
+                        className="flex items-center gap-2 text-[11px] font-semibold w-full py-2.5 px-3 rounded-xl transition-all"
+                        style={{ background: showAdvanced ? '#F3F4F6' : 'white', border: '1px solid rgba(0,0,0,0.06)', color: '#555' }}>
+                        <span style={{ fontSize: '0.8rem' }}>⚙️</span>
+                        <span>Ajustes Detallados</span>
+                        <span style={{ marginLeft: 'auto', fontSize: '0.6rem', transition: 'transform .2s', transform: showAdvanced ? 'rotate(180deg)' : 'rotate(0deg)', color: '#999' }}>▼</span>
                       </button>
 
                       {showAdvanced && (
-                        <div className="space-y-5 pl-3 border-l-2" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
-                          <div>
-                            <label className="joi-label block mb-2">Color de Ojos</label>
-                            <ChipSelector options={EYE_COLORS} selected={chipSelections.eyeColor}
-                              onSelect={ids => updateChip('eyeColor', ids)} color="var(--joi-magenta)" />
+                        <div className="space-y-4 p-4 rounded-xl" style={{ background: '#F9FAFB', border: '1px solid rgba(0,0,0,0.04)' }}>
+                          {/* Proporciones */}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Busto</label>
+                              <ChipSelector options={BUST_SIZES} selected={chipSelections.bust}
+                                onSelect={ids => updateChip('bust', ids)} />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Cadera</label>
+                              <ChipSelector options={HIP_SIZES} selected={chipSelections.hips}
+                                onSelect={ids => updateChip('hips', ids)} />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Musculatura</label>
+                              <ChipSelector options={MUSCULATURE} selected={chipSelections.musculature}
+                                onSelect={ids => updateChip('musculature', ids)} />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Piernas</label>
+                              <ChipSelector options={LEG_PROPORTIONS} selected={chipSelections.legs}
+                                onSelect={ids => updateChip('legs', ids)} />
+                            </div>
                           </div>
                           <div>
-                            <label className="joi-label block mb-2">Forma de Ojos</label>
+                            <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Vello Facial</label>
+                            <ChipSelector options={FACIAL_HAIR} selected={chipSelections.facialHair}
+                              onSelect={ids => updateChip('facialHair', ids)} />
+                          </div>
+                          {/* Faciales */}
+                          <div className="pt-2" style={{ borderTop: '1px solid rgba(0,0,0,0.04)' }}>
+                          <div>
+                            <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Color de Ojos</label>
+                            <ChipSelector options={EYE_COLORS} selected={chipSelections.eyeColor}
+                              onSelect={ids => updateChip('eyeColor', ids)} />
+                          </div>
+                          <div className="mt-3">
+                            <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Forma de Ojos</label>
                             <ChipSelector options={EYE_SHAPES} selected={chipSelections.eyeShape}
                               onSelect={ids => updateChip('eyeShape', ids)} />
                           </div>
-                          <div>
-                            <label className="joi-label block mb-2">Tipo de Nariz</label>
+                          <div className="mt-3">
+                            <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Tipo de Nariz</label>
                             <ChipSelector options={NOSE_TYPES} selected={chipSelections.noseType}
-                              onSelect={ids => updateChip('noseType', ids)} color="var(--joi-magenta)" />
+                              onSelect={ids => updateChip('noseType', ids)} />
                           </div>
-                          <div>
-                            <label className="joi-label block mb-2">Forma de Labios</label>
+                          <div className="mt-3">
+                            <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Forma de Labios</label>
                             <ChipSelector options={LIP_SHAPES} selected={chipSelections.lipShape}
-                              onSelect={ids => updateChip('lipShape', ids)} color="var(--joi-pink)" />
+                              onSelect={ids => updateChip('lipShape', ids)} />
                           </div>
-                          <div>
-                            <label className="joi-label block mb-2">Forma de Rostro</label>
+                          <div className="mt-3">
+                            <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Forma de Rostro</label>
                             <ChipSelector options={FACE_SHAPES} selected={chipSelections.faceShape}
                               onSelect={ids => updateChip('faceShape', ids)} />
                           </div>
-                          <div>
-                            <label className="joi-label block mb-2">Mandíbula</label>
+                          <div className="mt-3">
+                            <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Mandíbula</label>
                             <ChipSelector options={JAWLINES} selected={chipSelections.jawline}
-                              onSelect={ids => updateChip('jawline', ids)} color="var(--joi-blue)" />
+                              onSelect={ids => updateChip('jawline', ids)} />
                           </div>
-                          <div>
-                            <label className="joi-label block mb-2">Cejas</label>
+                          <div className="mt-3">
+                            <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Cejas</label>
                             <ChipSelector options={EYEBROWS} selected={chipSelections.eyebrows}
                               onSelect={ids => updateChip('eyebrows', ids)} />
                           </div>
                           {!isPhotorealistic && (
-                            <div>
-                              <label className="joi-label block mb-2">Textura de Piel</label>
+                            <div className="mt-3">
+                              <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Textura de Piel</label>
                               <ChipSelector options={SKIN_TEXTURES} selected={chipSelections.skinTexture}
-                                onSelect={ids => updateChip('skinTexture', ids)} color="var(--joi-magenta)" />
+                                onSelect={ids => updateChip('skinTexture', ids)} />
                             </div>
                           )}
+                          </div>
                         </div>
                       )}
                     </>
                   ) : (
                     /* ─── Prompt Tab ─── */
                     <div>
-                      <label className="joi-label block mb-2">Describe tu personaje</label>
+                      <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Describe tu personaje</label>
                       <textarea
                         value={promptText}
                         onChange={e => setPromptText(e.target.value)}
@@ -946,8 +960,8 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                         placeholder={"Describe la apariencia de tu personaje en detalle.\n\nEjemplo: Una mujer de 25 años con cabello castaño ondulado, ojos verdes, pecas ligeras y una sonrisa cálida. Complexión atlética, usando una camisa de lino casual."}
                         className="w-full px-4 py-3 rounded-xl text-sm border outline-none transition-colors resize-none"
                         style={{
-                          background: 'var(--joi-bg-2)', borderColor: 'rgba(255,255,255,.04)',
-                          color: 'var(--joi-text-1)', backdropFilter: 'blur(8px)',
+                          background: '#F9FAFB', borderColor: 'rgba(0,0,0,0.06)',
+                          color: '#111',
                         }} />
                       {/* Quick examples */}
                       {!promptText && (
@@ -959,14 +973,14 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                           ].map(ex => (
                             <button key={ex.label} onClick={() => setPromptText(ex.text)}
                               className="px-3 py-1.5 rounded-lg text-[10px] transition-all hover:scale-[1.02]"
-                              style={{ background: 'rgba(99,102,241,.06)', color: 'var(--joi-pink)', border: '1px solid rgba(99,102,241,.12)' }}>
+                              style={{ background: '#F3F4F6', color: '#1A1A1A', border: '1px solid rgba(0,0,0,0.08)' }}>
                               {ex.label}
                             </button>
                           ))}
                         </div>
                       )}
                       <div className="flex items-center justify-between mt-3">
-                        <div className="text-[10px]" style={{ color: 'var(--joi-text-3)' }}>
+                        <div className="text-[10px]" style={{ color: '#999' }}>
                           Tip: Sé específico con los rasgos físicos, expresión y estilo para mejores resultados.
                         </div>
                         <button
@@ -994,9 +1008,9 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                           }}
                           className="px-3 py-1.5 rounded-lg text-[10px] font-medium transition-all shrink-0 ml-3"
                           style={{
-                            background: enhancing ? 'var(--joi-bg-3)' : 'rgba(99,102,241,.08)',
-                            border: '1px solid rgba(99,102,241,.15)',
-                            color: 'var(--joi-pink)',
+                            background: enhancing ? '#F3F4F6' : '#F9FAFB',
+                            border: '1px solid rgba(0,0,0,0.08)',
+                            color: '#1A1A1A',
                             opacity: (!promptText.trim() || enhancing) ? 0.4 : 1,
                           }}>
                           {enhancing ? '...' : '✨ Mejorar (2cr)'}
@@ -1007,12 +1021,12 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                 </div>
 
                 {/* Reference photos — always visible */}
-                <div className="p-5 rounded-xl joi-glass">
+                <div className="p-5 rounded-xl" style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 12 }}>
                   <div className="flex items-center justify-between mb-3">
-                    <label className="joi-label">Fotos de Referencia (opcional)</label>
-                    <span className="text-[10px] font-mono" style={{ color: 'var(--joi-text-3)' }}>{referenceFiles.length}/5</span>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#555' }}>Fotos de Referencia (opcional)</label>
+                    <span className="text-[10px] font-mono" style={{ color: '#999' }}>{referenceFiles.length}/5</span>
                   </div>
-                  <div className="text-[10px] mb-3" style={{ color: 'var(--joi-text-3)' }}>Sube fotos para mejor consistencia</div>
+                  <div className="text-[10px] mb-3" style={{ color: '#999' }}>Sube fotos para mejor consistencia</div>
                   <input ref={refInputRef} type="file" multiple accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleRefSelect} />
                   <div className="grid grid-cols-5 gap-2">
                     {Array.from({ length: 5 }).map((_, i) => (
@@ -1022,8 +1036,8 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                         onDragOver={e => e.preventDefault()}
                         onDrop={i >= referenceFiles.length ? handleRefDrop : undefined}
                         style={{
-                          background: i < referenceFiles.length ? 'var(--joi-bg-3)' : 'var(--joi-bg-2)',
-                          border: `1px solid ${i < referenceFiles.length ? 'var(--joi-border-h)' : 'rgba(255,255,255,.04)'}`,
+                          background: i < referenceFiles.length ? '#F9FAFB' : '#F3F4F6',
+                          border: `1px solid ${i < referenceFiles.length ? 'rgba(0,0,0,0.1)' : 'rgba(0,0,0,0.04)'}`,
                         }}>
                         {i < referenceFiles.length ? (
                           <>
@@ -1034,7 +1048,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                           </>
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <span className="text-lg" style={{ color: 'var(--joi-text-3)' }}>+</span>
+                            <span className="text-lg" style={{ color: '#999' }}>+</span>
                           </div>
                         )}
                       </div>
@@ -1047,17 +1061,17 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
             {/* ─── Step 2: Style & Personality ───────────────────── */}
             {step === 2 && (
               <div className="space-y-4">
-                <div className="p-6 space-y-5 rounded-xl joi-glass">
+                <div className="p-6 space-y-5 rounded-xl" style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 12 }}>
                   <div>
-                    <label className="joi-label block mb-1">Estilo de Moda <span style={{ color: 'var(--joi-text-3)', fontWeight: 400 }}>(máx 2)</span></label>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider block mb-1" style={{ color: '#555' }}>Estilo de Moda <span style={{ color: '#999', fontWeight: 400 }}>(máx 2)</span></label>
                     <div className="mt-2">
                       <ChipSelector options={FASHION_STYLES} selected={selFashion}
-                        onSelect={setSelFashion} maxSelect={2} color="var(--joi-magenta)" />
+                        onSelect={setSelFashion} maxSelect={2} />
                     </div>
                   </div>
 
                   <div>
-                    <label className="joi-label block mb-1">Personalidad <span style={{ color: 'var(--joi-text-3)', fontWeight: 400 }}>(máx 3)</span></label>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider block mb-1" style={{ color: '#555' }}>Personalidad <span style={{ color: '#999', fontWeight: 400 }}>(máx 3)</span></label>
                     <div className="mt-2">
                       <ChipSelector options={PERSONALITY_TRAITS} selected={selPersonality}
                         onSelect={setSelPersonality} maxSelect={3} />
@@ -1065,25 +1079,25 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                   </div>
 
                   <div>
-                    <label className="joi-label block mb-2">Accesorios <span style={{ color: 'var(--joi-text-3)', fontWeight: 400 }}>(máx 6)</span></label>
-                    <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5 mt-3" style={{ color: 'var(--joi-text-3)' }}>Cotidianos</div>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Accesorios <span style={{ color: '#999', fontWeight: 400 }}>(máx 6)</span></label>
+                    <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5 mt-3" style={{ color: '#999' }}>Cotidianos</div>
                     <ChipSelector options={ACCESSORIES.filter(a => !a.promptText.includes('mystical') && !a.promptText.includes('wings') && !a.promptText.includes('horns') && !a.promptText.includes('fangs') && !a.promptText.includes('halo') && !a.promptText.includes('demon') && !a.promptText.includes('mermaid') && !a.promptText.includes('cyber') && !a.promptText.includes('crystal') && !a.promptText.includes('fire') && !a.promptText.includes('ice') && !a.promptText.includes('shadow') && !a.promptText.includes('butterfly') && !a.promptText.includes('antlers') && !a.promptText.includes('orbs') && !a.promptText.includes('mechanical') && !a.promptText.includes('elf'))} selected={selAccessories}
-                      onSelect={setSelAccessories} maxSelect={8} color="var(--joi-blue)" />
-                    <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5 mt-3" style={{ color: 'var(--joi-text-3)' }}>Fantasía</div>
+                      onSelect={setSelAccessories} maxSelect={8} />
+                    <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5 mt-3" style={{ color: '#999' }}>Fantasía</div>
                     <ChipSelector options={ACCESSORIES.filter(a => a.promptText.includes('mystical') || a.promptText.includes('wings') || a.promptText.includes('horns') || a.promptText.includes('fangs') || a.promptText.includes('halo') || a.promptText.includes('demon') || a.promptText.includes('mermaid') || a.promptText.includes('cyber') || a.promptText.includes('crystal') || a.promptText.includes('fire') || a.promptText.includes('ice') || a.promptText.includes('shadow') || a.promptText.includes('butterfly') || a.promptText.includes('antlers') || a.promptText.includes('orbs') || a.promptText.includes('mechanical') || a.promptText.includes('elf'))} selected={selAccessories}
-                      onSelect={setSelAccessories} maxSelect={8} color="var(--joi-blue)" />
+                      onSelect={setSelAccessories} maxSelect={8} />
                   </div>
                 </div>
 
                 {/* ─── Generation Zone ────────────────────────────── */}
                 {generationPhase !== 'idle' && (
-                  <div className="p-5 rounded-xl joi-glass space-y-4">
+                  <div className="p-5 rounded-xl space-y-4" style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 12 }}>
                     <div className="flex items-center justify-between">
-                      <div className="joi-label">Variantes Generadas</div>
+                      <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#555' }}>Variantes Generadas</div>
                       {!characterSaved && !generating && (
                         <button onClick={resetGeneration}
                           className="text-[10px] px-3 py-1.5 rounded-lg transition-colors hover:opacity-80"
-                          style={{ color: 'var(--joi-text-3)', background: 'var(--joi-bg-3)', border: '1px solid rgba(255,255,255,.06)' }}>
+                          style={{ color: '#999', background: '#F3F4F6', border: '1px solid rgba(0,0,0,0.06)' }}>
                           ✕ Descartar y empezar de nuevo
                         </button>
                       )}
@@ -1097,13 +1111,13 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                             <button onClick={() => { setSelectedVariant(i); setGenerationPhase('picking') }}
                               className="w-full aspect-[3/4] rounded-xl overflow-hidden transition-all hover:scale-[1.02] relative"
                               style={{
-                                border: selectedVariant === i ? '2px solid var(--joi-pink)' : '1px solid rgba(255,255,255,.04)',
-                                boxShadow: selectedVariant === i ? '0 0 20px rgba(99,102,241,.15)' : 'none',
+                                border: selectedVariant === i ? '2px solid #1A1A1A' : '1px solid rgba(0,0,0,0.06)',
+                                boxShadow: selectedVariant === i ? '0 0 0 1px #1A1A1A' : 'none',
                               }}>
                               <img src={url} className="w-full h-full object-cover" alt={`Variant ${i + 1}`} />
                               {selectedVariant === i && (
                                 <div className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold"
-                                  style={{ background: 'var(--joi-pink)', color: '#fff' }}>{'\u2713'}</div>
+                                  style={{ background: '#1A1A1A', color: '#fff' }}>{'\u2713'}</div>
                               )}
                             </button>
                             {/* Zoom button */}
@@ -1121,7 +1135,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                     {/* ─── Character Sheet Builder (progressive) ─── */}
                     {(generationPhase === 'picking' || generationPhase === 'sheet') && selectedVariant !== null && !characterSaved && (
                       <div className="space-y-3">
-                        <div className="text-[10px] font-mono uppercase tracking-wider" style={{ color: 'var(--joi-text-3)' }}>
+                        <div className="text-[10px] font-mono uppercase tracking-wider" style={{ color: '#999' }}>
                           Hoja de Personaje (opcional)
                         </div>
 
@@ -1132,35 +1146,35 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                             disabled={sheetGenerating !== null}
                             className="w-full p-3 rounded-xl text-left transition-all hover:scale-[1.01]"
                             style={{
-                              background: 'rgba(99,102,241,.04)',
-                              border: '1px solid rgba(99,102,241,.10)',
+                              background: 'rgba(0,0,0,.02)',
+                              border: '1px solid rgba(0,0,0,.06)',
                             }}
                           >
                             <div className="flex items-center justify-between">
                               <div>
-                                <div className="text-[12px] font-medium" style={{ color: 'var(--joi-text-1)' }}>
+                                <div className="text-[12px] font-medium" style={{ color: '#111' }}>
                                   {sheetGenerating === 'face' ? '\u21BB Generando...' : '\u{1F9D1} Ángulos de Rostro (4 vistas)'}
                                 </div>
-                                <div className="text-[10px]" style={{ color: 'var(--joi-text-3)' }}>
+                                <div className="text-[10px]" style={{ color: '#999' }}>
                                   Frontal · Perfil derecho · Perfil izquierdo · Tres cuartos
                                 </div>
                               </div>
                               <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg"
-                                style={{ background: 'rgba(99,102,241,.08)', color: 'var(--joi-pink)' }}>
+                                style={{ background: '#F3F4F6', color: '#1A1A1A' }}>
                                 {SHEET_CREDIT_COST}cr
                               </span>
                             </div>
                             {sheetGenerating === 'face' && (
-                              <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: 'var(--joi-bg-3)' }}>
-                                <div className="h-full rounded-full shimmer" style={{ width: '60%', background: 'linear-gradient(90deg, var(--joi-pink), var(--joi-magenta))' }} />
+                              <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: '#E5E7EB' }}>
+                                <div className="h-full rounded-full shimmer" style={{ width: '60%', background: '#1A1A1A' }} />
                               </div>
                             )}
                           </button>
                         ) : (
-                          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(99,102,241,.10)' }}>
+                          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(0,0,0,.06)' }}>
                             <img src={sheetResults.faceUltra || sheetResults.face} className="w-full object-contain" alt="Ángulos de rostro" />
-                            <div className="flex items-center justify-between px-3 py-2" style={{ background: 'rgba(99,102,241,.04)' }}>
-                              <span className="text-[10px] font-mono" style={{ color: 'var(--joi-text-3)' }}>
+                            <div className="flex items-center justify-between px-3 py-2" style={{ background: 'rgba(0,0,0,.02)' }}>
+                              <span className="text-[10px] font-mono" style={{ color: '#999' }}>
                                 {sheetResults.faceUltra ? '\u2728 Ultra Mejorado' : 'Ángulos de Rostro'}
                               </span>
                               {!sheetResults.faceUltra && (
@@ -1168,7 +1182,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                                   onClick={() => handleUltraEnhance('face')}
                                   disabled={sheetGenerating !== null}
                                   className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg transition-colors hover:opacity-80"
-                                  style={{ background: 'rgba(129,140,248,.12)', color: 'var(--joi-violet)', border: '1px solid rgba(129,140,248,.15)' }}
+                                  style={{ background: '#F3F4F6', color: '#1A1A1A', border: '1px solid rgba(0,0,0,0.08)' }}
                                 >
                                   {sheetGenerating === 'faceUltra' ? '\u21BB...' : `\u2728 Ultra +${ULTRA_CREDIT_COST}cr`}
                                 </button>
@@ -1184,36 +1198,36 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                             disabled={sheetGenerating !== null}
                             className="w-full p-3 rounded-xl text-left transition-all hover:scale-[1.01]"
                             style={{
-                              background: 'rgba(129,140,248,.04)',
-                              border: '1px solid rgba(129,140,248,.10)',
+                              background: 'rgba(0,0,0,.02)',
+                              border: '1px solid rgba(0,0,0,.06)',
                             }}
                           >
                             <div className="flex items-center justify-between">
                               <div>
-                                <div className="text-[12px] font-medium" style={{ color: 'var(--joi-text-1)' }}>
+                                <div className="text-[12px] font-medium" style={{ color: '#111' }}>
                                   {sheetGenerating === 'body' ? '\u21BB Generando...' : '\u{1F9CD} Ángulos de Cuerpo (4 vistas)'}
                                 </div>
-                                <div className="text-[10px]" style={{ color: 'var(--joi-text-3)' }}>
+                                <div className="text-[10px]" style={{ color: '#999' }}>
                                   Frontal · Media vuelta · Perfil lateral · Espalda
                                 </div>
                               </div>
                               <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg"
-                                style={{ background: 'rgba(129,140,248,.08)', color: 'var(--joi-violet)' }}>
+                                style={{ background: '#F3F4F6', color: '#1A1A1A' }}>
                                 {SHEET_CREDIT_COST}cr
                               </span>
                             </div>
                             {sheetGenerating === 'body' && (
-                              <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: 'var(--joi-bg-3)' }}>
-                                <div className="h-full rounded-full shimmer" style={{ width: '60%', background: 'linear-gradient(90deg, var(--joi-violet), var(--joi-pink))' }} />
+                              <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: '#E5E7EB' }}>
+                                <div className="h-full rounded-full shimmer" style={{ width: '60%', background: '#1A1A1A' }} />
                               </div>
                             )}
                           </button>
                         )}
                         {sheetResults.body && (
-                          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(129,140,248,.10)' }}>
+                          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(0,0,0,.06)' }}>
                             <img src={sheetResults.body} className="w-full object-contain" alt="Ángulos de cuerpo" />
-                            <div className="px-3 py-2" style={{ background: 'rgba(129,140,248,.04)' }}>
-                              <span className="text-[10px] font-mono" style={{ color: 'var(--joi-text-3)' }}>Ángulos de Cuerpo</span>
+                            <div className="px-3 py-2" style={{ background: 'rgba(0,0,0,.02)' }}>
+                              <span className="text-[10px] font-mono" style={{ color: '#999' }}>Ángulos de Cuerpo</span>
                             </div>
                           </div>
                         )}
@@ -1225,36 +1239,36 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                             disabled={sheetGenerating !== null}
                             className="w-full p-3 rounded-xl text-left transition-all hover:scale-[1.01]"
                             style={{
-                              background: 'rgba(99,102,241,.04)',
-                              border: '1px solid rgba(99,102,241,.10)',
+                              background: 'rgba(0,0,0,.02)',
+                              border: '1px solid rgba(0,0,0,.06)',
                             }}
                           >
                             <div className="flex items-center justify-between">
                               <div>
-                                <div className="text-[12px] font-medium" style={{ color: 'var(--joi-text-1)' }}>
+                                <div className="text-[12px] font-medium" style={{ color: '#111' }}>
                                   {sheetGenerating === 'expressions' ? '\u21BB Generando...' : '\u{1F3AD} Expresiones (9 rostros)'}
                                 </div>
-                                <div className="text-[10px]" style={{ color: 'var(--joi-text-3)' }}>
+                                <div className="text-[10px]" style={{ color: '#999' }}>
                                   Feliz · Triste · Sorprendido · Enojado · Riendo · Serio · Coqueto · Disgustado · Tranquilo
                                 </div>
                               </div>
                               <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg"
-                                style={{ background: 'rgba(99,102,241,.08)', color: 'var(--joi-pink)' }}>
+                                style={{ background: '#F3F4F6', color: '#1A1A1A' }}>
                                 {SHEET_CREDIT_COST}cr
                               </span>
                             </div>
                             {sheetGenerating === 'expressions' && (
-                              <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: 'var(--joi-bg-3)' }}>
-                                <div className="h-full rounded-full shimmer" style={{ width: '60%', background: 'linear-gradient(90deg, var(--joi-pink), var(--joi-magenta))' }} />
+                              <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: '#E5E7EB' }}>
+                                <div className="h-full rounded-full shimmer" style={{ width: '60%', background: '#1A1A1A' }} />
                               </div>
                             )}
                           </button>
                         )}
                         {sheetResults.expressions && (
-                          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(99,102,241,.10)' }}>
+                          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(0,0,0,.06)' }}>
                             <img src={sheetResults.expressionsUltra || sheetResults.expressions} className="w-full object-contain" alt="Expresiones" />
-                            <div className="flex items-center justify-between px-3 py-2" style={{ background: 'rgba(99,102,241,.04)' }}>
-                              <span className="text-[10px] font-mono" style={{ color: 'var(--joi-text-3)' }}>
+                            <div className="flex items-center justify-between px-3 py-2" style={{ background: 'rgba(0,0,0,.02)' }}>
+                              <span className="text-[10px] font-mono" style={{ color: '#999' }}>
                                 {sheetResults.expressionsUltra ? '\u2728 Ultra Mejorado' : 'Expresiones'}
                               </span>
                               {!sheetResults.expressionsUltra && (
@@ -1262,7 +1276,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                                   onClick={() => handleUltraEnhance('expressions')}
                                   disabled={sheetGenerating !== null}
                                   className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg transition-colors hover:opacity-80"
-                                  style={{ background: 'rgba(129,140,248,.12)', color: 'var(--joi-violet)', border: '1px solid rgba(129,140,248,.15)' }}
+                                  style={{ background: '#F3F4F6', color: '#1A1A1A', border: '1px solid rgba(0,0,0,0.08)' }}
                                 >
                                   {sheetGenerating === 'expressionsUltra' ? '\u21BB...' : `\u2728 Ultra +${ULTRA_CREDIT_COST}cr`}
                                 </button>
@@ -1274,7 +1288,8 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                         {/* Save — always available */}
                         {sheetGenerating === null && (
                           <button onClick={handleSave}
-                            className="joi-btn-solid w-full py-3 text-sm joi-breathe">
+                            className="w-full py-3 text-sm font-semibold rounded-xl transition-all"
+                            style={{ background: '#1A1A1A', color: 'white', borderRadius: 12 }}>
                             {'\u2726'} Guardar Personaje
                           </button>
                         )}
@@ -1283,13 +1298,13 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
                     {characterSaved && onNav && (
                       <div className="space-y-3">
-                        <div className="text-center text-[12px] font-medium" style={{ color: 'var(--joi-mint, var(--joi-pink))' }}>
+                        <div className="text-center text-[12px] font-medium" style={{ color: '#1A1A1A' }}>
                           {'\u2713'} Personaje guardado!
                         </div>
                         <PipelineCTA label="Crear Foto Principal en Studio" targetPage="studio" onNav={onNav} icon="\u{1F3AC}" />
                         <button onClick={resetAll}
                           className="w-full py-2.5 rounded-xl text-[12px] font-medium transition-all"
-                          style={{ background: 'var(--joi-bg-3)', border: '1px solid var(--joi-border)', color: 'var(--joi-text-2)' }}>
+                          style={{ background: 'white', border: '1px solid rgba(0,0,0,0.08)', color: '#555' }}>
                           + Crear Nuevo Personaje
                         </button>
                       </div>
@@ -1299,53 +1314,56 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               </div>
             )}
 
-            {/* ─── Navigation Buttons ────────────────────────────── */}
-            <div className="flex justify-between mt-5">
+            {/* ─── Sticky Navigation Bar ────────────────────────── */}
+            <div className="sticky bottom-0 left-0 right-0 z-20 flex items-center justify-between gap-3 py-3 px-4 mt-4 -mx-4 lg:mx-0"
+              style={{ background: 'white', borderTop: '1px solid rgba(0,0,0,0.06)', paddingBottom: 'calc(12px + 64px)', marginBottom: -64 }}>
               <button onClick={() => setStep(Math.max(0, step - 1))}
-                className="joi-btn-ghost px-5 py-2.5 text-sm"
-                style={{ opacity: step === 0 ? .3 : 1 }} disabled={step === 0}>
-                {'\u2190'} Atrás
+                className="px-4 py-2.5 rounded-xl text-[13px] font-medium"
+                style={{ background: 'white', border: '1px solid rgba(0,0,0,0.08)', color: '#555', opacity: step === 0 ? 0.3 : 1, cursor: step === 0 ? 'default' : 'pointer' }} disabled={step === 0}>
+                ← Atrás
               </button>
               {step < 2 ? (
                 <div className="flex items-center gap-3">
                   {missingFields.length > 0 && (
-                    <span className="text-[10px]" style={{ color: 'var(--joi-text-3)' }}>
+                    <span className="text-[10px] hidden lg:inline" style={{ color: '#999' }}>
                       Falta: {missingFields.join(', ')}
                     </span>
                   )}
                   <button onClick={() => setStep(step + 1)}
-                    className="joi-btn-solid px-6 py-2.5 text-sm"
+                    className="px-6 py-2.5 rounded-xl text-[13px] font-semibold"
+                    style={{ background: '#1A1A1A', color: 'white', opacity: !canAdvance(step) ? 0.4 : 1, cursor: !canAdvance(step) ? 'not-allowed' : 'pointer' }}
                     disabled={!canAdvance(step)}>
-                    Siguiente {'\u2192'}
+                    Siguiente →
                   </button>
                 </div>
               ) : (
                 generationPhase === 'idle' && (
                   <button onClick={handleGenerate}
-                    className={`joi-btn-solid px-6 py-2.5 text-sm${!generating ? ' joi-breathe' : ''}`}
+                    className="px-6 py-2.5 rounded-xl text-[13px] font-semibold"
+                    style={{ background: '#1A1A1A', color: 'white', opacity: generating ? 0.5 : 1 }}
                     disabled={generating}>
-                    {generating ? '\u21BB Generando...' : `\u2726 Generar Personaje (3 variantes, ${costPerVariant * 3}cr)`}
+                    {generating ? '⟳ Generando...' : `✦ Generar Personaje · ${costPerVariant * 3}cr`}
                   </button>
                 )
               )}
             </div>
           </div>
 
-          {/* ─── Right: Preview Panel ──────────────────────────── */}
-          <div className="w-full md:w-[320px] shrink-0">
-            <div className="p-5 sticky top-8 rounded-xl joi-glass">
+          {/* ─── Right: Preview Panel — only shown when variants exist ── */}
+          <div className="w-full md:w-[320px] shrink-0" style={{ display: variants.length > 0 || generating ? undefined : 'none' }}>
+            <div className="p-5 sticky top-8 rounded-xl" style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 12 }}>
               <div className="flex items-center justify-between mb-3">
-                <div className="joi-label">Vista Previa</div>
+                <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#555' }}>Vista Previa</div>
                 <span className="text-[8px] font-mono font-bold px-2 py-0.5 rounded-lg"
-                  style={{ background: 'linear-gradient(135deg, rgba(99,102,241,.15), rgba(79,70,229,.15))', color: 'var(--joi-pink)' }}>
+                  style={{ background: '#F3F4F6', color: '#1A1A1A' }}>
                   {renderStyles[selRenderStyle]?.label.toUpperCase()}
                 </span>
               </div>
 
               <div className="aspect-[3/4] rounded-xl overflow-hidden relative"
                 style={{
-                  background: selectedVariant !== null ? 'var(--joi-bg-2)' : renderStyles[selRenderStyle]?.bg || 'var(--joi-bg-2)',
-                  border: '1px solid rgba(255,255,255,.04)',
+                  background: '#F9FAFB',
+                  border: '1px solid rgba(0,0,0,0.06)',
                 }}>
                 {selectedVariant !== null && variants[selectedVariant] ? (
                   /* Show selected variant */
@@ -1359,23 +1377,23 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                     <div className="relative">
                       {/* Head */}
                       <div className="w-16 h-20 mx-auto rounded-[45%] transition-all"
-                        style={{ background: 'rgba(99,102,241,.08)', border: '1px solid rgba(99,102,241,.12)' }} />
+                        style={{ background: 'rgba(0,0,0,.04)', border: '1px solid rgba(0,0,0,.06)' }} />
                     </div>
                     {/* Body silhouette */}
                     <div className="mt-1 flex flex-col items-center">
-                      <div style={{ width: '10px', height: '6px', background: 'rgba(99,102,241,.06)', borderRadius: '0 0 4px 4px' }} />
-                      <div className="rounded-t-2xl" style={{ width: '60px', height: '8px', background: 'rgba(99,102,241,.06)' }} />
-                      <div style={{ width: '52px', height: '44px', background: 'rgba(99,102,241,.04)', borderRadius: '30%' }} />
+                      <div style={{ width: '10px', height: '6px', background: 'rgba(0,0,0,.03)', borderRadius: '0 0 4px 4px' }} />
+                      <div className="rounded-t-2xl" style={{ width: '60px', height: '8px', background: 'rgba(0,0,0,.03)' }} />
+                      <div style={{ width: '52px', height: '44px', background: 'rgba(0,0,0,.02)', borderRadius: '30%' }} />
                       <div className="flex gap-1 -mt-0.5">
-                        <div style={{ width: '12px', height: '20px', background: 'rgba(99,102,241,.03)', borderRadius: '0 0 6px 6px' }} />
-                        <div style={{ width: '12px', height: '20px', background: 'rgba(99,102,241,.03)', borderRadius: '0 0 6px 6px' }} />
+                        <div style={{ width: '12px', height: '20px', background: 'rgba(0,0,0,.015)', borderRadius: '0 0 6px 6px' }} />
+                        <div style={{ width: '12px', height: '20px', background: 'rgba(0,0,0,.015)', borderRadius: '0 0 6px 6px' }} />
                       </div>
                     </div>
                   </div>
                 )}
                 <div className="absolute bottom-0 left-0 right-0 p-3" style={{ background: 'linear-gradient(transparent, rgba(0,0,0,.7))' }}>
                   <div className="text-sm font-bold text-white">{name || 'Sin nombre'}</div>
-                  <div className="text-[9px] font-mono" style={{ color: 'var(--joi-pink)' }}>
+                  <div className="text-[9px] font-mono" style={{ color: 'rgba(255,255,255,.7)' }}>
                     {[
                       GENDERS.find(g => g.id === selGender)?.label,
                       AGE_RANGES.find(a => a.id === selAge)?.label,
@@ -1388,22 +1406,22 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               <div className="mt-3 flex flex-wrap gap-1 justify-center">
                 {selPersonality.map(id => {
                   const chip = PERSONALITY_TRAITS.find(c => c.id === id)
-                  return chip ? <span key={id} className="badge" style={{ background: 'rgba(99,102,241,.1)', color: 'var(--joi-pink)' }}>{chip.label}</span> : null
+                  return chip ? <span key={id} className="badge" style={{ background: '#F3F4F6', color: '#1A1A1A' }}>{chip.label}</span> : null
                 })}
                 {selFashion.map(id => {
                   const chip = FASHION_STYLES.find(c => c.id === id)
-                  return chip ? <span key={id} className="badge" style={{ background: 'rgba(79,70,229,.1)', color: 'var(--joi-magenta)' }}>{chip.label}</span> : null
+                  return chip ? <span key={id} className="badge" style={{ background: '#F3F4F6', color: '#555' }}>{chip.label}</span> : null
                 })}
               </div>
 
               {/* Generation loading indicator */}
               {generating && (
                 <div className="mt-3 text-center">
-                  <div className="text-[11px] font-medium" style={{ color: 'var(--joi-pink)' }}>
+                  <div className="text-[11px] font-medium" style={{ color: '#1A1A1A' }}>
                     {'\u21BB'} Generando{generationPhase === 'sheet' ? ' hoja de personaje' : ' variantes'}...
                   </div>
-                  <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: 'var(--joi-bg-3)' }}>
-                    <div className="h-full rounded-full shimmer" style={{ width: '60%', background: 'linear-gradient(90deg, var(--joi-pink), var(--joi-magenta))' }} />
+                  <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: '#E5E7EB' }}>
+                    <div className="h-full rounded-full shimmer" style={{ width: '60%', background: '#1A1A1A' }} />
                   </div>
                 </div>
               )}
@@ -1420,32 +1438,32 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
             style={{
               display: 'flex', flexDirection: 'column',
               top: '50%', left: 'calc(50% + 110px)', transform: 'translate(-50%, -50%)',
-              background: 'var(--joi-bg-glass)',
-              backdropFilter: 'blur(24px)',
-              border: '1px solid rgba(255,255,255,.04)',
-              boxShadow: '0 20px 60px rgba(0,0,0,.6)',
+              background: 'white',
+              border: '1px solid rgba(0,0,0,0.08)',
+              boxShadow: '0 20px 60px rgba(0,0,0,.12)',
               overflow: 'hidden',
+              borderRadius: 12,
             }}>
-            <div className="overflow-y-auto p-4 pb-2 space-y-1 flex-1 min-h-0 joi-scroll">
-              <div className="joi-label mb-2 px-1">Motor de Generación</div>
+            <div className="overflow-y-auto p-4 pb-2 space-y-1 flex-1 min-h-0">
+              <div className="text-[11px] font-semibold uppercase tracking-wider mb-2 px-1" style={{ color: '#555' }}>Motor de Generación</div>
 
               <button onClick={() => { setSelectedEngine('auto'); setShowEngineModal(false) }}
                 className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-left transition-all"
                 style={{
-                  background: selectedEngine === 'auto' ? 'rgba(99,102,241,.08)' : 'transparent',
-                  border: `1px solid ${selectedEngine === 'auto' ? 'rgba(99,102,241,.2)' : 'transparent'}`,
+                  background: selectedEngine === 'auto' ? '#F3F4F6' : 'transparent',
+                  border: `1px solid ${selectedEngine === 'auto' ? 'rgba(0,0,0,0.1)' : 'transparent'}`,
                 }}>
                 <span className="text-base">{'\u2728'}</span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[11px] font-medium" style={{ color: selectedEngine === 'auto' ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>Auto</div>
-                  <div className="text-[9px]" style={{ color: 'var(--joi-text-3)' }}>Mejor motor automáticamente</div>
+                  <div className="text-[11px] font-medium" style={{ color: selectedEngine === 'auto' ? '#1A1A1A' : '#555' }}>Auto</div>
+                  <div className="text-[9px]" style={{ color: '#999' }}>Mejor motor automáticamente</div>
                 </div>
               </button>
 
-              <div className="h-px my-1 joi-divider" />
+              <div className="h-px my-1" style={{ background: 'rgba(0,0,0,0.06)' }} />
 
               {/* Recommended engines for character creation */}
-              <div className="joi-label mb-1 mt-2 px-1 text-[9px]" style={{ color: 'var(--joi-text-3)' }}>Mejor para Personajes</div>
+              <div className="text-[9px] font-semibold uppercase tracking-wider mb-1 mt-2 px-1" style={{ color: '#999' }}>Mejor para Personajes</div>
               {CHARACTER_ENGINES.map(ce => {
                 const meta = ENGINE_METADATA.find(e => e.key === ce.id);
                 return (
@@ -1453,28 +1471,28 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                     onClick={() => { setSelectedEngine(ce.id); setShowEngineModal(false) }}
                     className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-left transition-all"
                     style={{
-                      background: selectedEngine === ce.id ? 'rgba(99,102,241,.10)' : 'rgba(255,255,255,.02)',
-                      border: `1px solid ${selectedEngine === ce.id ? 'rgba(99,102,241,.25)' : 'rgba(255,255,255,.04)'}`,
+                      background: selectedEngine === ce.id ? '#F3F4F6' : 'transparent',
+                      border: `1px solid ${selectedEngine === ce.id ? 'rgba(0,0,0,0.1)' : 'rgba(0,0,0,0.04)'}`,
                     }}>
-                    <span className="text-sm" style={{ color: ce.badge ? 'var(--joi-pink)' : 'var(--joi-text-3)' }}>
+                    <span className="text-sm" style={{ color: ce.badge ? '#1A1A1A' : '#999' }}>
                       {ce.badge ? '\u2B50' : '\u2699'}
                     </span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[11px] font-medium" style={{ color: selectedEngine === ce.id ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{ce.label}</span>
+                        <span className="text-[11px] font-medium" style={{ color: selectedEngine === ce.id ? '#1A1A1A' : '#555' }}>{ce.label}</span>
                         {ce.badge && (
                           <span className="text-[7px] font-bold px-1.5 py-0.5 rounded-full" style={{
-                            background: 'rgba(99,102,241,.15)',
-                            color: 'var(--joi-pink)',
-                            border: '1px solid rgba(99,102,241,.2)',
+                            background: '#F3F4F6',
+                            color: '#1A1A1A',
+                            border: '1px solid rgba(0,0,0,0.08)',
                           }}>{ce.badge}</span>
                         )}
                       </div>
-                      <div className="text-[8px]" style={{ color: 'var(--joi-text-3)' }}>{ce.desc}</div>
+                      <div className="text-[8px]" style={{ color: '#999' }}>{ce.desc}</div>
                     </div>
                     <div className="shrink-0 text-right">
-                      <div className="text-[9px] font-mono" style={{ color: 'var(--joi-pink)' }}>{meta?.creditCost ?? '?'}cr</div>
-                      <div className="text-[8px] font-mono" style={{ color: 'var(--joi-text-3)' }}>{meta?.estimatedTime ?? ''}</div>
+                      <div className="text-[9px] font-mono" style={{ color: '#1A1A1A' }}>{meta?.creditCost ?? '?'}cr</div>
+                      <div className="text-[8px] font-mono" style={{ color: '#999' }}>{meta?.estimatedTime ?? ''}</div>
                     </div>
                   </button>
                 );
@@ -1482,8 +1500,8 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
             </div>
 
-            <div className="shrink-0 px-4 pb-4 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,.04)' }}>
-              <div className="joi-label mb-2 px-1">Resolución</div>
+            <div className="shrink-0 px-4 pb-4 pt-2" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+              <div className="text-[11px] font-semibold uppercase tracking-wider mb-2 px-1" style={{ color: '#555' }}>Resolución</div>
               <div className="flex gap-2">
                 {[
                   { id: '1k', label: '1K', desc: '1024px' },
@@ -1493,12 +1511,11 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                   <button key={r.id} onClick={() => setSelectedResolution(r.id)}
                     className="flex-1 px-3 py-2 rounded-xl text-center transition-all"
                     style={{
-                      background: selectedResolution === r.id ? 'rgba(99,102,241,.08)' : 'var(--joi-bg-3)',
-                      border: `1px solid ${selectedResolution === r.id ? 'rgba(99,102,241,.25)' : 'rgba(255,255,255,.04)'}`,
-                      backdropFilter: 'blur(8px)',
+                      background: selectedResolution === r.id ? '#F3F4F6' : 'white',
+                      border: `1px solid ${selectedResolution === r.id ? '#1A1A1A' : 'rgba(0,0,0,0.06)'}`,
                     }}>
-                    <div className="text-[11px] font-mono font-bold" style={{ color: selectedResolution === r.id ? 'var(--joi-pink)' : 'var(--joi-text-1)' }}>{r.label}</div>
-                    <div className="text-[8px] font-mono" style={{ color: 'var(--joi-text-3)' }}>{r.desc}</div>
+                    <div className="text-[11px] font-mono font-bold" style={{ color: selectedResolution === r.id ? '#1A1A1A' : '#555' }}>{r.label}</div>
+                    <div className="text-[8px] font-mono" style={{ color: '#999' }}>{r.desc}</div>
                   </button>
                 ))}
               </div>

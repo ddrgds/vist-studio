@@ -196,8 +196,12 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
 
   // ─── Add ────────────────────────────────────
   addItems: (newItems) => {
-    // Optimistic update
-    set((s) => ({ items: [...newItems, ...s.items] }));
+    // Optimistic update — dedup by URL to prevent duplicates
+    set((s) => {
+      const existingUrls = new Set(s.items.map(i => i.url))
+      const unique = newItems.filter(i => !existingUrls.has(i.url))
+      return { items: [...unique, ...s.items] }
+    });
 
     // Persist async
     const { _userId } = get();

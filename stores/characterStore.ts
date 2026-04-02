@@ -81,17 +81,18 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
       }
 
       // Auto-migrate: ensure character creation photos exist in galleryStore
-      // Wrapped in try/catch — gallery migration is non-critical, should not block hydrate
+      // Only migrate if no gallery items exist for this character yet (prevents duplicates from URL changes)
       try {
         const galleryState = useGalleryStore.getState();
-        const existingIds = new Set(galleryState.items.map(i => `${i.characterId}::${i.url}`));
+        const charsWithGalleryItems = new Set(galleryState.items.filter(i => i.tags?.includes('character-creation')).map(i => i.characterId));
         const sheetLabels = ['Retrato', 'Ángulos de Rostro', 'Ángulos de Cuerpo', 'Expresiones'];
         const newGalleryItems: any[] = [];
         for (const c of chars) {
           if (!c.modelImageUrls || c.modelImageUrls.length === 0) continue;
+          if (charsWithGalleryItems.has(c.id)) continue; // already migrated
           for (let i = 0; i < c.modelImageUrls.length; i++) {
             const url = c.modelImageUrls[i];
-            if (!url || existingIds.has(`${c.id}::${url}`)) continue;
+            if (!url) continue;
             newGalleryItems.push({
               id: crypto.randomUUID(), url,
               prompt: `${c.name} — ${sheetLabels[i] || 'Referencia'}`,

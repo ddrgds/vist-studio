@@ -210,14 +210,15 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
 }) {
   const [phase, setPhase] = useState<'hero' | 'session'>('hero')
   const [sourceTab, setSourceTab] = useState<'crear' | 'subir' | 'galeria'>('crear')
-  const [isSimpleMode, setIsSimpleMode] = useState(true)
+  const [isSimpleMode, setIsSimpleMode] = useState(false)
 
   const characters = useCharacterStore(s => s.characters)
   const galleryItems = useGalleryStore(s => s.items)
   const pipelineCharId = usePipelineStore(s => s.characterId)
   const pipelineHeroUrl = usePipelineStore(s => s.heroShotUrl)
   const pipelineSetHeroShot = usePipelineStore(s => s.setHeroShot)
-  const { decrementCredits, restoreCredits } = useProfile()
+  const { decrementCredits, restoreCredits, profile } = useProfile()
+  const userCredits = profile?.creditsRemaining ?? 0
   const toast = useToast()
 
   // Phase 1
@@ -406,8 +407,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
     setSourceTab('crear') // go back to create tab
   }
 
-  // Gallery modal + fullscreen preview
-  const [showGalleryModal, setShowGalleryModal] = useState(false)
+  // Fullscreen preview
   const [galleryFullscreen, setGalleryFullscreen] = useState<string | null>(null)
 
   // Session output controls
@@ -518,330 +518,437 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
   // Lightbox
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null)
 
+  // Mobile bottom sheet
+  const [mobileSheetExpanded, setMobileSheetExpanded] = useState(false)
+
   const handleVibeToggle = (id: string) => { setSelectedVibes(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n }) }
   const canvasSize = CANVAS_SIZES[selectedAspectRatio] ?? CANVAS_SIZES[AspectRatio.Portrait]
 
+  // ─── Shared UI pieces ─────────────────────────────────
+  const phaseToggle = (
+    <div style={{ display: 'flex', background: 'var(--bg-0)', borderRadius: 14, padding: 4, border: '1px solid var(--border)' }}>
+      <button onClick={() => setPhase('hero')} style={{ flex: 1, padding: '10px 16px', borderRadius: 10, fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer', textAlign: 'center', border: 'none', background: phase === 'hero' ? 'var(--accent)' : 'transparent', color: phase === 'hero' ? 'white' : 'var(--text-3)', transition: 'all 0.2s' }}>⚡ Crear Hero</button>
+      <button onClick={() => { if (heroImage) handleSessionTransition(); else toast.error('Genera un hero primero') }} style={{ flex: 1, padding: '10px 16px', borderRadius: 10, fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer', textAlign: 'center', border: 'none', background: phase === 'session' ? 'var(--accent)' : 'transparent', color: phase === 'session' ? 'white' : 'var(--text-3)', transition: 'all 0.2s' }}>📸 Sesión de Fotos</button>
+    </div>
+  )
+
+  // State for grouped advanced config accordion
+  const [showAdvancedConfig, setShowAdvancedConfig] = useState(false)
+
+  const heroControlsContent = (compact = false) => (
+    <>
+      {/* Source tabs */}
+      <div style={{ display: 'flex', gap: 6 }}>
+        {[{ key: 'crear' as const, label: '✨ Crear' }, { key: 'subir' as const, label: '📷 Subir' }, { key: 'galeria' as const, label: '🖼 Galería' }].map(t => (
+          <button key={t.key} onClick={() => { setSourceTab(t.key); if (t.key === 'subir') uploadInputRef.current?.click(); if (t.key === 'galeria') { useNavigationStore.getState().openGalleryForSelection('studio'); onNav?.('gallery') } }}
+            style={{ padding: compact ? '5px 10px' : '7px 14px', borderRadius: 20, fontSize: compact ? '0.75rem' : '0.78rem', cursor: 'pointer', border: `1px solid ${sourceTab === t.key ? 'var(--accent)' : 'var(--border)'}`, background: sourceTab === t.key ? 'var(--accent)' : 'white', color: sourceTab === t.key ? 'white' : 'var(--text-2)', transition: 'all 0.15s' }}>{t.label}</button>
+        ))}
+      </div>
+
+      {/* Character row — improved active state */}
+      <div>
+        <span style={labelStyle}>Protagonista</span>
+        <div style={{ display: 'flex', gap: compact ? 8 : 10, overflowX: 'auto', paddingBottom: 4 }}>
+          {characters.map(c => {
+            const isSelected = selectedCharId === c.id
+            const size = compact ? 40 : 50
+            const avatarSrc = c.thumbnail || c.modelImageUrls?.[0] || c.referencePhotoUrls?.[0]
+            return (
+              <div key={c.id} onClick={() => handleSelectCharacter(c.id)} style={{ width: size, height: size, borderRadius: '50%', cursor: 'pointer', flexShrink: 0, border: isSelected ? '3px solid var(--accent)' : '2px solid transparent', opacity: selectedCharId && !isSelected ? 0.45 : 1, transition: 'all 0.2s', overflow: 'hidden', boxShadow: isSelected ? '0 0 0 2px white, 0 0 0 5px var(--accent)' : 'none' }}>
+                {avatarSrc ? <img src={avatarSrc} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: compact ? '0.7rem' : '0.9rem', fontWeight: 600, color: 'var(--text-2)' }}>{c.name?.[0] || '?'}</div>}
+              </div>
+            )
+          })}
+          {characters.length === 0 && <span style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>Sin personajes</span>}
+        </div>
+      </div>
+
+      {/* Quick Styles */}
+      <div>
+        <span style={labelStyle}>Estilo Rápido</span>
+        <div style={{ display: 'flex', gap: compact ? 6 : 8, flexWrap: compact ? 'nowrap' : 'wrap', overflowX: compact ? 'auto' : undefined, paddingBottom: compact ? 4 : 0 }}>
+          {QUICK_STYLE_PRESETS.map(p => (
+            <button key={p.id} onClick={() => applyQuickStyle(p)} style={{ padding: compact ? '6px 12px' : '8px 16px', borderRadius: 20, fontSize: compact ? '0.75rem' : '0.8rem', cursor: 'pointer', whiteSpace: 'nowrap', border: `1px solid ${activeQuickStyle === p.id ? 'var(--accent)' : 'var(--border)'}`, background: activeQuickStyle === p.id ? 'var(--accent)' : 'white', color: activeQuickStyle === p.id ? 'white' : 'var(--text-2)', transition: 'all 0.15s' }}>{p.emoji} {p.label}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Outfit — improved upload card */}
+      <div>
+        <span style={labelStyle}>Ropa</span>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <textarea value={outfitDescription} onChange={e => setOutfitDescription(e.target.value)} rows={2} placeholder="Describe la ropa..." style={{ ...inputStyle, flex: 1 }} />
+          {outfitRef ? (
+            <div style={{ position: 'relative', width: 56, height: 56, borderRadius: 10, overflow: 'hidden', flexShrink: 0 }}>
+              <img src={outfitRef.preview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <button onClick={() => setOutfitRef(null)} style={{ position: 'absolute', top: -2, right: -2, width: 18, height: 18, borderRadius: '50%', background: 'var(--accent)', color: 'white', border: 'none', fontSize: 9, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+            </div>
+          ) : (
+            <label style={{ width: 56, height: 56, borderRadius: 10, background: '#F3F4F6', border: '1px solid var(--border)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0, gap: 2, transition: 'all 0.15s' }}>
+              <span style={{ fontSize: 16, color: 'var(--text-2)' }}>+</span>
+              <span style={{ fontSize: 8, color: 'var(--text-3)', fontWeight: 500 }}>Referencia</span>
+              <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) setOutfitRef({ file: f, preview: URL.createObjectURL(f) }); if (e.target) e.target.value = '' }} />
+            </label>
+          )}
+        </div>
+      </div>
+
+      {/* Grouped Advanced Configuration — single accordion */}
+      <AccordionSection title="Configuración Avanzada" icon="⚙️" isOpen={showAdvancedConfig} onToggle={() => setShowAdvancedConfig(p => !p)}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Scenario */}
+          <div>
+            <span style={labelStyle}>Escenario</span>
+            <textarea value={scenario} onChange={e => setScenario(e.target.value)} rows={2} placeholder="Describe el escenario..." style={inputStyle} />
+            <div style={{ marginTop: 8 }}>
+              {scenarioRef ? (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div style={{ position: 'relative', width: 44, height: 44, borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
+                    <img src={scenarioRef.preview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <button onClick={() => setScenarioRef(null)} style={{ position: 'absolute', top: -2, right: -2, width: 16, height: 16, borderRadius: '50%', background: 'var(--accent)', color: 'white', border: 'none', fontSize: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                  </div>
+                  <span style={{ fontSize: '0.65rem', color: 'var(--text-3)' }}>Referencia de escenario</span>
+                </div>
+              ) : (
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, background: '#F3F4F6', border: '1px solid var(--border)', cursor: 'pointer', fontSize: '0.7rem', color: 'var(--text-2)' }}>
+                  + Añadir referencia visual
+                  <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) setScenarioRef({ file: f, preview: URL.createObjectURL(f) }); if (e.target) e.target.value = '' }} />
+                </label>
+              )}
+            </div>
+          </div>
+          {/* Pose */}
+          <div>
+            <span style={labelStyle}>Pose</span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{POSE_OPTIONS.map(o => <Chip key={o.id} label={o.label} icon={o.icon} active={selectedPose === o.id} onClick={() => setSelectedPose(selectedPose === o.id ? '' : o.id)} />)}</div>
+            <div style={{ marginTop: 8 }}><RefSlot label="Pose ControlNet" iconLabel="🧍 Pose" ref_={poseRef} onUpload={f => setPoseRef({ file: f, preview: URL.createObjectURL(f) })} onRemove={() => setPoseRef(null)} badge="+5cr" /></div>
+          </div>
+          {/* Camera */}
+          <div>
+            <span style={labelStyle}>Cámara</span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{CAMERA_OPTIONS.map(o => <Chip key={o.id} label={o.label} icon={o.icon} active={selectedCamera === o.id} onClick={() => setSelectedCamera(o.id)} />)}</div>
+          </div>
+          {/* Lighting */}
+          <div>
+            <span style={labelStyle}>Iluminación</span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{LIGHTING_OPTIONS.map(o => <Chip key={o.id} label={o.label} icon={o.icon} active={selectedLighting === o.id} onClick={() => setSelectedLighting(o.id)} />)}</div>
+          </div>
+          {/* Enhancers */}
+          <div>
+            <span style={labelStyle}>Enhancers</span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{ENHANCERS.map(e => <Chip key={e.id} label={e.label} icon={e.icon} active={selectedEnhancers.has(e.id)} onClick={() => setSelectedEnhancers(prev => { const n = new Set(prev); n.has(e.id) ? n.delete(e.id) : n.add(e.id); return n })} />)}</div>
+          </div>
+          {/* Negative + boost */}
+          <div>
+            <span style={labelStyle}>Avanzado</span>
+            <textarea value={negativePrompt} onChange={e => setNegativePrompt(e.target.value)} rows={2} placeholder="Negative prompt..." style={inputStyle} />
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.8rem', color: 'var(--text-2)', cursor: 'pointer', marginTop: 8 }}>
+              <input type="checkbox" checked={imageBoostOn} onChange={e => setImageBoostOn(e.target.checked)} /> Image Boost
+            </label>
+          </div>
+        </div>
+      </AccordionSection>
+    </>
+  )
+
+  const sessionControlsContent = () => (
+    <>
+      {/* Hero thumbnail */}
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', padding: 12, background: 'var(--bg-0)', borderRadius: 12, border: '1px solid var(--border)' }}>
+        {heroImage && <img src={heroImage} style={{ width: 48, height: 64, borderRadius: 6, objectFit: 'cover' }} />}
+        <div>
+          <span style={{ ...labelStyle, marginBottom: 2 }}>Imagen base</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-2)' }}>{scenario ? scenario.slice(0, 40) + '...' : 'Hero shot'}</span>
+        </div>
+      </div>
+
+      {/* Vibes */}
+      <div>
+        <span style={labelStyle}>Dirección Creativa <span style={{ fontSize: '0.55rem', fontFamily: "'JetBrains Mono', monospace", background: '#eee', padding: '1px 4px', borderRadius: 3, textTransform: 'none', letterSpacing: 0 }}>auto</span></span>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {PHOTO_SESSION_PRESETS.map(p => (
+            <button key={p.id} onClick={() => handleVibeToggle(p.id)} style={{ padding: '5px 12px', borderRadius: 20, fontSize: '0.75rem', cursor: 'pointer', border: `1px solid ${selectedVibes.has(p.id) ? 'var(--accent)' : 'var(--border)'}`, background: selectedVibes.has(p.id) ? 'var(--accent)' : 'white', color: selectedVibes.has(p.id) ? 'white' : 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 4, transition: 'all 0.2s' }}>
+              {p.icon} {p.label}
+              {autoVibes.has(p.id) && <span style={{ fontSize: '0.55rem', fontFamily: "'JetBrains Mono', monospace", background: selectedVibes.has(p.id) ? 'rgba(255,255,255,0.2)' : '#eee', padding: '1px 4px', borderRadius: 3 }}>auto</span>}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Photo count */}
+      <div>
+        <span style={labelStyle}>Fotos</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button onClick={() => setPhotoCount(p => Math.max(4, p - 3) as any)} style={{ background: 'none', border: 'none', fontSize: '1rem', cursor: 'pointer', color: 'var(--text-3)' }}>◀</button>
+          <span style={{ fontSize: '1.3rem', fontWeight: 700 }}>{photoCount}</span>
+          <button onClick={() => setPhotoCount(p => Math.min(12, p + 3) as any)} style={{ background: 'none', border: 'none', fontSize: '1rem', cursor: 'pointer', color: 'var(--text-3)' }}>▶</button>
+        </div>
+      </div>
+
+      {/* Resolution + Format */}
+      <div style={{ display: 'flex', gap: 16 }}>
+        <div>
+          <span style={labelStyle}>Resolución</span>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {(['1k', '2k', '4k'] as const).map(r => (
+              <button key={r} onClick={() => setSessionResolution(r)} style={{ padding: '5px 12px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 500, cursor: 'pointer', border: `1px solid ${sessionResolution === r ? 'var(--accent)' : 'var(--border)'}`, background: sessionResolution === r ? 'var(--accent)' : 'transparent', color: sessionResolution === r ? 'white' : 'var(--text-2)', fontFamily: "'JetBrains Mono', monospace", transition: 'all 0.2s' }}>{r.toUpperCase()}</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <span style={labelStyle}>Formato</span>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {[{ ar: AspectRatio.Portrait, label: 'Publicación' }, { ar: AspectRatio.Tall, label: 'Historia' }, { ar: AspectRatio.Square, label: '□' }].map(({ ar, label }) => (
+              <button key={ar} onClick={() => setSessionAspectRatio(ar)} style={{ padding: '5px 12px', borderRadius: 8, fontSize: '0.7rem', cursor: 'pointer', border: `1px solid ${sessionAspectRatio === ar ? 'var(--accent)' : 'var(--border)'}`, background: sessionAspectRatio === ar ? 'var(--accent)' : 'transparent', color: sessionAspectRatio === ar ? 'white' : 'var(--text-2)', transition: 'all 0.2s' }}>{label}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
+  )
+
+  const canvasContent = () => (
+    <>
+      <div style={{ width: canvasSize.w, height: canvasSize.h, maxWidth: '90vw', borderRadius: 16, position: 'relative', overflow: 'hidden', boxShadow: heroImage ? '0 8px 32px rgba(0,0,0,0.04)' : 'none', background: heroImage ? undefined : 'var(--bg-0)', border: heroImage ? 'none' : '1px dashed #ccc', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', transition: 'all 0.5s ease' }}>
+        {!heroImage && !generatingHero && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, color: 'var(--text-3)' }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
+            <span style={{ fontFamily: "'Instrument Serif', serif", fontSize: '1.2rem', color: '#999', fontStyle: 'italic' }}>Tu lienzo en blanco</span>
+          </div>
+        )}
+        {generatingHero && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 32, height: 32, border: '3px solid rgba(0,0,0,0.1)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>Generando... {Math.round(heroProgress)}%</span>
+          </div>
+        )}
+        {heroImage && (
+          <>
+            <img src={heroImage} onClick={() => setGalleryFullscreen(heroImage)} style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }} title="Clic para ampliar" />
+            <div style={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px)', borderRadius: 20, padding: 6, display: 'flex', gap: 6, border: '1px solid rgba(0,0,0,0.04)' }}>
+              <button onClick={() => onEditImage?.(heroImage)} style={{ padding: '8px 16px', borderRadius: 14, fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer', border: 'none', background: 'transparent', color: 'var(--text-1)' }}>✏️ Editar</button>
+              <button onClick={handleSessionTransition} style={{ padding: '8px 16px', borderRadius: 14, fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer', border: 'none', background: 'var(--accent)', color: 'white' }}>📸 Sesión</button>
+            </div>
+          </>
+        )}
+      </div>
+      <div style={{ display: 'flex', gap: 12, marginTop: 20, fontSize: '0.75rem' }}>
+        {Object.values(AspectRatio).map(ar => (
+          <span key={ar} onClick={() => setSelectedAspectRatio(ar)} style={{ cursor: 'pointer', color: selectedAspectRatio === ar ? 'var(--text-1)' : 'var(--text-3)', fontWeight: selectedAspectRatio === ar ? 600 : 400, transition: 'all 0.15s' }}>
+            {ar === AspectRatio.Portrait ? 'Publicación' : ar === AspectRatio.Square ? 'Cuadrado' : ar === AspectRatio.Landscape ? 'Portada' : ar === AspectRatio.Wide ? 'Banner' : 'Historia / Reel'}
+          </span>
+        ))}
+      </div>
+    </>
+  )
+
+  const sessionGridContent = () => (
+    <>
+      {gridCells.length === 0 && !generatingSession && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, color: 'var(--text-3)', flex: 1, justifyContent: 'center' }}>
+          <span style={{ fontFamily: "'Instrument Serif', serif", fontSize: '1.2rem', fontStyle: 'italic' }}>Haz clic en "Disparar" para generar</span>
+        </div>
+      )}
+      {generatingSession && gridCells.filter(Boolean).length === 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, flex: 1, justifyContent: 'center' }}>
+          <div style={{ width: 32, height: 32, border: '3px solid rgba(0,0,0,0.1)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+          <span style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>Revelando... {Math.round(sessionProgress)}%</span>
+        </div>
+      )}
+      {gridCells.length > 0 && (
+        <div style={{ width: '100%', maxWidth: 600, display: 'grid', gridTemplateColumns: `repeat(${(GRID_DIMS[photoCount] || GRID_DIMS[9]).cols}, 1fr)`, gap: 8 }}>
+          {Array.from({ length: photoCount }).map((_, idx) => {
+            const vibeLabel = cellVibeMap[idx] || 'Photo'
+            const vibePreset = PHOTO_SESSION_PRESETS.find(p => p.label === vibeLabel)
+            const isRecycled = vibePreset ? !selectedVibes.has(vibePreset.id) : false
+            return <GridCell key={idx} imageUrl={gridCells[idx] || null} vibeLabel={vibeLabel} isSelected={selectedCells.has(idx)} isRevealed={revealedCells.has(idx)} isRecycled={isRecycled} onClick={() => gridCells[idx] && setSelectedCells(prev => { const n = new Set(prev); n.has(idx) ? n.delete(idx) : n.add(idx); return n })} onExpand={() => setLightboxIdx(idx)} delay={idx * 150} aspectRatio={ASPECT_RATIO_CSS[sessionAspectRatio] || '3/4'} />
+          })}
+        </div>
+      )}
+    </>
+  )
+
   // ─── RENDER ─────────────────────────────────────────────
   return (
-    <div className="flex flex-col lg:flex-row lg:h-full" style={{ background: 'var(--bg-0)' }}>
+    <>
       <FlashOverlay active={flashActive} />
       <input ref={uploadInputRef} type="file" accept="image/*" className="hidden" onChange={handleUploadSource} />
       <input ref={faceInputRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f && faceRefs.length < 3) setFaceRefs(prev => [...prev, { file: f, preview: URL.createObjectURL(f) }]); e.target.value = '' }} />
 
-      {/* ── LEFT PANEL ── */}
-      <div className="w-full max-h-[60vh] lg:max-h-none lg:w-[360px] shrink-0 flex flex-col lg:h-full overflow-y-auto" style={{ background: 'var(--bg-1)', borderRight: '1px solid var(--border)', backdropFilter: 'blur(20px)', boxShadow: '0 8px 32px rgba(0,0,0,0.03)' }}>
+      {/* ═══════ DESKTOP ═══════ */}
+      <div className="hidden lg:flex h-full" style={{ background: 'var(--bg-0)' }}>
 
-        {phase === 'hero' ? (
-          <div className="flex flex-col h-full">
-            <div className="p-6 flex flex-col gap-5">
-              {/* Mode toggle */}
-              <div style={{ display: 'flex', background: 'var(--bg-0)', borderRadius: 12, padding: 4, border: '1px solid var(--border)' }}>
-                {(['Simple', 'Avanzado'] as const).map(mode => (
-                  <button key={mode} onClick={() => setIsSimpleMode(mode === 'Simple')} style={{ flex: 1, padding: '6px 12px', borderRadius: 8, fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer', border: 'none', background: (mode === 'Simple') === isSimpleMode ? 'var(--accent)' : 'transparent', color: (mode === 'Simple') === isSimpleMode ? 'white' : 'var(--text-2)', transition: 'all 0.2s' }}>{mode}</button>
-                ))}
+        {/* ── LEFT PANEL ── */}
+        <div className="w-[400px] shrink-0 flex flex-col h-full" style={{ background: 'white', borderRight: '1px solid var(--border)' }}>
+
+          {/* Header */}
+          <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {phaseToggle}
+            {phase === 'hero' && (
+              <div style={{ display: 'flex', background: 'var(--bg-0)', borderRadius: 10, padding: 3, border: '1px solid var(--border)' }}>
+                <button onClick={() => setIsSimpleMode(true)} style={{ flex: 1, padding: '6px 12px', borderRadius: 7, fontSize: '0.78rem', fontWeight: 500, cursor: 'pointer', border: 'none', background: isSimpleMode ? 'var(--accent)' : 'transparent', color: isSimpleMode ? 'white' : 'var(--text-3)', transition: 'all 0.2s' }}>Simple</button>
+                <button onClick={() => setIsSimpleMode(false)} style={{ flex: 1, padding: '6px 12px', borderRadius: 7, fontSize: '0.78rem', fontWeight: 500, cursor: 'pointer', border: 'none', background: !isSimpleMode ? 'var(--accent)' : 'transparent', color: !isSimpleMode ? 'white' : 'var(--text-3)', transition: 'all 0.2s' }}>Avanzado</button>
               </div>
-
-              {/* Source tabs */}
-              <div style={{ display: 'flex', gap: 8 }}>
-                {[{ key: 'crear' as const, label: '✨ Crear' }, { key: 'subir' as const, label: '📷 Subir' }, { key: 'galeria' as const, label: '🖼 Galería' }].map(t => (
-                  <button key={t.key} onClick={() => { setSourceTab(t.key); if (t.key === 'subir') uploadInputRef.current?.click() }}
-                    style={{ padding: '6px 12px', borderRadius: 16, fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer', border: `1px solid ${sourceTab === t.key ? 'transparent' : 'var(--border)'}`, background: sourceTab === t.key ? 'var(--bg-0)' : 'var(--bg-1)', color: sourceTab === t.key ? 'var(--text-1)' : 'var(--text-2)', transition: 'all 0.2s' }}>{t.label}</button>
-                ))}
-              </div>
-
-              {/* Gallery source — navigates to real gallery in selection mode */}
-              {sourceTab === 'galeria' && (
-                <div>
-                  <span style={labelStyle}>Elegir de Galería</span>
-                  <button onClick={() => { useNavigationStore.getState().openGalleryForSelection('studio'); onNav?.('gallery') }} style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--bg-0)', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                    🖼 Ir a Galería para elegir foto
-                  </button>
-                </div>
-              )}
-
-              {/* Character row */}
-              <div>
-                <span style={labelStyle}>Protagonista</span>
-                <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
-                  {characters.map(c => (
-                    <div key={c.id} onClick={() => handleSelectCharacter(c.id)} style={{ width: 48, height: 48, borderRadius: '50%', cursor: 'pointer', flexShrink: 0, border: selectedCharId === c.id ? '2px solid var(--accent)' : '2px solid transparent', padding: selectedCharId === c.id ? 2 : 0, transition: 'all 0.2s', overflow: 'hidden' }}>
-                      {c.thumbnail ? (
-                        <img src={c.thumbnail} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-                      ) : (
-                        <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: 'var(--bg-0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: 600, color: 'var(--text-2)' }}>{c.name?.[0] || '?'}</div>
-                      )}
-                    </div>
-                  ))}
-                  {characters.length === 0 && <span style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>Sin personajes</span>}
-                </div>
-              </div>
-
-              {/* Quick Style pills */}
-              <div>
-                <span style={labelStyle}>Estilo Base</span>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {QUICK_STYLE_PRESETS.map(p => (
-                    <button key={p.id} onClick={() => applyQuickStyle(p)} style={{ padding: '6px 14px', borderRadius: 20, fontSize: '0.8rem', cursor: 'pointer', border: `1px solid ${activeQuickStyle === p.id ? 'var(--accent)' : 'var(--border)'}`, background: activeQuickStyle === p.id ? 'var(--accent)' : 'white', color: activeQuickStyle === p.id ? 'white' : 'var(--text-2)', transition: 'all 0.2s' }}>{p.emoji} {p.label}</button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Simple mode: progressive disclosure */}
-              {isSimpleMode && (
-                <>
-                  {/* Scenario disclosure */}
-                  <div>
-                    <button onClick={() => setShowScenarioInput(p => !p)} style={{ fontSize: '0.75rem', color: 'var(--text-3)', cursor: 'pointer', background: 'none', border: 'none', fontWeight: 500 }}>
-                      {showScenarioInput ? '− Ocultar escenario' : '+ Añadir instrucción manual'}
-                    </button>
-                    {showScenarioInput && (
-                      <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        <textarea value={scenario} onChange={e => setScenario(e.target.value)} rows={3} placeholder="Describe el escenario..." style={inputStyle} />
-                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                          {scenarioRef ? (
-                            <div style={{ position: 'relative', width: 50, height: 50, borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
-                              <img src={scenarioRef.preview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                              <button onClick={() => setScenarioRef(null)} style={{ position: 'absolute', top: -2, right: -2, width: 16, height: 16, borderRadius: '50%', background: 'var(--accent)', color: 'white', border: 'none', fontSize: 9, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
-                            </div>
-                          ) : (
-                            <label style={{ width: 50, height: 50, borderRadius: 8, border: '1px dashed #ccc', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 10, color: 'var(--text-3)', textAlign: 'center' }}>
-                              📷 Ref<input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) setScenarioRef({ file: f, preview: URL.createObjectURL(f) }); if (e.target) e.target.value = '' }} />
-                            </label>
-                          )}
-                          <span style={{ fontSize: '0.65rem', color: 'var(--text-3)' }}>Referencia visual de escenario</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  {/* Outfit disclosure */}
-                  <div>
-                    <button onClick={() => setShowOutfitInput(p => !p)} style={{ fontSize: '0.75rem', color: 'var(--text-3)', cursor: 'pointer', background: 'none', border: 'none', fontWeight: 500 }}>
-                      {showOutfitInput ? '− Ocultar vestuario' : '+ Subir vestuario específico'}
-                    </button>
-                    {showOutfitInput && (
-                      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                        <textarea value={outfitDescription} onChange={e => setOutfitDescription(e.target.value)} rows={2} placeholder="Describe la ropa..." style={inputStyle} />
-                        {outfitRef ? (
-                          <div style={{ position: 'relative', width: 50, height: 50, borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
-                            <img src={outfitRef.preview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            <button onClick={() => setOutfitRef(null)} style={{ position: 'absolute', top: -2, right: -2, width: 16, height: 16, borderRadius: '50%', background: 'var(--accent)', color: 'white', border: 'none', fontSize: 9, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
-                          </div>
-                        ) : (
-                          <label style={{ width: 50, height: 50, borderRadius: 8, border: '1px dashed #ccc', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 10, color: 'var(--text-3)', textAlign: 'center' }}>
-                            📷 Ref<input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) setOutfitRef({ file: f, preview: URL.createObjectURL(f) }); if (e.target) e.target.value = '' }} />
-                          </label>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  {/* Pose reference (always visible in simple, just the upload) */}
-                  <div>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-3)', fontWeight: 500, display: 'block', marginBottom: 6 }}>Referencia de pose (opcional)</span>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      {poseRef ? (
-                        <div style={{ position: 'relative', width: 50, height: 50, borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
-                          <img src={poseRef.preview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          <button onClick={() => setPoseRef(null)} style={{ position: 'absolute', top: -2, right: -2, width: 16, height: 16, borderRadius: '50%', background: 'var(--accent)', color: 'white', border: 'none', fontSize: 9, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
-                        </div>
-                      ) : (
-                        <label style={{ width: 50, height: 50, borderRadius: 8, border: '1px dashed #ccc', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 10, color: 'var(--text-3)', textAlign: 'center' }}>
-                          🧍 Pose<input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) setPoseRef({ file: f, preview: URL.createObjectURL(f) }); if (e.target) e.target.value = '' }} />
-                        </label>
-                      )}
-                      {poseRef && <span style={{ fontSize: '0.6rem', fontFamily: "'JetBrains Mono', monospace", background: 'rgba(0,0,0,0.04)', padding: '2px 6px', borderRadius: 4, color: 'var(--text-2)' }}>+5cr ControlNet</span>}
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* Advanced mode: accordions */}
-              {!isSimpleMode && (
-                <div style={{ borderTop: '1px solid var(--border)', marginTop: 4 }}>
-                  {/* Face references */}
-                  <div style={{ margin: '12px 0' }}>
-                    <span style={labelStyle}>Referencias de rostro</span>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      {faceRefs.map((ref, i) => (
-                        <RefSlot key={i} label="" iconLabel="" ref_={ref} onUpload={() => {}} onRemove={() => setFaceRefs(prev => prev.filter((_, idx) => idx !== i))} />
-                      ))}
-                      {faceRefs.length < 3 && (
-                        <label style={{ width: 50, height: 50, borderRadius: 8, border: '1px dashed #ccc', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 10, color: 'var(--text-3)' }}>
-                          + Cara<input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) setFaceRefs(prev => [...prev, { file: f, preview: URL.createObjectURL(f) }]); if (e.target) e.target.value = '' }} />
-                        </label>
-                      )}
-                    </div>
-                    {charRefUrls.length > 0 && <span style={{ fontSize: '0.6rem', color: 'var(--text-3)', marginTop: 4, display: 'block' }}>{charRefUrls.length} ref(s) del personaje auto-cargadas</span>}
-                  </div>
-                  {/* Scenario + ref */}
-                  <div style={{ margin: '12px 0' }}>
-                    <span style={labelStyle}>Escenario</span>
-                    <textarea value={scenario} onChange={e => setScenario(e.target.value)} rows={3} placeholder="Describe el escenario..." style={inputStyle} />
-                    <div style={{ marginTop: 8 }}>
-                      <RefSlot label="Referencia de escenario" iconLabel="📷 Ref" ref_={scenarioRef} onUpload={f => setScenarioRef({ file: f, preview: URL.createObjectURL(f) })} onRemove={() => setScenarioRef(null)} />
-                    </div>
-                  </div>
-                  {/* Outfit + ref */}
-                  <div style={{ marginBottom: 12 }}>
-                    <span style={labelStyle}>Ropa</span>
-                    <textarea value={outfitDescription} onChange={e => setOutfitDescription(e.target.value)} rows={2} placeholder="Describe la ropa..." style={inputStyle} />
-                    <div style={{ marginTop: 8 }}>
-                      <RefSlot label="Referencia de ropa" iconLabel="👗 Ref" ref_={outfitRef} onUpload={f => setOutfitRef({ file: f, preview: URL.createObjectURL(f) })} onRemove={() => setOutfitRef(null)} />
-                    </div>
-                  </div>
-                  {/* Pose accordion + ref */}
-                  <AccordionSection title="Pose" icon="🧍" isOpen={openSections.pose} onToggle={() => setOpenSections(p => ({ ...p, pose: !p.pose }))}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>{POSE_OPTIONS.map(o => <Chip key={o.id} label={o.label} icon={o.icon} active={selectedPose === o.id} onClick={() => setSelectedPose(selectedPose === o.id ? '' : o.id)} />)}</div>
-                    <div style={{ marginTop: 10 }}>
-                      <RefSlot label="Referencia de pose (ControlNet)" iconLabel="🧍 Pose" ref_={poseRef} onUpload={f => setPoseRef({ file: f, preview: URL.createObjectURL(f) })} onRemove={() => setPoseRef(null)} badge="+5cr" />
-                    </div>
-                  </AccordionSection>
-                  <AccordionSection title="Cámara" icon="📷" isOpen={openSections.camera} onToggle={() => setOpenSections(p => ({ ...p, camera: !p.camera }))}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>{CAMERA_OPTIONS.map(o => <Chip key={o.id} label={o.label} icon={o.icon} active={selectedCamera === o.id} onClick={() => setSelectedCamera(o.id)} />)}</div>
-                  </AccordionSection>
-                  <AccordionSection title="Iluminación" icon="💡" isOpen={openSections.lighting} onToggle={() => setOpenSections(p => ({ ...p, lighting: !p.lighting }))}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>{LIGHTING_OPTIONS.map(o => <Chip key={o.id} label={o.label} icon={o.icon} active={selectedLighting === o.id} onClick={() => setSelectedLighting(o.id)} />)}</div>
-                  </AccordionSection>
-                  <AccordionSection title="Enhancers" icon="✨" isOpen={openSections.enhancers} onToggle={() => setOpenSections(p => ({ ...p, enhancers: !p.enhancers }))}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>{ENHANCERS.map(e => <Chip key={e.id} label={e.label} icon={e.icon} active={selectedEnhancers.has(e.id)} onClick={() => setSelectedEnhancers(prev => { const n = new Set(prev); n.has(e.id) ? n.delete(e.id) : n.add(e.id); return n })} />)}</div>
-                  </AccordionSection>
-                  <AccordionSection title="Avanzado" icon="⚙️" isOpen={openSections.advanced} onToggle={() => setOpenSections(p => ({ ...p, advanced: !p.advanced }))}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                      <textarea value={negativePrompt} onChange={e => setNegativePrompt(e.target.value)} rows={2} placeholder="Negative prompt..." style={inputStyle} />
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.8rem', color: 'var(--text-2)', cursor: 'pointer' }}>
-                        <input type="checkbox" checked={imageBoostOn} onChange={e => setImageBoostOn(e.target.checked)} /> Image Boost
-                      </label>
-                    </div>
-                  </AccordionSection>
-                </div>
-              )}
-            </div>
-
-            {/* CTA */}
-            <div style={{ marginTop: 'auto', padding: '0 24px 24px' }}>
-              <button onClick={handleHeroGenerate} disabled={generatingHero} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 16, borderRadius: 12, fontSize: '1rem', fontWeight: 500, cursor: generatingHero ? 'wait' : 'pointer', opacity: generatingHero ? 0.6 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-                {generatingHero ? <><div style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /> Generando... {Math.round(heroProgress)}%</> : <>⚡ Generar Hero <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.85rem' }}>· {CREDIT_COSTS['grok-edit']}cr</span></>}
-              </button>
-            </div>
+            )}
           </div>
-        ) : (
-          /* ── PHASE 2 PANEL ── */
-          <div className="flex flex-col h-full">
-            <div className="p-6 flex flex-col gap-5">
-              {/* Hero thumbnail */}
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center', padding: 12, background: 'var(--bg-0)', borderRadius: 12, border: '1px solid var(--border)' }}>
-                {heroImage && <img src={heroImage} style={{ width: 48, height: 64, borderRadius: 6, objectFit: 'cover' }} />}
-                <div>
-                  <span style={{ ...labelStyle, marginBottom: 2 }}>Imagen base</span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-2)' }}>{scenario ? scenario.slice(0, 40) + '...' : 'Hero shot'}</span>
-                </div>
-              </div>
 
-              {/* Vibes */}
-              <div>
-                <span style={labelStyle}>Dirección Creativa (Vibes)</span>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {PHOTO_SESSION_PRESETS.map(p => (
-                    <button key={p.id} onClick={() => handleVibeToggle(p.id)} style={{ padding: '5px 12px', borderRadius: 20, fontSize: '0.75rem', cursor: 'pointer', border: `1px solid ${selectedVibes.has(p.id) ? 'var(--accent)' : 'var(--border)'}`, background: selectedVibes.has(p.id) ? 'var(--accent)' : 'white', color: selectedVibes.has(p.id) ? 'white' : 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 4, transition: 'all 0.2s' }}>
-                      {p.icon} {p.label}
-                      {autoVibes.has(p.id) && <span style={{ fontSize: '0.55rem', fontFamily: "'JetBrains Mono', monospace", background: selectedVibes.has(p.id) ? 'rgba(255,255,255,0.2)' : '#eee', padding: '1px 4px', borderRadius: 3 }}>auto</span>}
-                    </button>
-                  ))}
-                </div>
-                <p style={{ fontSize: '0.7rem', color: 'var(--text-3)', marginTop: 8 }}>Desmarca una vibra para opacar esas fotos.</p>
-              </div>
-
-              {/* Photo count */}
-              <div>
-                <span style={labelStyle}>Fotos</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <button onClick={() => setPhotoCount(p => Math.max(4, p - 3) as any)} style={{ background: 'none', border: 'none', fontSize: '1rem', cursor: 'pointer', color: 'var(--text-3)' }}>◀</button>
-                  <span style={{ fontSize: '1.25rem', fontWeight: 700 }}>{photoCount}</span>
-                  <button onClick={() => setPhotoCount(p => Math.min(12, p + 3) as any)} style={{ background: 'none', border: 'none', fontSize: '1rem', cursor: 'pointer', color: 'var(--text-3)' }}>▶</button>
-                </div>
-              </div>
-
-              {/* Resolution */}
-              <div>
-                <span style={labelStyle}>Resolución</span>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  {(['1k', '2k', '4k'] as const).map(r => (
-                    <button key={r} onClick={() => setSessionResolution(r)} style={{ padding: '5px 14px', borderRadius: 8, fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer', border: `1px solid ${sessionResolution === r ? 'var(--accent)' : 'var(--border)'}`, background: sessionResolution === r ? 'var(--accent)' : 'transparent', color: sessionResolution === r ? 'white' : 'var(--text-2)', fontFamily: "'JetBrains Mono', monospace", transition: 'all 0.2s' }}>{r.toUpperCase()}</button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Aspect ratio */}
-              <div>
-                <span style={labelStyle}>Formato</span>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {[{ ar: AspectRatio.Portrait, label: 'Publicación' }, { ar: AspectRatio.Square, label: 'Cuadrado' }, { ar: AspectRatio.Landscape, label: 'Portada' }, { ar: AspectRatio.Wide, label: 'Banner' }, { ar: AspectRatio.Tall, label: 'Historia / Reel' }].map(({ ar, label }) => (
-                    <button key={ar} onClick={() => setSessionAspectRatio(ar)} style={{ padding: '5px 12px', borderRadius: 8, fontSize: '0.75rem', cursor: 'pointer', border: `1px solid ${sessionAspectRatio === ar ? 'var(--accent)' : 'var(--border)'}`, background: sessionAspectRatio === ar ? 'var(--accent)' : 'transparent', color: sessionAspectRatio === ar ? 'white' : 'var(--text-2)', transition: 'all 0.2s' }}>{label}</button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* CTA */}
-            <div style={{ marginTop: 'auto', padding: '0 24px 24px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <button onClick={handleSessionGenerate} disabled={generatingSession} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 16, borderRadius: 12, fontSize: '1rem', fontWeight: 500, cursor: generatingSession ? 'wait' : 'pointer', opacity: generatingSession ? 0.6 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-                {generatingSession ? <><div style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /> Revelando... {Math.round(sessionProgress)}%</> : <>📸 Disparar {photoCount} Fotos <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.85rem' }}>· {photoCount * CREDIT_COSTS['grok-edit']}cr</span></>}
-              </button>
-              <button onClick={() => setPhase('hero')} style={{ background: 'none', border: 'none', fontSize: '0.75rem', color: 'var(--text-3)', cursor: 'pointer', textAlign: 'center' }}>← Volver al hero</button>
-            </div>
+          {/* Scrollable body */}
+          <div className="flex-1 overflow-y-auto" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {phase === 'hero' ? heroControlsContent() : sessionControlsContent()}
           </div>
-        )}
+
+          {/* Footer CTA */}
+          <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)' }}>
+            {phase === 'hero' ? (
+              <button onClick={handleHeroGenerate} disabled={generatingHero} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 500, cursor: generatingHero ? 'wait' : 'pointer', opacity: generatingHero ? 0.6 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+                {generatingHero ? <><div style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /> Generando... {Math.round(heroProgress)}%</> : <>⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.8rem', opacity: 0.7 }}>· {CREDIT_COSTS['grok-edit']}cr</span></>}
+              </button>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <button onClick={handleSessionGenerate} disabled={generatingSession} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 500, cursor: generatingSession ? 'wait' : 'pointer', opacity: generatingSession ? 0.6 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+                  {generatingSession ? <><div style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /> Revelando... {Math.round(sessionProgress)}%</> : <>📸 Disparar {photoCount} Fotos <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.8rem', opacity: 0.7 }}>· {photoCount * CREDIT_COSTS['grok-edit']}cr</span></>}
+                </button>
+                <button onClick={() => setPhase('hero')} style={{ background: 'none', border: 'none', fontSize: '0.75rem', color: 'var(--text-3)', cursor: 'pointer', textAlign: 'center' }}>← Volver al hero</button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── CENTER: Canvas / Grid ── */}
+        <div className="flex-1 flex flex-col items-center justify-center relative overflow-y-auto" style={{ padding: 24, gap: 20 }}>
+          {phase === 'hero' ? canvasContent() : (
+            <>
+              {sessionGridContent()}
+              {/* Bottom bar */}
+              {gridCells.length > 0 && (
+                <div style={{ position: 'sticky', bottom: 20, width: '100%', maxWidth: 600, background: 'white', borderRadius: 16, padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 12px 48px rgba(0,0,0,0.08)', border: '1px solid var(--border)', zIndex: 20, marginTop: 16 }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-2)' }}>{selectedCells.size} de {gridCells.filter(Boolean).length} seleccionadas</span>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={handleSessionGenerate} style={{ background: 'white', border: '1px solid var(--border)', padding: '10px 16px', borderRadius: 10, cursor: 'pointer', fontSize: '0.8rem', color: 'var(--text-2)' }}>↻ Regenerar</button>
+                    <button onClick={handleSaveSelected} disabled={selectedCells.size === 0} style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '10px 20px', borderRadius: 10, cursor: selectedCells.size === 0 ? 'not-allowed' : 'pointer', fontSize: '0.85rem', fontWeight: 500, opacity: selectedCells.size === 0 ? 0.5 : 1 }}>💾 Guardar {selectedCells.size > 0 ? selectedCells.size : ''} en Galería</button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
-      {/* ── CENTER CANVAS ── */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 relative overflow-y-auto" style={{ minHeight: '100vh' }}>
-        {phase === 'hero' ? (
-          <>
-            <div style={{ width: canvasSize.w, height: canvasSize.h, maxWidth: '100%', borderRadius: 16, position: 'relative', overflow: 'hidden', boxShadow: heroImage ? '0 8px 32px rgba(0,0,0,0.03)' : 'none', background: heroImage ? undefined : 'var(--bg-0)', border: heroImage ? 'none' : '1px dashed #ccc', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', transition: 'all 0.5s ease' }}>
-              {!heroImage && !generatingHero && (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, color: 'var(--text-3)' }}>
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
-                  <span style={{ fontFamily: "'Instrument Serif', serif", fontSize: '1.2rem', color: '#999', fontStyle: 'italic' }}>Tu lienzo en blanco</span>
-                </div>
-              )}
-              {generatingHero && (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 32, height: 32, border: '3px solid rgba(0,0,0,0.1)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>Generando... {Math.round(heroProgress)}%</span>
-                </div>
-              )}
-              {heroImage && (
-                <>
-                  <img src={heroImage} onClick={() => setGalleryFullscreen(heroImage)} style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }} title="Clic para ampliar" />
-                  <div style={{ position: 'absolute', bottom: 24, background: 'white', borderRadius: 20, padding: 8, display: 'flex', gap: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.08)', border: '1px solid var(--border)' }}>
-                    <button onClick={() => onEditImage?.(heroImage)} style={{ padding: '8px 16px', borderRadius: 12, fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer', border: 'none', background: 'transparent', color: 'var(--text-1)' }}>✏️ Editar</button>
-                    <button onClick={handleSessionTransition} style={{ padding: '8px 16px', borderRadius: 12, fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer', border: 'none', background: 'var(--accent)', color: 'white' }}>📸 Sesión</button>
-                  </div>
-                </>
-              )}
+      {/* ═══════ MOBILE ═══════ */}
+
+      {/* Mobile Phase 1: Hero */}
+      {phase === 'hero' && (
+        <div className="flex lg:hidden flex-col" style={{ height: '100dvh', background: 'var(--bg-0)' }}>
+          {/* Header */}
+          <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'white', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+            <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Studio</span>
+            <div style={{ display: 'flex', gap: 4 }}>
+              <button onClick={() => setPhase('hero')} style={{ padding: '4px 10px', borderRadius: 16, fontSize: '0.7rem', cursor: 'pointer', border: `1px solid ${phase === 'hero' ? 'var(--accent)' : 'var(--border)'}`, background: phase === 'hero' ? 'var(--accent)' : 'white', color: phase === 'hero' ? 'white' : 'var(--text-3)' }}>Hero</button>
+              <button onClick={() => { if (heroImage) handleSessionTransition(); else toast.error('Genera un hero primero') }} style={{ padding: '4px 10px', borderRadius: 16, fontSize: '0.7rem', cursor: 'pointer', border: `1px solid var(--border)`, background: 'white', color: 'var(--text-3)' }}>Sesión</button>
             </div>
-            <div style={{ display: 'flex', gap: 12, marginTop: 24, fontSize: '0.75rem' }}>
-              {Object.values(AspectRatio).map(ar => (
-                <span key={ar} onClick={() => setSelectedAspectRatio(ar)} style={{ cursor: 'pointer', color: selectedAspectRatio === ar ? 'var(--text-1)' : 'var(--text-3)', fontWeight: selectedAspectRatio === ar ? 600 : 400 }}>
-                  {ar === AspectRatio.Portrait ? 'Publicación' : ar === AspectRatio.Square ? 'Cuadrado' : ar === AspectRatio.Landscape ? 'Portada' : ar === AspectRatio.Wide ? 'Banner' : 'Historia / Reel'}
-                </span>
-              ))}
-            </div>
-          </>
-        ) : (
-          <>
-            {gridCells.length === 0 && !generatingSession && (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, color: 'var(--text-3)' }}>
-                <span style={{ fontFamily: "'Instrument Serif', serif", fontSize: '1.2rem', fontStyle: 'italic' }}>Haz clic en "Disparar Sesión"</span>
+          </div>
+
+          {/* Canvas */}
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#EAEBEE', position: 'relative', overflow: 'hidden' }}>
+            {!heroImage && !generatingHero && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, color: 'var(--text-3)', textAlign: 'center', padding: 40 }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
+                <span style={{ fontFamily: "'Instrument Serif', serif", fontSize: '1.1rem', color: '#999', fontStyle: 'italic' }}>Tu lienzo en blanco</span>
               </div>
             )}
-            {generatingSession && gridCells.length === 0 && (
+            {generatingHero && (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
                 <div style={{ width: 32, height: 32, border: '3px solid rgba(0,0,0,0.1)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>Revelando... {Math.round(sessionProgress)}%</span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>Generando... {Math.round(heroProgress)}%</span>
               </div>
             )}
-            {(gridCells.length > 0 || (generatingSession && gridCells.length === 0)) && gridCells.length > 0 && (
-              <div style={{ width: '100%', maxWidth: 600, display: 'grid', gridTemplateColumns: `repeat(${(GRID_DIMS[photoCount] || GRID_DIMS[9]).cols}, 1fr)`, gap: 8, marginBottom: 80 }}>
+            {heroImage && (
+              <>
+                <img src={heroImage} onClick={() => setGalleryFullscreen(heroImage)} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                <div style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px)', borderRadius: 20, padding: 6, display: 'flex', gap: 6, border: '1px solid rgba(0,0,0,0.04)' }}>
+                  <button onClick={() => onEditImage?.(heroImage)} style={{ padding: '8px 16px', borderRadius: 14, fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer', border: 'none', background: 'transparent', color: 'var(--text-1)' }}>✏️ Editar</button>
+                  <button onClick={handleSessionTransition} style={{ padding: '8px 16px', borderRadius: 14, fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer', border: 'none', background: 'var(--accent)', color: 'white' }}>📸 Sesión</button>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Bottom sheet — scrollable controls + sticky CTA above tab bar */}
+          <div style={{ background: 'white', borderTopLeftRadius: 20, borderTopRightRadius: 20, boxShadow: '0 -8px 32px rgba(0,0,0,0.06)', overflow: 'hidden', maxHeight: mobileSheetExpanded ? '70vh' : 'none', transition: 'max-height 0.3s ease', flexShrink: 0, display: 'flex', flexDirection: 'column', marginBottom: 64 }}>
+            {/* Drag bar */}
+            <div onClick={() => setMobileSheetExpanded(p => !p)} style={{ width: 36, height: 4, background: '#D1D5DB', borderRadius: 2, margin: '8px auto', cursor: 'grab', flexShrink: 0 }} />
+            {/* Collapsed: show avatar + prompt preview + CTA without scroll */}
+            {!mobileSheetExpanded && (
+              <div style={{ padding: '4px 20px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {/* Mini protagonist + style summary */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {(selectedChar?.thumbnail || selectedChar?.modelImageUrls?.[0] || selectedChar?.referencePhotoUrls?.[0]) && <img src={selectedChar.thumbnail || selectedChar.modelImageUrls?.[0] || selectedChar.referencePhotoUrls?.[0]} style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent)' }} />}
+                  <span style={{ fontSize: '0.75rem', color: '#555', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {selectedChar?.name || 'Sin personaje'}{activeQuickStyle ? ` · ${QUICK_STYLE_PRESETS.find(p => p.id === activeQuickStyle)?.label || ''}` : ''}
+                  </span>
+                  <button onClick={() => setMobileSheetExpanded(true)} style={{ fontSize: '0.7rem', color: '#999', background: 'none', border: 'none', cursor: 'pointer' }}>Opciones ↑</button>
+                </div>
+                {/* CTA always visible */}
+                <button onClick={handleHeroGenerate} disabled={generatingHero} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 600, cursor: generatingHero ? 'wait' : 'pointer', opacity: generatingHero ? 0.6 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+                  {generatingHero ? <><div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /> Generando... {Math.round(heroProgress)}%</> : <>⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', opacity: 0.7 }}>· {CREDIT_COSTS['grok-edit']}cr</span></>}
+                </button>
+              </div>
+            )}
+            {/* Expanded: full controls + sticky CTA */}
+            {mobileSheetExpanded && (
+              <>
+                <div style={{ padding: '8px 20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {heroControlsContent(true)}
+                </div>
+                <div style={{ padding: '10px 20px', paddingBottom: 12, borderTop: '1px solid var(--border)', background: 'white', flexShrink: 0 }}>
+                  <button onClick={handleHeroGenerate} disabled={generatingHero} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 600, cursor: generatingHero ? 'wait' : 'pointer', opacity: generatingHero ? 0.6 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+                    {generatingHero ? <><div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /> Generando... {Math.round(heroProgress)}%</> : <>⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', opacity: 0.7 }}>· {CREDIT_COSTS['grok-edit']}cr</span></>}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Phase 2: Session */}
+      {phase === 'session' && (
+        <div className="flex lg:hidden flex-col" style={{ height: '100dvh', background: 'var(--bg-0)' }}>
+          {/* Header */}
+          <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'white', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+            <button onClick={() => setPhase('hero')} style={{ background: 'none', border: 'none', fontSize: '0.85rem', cursor: 'pointer', color: 'var(--text-2)' }}>← Hero</button>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Sesión de Fotos</span>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.7rem', color: 'var(--text-3)' }}>{selectedCells.size}/{gridCells.filter(Boolean).length} ✓</span>
+          </div>
+
+          {/* Grid */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            {gridCells.length === 0 ? (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 }}>
+                {/* Vibes */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, justifyContent: 'center' }}>
+                  {PHOTO_SESSION_PRESETS.slice(0, 6).map(p => (
+                    <button key={p.id} onClick={() => handleVibeToggle(p.id)} style={{ padding: '4px 10px', borderRadius: 16, fontSize: '0.7rem', cursor: 'pointer', border: `1px solid ${selectedVibes.has(p.id) ? 'var(--accent)' : 'var(--border)'}`, background: selectedVibes.has(p.id) ? 'var(--accent)' : 'white', color: selectedVibes.has(p.id) ? 'white' : 'var(--text-2)' }}>{p.icon} {p.label}</button>
+                  ))}
+                </div>
+                {/* Photo count stepper */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fotos</span>
+                  <button onClick={() => setPhotoCount(p => Math.max(4, p - 3) as any)} style={{ width: 32, height: 32, borderRadius: 8, background: 'white', border: '1px solid var(--border)', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--text-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                  <span style={{ fontSize: '1.2rem', fontWeight: 700, minWidth: 24, textAlign: 'center' }}>{photoCount}</span>
+                  <button onClick={() => setPhotoCount(p => Math.min(12, p + 3) as any)} style={{ width: 32, height: 32, borderRadius: 8, background: 'white', border: '1px solid var(--border)', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--text-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                </div>
+                {!generatingSession ? (
+                  <button onClick={handleSessionGenerate} style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '14px 32px', borderRadius: 28, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', boxShadow: '0 8px 32px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', gap: 8 }}>📸 Disparar {photoCount} Fotos <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', opacity: 0.7 }}>· {photoCount * CREDIT_COSTS['grok-edit']}cr</span></button>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 32, height: 32, border: '3px solid rgba(0,0,0,0.1)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>Revelando... {Math.round(sessionProgress)}%</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, padding: '0 8px 16px', width: '100%' }}>
                 {Array.from({ length: photoCount }).map((_, idx) => {
                   const vibeLabel = cellVibeMap[idx] || 'Photo'
                   const vibePreset = PHOTO_SESSION_PRESETS.find(p => p.label === vibeLabel)
@@ -850,38 +957,26 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
                 })}
               </div>
             )}
-            {gridCells.length > 0 && (
-              <div style={{ position: 'sticky', bottom: 24, width: 'calc(100% - 48px)', maxWidth: 600, background: 'white', borderRadius: 16, padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 12px 48px rgba(0,0,0,0.08)', border: '1px solid var(--border)', zIndex: 20 }}>
-                <span style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-2)' }}>{selectedCells.size} de {gridCells.length} seleccionadas</span>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={handleSessionGenerate} style={{ background: 'white', border: '1px solid #ccc', padding: 12, borderRadius: 12, cursor: 'pointer', fontSize: '0.85rem' }}>↻ Regenerar</button>
-                  <button onClick={handleSaveSelected} disabled={selectedCells.size === 0} style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: 12, fontSize: '0.9rem', fontWeight: 500, cursor: selectedCells.size === 0 ? 'not-allowed' : 'pointer', opacity: selectedCells.size === 0 ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    💾 Guardar {selectedCells.size > 0 ? selectedCells.size : ''} en Galería
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+          </div>
 
-      {/* ── LIGHTBOX ── */}
+          {/* Bottom bar */}
+          {gridCells.length > 0 && (
+            <div style={{ padding: '12px 16px', background: 'white', borderTop: '1px solid var(--border)', display: 'flex', gap: 8, flexShrink: 0 }}>
+              <button onClick={handleSessionGenerate} style={{ flex: 1, background: 'white', border: '1px solid var(--border)', padding: 12, borderRadius: 12, cursor: 'pointer', fontSize: '0.8rem', color: 'var(--text-2)' }}>↻ Regenerar</button>
+              <button onClick={handleSaveSelected} disabled={selectedCells.size === 0} style={{ flex: 2, background: 'var(--accent)', color: 'white', border: 'none', padding: 12, borderRadius: 12, cursor: selectedCells.size === 0 ? 'not-allowed' : 'pointer', fontSize: '0.85rem', fontWeight: 600, opacity: selectedCells.size === 0 ? 0.5 : 1 }}>💾 Guardar {selectedCells.size > 0 ? selectedCells.size : ''}</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══════ OVERLAYS (shared) ═══════ */}
+
+      {/* Lightbox */}
       {lightboxIdx !== null && gridCells[lightboxIdx] && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9998, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)' }} onClick={() => setLightboxIdx(null)}>
-          {/* Close */}
           <button onClick={() => setLightboxIdx(null)} style={{ position: 'absolute', top: 24, right: 24, width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
-
-          {/* Prev */}
-          {lightboxIdx > 0 && gridCells[lightboxIdx - 1] && (
-            <button onClick={e => { e.stopPropagation(); setLightboxIdx(lightboxIdx - 1) }} style={{ position: 'absolute', left: 24, top: '50%', transform: 'translateY(-50%)', width: 44, height: 44, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>◀</button>
-          )}
-
-          {/* Next */}
-          {lightboxIdx < gridCells.length - 1 && gridCells[lightboxIdx + 1] && (
-            <button onClick={e => { e.stopPropagation(); setLightboxIdx(lightboxIdx + 1) }} style={{ position: 'absolute', right: 24, top: '50%', transform: 'translateY(-50%)', width: 44, height: 44, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>▶</button>
-          )}
-
-          {/* Image */}
+          {lightboxIdx > 0 && gridCells[lightboxIdx - 1] && <button onClick={e => { e.stopPropagation(); setLightboxIdx(lightboxIdx - 1) }} style={{ position: 'absolute', left: 24, top: '50%', transform: 'translateY(-50%)', width: 44, height: 44, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>◀</button>}
+          {lightboxIdx < gridCells.length - 1 && gridCells[lightboxIdx + 1] && <button onClick={e => { e.stopPropagation(); setLightboxIdx(lightboxIdx + 1) }} style={{ position: 'absolute', right: 24, top: '50%', transform: 'translateY(-50%)', width: 44, height: 44, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>▶</button>}
           <div onClick={e => e.stopPropagation()} style={{ maxWidth: '85vw', maxHeight: '85vh', position: 'relative' }}>
             <img src={gridCells[lightboxIdx]} style={{ maxWidth: '85vw', maxHeight: '80vh', objectFit: 'contain', borderRadius: 12, boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }} />
             <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 16 }}>
@@ -894,40 +989,13 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
         </div>
       )}
 
-      {/* Fullscreen image preview (gallery or hero) */}
+      {/* Fullscreen preview */}
       {galleryFullscreen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setGalleryFullscreen(null)}>
           <button onClick={() => setGalleryFullscreen(null)} style={{ position: 'absolute', top: 16, right: 16, width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10 }}>✕</button>
           <img src={galleryFullscreen} style={{ maxWidth: '95vw', maxHeight: '95vh', objectFit: 'contain', borderRadius: 8 }} />
         </div>
       )}
-
-      {/* Gallery Modal */}
-      {showGalleryModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9998, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }} onClick={() => setShowGalleryModal(false)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: 16, width: '90vw', maxWidth: 600, maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Elegir de Galería</span>
-              <button onClick={() => setShowGalleryModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: 'var(--text-3)' }}>✕</button>
-            </div>
-            <div style={{ padding: 16, overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-              {galleryItems.filter(i => i.url && !i.tags?.includes('sheet')).map(item => (
-                <button key={item.id}
-                  onClick={() => {
-                    if (heroImage === item.url) { setGalleryFullscreen(item.url) } // second click = fullscreen
-                    else { handleGallerySelect(item.url) } // first click = select
-                  }}
-                  style={{ aspectRatio: '3/4', borderRadius: 10, overflow: 'hidden', border: heroImage === item.url ? '3px solid var(--accent)' : '1px solid var(--border)', cursor: 'pointer', padding: 0, background: '#F0F0F1' }}>
-                  <img src={item.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                </button>
-              ))}
-              {galleryItems.filter(i => i.url).length === 0 && (
-                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 40, color: 'var(--text-3)', fontSize: '0.85rem' }}>Sin fotos en galería</div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </>
   )
 }

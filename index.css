@@ -222,6 +222,7 @@ h1, h2, h3, h4, h5, h6 {
 @keyframes studioFlash { 0% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes navBounce { 0%,100% { transform: translateY(0) } 20% { transform: translateY(-5px) } 40% { transform: translateY(0) } 60% { transform: translateY(-2px) } 80% { transform: translateY(0) } }
 
 @keyframes shimmer {
   0% { background-position: -200% 0; }

@@ -105,6 +105,7 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
   }, [items])
 
   const filtered = (activeFilter === 'Todas' ? items : items.filter(i => getItemCategory(i) === activeFilter))
+    .filter(item => !item.tags?.includes('sheet'))
     .filter(item => !statusFilter || item.workflowStatus === statusFilter)
 
   const sorted = useMemo(() => {
@@ -130,11 +131,11 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
   }, [items])
 
   const stats = [
-    { l:'Total', v: filtered.length, c:'var(--joi-pink)' },
-    { l:'Cambios de Rostro', v: categoryCounts['Cambio de Rostro'] ?? 0, c:'var(--joi-coral)' },
-    { l:'Reiluminaciones', v: categoryCounts['Reiluminar'] ?? 0, c:'var(--joi-magenta)' },
-    { l:'Try-Ons', v: categoryCounts['Try-On'] ?? 0, c:'var(--joi-cyan-warm)' },
-    { l:'Sesiones', v: categoryCounts['Sesión'] ?? 0, c:'var(--joi-lavender)' },
+    { l:'Total', v: filtered.length, c:'#1A1A1A' },
+    { l:'Cambios de Rostro', v: categoryCounts['Cambio de Rostro'] ?? 0, c:'#6366F1' },
+    { l:'Reiluminaciones', v: categoryCounts['Reiluminar'] ?? 0, c:'#8B5CF6' },
+    { l:'Try-Ons', v: categoryCounts['Try-On'] ?? 0, c:'#0EA5E9' },
+    { l:'Sesiones', v: categoryCounts['Sesión'] ?? 0, c:'#10B981' },
   ].filter(s => s.l === 'Total' || s.v > 0)
 
   // --- Handlers ---
@@ -256,7 +257,7 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
   }, [lightboxIndex, sorted.length])
 
   return (
-    <div className="min-h-screen joi-mesh">
+    <div className="min-h-screen" style={{ background: '#F3F4F6' }}>
       {/* Selection mode banner */}
       {selectFor && (
         <div style={{ background: 'var(--accent)', color: 'white', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', fontWeight: 500 }}>
@@ -266,26 +267,25 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
       )}
       <div className="px-4 lg:px-8 pt-8 pb-2 flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h1 className="joi-heading joi-glow--subtle" style={{ fontSize: '1.75rem' }}>
-            <span className="joi-text-gradient">Galería</span>{' '}
-            <span style={{ color: 'var(--joi-text-1)' }}>de Creaciones</span>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#111', fontFamily: "'Instrument Serif', serif" }}>
+            Galería <span style={{ color: '#111', fontWeight: 400 }}>de Creaciones</span>
           </h1>
-          <p className="joi-label mt-1" style={{ color: 'var(--joi-lavender)' }}>Todas tus imágenes editadas con AI en un solo lugar</p>
+          <p className="mt-1" style={{ color: '#999', fontSize: '0.8rem' }}>Todas tus imágenes editadas con AI en un solo lugar</p>
         </div>
         <div className="flex items-center gap-2">
           {/* Gallery / Storyboard tab toggle */}
-          <div className="flex p-0.5 rounded-lg" style={{ background:'var(--joi-bg-2)', backdropFilter:'blur(8px)' }}>
+          <div className="flex p-0.5 rounded-lg" style={{ background:'#EAEAEA' }}>
             <button onClick={()=>setGalleryTab('gallery')}
               className="px-3 py-1 rounded-lg text-[11px] font-medium transition-all"
-              style={{ background: galleryTab==='gallery' ? 'var(--joi-bg-3)' : 'transparent', color: galleryTab==='gallery' ? 'var(--joi-text-1)' : 'var(--joi-text-3)' }}>
+              style={{ background: galleryTab==='gallery' ? '#fff' : 'transparent', color: galleryTab==='gallery' ? '#111' : '#999', boxShadow: galleryTab==='gallery' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>
               Galería
             </button>
             <button onClick={()=>setGalleryTab('storyboard')}
               className="px-3 py-1 rounded-lg text-[11px] font-medium transition-all flex items-center gap-1.5"
-              style={{ background: galleryTab==='storyboard' ? 'var(--joi-bg-3)' : 'transparent', color: galleryTab==='storyboard' ? 'var(--joi-violet)' : 'var(--joi-text-3)' }}>
+              style={{ background: galleryTab==='storyboard' ? '#fff' : 'transparent', color: galleryTab==='storyboard' ? '#6366F1' : '#999', boxShadow: galleryTab==='storyboard' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>
               Storyboard
               {storyboardIds.length > 0 && (
-                <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-md" style={{ background: 'rgba(129,140,248,.15)', color: 'var(--joi-violet)' }}>
+                <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-md" style={{ background: '#EEF2FF', color: '#6366F1' }}>
                   {storyboardIds.length}
                 </span>
               )}
@@ -296,9 +296,9 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
               onClick={() => { setBatchMode(prev => !prev); if (batchMode) setSelected([]) }}
               className="px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all"
               style={{
-                background: batchMode ? 'rgba(99,102,241,.12)' : 'rgba(255,255,255,.04)',
-                border: `1px solid ${batchMode ? 'rgba(99,102,241,.2)' : 'rgba(255,255,255,.04)'}`,
-                color: batchMode ? 'var(--joi-pink)' : 'var(--joi-text-2)',
+                background: batchMode ? '#EEF2FF' : '#fff',
+                border: `1px solid ${batchMode ? '#C7D2FE' : 'rgba(0,0,0,0.06)'}`,
+                color: batchMode ? '#6366F1' : '#555',
               }}>
               <span className="hidden sm:inline">{batchMode ? 'Salir de Lote' : 'Editar en Lote'}</span>
               <span className="sm:hidden">{batchMode ? '✕' : '⊞'}</span>
@@ -309,25 +309,25 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
               onClick={() => setSelected(selected.length === sorted.length ? [] : sorted.map(i => i.id))}
               className="px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all"
               style={{
-                background: 'rgba(255,255,255,.04)',
-                border: '1px solid rgba(255,255,255,.06)',
-                color: 'var(--joi-text-2)',
+                background: '#fff',
+                border: '1px solid rgba(0,0,0,0.06)',
+                color: '#555',
               }}>
               {selected.length === sorted.length ? 'Deseleccionar todo' : 'Seleccionar todo'}
             </button>
           )}
           {galleryTab === 'gallery' && selected.length > 0 && (
             <>
-              <span className="text-[11px] font-mono px-3 py-1.5 rounded-lg" style={{ background:'rgba(99,102,241,.08)', color:'var(--joi-pink)' }}>
+              <span className="text-[11px] font-mono px-3 py-1.5 rounded-lg" style={{ background:'#EEF2FF', color:'#6366F1' }}>
                 {selected.length} seleccionadas
               </span>
               <button
                 onClick={handleBulkDownload}
                 className="px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all flex items-center gap-1.5 hover:scale-[1.02]"
                 style={{
-                  background: 'rgba(129,140,248,.10)',
-                  border: '1px solid rgba(129,140,248,.18)',
-                  color: 'var(--joi-violet)',
+                  background: '#EEF2FF',
+                  border: '1px solid #C7D2FE',
+                  color: '#6366F1',
                 }}>
                 ↓ Descargar ({selected.length})
               </button>
@@ -345,18 +345,18 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
           )}
           {galleryTab === 'gallery' && (
             <>
-              <div className="flex p-0.5 rounded-lg" style={{ background:'var(--joi-bg-2)', backdropFilter:'blur(8px)' }}>
+              <div className="flex p-0.5 rounded-lg" style={{ background:'#EAEAEA' }}>
                 {(['grid','masonry'] as const).map(m=>(
                   <button key={m} onClick={()=>setViewMode(m)}
                     className="px-2.5 py-1 rounded-lg text-[11px] transition-all"
-                    style={{ background: viewMode===m ? 'var(--joi-bg-3)' : 'transparent', color: viewMode===m ? 'var(--joi-text-1)' : 'var(--joi-text-3)' }}>
+                    style={{ background: viewMode===m ? '#fff' : 'transparent', color: viewMode===m ? '#111' : '#999', boxShadow: viewMode===m ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>
                     {m==='grid' ? '\u229e' : '\u229f'}
                   </button>
                 ))}
               </div>
               <select value={sortBy} onChange={e=>setSortBy(e.target.value)}
                 className="px-3 py-1.5 rounded-xl text-[11px] outline-none"
-                style={{ background:'var(--joi-bg-2)', border:'1px solid rgba(255,255,255,.04)', color:'var(--joi-text-2)', backdropFilter:'blur(8px)' }}>
+                style={{ background:'#fff', border:'1px solid rgba(0,0,0,0.06)', color:'#555' }}>
                 {sortOpts.map(s=><option key={s} value={s}>{s}</option>)}
               </select>
             </>
@@ -374,15 +374,14 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
       {/* Gallery tab content */}
       {galleryTab === 'gallery' && <>
       {/* Filter chips */}
-      <div className="px-4 lg:px-8 py-3 flex gap-1.5 overflow-x-auto joi-scroll flex-nowrap">
+      <div className="px-4 lg:px-8 py-3 flex gap-1.5 overflow-x-auto flex-nowrap">
         {filters.map(f => (
           <button key={f} onClick={()=>setActiveFilter(f)}
             className="px-3.5 py-1.5 rounded-lg text-[11px] font-medium shrink-0 transition-all"
             style={{
-              background: activeFilter===f ? 'rgba(99,102,241,.08)' : 'var(--joi-bg-2)',
-              border: `1px solid ${activeFilter===f ? 'rgba(99,102,241,.2)' : 'rgba(255,255,255,.04)'}`,
-              color: activeFilter===f ? 'var(--joi-pink)' : 'var(--joi-text-2)',
-              backdropFilter: 'blur(8px)',
+              background: activeFilter===f ? '#1A1A1A' : '#fff',
+              border: `1px solid ${activeFilter===f ? '#1A1A1A' : 'rgba(0,0,0,0.06)'}`,
+              color: activeFilter===f ? '#fff' : '#555',
             }}>{f}</button>
         ))}
       </div>
@@ -399,9 +398,9 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
           <button key={String(s.id)} onClick={() => setStatusFilter(s.id as string | null)}
             className="px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all"
             style={{
-              background: statusFilter === s.id ? 'rgba(99,102,241,.1)' : 'rgba(255,255,255,.03)',
-              border: `1px solid ${statusFilter === s.id ? 'rgba(99,102,241,.2)' : 'rgba(255,255,255,.05)'}`,
-              color: statusFilter === s.id ? 'var(--joi-pink)' : 'var(--joi-text-3)',
+              background: statusFilter === s.id ? '#1A1A1A' : '#fff',
+              border: `1px solid ${statusFilter === s.id ? '#1A1A1A' : 'rgba(0,0,0,0.06)'}`,
+              color: statusFilter === s.id ? '#fff' : '#999',
             }}>
             {s.label}
           </button>
@@ -412,8 +411,8 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
       <div className="px-8 py-2 flex gap-4">
         {stats.map(s=>(
           <div key={s.l} className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full joi-breathe" style={{ background:s.c }} />
-            <span className="text-[10px]" style={{ color:'var(--joi-text-3)' }}>{s.l}:</span>
+            <div className="w-2 h-2 rounded-full" style={{ background:s.c }} />
+            <span className="text-[10px]" style={{ color:'#999' }}>{s.l}:</span>
             <span className="text-[11px] font-mono font-bold" style={{ color:s.c }}>{String(s.v)}</span>
           </div>
         ))}
@@ -422,17 +421,17 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
       {/* Empty state */}
       {items.length === 0 ? (
         <div className="px-8 pb-8 flex items-center justify-center" style={{ minHeight: '50vh' }}>
-          <div className="joi-glass px-10 py-12 text-center rounded-2xl" style={{ maxWidth: '460px', border: '1px solid rgba(255,255,255,.04)' }}>
+          <div className="px-10 py-12 text-center rounded-2xl" style={{ maxWidth: '460px', background: '#fff', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
             <div className="text-3xl mb-4">✦</div>
-            <h2 className="joi-heading text-lg mb-2">Tu galería está vacía</h2>
-            <p className="text-[12px] mb-6" style={{ color:'var(--joi-text-3)' }}>
+            <h2 className="text-lg mb-2 font-semibold" style={{ color: '#111' }}>Tu galería está vacía</h2>
+            <p className="text-[12px] mb-6" style={{ color:'#999' }}>
               ¡Empieza a crear! Dirige una toma o edita una imagen con herramientas AI.
             </p>
             <div className="flex gap-3 justify-center">
-              <button onClick={() => onNav?.('studio')} className="joi-btn-solid px-5 py-2.5 text-[12px]">
+              <button onClick={() => onNav?.('studio')} className="px-5 py-2.5 text-[12px] rounded-xl font-medium transition-all" style={{ background: '#1A1A1A', color: '#fff' }}>
                 ◎ Dirigir una Escena
               </button>
-              <button onClick={() => onNav?.('studio')} className="joi-btn-ghost px-5 py-2.5 text-[12px]">
+              <button onClick={() => onNav?.('studio')} className="px-5 py-2.5 text-[12px] rounded-xl font-medium transition-all" style={{ background: 'transparent', color: '#555', border: '1px solid rgba(0,0,0,0.12)' }}>
                 ✦ Abrir Editor AI
               </button>
             </div>
@@ -445,8 +444,8 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
             const charName = characters.find(c => c.id === img.characterId)?.name || 'Sin personaje'
             const category = getItemCategory(img)
             const dateStr = new Date(img.timestamp).toLocaleDateString('es', { day:'numeric', month:'short' })
-            const colorMap: Record<number, string> = { 0:'var(--joi-pink)', 1:'var(--joi-lavender)', 2:'var(--joi-coral)' }
-            const fallbackColor = colorMap[idx % 3] || 'var(--joi-pink)'
+            const colorMap: Record<number, string> = { 0:'#6366F1', 1:'#8B5CF6', 2:'#0EA5E9' }
+            const fallbackColor = colorMap[idx % 3] || '#6366F1'
 
             return (
               <div
@@ -458,20 +457,19 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                     return
                   }
                   if (batchMode) { toggleSelect(img.id) }
-                  else { setEditorSrc(img.url); setEditorItem(img) }
+                  else { setLightboxIndex(idx); setLbZoom(1); setLbPan({ x: 0, y: 0 }) }
                 }}
-                className={`group cursor-pointer rounded-xl overflow-hidden relative transition-all hover:scale-[1.02] joi-border-glow ${viewMode==='masonry' ? 'break-inside-avoid' : ''}`}
+                className={`group cursor-pointer rounded-xl overflow-hidden relative transition-all hover:scale-[1.02] ${viewMode==='masonry' ? 'break-inside-avoid' : ''}`}
                 style={{
-                  border: `1px solid ${selected.includes(img.id) ? 'rgba(99,102,241,.3)' : 'rgba(255,255,255,.04)'}`,
-                  boxShadow: selected.includes(img.id) ? '0 0 20px rgba(99,102,241,.12)' : 'none',
-                  background: 'var(--joi-bg-glass)',
-                  backdropFilter: 'blur(12px)',
+                  border: `1px solid ${selected.includes(img.id) ? '#6366F1' : 'rgba(0,0,0,0.06)'}`,
+                  boxShadow: selected.includes(img.id) ? '0 0 0 2px rgba(99,102,241,.2)' : '0 2px 8px rgba(0,0,0,0.04)',
+                  background: '#fff',
                 }}
               >
                 <div
                   className={viewMode==='grid' ? 'aspect-square' : ''}
                   style={{
-                    background: img.url ? undefined : `linear-gradient(${90 + idx * 15}deg, ${fallbackColor}18, var(--joi-bg-2))`,
+                    background: img.url ? undefined : `linear-gradient(${90 + idx * 15}deg, ${fallbackColor}18, #F3F4F6)`,
                     minHeight: viewMode==='masonry' ? `${140 + (idx%4)*40}px` : undefined,
                   }}
                 >
@@ -481,7 +479,7 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                     <div className="w-full h-full flex items-center justify-center p-4">
                       <div className="text-center">
                         <span className="text-2xl block mb-1 opacity-30">{charName[0]}</span>
-                        <span className="text-[9px] font-mono opacity-40" style={{ color:'var(--joi-text-1)' }}>{category}</span>
+                        <span className="text-[9px] font-mono opacity-40" style={{ color:'#555' }}>{category}</span>
                       </div>
                     </div>
                   )}
@@ -490,20 +488,20 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                 {/* Workflow status badge */}
                 {img.workflowStatus && (
                   <div className="absolute top-2 left-2 z-10">
-                    <span className="text-[9px] font-mono px-2 py-0.5 rounded-full backdrop-blur-sm" style={{
-                      background: img.workflowStatus === 'aprobado' ? 'rgba(80,216,160,.15)' :
-                                  img.workflowStatus === 'publicado' ? 'rgba(80,160,255,.15)' :
-                                  img.workflowStatus === 'editado' ? 'rgba(99,102,241,.12)' :
-                                  'rgba(255,255,255,.08)',
-                      color: img.workflowStatus === 'aprobado' ? '#50d8a0' :
-                             img.workflowStatus === 'publicado' ? '#50a0ff' :
-                             img.workflowStatus === 'editado' ? 'var(--joi-pink)' :
-                             'var(--joi-text-3)',
+                    <span className="text-[9px] font-mono px-2 py-0.5 rounded-full" style={{
+                      background: img.workflowStatus === 'aprobado' ? '#ECFDF5' :
+                                  img.workflowStatus === 'publicado' ? '#EFF6FF' :
+                                  img.workflowStatus === 'editado' ? '#EEF2FF' :
+                                  '#F9FAFB',
+                      color: img.workflowStatus === 'aprobado' ? '#059669' :
+                             img.workflowStatus === 'publicado' ? '#2563EB' :
+                             img.workflowStatus === 'editado' ? '#6366F1' :
+                             '#999',
                       border: `1px solid ${
-                        img.workflowStatus === 'aprobado' ? 'rgba(80,216,160,.2)' :
-                        img.workflowStatus === 'publicado' ? 'rgba(80,160,255,.2)' :
-                        img.workflowStatus === 'editado' ? 'rgba(99,102,241,.2)' :
-                        'rgba(255,255,255,.06)'
+                        img.workflowStatus === 'aprobado' ? '#A7F3D0' :
+                        img.workflowStatus === 'publicado' ? '#BFDBFE' :
+                        img.workflowStatus === 'editado' ? '#C7D2FE' :
+                        'rgba(0,0,0,0.06)'
                       }`,
                     }}>
                       {({ borrador: 'Borrador', editado: 'Editado', aprobado: '✓ Aprobado', publicado: '↑ Publicado' } as const)[img.workflowStatus]}
@@ -520,19 +518,19 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                 </div>
 
                 {/* Info bar */}
-                <div className="px-2 py-1.5" style={{ background: 'var(--joi-bg-2)' }}>
-                  <div className="text-[9px] font-medium truncate" style={{ color: 'var(--joi-text-2)' }}>
+                <div className="px-2 py-1.5" style={{ background: '#FAFAFA', borderTop: '1px solid rgba(0,0,0,0.04)' }}>
+                  <div className="text-[9px] font-medium truncate" style={{ color: '#555' }}>
                     {charName} · {category}
                   </div>
-                  <div className="text-[8px]" style={{ color: 'var(--joi-text-3)' }}>{dateStr}</div>
+                  <div className="text-[8px]" style={{ color: '#999' }}>{dateStr}</div>
                 </div>
 
                 {/* Select indicator / batch checkbox */}
                 {batchMode && (
                   <div className="absolute top-2 right-2 w-5 h-5 rounded-md flex items-center justify-center text-[10px] transition-all"
                     style={{
-                      background: selected.includes(img.id) ? 'var(--joi-pink)' : 'rgba(255,255,255,0.12)',
-                      border: selected.includes(img.id) ? 'none' : '1px solid rgba(255,255,255,0.15)',
+                      background: selected.includes(img.id) ? '#1A1A1A' : 'rgba(255,255,255,0.7)',
+                      border: selected.includes(img.id) ? 'none' : '1px solid rgba(0,0,0,0.15)',
                       color: '#fff',
                     }}>
                     {selected.includes(img.id) ? '\u2713' : ''}
@@ -540,7 +538,7 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                 )}
                 {!batchMode && selected.includes(img.id) && (
                   <div className="absolute top-2 right-2 w-5 h-5 rounded-lg flex items-center justify-center text-[10px] text-white"
-                    style={{ background:'var(--joi-pink)' }}>{'\u2713'}</div>
+                    style={{ background:'#1A1A1A' }}>{'\u2713'}</div>
                 )}
               </div>
             )
@@ -553,23 +551,21 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
         <div
           className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl"
           style={{
-            background: 'rgba(14,12,20,0.95)',
-            backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(99,102,241,0.2)',
-            boxShadow: '0 8px 40px rgba(0,0,0,0.5), 0 0 20px rgba(99,102,241,0.08)',
+            background: '#fff',
+            border: '1px solid rgba(0,0,0,0.08)',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.12)',
           }}
         >
           <span className="text-[11px] font-mono font-bold px-2 py-1 rounded-lg"
-            style={{ background: 'rgba(99,102,241,0.1)', color: '#6366F1' }}>
+            style={{ background: '#EEF2FF', color: '#6366F1' }}>
             {selected.length} seleccionadas
           </span>
           <button
             onClick={() => setShowBatchOutfit(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-bold transition-all hover:scale-[1.02]"
             style={{
-              background: 'linear-gradient(135deg, #6366F1, #818CF8)',
+              background: '#1A1A1A',
               color: '#fff',
-              boxShadow: '0 4px 16px rgba(99,102,241,0.25)',
             }}
           >
             {'\uD83D\uDC57'} Cambiar Ropa
@@ -578,9 +574,9 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
             onClick={() => { setSelected([]); setBatchMode(false) }}
             className="px-3 py-2 rounded-xl text-[11px] font-medium transition-all"
             style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.06)',
-              color: 'var(--joi-text-3)',
+              background: '#F3F4F6',
+              border: '1px solid rgba(0,0,0,0.06)',
+              color: '#555',
             }}
           >
             Cancelar
@@ -595,19 +591,19 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
       {/* Delete confirmation modal */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center"
-          style={{ background: 'rgba(8,7,12,0.8)', backdropFilter: 'blur(8px)' }}
+          style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}
           onClick={() => setDeleteConfirm(null)}>
-          <div className="joi-glass p-6 rounded-2xl max-w-xs text-center" onClick={e => e.stopPropagation()}
-            style={{ border: '1px solid rgba(255,60,60,.15)' }}>
+          <div className="p-6 rounded-2xl max-w-xs text-center" onClick={e => e.stopPropagation()}
+            style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
             <div className="text-2xl mb-3">🗑</div>
-            <h3 className="text-sm font-semibold mb-1" style={{ color: 'var(--joi-text-1)' }}>¿Eliminar esta creación?</h3>
-            <p className="text-[11px] mb-5" style={{ color: 'var(--joi-text-3)' }}>Esta acción no se puede deshacer.</p>
+            <h3 className="text-sm font-semibold mb-1" style={{ color: '#111' }}>¿Eliminar esta creación?</h3>
+            <p className="text-[11px] mb-5" style={{ color: '#999' }}>Esta acción no se puede deshacer.</p>
             <div className="flex gap-2">
               <button onClick={() => setDeleteConfirm(null)}
-                className="joi-btn-ghost flex-1 py-2 text-[11px]">Cancelar</button>
+                className="flex-1 py-2 rounded-xl text-[11px] font-medium transition-all" style={{ background: '#F3F4F6', color: '#555', border: '1px solid rgba(0,0,0,0.06)' }}>Cancelar</button>
               <button onClick={confirmDelete}
                 className="flex-1 py-2 rounded-xl text-[11px] font-medium transition-all"
-                style={{ background: 'rgba(255,60,60,.15)', color: '#e05050', border: '1px solid rgba(255,60,60,.2)' }}>
+                style={{ background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' }}>
                 Eliminar
               </button>
             </div>
@@ -618,19 +614,19 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
       {/* Bulk delete confirmation modal */}
       {bulkDeleteConfirm && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center"
-          style={{ background: 'rgba(8,7,12,0.8)', backdropFilter: 'blur(8px)' }}
+          style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}
           onClick={() => setBulkDeleteConfirm(false)}>
-          <div className="joi-glass p-6 rounded-2xl max-w-xs text-center" onClick={e => e.stopPropagation()}
-            style={{ border: '1px solid rgba(255,60,60,.15)' }}>
+          <div className="p-6 rounded-2xl max-w-xs text-center" onClick={e => e.stopPropagation()}
+            style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
             <div className="text-2xl mb-3">🗑</div>
-            <h3 className="text-sm font-semibold mb-1" style={{ color: 'var(--joi-text-1)' }}>¿Eliminar {selected.length} imágenes?</h3>
-            <p className="text-[11px] mb-5" style={{ color: 'var(--joi-text-3)' }}>Esta acción no se puede deshacer.</p>
+            <h3 className="text-sm font-semibold mb-1" style={{ color: '#111' }}>¿Eliminar {selected.length} imágenes?</h3>
+            <p className="text-[11px] mb-5" style={{ color: '#999' }}>Esta acción no se puede deshacer.</p>
             <div className="flex gap-2">
               <button onClick={() => setBulkDeleteConfirm(false)}
-                className="joi-btn-ghost flex-1 py-2 text-[11px]">Cancelar</button>
+                className="flex-1 py-2 rounded-xl text-[11px] font-medium transition-all" style={{ background: '#F3F4F6', color: '#555', border: '1px solid rgba(0,0,0,0.06)' }}>Cancelar</button>
               <button onClick={confirmBulkDelete}
                 className="flex-1 py-2 rounded-xl text-[11px] font-medium transition-all"
-                style={{ background: 'rgba(255,60,60,.15)', color: '#e05050', border: '1px solid rgba(255,60,60,.2)' }}>
+                style={{ background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' }}>
                 Eliminar todas
               </button>
             </div>
@@ -657,7 +653,7 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                   else { navigateToEditor(url); onNav?.('studio') }
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
-                style={{ background: 'var(--joi-bg-3)', border: '1px solid var(--joi-border)', color: 'var(--joi-text-1)' }}>
+                style={{ background: '#F3F4F6', border: '1px solid rgba(0,0,0,0.06)', color: '#111' }}>
                 ✦ Editor IA
               </button>
               <button
@@ -682,7 +678,7 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
               <button
                 onClick={(e) => { handleDownload(e, editorItem.url, editorItem.id) }}
                 className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] transition-all hover:scale-[1.02]"
-                style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', color: 'var(--joi-text-2)' }}>
+                style={{ background: '#F3F4F6', border: '1px solid rgba(0,0,0,0.06)', color: '#555' }}>
                 ↓ Descargar
               </button>
               <button
@@ -691,8 +687,8 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                 style={{ background: 'rgba(255,60,60,.06)', border: '1px solid rgba(255,60,60,.12)', color: '#f87171' }}>
                 ✕ Eliminar
               </button>
-              <div style={{ borderTop: '1px solid rgba(255,255,255,.04)', paddingTop: 8, marginTop: 4 }}>
-                <div className="text-[9px] font-bold uppercase tracking-wider mb-1.5" style={{ color: 'rgba(255,255,255,.2)' }}>Estado</div>
+              <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: 8, marginTop: 4 }}>
+                <div className="text-[9px] font-bold uppercase tracking-wider mb-1.5" style={{ color: '#999' }}>Estado</div>
                 <div className="flex flex-col gap-1">
                   {(['borrador', 'editado', 'aprobado', 'publicado'] as const).map(status => {
                     const labels: Record<string, string> = { borrador: '📝 Borrador', editado: '✏️ Editado', aprobado: '✓ Aprobado', publicado: '↑ Publicado' }
@@ -703,9 +699,9 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                         onClick={() => updateItem(editorItem.id, { workflowStatus: status })}
                         className="px-3 py-1.5 rounded-lg text-[10px] font-medium transition-all text-left"
                         style={{
-                          background: isActive ? 'rgba(99,102,241,.1)' : 'rgba(255,255,255,.02)',
-                          border: `1px solid ${isActive ? 'rgba(99,102,241,.2)' : 'rgba(255,255,255,.05)'}`,
-                          color: isActive ? 'var(--joi-pink)' : 'var(--joi-text-2)',
+                          background: isActive ? '#1A1A1A' : '#F3F4F6',
+                          border: `1px solid ${isActive ? '#1A1A1A' : 'rgba(0,0,0,0.06)'}`,
+                          color: isActive ? '#fff' : '#555',
                         }}
                       >
                         {labels[status]}
@@ -734,17 +730,17 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
         <div
           className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl"
           style={{
-            background: 'rgba(14,12,20,0.95)',
-            backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(129,140,248,0.25)',
+            background: '#fff',
+            border: '1px solid rgba(0,0,0,0.08)',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.12)',
           }}
         >
-          <img src={compareFirst.url} alt="" className="w-8 h-8 rounded-lg object-cover" style={{ border: '2px solid #818CF8' }} />
-          <span className="text-[11px] text-white font-medium">Selecciona una segunda imagen para comparar</span>
+          <img src={compareFirst.url} alt="" className="w-8 h-8 rounded-lg object-cover" style={{ border: '2px solid #6366F1' }} />
+          <span className="text-[11px] font-medium" style={{ color: '#111' }}>Selecciona una segunda imagen para comparar</span>
           <button
             onClick={() => setCompareFirst(null)}
             className="px-3 py-1 rounded-lg text-[10px] font-medium transition-all"
-            style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--joi-text-2)', border: '1px solid rgba(255,255,255,0.06)' }}
+            style={{ background: '#F3F4F6', color: '#555', border: '1px solid rgba(0,0,0,0.06)' }}
           >
             Cancelar
           </button>
@@ -774,18 +770,18 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
         <div
           className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-1 p-1 rounded-xl shadow-2xl"
           style={{
-            background: 'rgba(14,12,20,0.95)',
-            backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(129,140,248,0.2)',
+            background: '#fff',
+            border: '1px solid rgba(0,0,0,0.08)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
           }}
         >
           <button
             onClick={() => setCompareMode('ab')}
             className="px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all"
             style={{
-              background: compareMode === 'ab' ? 'rgba(129,140,248,0.15)' : 'transparent',
-              color: compareMode === 'ab' ? '#818CF8' : 'var(--joi-text-3)',
-              border: compareMode === 'ab' ? '1px solid rgba(129,140,248,0.2)' : '1px solid transparent',
+              background: compareMode === 'ab' ? '#1A1A1A' : 'transparent',
+              color: compareMode === 'ab' ? '#fff' : '#999',
+              border: compareMode === 'ab' ? '1px solid #1A1A1A' : '1px solid transparent',
             }}
           >
             A/B Lado a Lado
@@ -794,15 +790,86 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
             onClick={() => setCompareMode('slider')}
             className="px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all"
             style={{
-              background: compareMode === 'slider' ? 'rgba(129,140,248,0.15)' : 'transparent',
-              color: compareMode === 'slider' ? '#818CF8' : 'var(--joi-text-3)',
-              border: compareMode === 'slider' ? '1px solid rgba(129,140,248,0.2)' : '1px solid transparent',
+              background: compareMode === 'slider' ? '#1A1A1A' : 'transparent',
+              color: compareMode === 'slider' ? '#fff' : '#999',
+              border: compareMode === 'slider' ? '1px solid #1A1A1A' : '1px solid transparent',
             }}
           >
             Deslizador
           </button>
         </div>
       )}
+
+      {/* ═══ FULLSCREEN LIGHTBOX ═══ */}
+      {lightboxIndex !== null && sorted[lightboxIndex] && (() => {
+        const lbItem = sorted[lightboxIndex]
+        const lbCharName = characters.find(c => c.id === lbItem.characterId)?.name || ''
+        return (
+          <div className="fixed inset-0 z-[90] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(8px)' }}
+            onClick={(e) => { if (e.target === e.currentTarget) { setLightboxIndex(null); setLbZoom(1); setLbPan({ x: 0, y: 0 }) } }}>
+
+            {/* Close */}
+            <button onClick={() => { setLightboxIndex(null); setLbZoom(1); setLbPan({ x: 0, y: 0 }) }}
+              className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full flex items-center justify-center"
+              style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', fontSize: '1.1rem', cursor: 'pointer' }}>✕</button>
+
+            {/* Nav prev */}
+            {lightboxIndex > 0 && (
+              <button onClick={() => { setLightboxIndex(lightboxIndex - 1); setLbZoom(1); setLbPan({ x: 0, y: 0 }) }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', fontSize: '1.1rem', cursor: 'pointer' }}>◀</button>
+            )}
+
+            {/* Nav next */}
+            {lightboxIndex < sorted.length - 1 && (
+              <button onClick={() => { setLightboxIndex(lightboxIndex + 1); setLbZoom(1); setLbPan({ x: 0, y: 0 }) }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', fontSize: '1.1rem', cursor: 'pointer' }}>▶</button>
+            )}
+
+            {/* Image with pinch/scroll zoom */}
+            <div className="max-w-[95vw] max-h-[85vh] overflow-hidden relative cursor-grab active:cursor-grabbing"
+              onWheel={(e) => { e.preventDefault(); setLbZoom(z => Math.max(0.5, Math.min(5, z + (e.deltaY > 0 ? -0.2 : 0.2)))); if (lbZoom <= 1) setLbPan({ x: 0, y: 0 }) }}
+              onMouseDown={(e) => { if (lbZoom > 1) { setLbPanning(true); lbPanStart.current = { x: e.clientX, y: e.clientY, px: lbPan.x, py: lbPan.y } } }}
+              onMouseMove={(e) => { if (lbPanning) setLbPan({ x: lbPanStart.current.px + (e.clientX - lbPanStart.current.x), y: lbPanStart.current.py + (e.clientY - lbPanStart.current.y) }) }}
+              onMouseUp={() => setLbPanning(false)} onMouseLeave={() => setLbPanning(false)}
+              onTouchStart={(e) => { if (lbZoom > 1 && e.touches.length === 1) { setLbPanning(true); lbPanStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, px: lbPan.x, py: lbPan.y } } }}
+              onTouchMove={(e) => { if (lbPanning && e.touches.length === 1) setLbPan({ x: lbPanStart.current.px + (e.touches[0].clientX - lbPanStart.current.x), y: lbPanStart.current.py + (e.touches[0].clientY - lbPanStart.current.y) }) }}
+              onTouchEnd={() => setLbPanning(false)}
+              onDoubleClick={() => { if (lbZoom > 1) { setLbZoom(1); setLbPan({ x: 0, y: 0 }) } else { setLbZoom(2.5) } }}
+            >
+              <img src={lbItem.url} alt="" draggable={false}
+                className="select-none"
+                style={{ maxWidth: '95vw', maxHeight: '80vh', objectFit: 'contain', borderRadius: 8, transform: `scale(${lbZoom}) translate(${lbPan.x / lbZoom}px, ${lbPan.y / lbZoom}px)`, transition: lbPanning ? 'none' : 'transform 0.15s ease' }} />
+            </div>
+
+            {/* Bottom actions bar */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-2 rounded-2xl"
+              style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.08)' }}>
+
+              {/* Zoom controls */}
+              <button onClick={() => setLbZoom(z => Math.min(5, z + 0.5))} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', cursor: 'pointer', fontSize: '0.9rem' }}>+</button>
+              <span className="text-[10px] font-mono text-white/60 min-w-[36px] text-center">{Math.round(lbZoom * 100)}%</span>
+              <button onClick={() => { setLbZoom(z => Math.max(0.5, z - 0.5)); if (lbZoom <= 1.5) setLbPan({ x: 0, y: 0 }) }} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', cursor: 'pointer', fontSize: '0.9rem' }}>−</button>
+
+              <div className="w-px h-5 mx-1" style={{ background: 'rgba(255,255,255,0.15)' }} />
+
+              {/* Actions */}
+              <button onClick={() => { navigateToEditor(lbItem.url); onNav?.('editor'); setLightboxIndex(null) }}
+                className="px-3 py-1.5 rounded-lg text-[11px] font-medium" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', cursor: 'pointer' }}>✦ Editor</button>
+              <button onClick={(e) => handleDownload(e, lbItem.url, lbItem.id)}
+                className="px-3 py-1.5 rounded-lg text-[11px] font-medium" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', cursor: 'pointer' }}>↓</button>
+              <button onClick={(e) => { handleDelete(e, lbItem); setLightboxIndex(null) }}
+                className="px-3 py-1.5 rounded-lg text-[11px] font-medium" style={{ background: 'rgba(255,60,60,0.15)', color: '#f87171', border: 'none', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            {/* Info */}
+            <div className="absolute top-4 left-4 z-20">
+              <span className="text-[11px] text-white/50 font-mono">{lightboxIndex + 1}/{sorted.length}{lbCharName ? ` · ${lbCharName}` : ''}</span>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Batch Outfit Modal */}
       {showBatchOutfit && selected.length > 0 && (

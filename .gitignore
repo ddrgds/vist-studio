@@ -64,3 +64,4 @@ stitch-v2.html
 
 # Claude Code session data
 .claude/
+.gstack/

@@ -15,6 +15,8 @@ import { SOUL_STYLES, SOUL_STYLE_CATEGORIES, type SoulStyleCategory } from '../d
 import { useNavigationStore } from '../stores/navigationStore'
 import { usePipelineStore } from '../stores/pipelineStore'
 import { PipelineCTA } from '../components/PipelineCTA'
+import { ImageComparison } from '../components/ui/image-comparison-slider'
+// Dazz engine deferred to post-MVP — using AI prompts for now
 
 // Lazy load modals (they're heavy)
 const RelightModal = lazy(() => import('../components/RelightModal'))
@@ -22,13 +24,19 @@ const InpaintingModal = lazy(() => import('../components/InpaintingModal'))
 const SkinEnhancerModal = lazy(() => import('../components/SkinEnhancerModal'))
 const ImageEditor = lazy(() => import('../components/ImageEditor'))
 
-const tools = [
+// Primary tools — always visible in toolbar
+const PRIMARY_TOOLS = [
   { id:'freeai', label:'AI Edit', icon:'\u2728', desc:'Edita con cualquier instruccion en lenguaje natural' },
-  { id:'reimagine', label:'Reimaginar', icon:'\u2726', desc:'Crea una foto nueva con 100+ estilos' },
+  { id:'reimagine', label:'Reimaginar', icon:'\u2726', desc:'Crea una foto nueva con 100+ estilos', featured: true },
+  { id:'dazz', label:'Efectos', icon:'\uD83C\uDFAC', desc:'Camaras analogicas, filtros de pelicula y efectos' },
+  { id:'realskin', label:'Piel', icon:'\uD83E\uDDF4', desc:'Agrega poros naturales, textura e imperfecciones' },
+]
+
+// Secondary tools — shown in "Otros" expandable
+const SECONDARY_TOOLS = [
   { id:'relight', label:'Reiluminar', icon:'\uD83D\uDCA1', desc:'Cambia la iluminacion de cualquier foto' },
   { id:'faceswap', label:'Cambio de Rostro', icon:'\uD83C\uDFAD', desc:'Intercambia rostros entre imagenes' },
   { id:'tryon', label:'Try-On Virtual', icon:'\uD83D\uDC57', desc:'Prueba ropa y accesorios' },
-  { id:'realskin', label:'Piel Realista', icon:'\uD83E\uDDF4', desc:'Agrega poros naturales, textura e imperfecciones' },
   { id:'rotate360', label:'Angulos 360\u00b0', icon:'\uD83D\uDD04', desc:'Genera vistas desde todos los angulos' },
   { id:'composite', label:'Escena / Fondo', icon:'\uD83C\uDFAC', desc:'Cambia el fondo o coloca en otra escena' },
   { id:'enhance', label:'Mejorar', icon:'\u2728', desc:'Mejora la calidad y los detalles' },
@@ -37,6 +45,9 @@ const tools = [
   { id:'rembg', label:'Quitar Fondo', icon:'\u2702\uFE0F', desc:'Elimina el fondo al instante' },
   { id:'expand', label:'Expandir', icon:'\u2194\uFE0F', desc:'Expande la imagen mas alla de sus bordes' },
 ]
+
+// Combined for logic that needs all tools
+const tools = [...PRIMARY_TOOLS, ...SECONDARY_TOOLS]
 
 const relightPresets = [
   { n:'Golden Hour',  c:'#f0b860', prompt:'golden hour warm sunset lighting, warm 3200K, long soft shadows, golden rim highlights on hair and shoulders' },
@@ -93,6 +104,7 @@ const TOOL_TO_FEATURE: Record<string, string> = {
   'realskin': 'skin-enhancer',
   'inpaint': 'inpaint',
   'expand': 'expand',
+  'dazz': 'relight',
 }
 
 async function urlToFile(url: string, filename = 'character.png'): Promise<File> {
@@ -178,6 +190,10 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
   const [reimagineStyleIds, setReimagineStyleIds] = useState<Set<string>>(new Set())
   const [reimagineCategory, setReimagineCategory] = useState<SoulStyleCategory | 'all'>('all')
   const [reimagineSearch, setReimagineSearch] = useState('')
+  const [showAllStyles, setShowAllStyles] = useState(false)
+
+  // Efectos category filter
+  const [dazzCategory, setDazzCategory] = useState('all')
   const [reimagineCustom, setReimagineCustom] = useState('')
   const [sceneImage, setSceneImage] = useState<string | null>(null)
   const [sceneFile, setSceneFile] = useState<File | null>(null)
@@ -329,9 +345,11 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
     }
   }, [showEngineModal])
 
+
   // ── handleApply — identical logic ──────────────────────────────
   const handleApply = async () => {
     if (!inputImage) { toast.error('Sube una imagen primero'); return }
+
     if (['inpaint', 'enhance'].includes(activeTool)) { setActiveModal(activeTool); return }
     if (activeTool === 'faceswap' && !faceSwapFile) { toast.error('Sube una foto del rostro de origen primero'); return }
     if (activeTool === 'tryon' && !garmentFile) { toast.error('Sube una referencia de outfit primero'); return }
@@ -360,11 +378,11 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
     try {
       let resultUrls: string[] = []
 
-      if (activeTool === 'freeai') {
+      if (activeTool === 'freeai' || activeTool === 'dazz') {
         const charRefs = await getCharRefFiles()
         const instruction = freePrompt.trim()
         try {
-          const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio })
+          const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
@@ -416,7 +434,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           : `Change background/scene to: ${sceneDesc}. Keep person identical. Match lighting and color grading.`
         const charRefs = await getCharRefFiles()
         try {
-          const results = await editImageWithAI({ baseImage: inputFile, referenceImage: sceneFile ?? charRefs[0] ?? undefined, instruction: jsonSceneInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio })
+          const results = await editImageWithAI({ baseImage: inputFile, referenceImage: sceneFile ?? charRefs[0] ?? undefined, instruction: jsonSceneInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
@@ -435,7 +453,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         const charRefs = await getCharRefFiles()
         if (charRefs.length > 0) {
           try {
-            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0], instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio })
+            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0], instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
             if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
             resultUrls = results
           } catch {
@@ -493,7 +511,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         const tryonInstruction = `TRY-ON SPECIFICATION:\n${JSON.stringify(tryonSpec, null, 2)}`
         const tryonFlatInstruction = 'Replace ONLY the clothing. IMAGE 1 is the PERSON (keep everything). IMAGE 2 is the GARMENT ONLY (extract clothing, IGNORE the model wearing it). Same face, body, pose, background.'
         try {
-          const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: garmentFile, instruction: tryonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio })
+          const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: garmentFile, instruction: tryonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
@@ -526,7 +544,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         const flatInstruction = `Reimagine this person in a completely new photo with ${direction} aesthetic. New pose, lighting, outfit, environment. Preserve face and body identity ONLY. Outfit matches the aesthetic, NOT reference images. NO text, watermarks, brand names.`
         const charRefs = await getCharRefFiles()
         try {
-          const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction: jsonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio })
+          const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction: jsonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
@@ -623,62 +641,71 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           />
         </div>
         <div className="flex gap-1.5 flex-wrap">
-          {['Make cinematic','Add soft blur bg','Golden hour lighting','Change to b&w','Add film grain','Enhance details'].map(q => (
+          {['Hacerla cinematica','Fondo con blur suave','Iluminacion golden hour','Cambiar a blanco y negro','Agregar grano de pelicula','Mejorar detalles'].map(q => (
             <button key={q} onClick={() => setFreePrompt(q)} style={pill(freePrompt === q)}>{q}</button>
           ))}
         </div>
       </>}
 
-      {/* Reimagine */}
+      {/* Reimagine — optimized density */}
       {activeTool === 'reimagine' && <>
         <div>
           <input value={reimagineSearch} onChange={e => setReimagineSearch(e.target.value)}
-            placeholder="Buscar preset..."
+            placeholder="Buscar estilo..."
             className="w-full px-3 py-2 rounded-xl text-[12px] outline-none"
             style={{ background: '#F8F8F8', border: '1px solid rgba(0,0,0,0.06)', color: '#111' }} />
         </div>
+        {/* Categories — horizontal scroll carousel */}
         {!reimagineSearch.trim() && (
-          <div>
-            <div style={sectionLabel}>Categoria</div>
-            <div className="flex gap-1.5 flex-wrap">
-              <button onClick={() => setReimagineCategory('all')} style={pill(reimagineCategory === 'all')}>Todos</button>
+          <div className="relative">
+            <div className="flex gap-1.5 overflow-x-auto pb-1 min-w-0" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' }}>
+              <button onClick={() => setReimagineCategory('all')} className="shrink-0 text-[11px] px-3 py-1.5 rounded-full transition-all" style={{ background: reimagineCategory === 'all' ? '#1A1A1A' : 'transparent', color: reimagineCategory === 'all' ? '#FFF' : '#777', fontWeight: reimagineCategory === 'all' ? 600 : 400 }}>Todos</button>
               {(Object.entries(SOUL_STYLE_CATEGORIES) as [SoulStyleCategory, { label: string; icon: string }][]).map(([key, cat]) => (
-                <button key={key} onClick={() => setReimagineCategory(key)} style={pill(reimagineCategory === key)}>{cat.icon} {cat.label}</button>
+                <button key={key} onClick={() => setReimagineCategory(key)} className="shrink-0 text-[11px] px-3 py-1.5 rounded-full transition-all whitespace-nowrap" style={{ background: reimagineCategory === key ? '#1A1A1A' : 'transparent', color: reimagineCategory === key ? '#FFF' : '#777', fontWeight: reimagineCategory === key ? 600 : 400 }}>{cat.icon} {cat.label}</button>
               ))}
             </div>
           </div>
         )}
+        {/* Styles — filtered with show-more */}
         <div>
           {(() => {
             const q = reimagineSearch.trim().toLowerCase()
             const filtered = q
               ? SOUL_STYLES.filter(s => s.name.toLowerCase().includes(q) || s.category.includes(q))
-              : SOUL_STYLES.filter(s => reimagineCategory === 'all' || s.category === reimagineCategory)
+              : reimagineCategory === 'all'
+                ? SOUL_STYLES.filter(s => s.featured).concat(SOUL_STYLES.filter(s => !s.featured)).slice(0, showAllStyles ? 999 : 24)
+                : SOUL_STYLES.filter(s => s.category === reimagineCategory)
+            const totalCount = q ? filtered.length : reimagineCategory === 'all' ? SOUL_STYLES.length : SOUL_STYLES.filter(s => s.category === reimagineCategory).length
             return <>
-              <div style={sectionLabel}>{q ? `Resultados (${filtered.length})` : `Estilo (${filtered.length})`}</div>
-              <div className="grid grid-cols-2 gap-1.5 max-h-[240px] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+              <div className="flex items-center justify-between">
+                <span style={{ ...sectionLabel, marginBottom: 0 }}>{q ? `Resultados (${filtered.length})` : reimagineCategory === 'all' ? `Destacados` : `${totalCount} estilos`}</span>
+                {!q && reimagineCategory === 'all' && !showAllStyles && <button onClick={() => setShowAllStyles(true)} className="text-[10px] font-medium" style={{ color: 'var(--accent)' }}>Ver todos ({SOUL_STYLES.length})</button>}
+                {!q && reimagineCategory === 'all' && showAllStyles && <button onClick={() => setShowAllStyles(false)} className="text-[10px] font-medium" style={{ color: '#999' }}>Menos</button>}
+              </div>
+              <div className="grid grid-cols-2 gap-1 max-h-[200px] overflow-y-auto mt-1.5" style={{ scrollbarWidth: 'thin' }}>
                 {filtered.map(style => (
                   <button key={style.id} onClick={() => { setReimagineStyleIds(prev => { const n = new Set(prev); n.has(style.id) ? n.delete(style.id) : n.add(style.id); return n }); setReimagineCustom('') }}
-                    className="flex items-center gap-2 px-2.5 py-2 rounded-xl text-left transition-all"
-                    style={{ background: reimagineStyleIds.has(style.id) ? '#1A1A1A' : '#F8F8F8', border: `1px solid ${reimagineStyleIds.has(style.id) ? '#1A1A1A' : 'rgba(0,0,0,0.06)'}`, color: reimagineStyleIds.has(style.id) ? '#FFF' : '#555' }}>
-                    <span className="text-sm">{style.icon}</span>
-                    <span className="text-[11px] truncate">{style.name}</span>
-                    {style.featured && !reimagineStyleIds.has(style.id) && <span className="text-[8px] ml-auto" style={{ color: '#1A1A1A' }}>*</span>}
-                    {reimagineStyleIds.has(style.id) && <span className="text-[9px] ml-auto" style={{ color: '#FFF' }}>&#10003;</span>}
+                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition-all"
+                    style={{ background: reimagineStyleIds.has(style.id) ? '#1A1A1A' : 'white', border: `1px solid ${reimagineStyleIds.has(style.id) ? '#1A1A1A' : 'rgba(0,0,0,0.08)'}`, color: reimagineStyleIds.has(style.id) ? '#FFF' : '#333', boxShadow: reimagineStyleIds.has(style.id) ? 'none' : '0 1px 3px rgba(0,0,0,0.04)' }}>
+                    <span className="text-[12px]">{style.icon}</span>
+                    <span className="text-[10px] truncate font-medium">{style.name}</span>
+                    {reimagineStyleIds.has(style.id) && <span className="text-[9px] ml-auto">✓</span>}
                   </button>
                 ))}
               </div>
             </>
           })()}
         </div>
+        {/* Selected summary */}
         {reimagineStyleIds.size > 0 && (
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] font-mono" style={{ color: '#1A1A1A' }}>
+            <span className="text-[10px] font-mono font-medium" style={{ color: '#1A1A1A' }}>
               {SOUL_STYLES.filter(s => reimagineStyleIds.has(s.id)).map(s => s.name).join(' + ')}
             </span>
-            <button onClick={() => setReimagineStyleIds(new Set())} className="text-[10px] px-2 py-0.5 rounded-lg" style={{ color: '#999', background: '#F3F4F6' }}>Limpiar</button>
+            <button onClick={() => setReimagineStyleIds(new Set())} className="text-[10px] px-2 py-0.5 rounded-lg" style={{ color: '#999', background: '#F3F4F6' }}>✕</button>
           </div>
         )}
+        {/* Custom direction */}
         <div>
           <div style={sectionLabel}>O describe tu direccion</div>
           <textarea rows={2} value={reimagineCustom}
@@ -1073,6 +1100,57 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           </div>
         </div>
       </>}
+
+      {/* Dazz Cam — local film presets with Canvas compositing */}
+      {/* Efectos / Cámaras — AI-powered film presets via NB2 */}
+      {activeTool === 'dazz' && <>
+        {/* Category carousel */}
+        <div className="flex gap-1 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none', touchAction: 'pan-x' }}>
+          {[{ id: 'all', label: 'Todos' }, { id: 'film', label: '🎞️ Películas' }, { id: 'cam', label: '📷 Cámaras' }, { id: 'fx', label: '✨ Efectos' }].map(c => (
+            <button key={c.id} onClick={() => setDazzCategory(c.id)} className="shrink-0 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all" style={{ background: dazzCategory === c.id ? '#1A1A1A' : 'transparent', color: dazzCategory === c.id ? '#FFF' : '#777' }}>{c.label}</button>
+          ))}
+        </div>
+        {/* Preset grid */}
+        <div className="grid grid-cols-2 gap-1.5 max-h-[200px] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+          {(() => {
+            const FX_PRESETS = [
+              { id: 'portra', icon: '📷', label: 'Portra 400', cat: 'film', prompt: 'Apply Kodak Portra 400 film emulation: warm skin tones, slightly muted greens, gentle pastel color palette, fine organic grain texture, soft highlight roll-off, nostalgic analog feel' },
+              { id: 'superia', icon: '🌸', label: 'Fuji Superia', cat: 'film', prompt: 'Apply Fujifilm Superia 400 look: vivid saturated greens and blues, slightly cool shadows, punchy contrast, visible fine grain, Japanese film aesthetic' },
+              { id: 'cinestill', icon: '🌃', label: 'CineStill 800T', cat: 'film', prompt: 'Apply CineStill 800T tungsten film look: heavy orange halation around highlights, teal-orange color split, cinematic night photography feel, strong visible grain, red glow on bright areas' },
+              { id: 'kodachrome', icon: '🌅', label: 'Kodachrome', cat: 'film', prompt: 'Apply vintage Kodachrome film look: extremely saturated warm reds and yellows, deep rich shadows, high contrast, 1960s-70s photography aesthetic' },
+              { id: 'bw-trix', icon: '🖤', label: 'B/N Tri-X', cat: 'film', prompt: 'Convert to Kodak Tri-X 400 black and white film: high contrast, deep blacks, visible coarse grain, dramatic tonal range, classic street photography look' },
+              { id: 'ektar', icon: '🔴', label: 'Ektar 100', cat: 'film', prompt: 'Apply Kodak Ektar 100 film: extremely saturated vivid colors especially reds and blues, ultra-fine grain, very sharp, high contrast, landscape photography look' },
+              { id: 'disposable', icon: '🔦', label: 'Desechable', cat: 'cam', prompt: 'Apply disposable camera look: strong direct flash on subject, heavy vignette, oversaturated colors, random warm light leak on one edge, cheap lens softness on edges, party photography vibe, date stamp in corner' },
+              { id: 'polaroid', icon: '🖼️', label: 'Polaroid', cat: 'cam', prompt: 'Apply Polaroid instant film look: slightly faded washed colors, warm tint, soft vignette, overexposed highlights, add a white Polaroid border frame around the entire image' },
+              { id: 'lomo', icon: '🔮', label: 'Lomo LC-A', cat: 'cam', prompt: 'Apply Lomography LC-A camera look: extreme color saturation, heavy dark vignette in all corners, high contrast, slight color shift toward warm tones, tunnel vision effect, experimental analog feel' },
+              { id: 'halfframe', icon: '📐', label: 'Half Frame', cat: 'cam', prompt: 'Apply half-frame camera look: warm sepia-toned color grade, light leak bleeding from the left edge in warm orange, fine grain texture, slightly soft focus, intimate vintage diary photography feel' },
+              { id: 'bloom', icon: '✨', label: 'Bloom', cat: 'fx', prompt: 'Add a dreamy soft bloom/glow effect: soft diffused highlights that glow and bleed into surrounding areas, slight overexposure, ethereal atmosphere, like shooting through a pro-mist filter, maintain subject sharpness' },
+              { id: 'vhs', icon: '📼', label: 'VHS Retro', cat: 'fx', prompt: 'Apply VHS tape recording look: horizontal scan lines, slight RGB color separation, tracking distortion artifacts, slightly blurry, washed out desaturated colors, 1990s home video aesthetic' },
+              { id: 'infrared', icon: '🔴', label: 'Infrared', cat: 'fx', prompt: 'Apply infrared film photography look: vegetation and foliage turns bright white or pink, sky becomes very dark, surreal false-color palette, dreamlike otherworldly quality' },
+              { id: 'xpro', icon: '🧪', label: 'Cross Process', cat: 'fx', prompt: 'Apply cross-processed film look: extreme unnatural color shifts with heavy cyan and magenta tints, increased contrast, experimental colors, like developing slide film in negative chemicals' },
+              { id: 'golden', icon: '🌤️', label: 'Golden Hour', cat: 'fx', prompt: 'Apply golden hour warm sunlight effect: warm amber-gold directional light from the side, long soft shadows, warm skin tones, golden rim highlights on hair, sunset magic hour atmosphere' },
+              { id: 'noir', icon: '🕵️', label: 'Film Noir', cat: 'fx', prompt: 'Convert to dramatic film noir: extreme high contrast black and white, deep inky blacks, harsh single-source directional shadows, theatrical chiaroscuro lighting, 1940s detective movie aesthetic' },
+            ]
+            const filtered = dazzCategory === 'all' ? FX_PRESETS : FX_PRESETS.filter(p => p.cat === dazzCategory)
+            return filtered.map(preset => (
+              <button key={preset.id} onClick={() => setFreePrompt(preset.prompt)}
+                className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-all"
+                style={{ background: freePrompt === preset.prompt ? '#1A1A1A' : 'white', border: `1px solid ${freePrompt === preset.prompt ? '#1A1A1A' : 'rgba(0,0,0,0.08)'}`, color: freePrompt === preset.prompt ? '#FFF' : '#444', boxShadow: freePrompt === preset.prompt ? 'none' : '0 1px 3px rgba(0,0,0,0.04)' }}>
+                <span className="text-[13px]">{preset.icon}</span>
+                <span className="text-[10px] font-medium truncate">{preset.label}</span>
+              </button>
+            ))
+          })()}
+        </div>
+        {/* Custom prompt */}
+        <div>
+          <div style={sectionLabel}>O describe tu efecto</div>
+          <textarea rows={2} value={freePrompt} onChange={e => setFreePrompt(e.target.value)}
+            placeholder="Ej.: look de pelicula de Wes Anderson con paleta pastel..."
+            className="w-full px-3 py-2 rounded-xl text-[12px] outline-none resize-none"
+            style={{ background: '#F8F8F8', border: '1px solid rgba(0,0,0,0.06)', color: '#111' }} />
+        </div>
+      </>}
     </div>
   )
 
@@ -1114,13 +1192,6 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         <span className="text-[13px] font-semibold" style={{ color: '#111' }}>{currentTool.label}</span>
         <span className="text-[11px]" style={{ color: '#999' }}>{currentTool.desc}</span>
         <div className="flex-1" />
-        {inputImage && resultImage && (
-          <button onClick={() => setCompareMode(!compareMode)}
-            className="px-4 py-1.5 rounded-xl text-[11px] font-medium transition-all"
-            style={{ background: compareMode ? '#1A1A1A' : '#FFF', color: compareMode ? '#FFF' : '#555', border: '1px solid rgba(0,0,0,0.1)' }}>
-            Antes / Despues
-          </button>
-        )}
         {inputImage && <span className="text-[10px]" style={{ color: '#999' }}>Clic en imagen para ver en grande</span>}
       </div>
 
@@ -1129,33 +1200,58 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
 
         {/* ── LEFT: Vertical toolbar (desktop) ───────────────── */}
         <div className="hidden lg:flex flex-col items-center w-[72px] shrink-0 py-3 gap-1 overflow-y-auto" style={{ ...cardStyle, borderRadius: 0, borderRight: '1px solid rgba(0,0,0,0.06)', boxShadow: 'none' }}>
-          {tools.map(t => (
+          {/* Primary tools */}
+          {PRIMARY_TOOLS.map(t => (
             <button key={t.id} onClick={() => setActiveTool(t.id)}
-              className="w-[56px] h-[56px] rounded-2xl flex flex-col items-center justify-center transition-all shrink-0"
+              className="w-[56px] h-[56px] rounded-2xl flex flex-col items-center justify-center transition-all shrink-0 relative"
               style={{
-                background: activeTool === t.id ? '#1A1A1A' : 'transparent',
+                background: activeTool === t.id ? '#1A1A1A' : ('featured' in t && t.featured) ? 'rgba(0,0,0,0.03)' : 'transparent',
                 color: activeTool === t.id ? '#FFF' : '#555',
+                border: ('featured' in t && t.featured && activeTool !== t.id) ? '1px solid rgba(0,0,0,0.1)' : 'none',
               }}
               title={t.label}>
-              <span className="text-[16px] leading-none">{t.icon}</span>
+              <span className="text-[16px] leading-none" style={{ filter: activeTool === t.id ? 'none' : 'grayscale(1) opacity(0.6)' }}>{t.icon}</span>
               <span className="text-[8px] mt-1 font-medium leading-tight text-center" style={{ color: activeTool === t.id ? '#FFF' : '#999' }}>
                 {t.label.split(' ')[0]}
               </span>
             </button>
           ))}
           <div className="w-8 h-px my-1" style={{ background: 'rgba(0,0,0,0.06)' }} />
+          {/* Secondary tools — expandable */}
+          <button onClick={() => setShowAllTools(prev => !prev)}
+            className="w-[56px] h-[40px] rounded-xl flex flex-col items-center justify-center transition-all shrink-0"
+            style={{ background: showAllTools || SECONDARY_TOOLS.some(t => t.id === activeTool) ? 'rgba(0,0,0,0.05)' : 'transparent', color: '#777' }}
+            title="Más herramientas">
+            <span className="text-[14px]">⋯</span>
+            <span className="text-[7px] font-medium" style={{ color: '#999' }}>Otros</span>
+          </button>
+          {showAllTools && SECONDARY_TOOLS.map(t => (
+            <button key={t.id} onClick={() => setActiveTool(t.id)}
+              className="w-[56px] h-[52px] rounded-2xl flex flex-col items-center justify-center transition-all shrink-0"
+              style={{
+                background: activeTool === t.id ? '#1A1A1A' : 'transparent',
+                color: activeTool === t.id ? '#FFF' : '#555',
+              }}
+              title={t.label}>
+              <span className="text-[14px] leading-none" style={{ filter: activeTool === t.id ? 'none' : 'grayscale(1) opacity(0.6)' }}>{t.icon}</span>
+              <span className="text-[7px] mt-0.5 font-medium leading-tight text-center" style={{ color: activeTool === t.id ? '#FFF' : '#999' }}>
+                {t.label.split(' ')[0]}
+              </span>
+            </button>
+          ))}
+          <div className="w-8 h-px my-1" style={{ background: 'rgba(0,0,0,0.06)' }} />
           <button onClick={() => inputImage && setShowBasicEditor(true)}
-            className="w-[56px] h-[56px] rounded-2xl flex flex-col items-center justify-center transition-all shrink-0"
+            className="w-[56px] h-[52px] rounded-2xl flex flex-col items-center justify-center transition-all shrink-0"
             style={{ background: showBasicEditor ? '#1A1A1A' : 'transparent', opacity: inputImage ? 1 : 0.3, color: showBasicEditor ? '#FFF' : '#555' }}
             title="Editor Basico">
-            <span className="text-[16px] leading-none">{'\u270F\uFE0F'}</span>
-            <span className="text-[8px] mt-1 font-medium" style={{ color: showBasicEditor ? '#FFF' : '#999' }}>Basico</span>
+            <span className="text-[14px] leading-none">{'\u270F\uFE0F'}</span>
+            <span className="text-[7px] mt-0.5 font-medium" style={{ color: showBasicEditor ? '#FFF' : '#999' }}>Basico</span>
           </button>
         </div>
 
         {/* ── CENTER: Canvas area ─────────────────────────────── */}
         <div className="flex-1 flex flex-col min-h-0 min-w-0 relative">
-          <div ref={canvasContainerRef} className="flex-1 flex flex-col items-center justify-center p-3 lg:p-6 overflow-y-auto relative">
+          <div ref={canvasContainerRef} className="flex-1 flex flex-col items-center justify-start lg:justify-center pt-2 lg:pt-6 px-2 lg:px-6 pb-3 overflow-y-auto relative">
             {!inputImage ? (
               /* Empty state */
               <div className="max-w-[540px] w-full text-center px-4">
@@ -1165,102 +1261,161 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                 <p className="text-[15px] font-semibold mb-1" style={{ color: '#111' }}>Sube una imagen para empezar a editar</p>
                 <p className="text-[12px] mb-6" style={{ color: '#999' }}>O selecciona desde tu galeria o personajes</p>
 
-                <button onClick={() => fileInputRef.current?.click()}
-                  className="px-6 py-3 rounded-2xl text-[13px] font-semibold mb-6 transition-all hover:scale-[1.02]"
-                  style={{ background: '#1A1A1A', color: '#FFF' }}>
-                  Subir Imagen
-                </button>
+                <div className="flex gap-2 justify-center mb-6">
+                  <button onClick={() => fileInputRef.current?.click()}
+                    className="px-6 py-3 rounded-2xl text-[13px] font-semibold transition-all hover:scale-[1.02]"
+                    style={{ background: '#1A1A1A', color: '#FFF' }}>
+                    Subir Imagen
+                  </button>
+                  <button onClick={() => { useNavigationStore.getState().openGalleryForSelection('editor'); onNav?.('gallery') }}
+                    className="px-6 py-3 rounded-2xl text-[13px] font-semibold transition-all hover:scale-[1.02]"
+                    style={{ background: '#F8F8F8', color: '#555', border: '1px solid rgba(0,0,0,0.06)' }}>
+                    Galeria
+                  </button>
+                </div>
 
-                <div className="text-left mb-3" style={sectionLabel}>Lo que puedes hacer</div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {[
-                    { tool: 'relight', icon: '\uD83D\uDCA1', label: 'Reiluminar', desc: 'Cambia la iluminacion' },
-                    { tool: 'faceswap', icon: '\uD83C\uDFAD', label: 'Cambio de Rostro', desc: 'Intercambia rostros' },
-                    { tool: 'freeai', icon: '\u2728', label: 'AI Edit', desc: 'Edicion con lenguaje natural' },
-                  ].map(ex => (
-                    <button key={ex.tool} onClick={() => setActiveTool(ex.tool)}
-                      className="p-4 rounded-2xl text-left transition-all hover:scale-[1.02]"
-                      style={{ ...cardStyle }}>
-                      <span className="text-lg block mb-1.5">{ex.icon}</span>
-                      <div className="text-[12px] font-semibold mb-0.5" style={{ color: '#111' }}>{ex.label}</div>
-                      <div className="text-[10px]" style={{ color: '#999' }}>{ex.desc}</div>
+                {/* Character selector (visible on all screens) */}
+                {characters.length > 0 && (
+                  <div className="text-left mb-4">
+                    <div style={sectionLabel}>Personajes</div>
+                    <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'thin' }}>
+                      {characters.map(ch => (
+                        <button key={ch.id}
+                          onClick={() => setEditorCharFilter(editorCharFilter === ch.id ? null : ch.id)}
+                          className="flex flex-col items-center gap-1 shrink-0 transition-all"
+                          style={{ opacity: editorCharFilter && editorCharFilter !== ch.id ? 0.4 : 1 }}>
+                          <div className="w-12 h-12 rounded-full overflow-hidden" style={{ border: editorCharFilter === ch.id ? '2px solid #1A1A1A' : '2px solid transparent' }}>
+                            {ch.thumbnail ? <img src={ch.thumbnail} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full rounded-full flex items-center justify-center text-[14px] font-semibold" style={{ background: '#E5E7EB', color: '#555' }}>{ch.name?.[0] || '?'}</div>}
+                          </div>
+                          <span className="text-[9px]" style={{ color: editorCharFilter === ch.id ? '#1A1A1A' : '#999' }}>{ch.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                    {editorCharFilter && (
+                      <div className="grid grid-cols-4 gap-1 mt-2 max-h-[120px] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+                        {galleryItems.filter(i => i.characterId === editorCharFilter && i.url && !i.tags?.includes('sheet')).slice(0, 12).map(item => (
+                          <button key={item.id} onClick={async () => {
+                            setInputImage(item.url); setResultImage(null)
+                            if (editorCharFilter) pipelineSetCharacter(editorCharFilter)
+                            try { setInputFile(await urlToFile(item.url, 'gallery.png')) } catch { setInputFile(null) }
+                          }}
+                            className="aspect-square rounded-lg overflow-hidden transition-all hover:opacity-80"
+                            style={{ border: '1px solid rgba(0,0,0,0.06)' }}>
+                            <img src={item.url} className="w-full h-full object-cover" alt="" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex gap-2 flex-wrap justify-center">
+                  {PRIMARY_TOOLS.map(t => (
+                    <button key={t.id} onClick={() => setActiveTool(t.id)}
+                      className="px-3 py-2 rounded-xl text-[11px] font-medium transition-all hover:scale-[1.02]"
+                      style={{ background: ('featured' in t && t.featured) ? '#1A1A1A' : '#F8F8F8', border: '1px solid rgba(0,0,0,0.06)', color: ('featured' in t && t.featured) ? '#FFF' : '#555' }}>
+                      <span className="mr-1">{t.icon}</span>{t.label}
                     </button>
                   ))}
+                  <button onClick={() => setShowAllTools(p => !p)}
+                    className="px-3 py-2 rounded-xl text-[11px] font-medium transition-all hover:scale-[1.02]"
+                    style={{ background: showAllTools ? '#1A1A1A' : '#F8F8F8', border: '1px solid rgba(0,0,0,0.06)', color: showAllTools ? '#FFF' : '#555' }}>
+                    ⋯ Otros
+                  </button>
                 </div>
+                {showAllTools && (
+                  <div className="flex gap-2 flex-wrap justify-center mt-2">
+                    {SECONDARY_TOOLS.map(t => (
+                      <button key={t.id} onClick={() => setActiveTool(t.id)}
+                        className="px-3 py-2 rounded-xl text-[11px] font-medium transition-all hover:scale-[1.02]"
+                        style={{ background: '#F8F8F8', border: '1px solid rgba(0,0,0,0.06)', color: '#555' }}>
+                        <span className="mr-1">{t.icon}</span>{t.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               /* Image canvas */
-              compareMode && resultImage ? (
-                /* Side-by-side compare */
-                <div className="flex gap-1 rounded-2xl overflow-hidden" style={{ ...cardStyle }}>
-                  <div className="relative cursor-pointer" onClick={() => setEditorLightbox(inputImage)}>
-                    <div className="absolute top-2 left-2 px-2.5 py-1 rounded-xl text-[10px] font-mono z-10" style={{ background: 'rgba(0,0,0,.7)', color: 'white' }}>ANTES</div>
-                    <img src={inputImage} className="max-h-[35vh] lg:max-h-[65vh] max-w-[45vw] object-contain select-none" draggable={false} alt="Before" />
-                  </div>
-                  <div className="w-px shrink-0" style={{ background: '#1A1A1A' }} />
-                  <div className="relative cursor-pointer" onClick={() => setEditorLightbox(resultImage)}>
-                    <div className="absolute top-2 left-2 px-2.5 py-1 rounded-xl text-[10px] font-mono z-10" style={{ background: '#1A1A1A', color: 'white' }}>DESPUES</div>
-                    <img src={resultImage} className="max-h-[35vh] lg:max-h-[65vh] max-w-[45vw] object-contain select-none" draggable={false} alt="After" />
-                  </div>
-                </div>
-              ) : (
-                /* Normal before/after */
-                <div className="flex flex-col lg:flex-row items-center gap-3 lg:gap-6">
-                  <div className="text-center">
-                    <div className="text-[10px] font-semibold mb-2" style={{ color: '#999', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Original</div>
-                    <div className="w-[min(280px,_85vw)] lg:w-[min(400px,_35vw)] h-[min(300px,_35vh)] lg:h-[min(500px,_60vh)] rounded-2xl flex items-center justify-center overflow-hidden cursor-pointer"
-                      onClick={() => setEditorLightbox(inputImage)}
-                      style={{ ...cardStyle }}>
-                      <img src={inputImage} className="w-full h-full object-contain rounded-2xl select-none p-1" draggable={false} alt="Original" />
-                    </div>
-                  </div>
+              <div className="relative flex flex-col items-center gap-3 w-full">
+                {/* Clear image button */}
+                <button onClick={() => { setInputImage(null); setInputFile(null); setResultImage(null) }}
+                  className="absolute top-1 right-1 lg:top-0 lg:right-4 z-10 w-7 h-7 rounded-full flex items-center justify-center transition-all hover:scale-110"
+                  style={{ background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', fontSize: '0.75rem', cursor: 'pointer' }}>✕</button>
 
-                  <div className="text-2xl hidden lg:block" style={{ color: '#CCC' }}>{'\u2192'}</div>
-                  <div className="text-sm lg:hidden" style={{ color: '#CCC' }}>{'\u2190 Desliza para comparar \u2192'}</div>
-
-                  <div className="text-center">
-                    <div className="text-[10px] font-semibold mb-2" style={{ color: '#1A1A1A', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Resultado AI</div>
-                    <div className="w-[min(280px,_85vw)] lg:w-[min(400px,_35vw)] h-[min(300px,_35vh)] lg:h-[min(500px,_60vh)] rounded-2xl flex items-center justify-center overflow-hidden cursor-pointer"
-                      onClick={() => resultImage && setEditorLightbox(resultImage)}
-                      style={{ ...cardStyle }}>
-                      {resultImage ? (
-                        <img src={resultImage} className="w-full h-full object-contain rounded-2xl select-none p-1" draggable={false} alt="Result" />
-                      ) : (
-                        <div className="text-center">
-                          <span className="text-2xl block mb-2" style={{ color: '#CCC' }}>{'\u2726'}</span>
-                          <span className="text-[12px]" style={{ color: '#999' }}>El resultado aparecera aqui</span>
-                        </div>
-                      )}
+                {resultImage ? (
+                  /* Result available — comparison slider */
+                  <>
+                    <div className="w-full lg:max-w-[min(520px,_42vw)] rounded-xl lg:rounded-2xl overflow-hidden"
+                      style={{ ...cardStyle, height: 'min(55vh, 520px)', minHeight: 250 }}>
+                      <ImageComparison
+                        leftImage={inputImage}
+                        rightImage={resultImage}
+                        altLeft="Original"
+                        altRight="Resultado"
+                        className="w-full h-full rounded-2xl"
+                      />
                     </div>
-                    {resultImage && (
-                      <button onClick={async () => {
-                        setInputImage(resultImage); setResultImage(null)
-                        try { setInputFile(await urlToFile(resultImage!, 'result.png')) } catch { setInputFile(null) }
-                        toast.success('Resultado cargado como nueva base')
-                      }}
-                        className="mt-3 px-5 py-2.5 rounded-2xl text-[12px] font-semibold transition-all hover:scale-[1.02]"
-                        style={{ background: '#1A1A1A', color: '#FFF' }}>
-                        Seguir editando este resultado
-                      </button>
-                    )}
+                    <button onClick={async () => {
+                      setInputImage(resultImage); setResultImage(null); setCompareMode(false)
+                      try { setInputFile(await urlToFile(resultImage!, 'result.png')) } catch { setInputFile(null) }
+                      toast.success('Resultado cargado como nueva base')
+                    }}
+                      className="px-5 py-2.5 rounded-2xl text-[12px] font-semibold transition-all hover:scale-[1.02]"
+                      style={{ background: '#1A1A1A', color: '#FFF' }}>
+                      Seguir editando este resultado
+                    </button>
+                  </>
+                ) : (
+                  /* No result yet — show only input image large */
+                  <div className="w-full lg:max-w-[min(520px,_42vw)] rounded-xl lg:rounded-2xl overflow-hidden cursor-pointer relative"
+                    onClick={() => setEditorLightbox(inputImage)}
+                    style={{ ...cardStyle }}>
+                    <img src={inputImage} className="w-full object-contain select-none" draggable={false} alt="Input" />
                   </div>
-                </div>
-              )
+                )}
+              </div>
             )}
           </div>
 
           {/* ── FLOATING TOOLBAR — mobile only ─────────────────── */}
           {inputImage && (
-            <div className="flex lg:hidden absolute bottom-[60px] left-1/2 -translate-x-1/2 z-20">
-              <div className="flex items-center gap-1 px-2 py-1.5 rounded-2xl overflow-x-auto max-w-[90vw]"
-                style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(16px)', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 8px 32px rgba(0,0,0,0.08)' }}>
-                {tools.map(t => (
-                  <button key={t.id} onClick={() => { setActiveTool(t.id); setSheetExpanded(true) }}
-                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all"
-                    style={{ background: activeTool === t.id ? '#1A1A1A' : 'transparent', color: activeTool === t.id ? '#FFF' : '#555' }}>
-                    <span className="text-[14px]">{t.icon}</span>
+            <div className="flex lg:hidden absolute left-1/2 -translate-x-1/2 z-20 flex-col items-center gap-1.5" style={{ bottom: 132 }}>
+              {/* Secondary tools popup */}
+              {showAllTools && (
+                <div className="flex items-center gap-0.5 px-1.5 py-1 rounded-2xl overflow-x-auto max-w-[90vw]"
+                  style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.1)', boxShadow: '0 4px 24px rgba(0,0,0,0.12)', scrollbarWidth: 'none', touchAction: 'pan-x' }}>
+                  {SECONDARY_TOOLS.map(t => (
+                    <button key={t.id} onClick={() => { setActiveTool(t.id); setShowAllTools(false) }}
+                      className="w-[52px] py-1.5 rounded-xl flex flex-col items-center justify-center shrink-0 transition-all gap-0.5"
+                      style={{ background: activeTool === t.id ? '#1A1A1A' : 'transparent', color: activeTool === t.id ? '#FFF' : '#333' }}>
+                      <span className="text-[12px] leading-none" style={{ filter: activeTool === t.id ? 'none' : 'grayscale(1) opacity(0.7)' }}>{t.icon}</span>
+                      <span className="text-[6px] leading-tight font-semibold" style={{ color: activeTool === t.id ? '#FFF' : '#666' }}>{t.label.split(' ')[0]}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {/* Primary toolbar */}
+              <div className="flex items-center gap-0.5 px-1.5 py-1 rounded-2xl"
+                style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.1)', boxShadow: '0 4px 24px rgba(0,0,0,0.12)' }}>
+                {PRIMARY_TOOLS.map(t => (
+                  <button key={t.id} onClick={() => setActiveTool(t.id)}
+                    className="w-[56px] py-1.5 rounded-xl flex flex-col items-center justify-center shrink-0 transition-all gap-0.5"
+                    style={{
+                      background: activeTool === t.id ? '#1A1A1A' : 'transparent',
+                      color: activeTool === t.id ? '#FFF' : '#333',
+                      border: ('featured' in t && t.featured && activeTool !== t.id) ? '1px solid rgba(0,0,0,0.12)' : '1px solid transparent',
+                    }}>
+                    <span className="text-[14px] leading-none" style={{ filter: activeTool === t.id ? 'none' : 'grayscale(1) opacity(0.7)' }}>{t.icon}</span>
+                    <span className="text-[7px] leading-tight font-semibold" style={{ color: activeTool === t.id ? '#FFF' : '#666' }}>{t.label.split(' ')[0]}</span>
                   </button>
                 ))}
+                <button onClick={() => setShowAllTools(p => !p)}
+                  className="w-[48px] py-1.5 rounded-xl flex flex-col items-center justify-center shrink-0 transition-all gap-0.5"
+                  style={{ background: showAllTools || SECONDARY_TOOLS.some(t => t.id === activeTool) ? 'rgba(0,0,0,0.06)' : 'transparent', color: '#555' }}>
+                  <span className="text-[13px] leading-none">⋯</span>
+                  <span className="text-[7px] leading-tight font-semibold" style={{ color: '#888' }}>Otros</span>
+                </button>
               </div>
             </div>
           )}
@@ -1278,11 +1433,6 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                   <img src={url} className="w-full h-full object-cover" alt="" />
                 </div>
               ))}
-              {resultImage && onNav && (
-                <div className="ml-auto shrink-0 w-56">
-                  <PipelineCTA label="Iniciar Sesion de Fotos" targetPage="studio" onNav={onNav} icon="\uD83D\uDCF8" />
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -1298,7 +1448,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                 style={{ background: '#1A1A1A', color: '#FFF' }}>
                 {'\u2191'} Subir
               </button>
-              <button onClick={() => { /* scroll to gallery section below */ }}
+              <button onClick={() => { useNavigationStore.getState().openGalleryForSelection('editor'); onNav?.('gallery') }}
                 className="flex-1 py-2.5 rounded-xl text-[12px] font-medium transition-all"
                 style={{ background: '#F8F8F8', color: '#555', border: '1px solid rgba(0,0,0,0.06)' }}>
                 Galeria
@@ -1334,7 +1484,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
               </div>
               {editorCharFilter && (
                 <div className="grid grid-cols-4 gap-1 mt-2 max-h-[100px] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
-                  {galleryItems.filter(i => i.characterId === editorCharFilter && i.url).slice(0, 12).map(item => (
+                  {galleryItems.filter(i => i.characterId === editorCharFilter && i.url && !i.tags?.includes('sheet')).slice(0, 12).map(item => (
                     <button key={item.id} onClick={async () => {
                       setInputImage(item.url); setResultImage(null)
                       if (editorCharFilter) pipelineSetCharacter(editorCharFilter)
@@ -1377,10 +1527,11 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
       </div>
 
       {/* ── MOBILE BOTTOM SHEET ──────────────────────────────── */}
-      <div className="flex lg:hidden flex-col fixed bottom-0 left-0 right-0 z-30 transition-all duration-300"
+      <div className="flex lg:hidden flex-col fixed left-0 right-0 z-[60] transition-all duration-300"
         ref={sheetRef}
         style={{
-          maxHeight: sheetExpanded ? '70vh' : '64px',
+          bottom: 64,
+          maxHeight: sheetExpanded ? '65vh' : '64px',
           background: 'rgba(255,255,255,0.97)',
           backdropFilter: 'blur(20px)',
           borderTop: '1px solid rgba(0,0,0,0.08)',
@@ -1423,32 +1574,26 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           </div>
         )}
 
-        {/* Expanded state */}
+        {/* Expanded state — scrollable controls + sticky CTA */}
         {sheetExpanded && (
-          <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-4" style={{ scrollbarWidth: 'thin' }}>
-            {renderToolControls()}
-
-            {/* Output settings */}
-            <div className="space-y-2">
-              <div style={sectionLabel}>Salida</div>
-              <div className="flex gap-1.5">
+          <>
+            <div className="flex-1 overflow-y-auto px-4 pb-2 space-y-4" style={{ scrollbarWidth: 'thin' }}>
+              {renderToolControls()}
+            </div>
+            {/* Sticky CTA — always visible */}
+            <div className="px-4 pb-3 pt-2 shrink-0" style={{ borderTop: '1px solid rgba(0,0,0,0.06)', background: 'white' }}>
+              <div className="flex gap-1.5 mb-2">
                 {(['1k', '2k', '4k'] as const).map(r => (
                   <button key={r} onClick={() => setEditorResolution(r)} style={pill(editorResolution === r)} className="flex-1 text-center">{r.toUpperCase()}</button>
                 ))}
               </div>
-              <div className="flex gap-1 flex-wrap">
-                {[{ ar: AspectRatio.Portrait, label: 'Publicacion' }, { ar: AspectRatio.Square, label: 'Cuadrado' }, { ar: AspectRatio.Landscape, label: 'Portada' }, { ar: AspectRatio.Wide, label: 'Banner' }, { ar: AspectRatio.Tall, label: 'Historia' }].map(({ ar, label }) => (
-                  <button key={ar} onClick={() => setEditorAspectRatio(ar)} style={pill(editorAspectRatio === ar)}>{label}</button>
-                ))}
-              </div>
+              <button onClick={() => { handleApply(); setSheetExpanded(false) }} disabled={processing || !inputImage}
+                className="w-full py-3 rounded-2xl text-[13px] font-semibold transition-all"
+                style={{ background: (!inputImage || processing) ? '#CCC' : '#1A1A1A', color: '#FFF', opacity: (!inputImage || processing) ? 0.6 : 1 }}>
+                {processing ? `Procesando... ${Math.round(progress)}%` : `${currentTool.icon} Aplicar ${currentTool.label} (${displayCost}cr)`}
+              </button>
             </div>
-
-            <button onClick={() => { handleApply(); setSheetExpanded(false) }} disabled={processing || !inputImage}
-              className="w-full py-3 rounded-2xl text-[13px] font-semibold transition-all"
-              style={{ background: (!inputImage || processing) ? '#CCC' : '#1A1A1A', color: '#FFF', opacity: (!inputImage || processing) ? 0.6 : 1 }}>
-              {processing ? `Procesando... ${Math.round(progress)}%` : `${currentTool.icon} Aplicar ${currentTool.label} (${displayCost}cr)`}
-            </button>
-          </div>
+          </>
         )}
       </div>
 
