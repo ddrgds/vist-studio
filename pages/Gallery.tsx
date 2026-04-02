@@ -692,7 +692,8 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                 <div className="flex flex-col gap-1">
                   {(['borrador', 'editado', 'aprobado', 'publicado'] as const).map(status => {
                     const labels: Record<string, string> = { borrador: '📝 Borrador', editado: '✏️ Editado', aprobado: '✓ Aprobado', publicado: '↑ Publicado' }
-                    const isActive = editorItem.workflowStatus === status
+                    const liveItem = items.find(i => i.id === editorItem.id)
+                    const isActive = (liveItem?.workflowStatus ?? editorItem.workflowStatus) === status
                     return (
                       <button
                         key={status}
