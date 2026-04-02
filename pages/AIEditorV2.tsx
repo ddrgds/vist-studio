@@ -201,7 +201,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
   const [sceneSource, setSceneSource] = useState<'upload'|'gallery'|'prompt'>('upload')
   const sceneInputRef = useRef<HTMLInputElement>(null)
   const [selectedEngine, setSelectedEngine] = useState<string>('auto')
-  const [selectedResolution, setSelectedResolution] = useState('1k')
+  // selectedResolution removed — merged into editorResolution
   const [showEngineModal, setShowEngineModal] = useState(false)
   const engineButtonRef = useRef<HTMLButtonElement>(null)
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null)
@@ -1694,11 +1694,11 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
               <div style={sectionLabel}>Resolucion</div>
               <div className="flex gap-2">
                 {[{ id: '1k', label: '1K', desc: '1024px' }, { id: '2k', label: '2K', desc: '2048px' }, { id: '4k', label: '4K', desc: '4096px' }].map(r => (
-                  <button key={r.id} onClick={() => setSelectedResolution(r.id)}
+                  <button key={r.id} onClick={() => setEditorResolution(r.id)}
                     className="flex-1 px-3 py-2 rounded-xl text-center transition-all"
-                    style={{ background: selectedResolution === r.id ? '#1A1A1A' : '#F8F8F8', border: `1px solid ${selectedResolution === r.id ? '#1A1A1A' : 'rgba(0,0,0,0.06)'}` }}>
-                    <div className="text-[11px] font-mono font-bold" style={{ color: selectedResolution === r.id ? '#FFF' : '#111' }}>{r.label}</div>
-                    <div className="text-[8px] font-mono" style={{ color: selectedResolution === r.id ? 'rgba(255,255,255,.6)' : '#999' }}>{r.desc}</div>
+                    style={{ background: editorResolution === r.id ? '#1A1A1A' : '#F8F8F8', border: `1px solid ${editorResolution === r.id ? '#1A1A1A' : 'rgba(0,0,0,0.06)'}` }}>
+                    <div className="text-[11px] font-mono font-bold" style={{ color: editorResolution === r.id ? '#FFF' : '#111' }}>{r.label}</div>
+                    <div className="text-[8px] font-mono" style={{ color: editorResolution === r.id ? 'rgba(255,255,255,.6)' : '#999' }}>{r.desc}</div>
                   </button>
                 ))}
               </div>
