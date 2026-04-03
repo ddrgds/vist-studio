@@ -1116,9 +1116,27 @@ export const editImageWithFlux2Pro = async (
 
   if (onProgress) onProgress(35);
 
+  // FLUX.2 Pro Edit uses @image1, @image2... syntax to reference images.
+  // It does NOT support negative prompts — rephrase as positive descriptions.
+  // Strip "Avoid:", "NO ", "NEVER" and rephrase.
+  let fluxPrompt = instruction
+    .replace(/\bAvoid:\s*[^.]*\./gi, '')
+    .replace(/\bNO\s+\w[^.,]*[.,]/gi, '')
+    .replace(/\bNEVER\s+\w[^.,]*[.,]/gi, '')
+    .trim();
+
+  // Add @image references if not already present
+  if (!fluxPrompt.includes('@image')) {
+    const refs: string[] = ['@image1 is the base image to edit'];
+    for (let i = 1; i < imageUrls.length; i++) {
+      refs.push(`@image${i + 1} is identity/style reference ${i}`);
+    }
+    fluxPrompt = `${refs.join('. ')}. ${fluxPrompt}`;
+  }
+
   const result = await fal.subscribe(FalModel.Flux2Pro, {
     input: {
-      prompt: instruction,
+      prompt: fluxPrompt,
       image_urls: imageUrls,
       safety_tolerance: '5',
       ...(options?.seed !== undefined && { seed: options.seed }),
