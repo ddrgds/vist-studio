@@ -563,7 +563,7 @@ export const generateWithSeedream50 = async (
     prompt += ` ${params.imageBoost}.`;
   }
 
-  if (!isStylized50) prompt += ' Shot on Sony A7R V, 85mm f/1.4. Sharp detail, visible skin texture, no artifacts.';
+  if (!isStylized50) prompt += ' Shot on Sony A7R V, 85mm f/1.4. Natural skin with visible pores, fine hair texture, subtle imperfections, micro-freckles. Avoid plastic, airbrushed, or CGI skin. Real human skin luminosity and subsurface scattering.';
   const count = params.numberOfImages || 1;
   const results: string[] = [];
 
