@@ -15,7 +15,7 @@ import { runControlNet } from '../services/controlNetService'
 import { useProfile } from '../contexts/ProfileContext'
 import { useNavigationStore } from '../stores/navigationStore'
 import { useToast } from '../contexts/ToastContext'
-import { ImageSize, AspectRatio, ENGINE_METADATA, CREDIT_COSTS, AIProvider } from '../types'
+import { ImageSize, AspectRatio, ENGINE_METADATA, CREDIT_COSTS, AIProvider, ReplicateModel } from '../types'
 import type { InfluencerParams } from '../types'
 import { POSE_OPTIONS, CAMERA_OPTIONS, LIGHTING_OPTIONS } from '../data/directorOptions'
 import type { ChipOption } from '../data/directorOptions'
@@ -374,7 +374,23 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       else if (eng?.provider === AIProvider.Replicate) results = await generateWithReplicate(params, eng.replicateModel, p => setHeroProgress(p), abortHeroRef.current.signal)
       else if (eng?.provider === AIProvider.OpenAI) results = await generateWithOpenAI(params, eng.openaiModel, p => setHeroProgress(p), abortHeroRef.current.signal)
       else if (eng?.provider === AIProvider.Fal) results = await generateWithFal(params, eng.falModel, p => setHeroProgress(p), abortHeroRef.current.signal)
-      else results = await generateInfluencerImage(params, p => setHeroProgress(p), abortHeroRef.current.signal)
+      else {
+        // Default: NB2 → Wan 2.7 Pro → FLUX.2 Pro → Grok fallback chain
+        try {
+          results = await generateInfluencerImage(params, p => setHeroProgress(p), abortHeroRef.current.signal)
+          if (!results || results.length === 0) throw new Error('NB2 returned empty')
+        } catch (nb2Err) {
+          console.warn('NB2 hero failed, trying Wan 2.7 Pro:', nb2Err)
+          try {
+            const { generateWithWan27 } = await import('../services/replicateService')
+            results = await generateWithWan27(params, ReplicateModel.Wan27ImagePro, p => setHeroProgress(p), abortHeroRef.current.signal)
+            if (!results || results.length === 0) throw new Error('Wan 2.7 returned empty')
+          } catch (wanErr) {
+            console.warn('Wan 2.7 hero failed, trying Grok:', wanErr)
+            results = await generateWithReplicate(params, ReplicateModel.GrokImagine, p => setHeroProgress(p), abortHeroRef.current.signal)
+          }
+        }
+      }
 
       if (results.length > 0) {
         triggerFlash(); setHeroImage(results[0]); pipelineSetHeroShot(results[0])
@@ -472,19 +488,32 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       } catch (err: any) {
         if (err?.name === 'AbortError') return
         if (abortSessionRef.current?.signal.aborted) return // check before fallback
-        // Fallback to Grok
+        // Fallback: FLUX.2 Pro Edit → Grok
         try {
-          const grokRes = await generatePhotoSessionWithGrok(heroFile, 1, {
-            scenario: sceneContext, realistic: charStyleInfo.isRealistic, angles: [pose],
-          }, undefined, abortSessionRef.current!.signal)
-          if (grokRes.length > 0 && grokRes[0].url) {
-            setGridCells(prev => { const n = [...prev]; n[idx] = grokRes[0].url; return n })
+          const { editImageWithFlux2Pro } = await import('../services/falService')
+          const sessionInstruction = `Create a new photo of this exact person with: ${pose}. Scene: ${sceneContext}. Keep face and body identity identical. ${charStyleInfo.isRealistic ? 'Natural skin with visible pores.' : 'Style-consistent render.'}`
+          const fluxRes = await editImageWithFlux2Pro(heroFile, sessionInstruction, identityRefs, (p) => setSessionProgress(Math.round((idx / photoCount) * 100 + p * (1 / photoCount))), undefined, abortSessionRef.current!.signal)
+          if (fluxRes.length > 0 && fluxRes[0]) {
+            setGridCells(prev => { const n = [...prev]; n[idx] = fluxRes[0]; return n })
             setRevealedCells(prev => new Set([...prev, idx]))
             successCount++
-          } else { failCount++ }
-        } catch (grokErr: any) {
-          if ((grokErr as any)?.name === 'AbortError') return // don't count aborted as fail
-          failCount++
+          } else { throw new Error('FLUX.2 Pro returned empty') }
+        } catch (fluxErr: any) {
+          if ((fluxErr as any)?.name === 'AbortError') return
+          console.warn('FLUX.2 Pro session failed, trying Grok:', fluxErr)
+          try {
+            const grokRes = await generatePhotoSessionWithGrok(heroFile, 1, {
+              scenario: sceneContext, realistic: charStyleInfo.isRealistic, angles: [pose],
+            }, undefined, abortSessionRef.current!.signal)
+            if (grokRes.length > 0 && grokRes[0].url) {
+              setGridCells(prev => { const n = [...prev]; n[idx] = grokRes[0].url; return n })
+              setRevealedCells(prev => new Set([...prev, idx]))
+              successCount++
+            } else { failCount++ }
+          } catch (grokErr: any) {
+            if ((grokErr as any)?.name === 'AbortError') return
+            failCount++
+          }
         }
       }
       setSessionProgress(Math.round(((successCount + failCount) / photoCount) * 100))

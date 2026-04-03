@@ -333,6 +333,8 @@ export enum ReplicateModel {
   Flux2Pro = 'black-forest-labs/flux-2-pro',                 // FLUX 2 Pro — generation (Replicate variant)
   Flux2Klein4B = 'black-forest-labs/flux-2-klein-4b',        // FLUX 2 Klein 4B — fast, economical · 2026
   PrunaImageEdit = 'prunaai/p-image-edit',                   // Pruna P-Image-Edit — fallback edit engine · 2026
+  Wan27Image = 'wan-video/wan-2.7-image',                    // Wan 2.7 — text-to-image + editing, 9 refs, 2K · 2026
+  Wan27ImagePro = 'wan-video/wan-2.7-image-pro',             // Wan 2.7 Pro — 4K, thinking mode, 12 coherent outputs · 2026
 }
 
 export enum OpenAIModel {
@@ -488,6 +490,8 @@ export const CREDIT_COSTS: Record<string, number> = {
   [ReplicateModel.PrunaImageEdit]:     9,
   [ReplicateModel.RecraftCrispUpscale]: 9,
   [ReplicateModel.BriaExpand]:         14,
+  [ReplicateModel.Wan27Image]:         8,
+  [ReplicateModel.Wan27ImagePro]:      12,
   // OpenAI
   [OpenAIModel.GptImage15]:   20,
   [OpenAIModel.GptImage1]:    15,

@@ -674,7 +674,136 @@ export const generateWithReplicate = async (
       return generateWithFlux2Pro(params, onProgress, abortSignal);
     case ReplicateModel.Flux2Klein4B:
       return generateWithFlux2Klein(params, onProgress, abortSignal);
+    case ReplicateModel.Wan27Image:
+    case ReplicateModel.Wan27ImagePro:
+      return generateWithWan27(params, model, onProgress, abortSignal);
     default:
       return generateWithFlux2Max(params, onProgress);
   }
 };
+
+// ─────────────────────────────────────────────
+// Wan 2.7 Image (Pro) — Alibaba
+// Text-to-image + multi-ref editing, up to 9 refs, 12 coherent outputs
+// Thinking mode for better reasoning on complex prompts
+// ─────────────────────────────────────────────
+
+const toWanSize = (ar: AspectRatio): string => {
+  const map: Record<string, string> = {
+    [AspectRatio.Portrait]: '1024x1536',
+    [AspectRatio.Square]: '1024x1024',
+    [AspectRatio.Landscape]: '1536x1024',
+    [AspectRatio.Wide]: '1536x864',
+    [AspectRatio.Tall]: '864x1536',
+  };
+  return map[ar] ?? '1024x1536';
+};
+
+export async function generateWithWan27(
+  params: InfluencerParams,
+  model: ReplicateModel.Wan27Image | ReplicateModel.Wan27ImagePro = ReplicateModel.Wan27ImagePro,
+  onProgress?: (p: number) => void,
+  abortSignal?: AbortSignal,
+): Promise<string[]> {
+  const character = params.characters[0];
+  const isPro = model === ReplicateModel.Wan27ImagePro;
+
+  // Build a rich natural-language prompt (Wan responds well to detailed descriptions)
+  const parts: string[] = [];
+  if (params.imageBoost) parts.push(params.imageBoost);
+  else parts.push('Ultra-photorealistic editorial photograph, natural skin with visible pores and fine texture');
+
+  if (character?.characteristics) parts.push(`Subject: ${character.characteristics}`);
+  if (character?.outfitDescription) parts.push(`Wearing: ${character.outfitDescription}`);
+  if (character?.pose) parts.push(`Pose: ${character.pose}`);
+  if (character?.accessory) parts.push(`With: ${character.accessory}`);
+  if (params.scenario) parts.push(`Scene: ${params.scenario}`);
+  if (params.lighting) parts.push(`Lighting: ${params.lighting}`);
+  if (params.camera) parts.push(`Camera: ${params.camera}`);
+  if (params.negativePrompt) parts.push(`Avoid: ${params.negativePrompt}`);
+
+  const prompt = parts.filter(Boolean).join('. ') + '.';
+
+  onProgress?.(10);
+
+  // Upload reference images if available (face refs for character consistency)
+  const images: string[] = [];
+  if (character?.modelImages?.length) {
+    for (const file of character.modelImages.slice(0, 5)) {
+      const dataUrl = await fileToDataUrl(file);
+      images.push(dataUrl);
+    }
+  }
+
+  const input: Record<string, unknown> = {
+    prompt,
+    size: toWanSize(params.aspectRatio),
+    num_outputs: Math.min(params.numberOfImages || 1, isPro ? 12 : 4),
+    thinking: isPro, // thinking mode for Pro
+    ...(images.length > 0 && { images }),
+    ...(params.seed !== undefined && { seed: params.seed }),
+  };
+
+  onProgress?.(25);
+
+  const output = await replicate.run(model as `${string}/${string}`, {
+    input,
+    signal: abortSignal,
+  });
+
+  onProgress?.(100);
+  const urls = Array.isArray(output) ? output : [output];
+  return urls.map(u => typeof u === 'string' ? u : (u as any).url || String(u));
+}
+
+/**
+ * Wan 2.7 Pro — image editing with multi-reference
+ * Takes a base image + instruction + optional reference images.
+ * Good for reimagine, try-on, style transfer with character consistency.
+ */
+export async function editWithWan27Pro(
+  baseImage: File,
+  instruction: string,
+  referenceImages: File[] = [],
+  onProgress?: (p: number) => void,
+  abortSignal?: AbortSignal,
+  options?: { numOutputs?: number; thinking?: boolean; seed?: number },
+): Promise<string[]> {
+  onProgress?.(10);
+
+  // Convert images to data URLs for Replicate
+  const images: string[] = [];
+  images.push(await fileToDataUrl(baseImage));
+  for (const ref of referenceImages.slice(0, 8)) {
+    images.push(await fileToDataUrl(ref));
+  }
+
+  onProgress?.(25);
+
+  const input: Record<string, unknown> = {
+    prompt: instruction,
+    images,
+    size: '2K',
+    num_outputs: options?.numOutputs ?? 1,
+    thinking: options?.thinking ?? true,
+    ...(options?.seed !== undefined && { seed: options.seed }),
+  };
+
+  const output = await replicate.run(ReplicateModel.Wan27ImagePro as `${string}/${string}`, {
+    input,
+    signal: abortSignal,
+  });
+
+  onProgress?.(100);
+  const urls = Array.isArray(output) ? output : [output];
+  return urls.map(u => typeof u === 'string' ? u : (u as any).url || String(u));
+}
+
+/** Helper: File → data URL */
+async function fileToDataUrl(file: File): Promise<string> {
+  return new Promise<string>((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.readAsDataURL(file);
+  });
+}

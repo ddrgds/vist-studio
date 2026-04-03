@@ -7,7 +7,7 @@ import { generateWithSoul } from '../services/higgsfieldService'
 import { generateWithReplicate } from '../services/replicateService'
 import { generateWithOpenAI } from '../services/openaiService'
 import { generateWithFal, editImageWithGrokFal } from '../services/falService'
-import { ImageSize, AspectRatio, ENGINE_METADATA, FEATURE_ENGINES, AIProvider } from '../types'
+import { ImageSize, AspectRatio, ENGINE_METADATA, FEATURE_ENGINES, AIProvider, ReplicateModel } from '../types'
 import type { InfluencerParams } from '../types'
 import { useNavigationStore } from '../stores/navigationStore'
 import { usePipelineStore } from '../stores/pipelineStore'
@@ -297,7 +297,23 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
       return enhanced
     }
     if (!engineMeta || selectedEngine === 'auto') {
-      return generateInfluencerImage(params, () => {})
+      // NB2 → Wan 2.7 Pro → Grok fallback chain
+      try {
+        const nb2Results = await generateInfluencerImage(params, () => {})
+        if (nb2Results.length > 0) return nb2Results
+        throw new Error('NB2 returned empty')
+      } catch (nb2Err) {
+        console.warn('NB2 creator failed, trying Wan 2.7 Pro:', nb2Err)
+        try {
+          const { generateWithWan27 } = await import('../services/replicateService')
+          const wanResults = await generateWithWan27(params, ReplicateModel.Wan27ImagePro)
+          if (wanResults.length > 0) return wanResults
+          throw new Error('Wan 2.7 returned empty')
+        } catch (wanErr) {
+          console.warn('Wan 2.7 creator failed, trying Grok:', wanErr)
+          return generateWithReplicate(params, ReplicateModel.GrokImagine)
+        }
+      }
     }
     if (engineMeta.provider === AIProvider.Higgsfield) {
       return generateWithSoul(params, () => {})
