@@ -1439,86 +1439,113 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
 
         {/* ── RIGHT: Control panel (desktop) ──────────────────── */}
         <div className="hidden lg:flex flex-col w-[380px] shrink-0" style={{ ...cardStyle, borderRadius: 0, borderLeft: '1px solid rgba(0,0,0,0.06)', boxShadow: 'none' }}>
-          {/* Image source */}
-          <div className="p-4 space-y-3" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-            <div style={sectionLabel}>Imagen de Entrada</div>
-            <div className="flex gap-2">
-              <button onClick={() => fileInputRef.current?.click()}
-                className="flex-1 py-2.5 rounded-xl text-[12px] font-medium transition-all"
-                style={{ background: '#1A1A1A', color: '#FFF' }}>
-                {'\u2191'} Subir
-              </button>
-              <button onClick={() => { useNavigationStore.getState().openGalleryForSelection('editor'); onNav?.('gallery') }}
-                className="flex-1 py-2.5 rounded-xl text-[12px] font-medium transition-all"
-                style={{ background: '#F8F8F8', color: '#555', border: '1px solid rgba(0,0,0,0.06)' }}>
-                Galeria
-              </button>
-            </div>
-            {inputImage && (
-              <div className="relative rounded-xl overflow-hidden cursor-pointer" style={{ border: '1px solid rgba(0,0,0,0.06)' }}
-                onClick={() => fileInputRef.current?.click()}>
-                <img src={inputImage} className="w-full h-32 object-cover" alt="Input" />
-                <div className="absolute inset-0 bg-black/30 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <span className="text-[12px] font-medium text-white">Cambiar</span>
+          {/* Image source — compact when image loaded */}
+          <div className="px-4 py-3 shrink-0" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+            {inputImage ? (
+              <div className="flex items-center gap-3">
+                <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 cursor-pointer" style={{ border: '1px solid rgba(0,0,0,0.06)' }}
+                  onClick={() => fileInputRef.current?.click()}>
+                  <img src={inputImage} className="w-full h-full object-cover" alt="Input" />
                 </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#999' }}>Imagen</div>
+                  <div className="flex gap-1.5 mt-1">
+                    <button onClick={() => fileInputRef.current?.click()} className="pill-btn text-[10px] px-2.5 py-1 rounded-lg" style={{ background: '#F3F4F6', color: '#555', border: '1px solid rgba(0,0,0,0.06)' }}>Cambiar</button>
+                    <button onClick={() => { useNavigationStore.getState().openGalleryForSelection('editor'); onNav?.('gallery') }} className="pill-btn text-[10px] px-2.5 py-1 rounded-lg" style={{ background: '#F3F4F6', color: '#555', border: '1px solid rgba(0,0,0,0.06)' }}>Galería</button>
+                  </div>
+                </div>
+                {/* Inline character selector */}
+                {characters.length > 0 && (
+                  <div className="flex gap-1 shrink-0">
+                    {characters.slice(0, 4).map(ch => (
+                      <button key={ch.id}
+                        onClick={() => setEditorCharFilter(editorCharFilter === ch.id ? null : ch.id)}
+                        className="transition-all"
+                        aria-label={ch.name}
+                        style={{ opacity: editorCharFilter && editorCharFilter !== ch.id ? 0.35 : 1 }}>
+                        <div className="w-8 h-8 rounded-full overflow-hidden" style={{ border: editorCharFilter === ch.id ? '2px solid #1A1A1A' : '1.5px solid rgba(0,0,0,0.08)' }}>
+                          {(ch.thumbnail || ch.modelImageUrls?.[0]) && <img src={ch.thumbnail || ch.modelImageUrls?.[0]} className="w-full h-full object-cover" alt="" />}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div style={sectionLabel}>Imagen de Entrada</div>
+                <div className="flex gap-2">
+                  <button onClick={() => fileInputRef.current?.click()}
+                    className="flex-1 py-2.5 rounded-xl text-[12px] font-medium transition-all"
+                    style={{ background: '#1A1A1A', color: '#FFF' }}>
+                    {'\u2191'} Subir
+                  </button>
+                  <button onClick={() => { useNavigationStore.getState().openGalleryForSelection('editor'); onNav?.('gallery') }}
+                    className="flex-1 py-2.5 rounded-xl text-[12px] font-medium transition-all"
+                    style={{ background: '#F8F8F8', color: '#555', border: '1px solid rgba(0,0,0,0.06)' }}>
+                    Galeria
+                  </button>
+                </div>
+                {/* Character grid for photo selection — only when no image loaded */}
+                {characters.length > 0 && (
+                  <div>
+                    <div style={sectionLabel}>Personaje</div>
+                    <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'thin' }}>
+                      {characters.map(ch => (
+                        <button key={ch.id}
+                          onClick={() => setEditorCharFilter(editorCharFilter === ch.id ? null : ch.id)}
+                          className="flex flex-col items-center gap-1 shrink-0 transition-all"
+                          style={{ opacity: editorCharFilter && editorCharFilter !== ch.id ? 0.4 : 1 }}>
+                          <div className="w-10 h-10 rounded-full overflow-hidden" style={{ border: editorCharFilter === ch.id ? '2px solid #1A1A1A' : '2px solid transparent' }}>
+                            {(ch.thumbnail || ch.modelImageUrls?.[0]) && <img src={ch.thumbnail || ch.modelImageUrls?.[0]} className="w-full h-full object-cover" alt="" />}
+                          </div>
+                          <span className="text-[9px]" style={{ color: editorCharFilter === ch.id ? '#1A1A1A' : '#999' }}>{ch.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                    {editorCharFilter && (
+                      <div className="grid grid-cols-4 gap-1 mt-2 max-h-[100px] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+                        {galleryItems.filter(i => i.characterId === editorCharFilter && i.url && !i.tags?.includes('sheet')).slice(0, 12).map(item => (
+                          <button key={item.id} onClick={async () => {
+                            setInputImage(item.url); setResultImage(null)
+                            if (editorCharFilter) pipelineSetCharacter(editorCharFilter)
+                            try { setInputFile(await urlToFile(item.url, 'gallery.png')) } catch { setInputFile(null) }
+                          }}
+                            className="aspect-square rounded-lg overflow-hidden transition-all hover:opacity-80"
+                            style={{ border: inputImage === item.url ? '2px solid #1A1A1A' : '1px solid rgba(0,0,0,0.06)' }}>
+                            <img src={item.url} className="w-full h-full object-cover" alt="" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
 
-          {/* Character selector */}
-          {characters.length > 0 && (
-            <div className="px-4 py-3" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-              <div style={sectionLabel}>Personaje</div>
-              <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'thin' }}>
-                {characters.map(ch => (
-                  <button key={ch.id}
-                    onClick={() => setEditorCharFilter(editorCharFilter === ch.id ? null : ch.id)}
-                    className="flex flex-col items-center gap-1 shrink-0 transition-all"
-                    style={{ opacity: editorCharFilter && editorCharFilter !== ch.id ? 0.4 : 1 }}>
-                    <div className="w-10 h-10 rounded-full overflow-hidden" style={{ border: editorCharFilter === ch.id ? '2px solid #1A1A1A' : '2px solid transparent' }}>
-                      {ch.thumbnail && <img src={ch.thumbnail} className="w-full h-full object-cover" alt="" />}
-                    </div>
-                    <span className="text-[9px]" style={{ color: editorCharFilter === ch.id ? '#1A1A1A' : '#999' }}>{ch.name}</span>
-                  </button>
-                ))}
-              </div>
-              {editorCharFilter && (
-                <div className="grid grid-cols-4 gap-1 mt-2 max-h-[100px] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
-                  {galleryItems.filter(i => i.characterId === editorCharFilter && i.url && !i.tags?.includes('sheet')).slice(0, 12).map(item => (
-                    <button key={item.id} onClick={async () => {
-                      setInputImage(item.url); setResultImage(null)
-                      if (editorCharFilter) pipelineSetCharacter(editorCharFilter)
-                      try { setInputFile(await urlToFile(item.url, 'gallery.png')) } catch { setInputFile(null) }
-                    }}
-                      className="aspect-square rounded-lg overflow-hidden transition-all hover:opacity-80"
-                      style={{ border: inputImage === item.url ? '2px solid #1A1A1A' : '1px solid rgba(0,0,0,0.06)' }}>
-                      <img src={item.url} className="w-full h-full object-cover" alt="" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Tool controls */}
-          <div className="flex-1 overflow-y-auto px-4 py-4" style={{ scrollbarWidth: 'thin' }}>
+          {/* Tool controls — takes all remaining space */}
+          <div className="flex-1 overflow-y-auto px-4 py-3" style={{ scrollbarWidth: 'thin' }}>
             {renderToolControls()}
           </div>
 
-          {/* Output settings + Apply */}
-          <div className="px-4 py-3 space-y-3 shrink-0" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-            <div className="flex gap-1.5">
-              {(['1k', '2k', '4k'] as const).map(r => (
-                <button key={r} onClick={() => setEditorResolution(r)} style={pill(editorResolution === r)} className="pill-btn flex-1 text-center">{r.toUpperCase()}</button>
-              ))}
-            </div>
-            <div className="flex gap-1 flex-wrap">
-              {[{ ar: AspectRatio.Portrait, label: 'Publicacion' }, { ar: AspectRatio.Square, label: 'Cuadrado' }, { ar: AspectRatio.Landscape, label: 'Portada' }, { ar: AspectRatio.Wide, label: 'Banner' }, { ar: AspectRatio.Tall, label: 'Historia' }].map(({ ar, label }) => (
-                <button key={ar} onClick={() => setEditorAspectRatio(ar)} className="pill-btn" style={pill(editorAspectRatio === ar)}>{label}</button>
-              ))}
+          {/* Output settings + Apply — compact single row */}
+          <div className="px-4 py-2.5 shrink-0 space-y-2" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1">
+                {(['1k', '2k', '4k'] as const).map(r => (
+                  <button key={r} onClick={() => setEditorResolution(r)} style={pill(editorResolution === r)} className="pill-btn text-center text-[10px] px-2 py-1">{r.toUpperCase()}</button>
+                ))}
+              </div>
+              <div className="w-px h-4" style={{ background: 'rgba(0,0,0,0.08)' }} />
+              <div className="flex gap-1 flex-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                {[{ ar: AspectRatio.Portrait, label: 'Post' }, { ar: AspectRatio.Square, label: '1:1' }, { ar: AspectRatio.Landscape, label: '4:3' }, { ar: AspectRatio.Wide, label: '16:9' }, { ar: AspectRatio.Tall, label: '9:16' }].map(({ ar, label }) => (
+                  <button key={ar} onClick={() => setEditorAspectRatio(ar)} className="pill-btn text-[10px] px-2 py-1 shrink-0" style={pill(editorAspectRatio === ar)}>{label}</button>
+                ))}
+              </div>
             </div>
             <button onClick={handleApply} disabled={processing || !inputImage}
-              className="w-full py-3 rounded-2xl text-[13px] font-semibold transition-all"
+              className="w-full py-2.5 rounded-xl text-[12px] font-semibold transition-all"
               style={{ background: (!inputImage || processing) ? '#CCC' : '#1A1A1A', color: '#FFF', opacity: (!inputImage || processing) ? 0.6 : 1 }}>
               {processing ? `Procesando... ${Math.round(progress)}%` : `${currentTool.icon} Aplicar ${currentTool.label} (${displayCost}cr)`}
             </button>
