@@ -554,15 +554,25 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         const selectedStyles = SOUL_STYLES.filter(s => reimagineStyleIds.has(s.id))
         const styleDescriptions = selectedStyles.map(s => s.hint || s.name)
         const direction = reimagineCustom.trim() || styleDescriptions.join('. Also: ') || 'editorial fashion'
+        // Detect if any selected style is non-photorealistic
+        const nonPhotoCategories = new Set(['concept', 'experimental'])
+        const nonPhotoKeywords = /anime|pixel|cartoon|3d render|illustration|comic|manga|cel.shad|stylized|vaporwave|glitch|cyanotype|lenticular/i
+        const isStylizedReimagine = selectedStyles.some(s => nonPhotoCategories.has(s.category) || nonPhotoKeywords.test(s.hint || '') || nonPhotoKeywords.test(s.name))
+        const skinRule = isStylizedReimagine
+          ? `Render quality consistent with the ${selectedStyles.map(s => s.name).join(' + ') || 'requested'} style. Sharp details, no AI artifacts.`
+          : 'Real human skin with visible pores, fine texture, micro-freckles, natural luminosity. NEVER plastic, airbrushed, or CGI-looking skin.'
         const reimagineSpec = {
           task: 'REIMAGINE \u2014 Create a completely NEW photo of this person',
           identity: { source: 'Base Image + Reference Images', preserve: ['face', 'bone_structure', 'eye_shape', 'skin_tone', 'body_proportions'], rule: 'Person must be instantly recognizable as the SAME individual' },
           creative_direction: { style: direction, composition: 'NEW pose, NEW angle, NEW framing \u2014 do NOT copy the original photo layout', outfit: `Clothing must match the ${selectedStyles.map(s => s.name).join(' + ') || 'requested'} aesthetic \u2014 IGNORE clothing from reference images`, environment: 'NEW setting and background matching the style direction', lighting: 'Match the mood and atmosphere of the style direction' },
-          rules: { change_everything_except_identity: true, skin_quality: 'Real human skin with visible pores, fine texture, micro-freckles, natural luminosity. NEVER plastic, airbrushed, or CGI-looking skin.', never_add: ['text', 'words', 'letters', 'labels', 'watermarks', 'brand names', 'logos'] },
+          rules: { change_everything_except_identity: true, render_quality: skinRule, never_add: ['text', 'words', 'letters', 'labels', 'watermarks', 'brand names', 'logos'] },
         }
         const jsonInstruction = `REIMAGINE SPECIFICATION:\n${JSON.stringify(reimagineSpec, null, 2)}`
         const styleNames = selectedStyles.map(s => s.name).join(' + ') || 'editorial'
-        const flatInstruction = `Edit Figure 1: Transform into a ${styleNames} aesthetic photo. CHANGE: background to match ${direction} setting, outfit to fit the ${styleNames} style, pose and framing to be completely new. KEEP EXACTLY: the person's face, bone structure, eye color, skin tone, body proportions from Figure 1${charRefs.length > 0 ? ' and Figure 2 (identity reference)' : ''}. Skin must look real — visible pores, natural texture, subtle imperfections. NO plastic/airbrushed skin. NO text, watermarks, logos, brand names.`
+        const skinFlat = isStylizedReimagine
+          ? `Render in authentic ${styleNames} style with sharp details.`
+          : 'Skin must look real — visible pores, natural texture, subtle imperfections. NO plastic/airbrushed skin.'
+        const flatInstruction = `Edit Figure 1: Transform into a ${styleNames} aesthetic photo. CHANGE: background to match ${direction} setting, outfit to fit the ${styleNames} style, pose and framing to be completely new. KEEP EXACTLY: the person's face, bone structure, eye color, skin tone, body proportions from Figure 1${charRefs.length > 0 ? ' and Figure 2 (identity reference)' : ''}. ${skinFlat} NO text, watermarks, logos, brand names.`
         const charRefs = await getCharRefFiles()
         try {
           const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction: jsonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
