@@ -224,6 +224,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
   const [garmentFile, setGarmentFile] = useState<File | null>(null)
   const [garmentPreview, setGarmentPreview] = useState<string | null>(null)
   const garmentInputRef = useRef<HTMLInputElement>(null)
+  const [outfitChip, setOutfitChip] = useState<string | null>(null) // prompt-only try-on
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showAllTools, setShowAllTools] = useState(() => {
     try { return localStorage.getItem('vist-editor-all-tools') === 'true' } catch { return false }
@@ -352,7 +353,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
 
     if (['inpaint', 'enhance'].includes(activeTool)) { setActiveModal(activeTool); return }
     if (activeTool === 'faceswap' && !faceSwapFile) { toast.error('Sube una foto del rostro de origen primero'); return }
-    if (activeTool === 'tryon' && !garmentFile) { toast.error('Sube una referencia de outfit primero'); return }
+    if (activeTool === 'tryon' && !garmentFile && !outfitChip) { toast.error('Sube una referencia de outfit o elige una prenda'); return }
     if (activeTool === 'freeai' && !freePrompt.trim()) { toast.error('Escribe una instruccion primero'); return }
     if (activeTool === 'reimagine' && reimagineStyleIds.size === 0 && !reimagineCustom.trim()) { return }
     if (activeTool === 'composite') {
@@ -501,26 +502,45 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
             resultUrls = await editImageWithGrokFal(inputFile!, faceInstruction, (p) => setProgress(p), undefined, [faceSwapFile], true)
           }
         }
-      } else if (activeTool === 'tryon' && garmentFile) {
-        const tryonSpec = {
-          task: 'VIRTUAL TRY-ON',
-          image_1_BASE: { role: 'THE PERSON \u2014 this is the subject to keep', preserve: ['face', 'hair', 'skin_tone', 'body_shape', 'pose', 'background', 'lighting'], rule: 'Do NOT change ANYTHING about this person except their clothing' },
-          image_2_REFERENCE: { role: 'GARMENT ONLY \u2014 extract the clothing item from this image', extract: 'clothing, fabric, pattern, color, texture, fit', ignore: 'COMPLETELY ignore the person/model wearing the garment \u2014 their face, body, skin, hair are IRRELEVANT' },
-          output: 'The PERSON from Image 1 wearing the GARMENT from Image 2. Same face, same body, same pose, same background. Only the clothing changes.',
-        }
-        const tryonInstruction = `TRY-ON SPECIFICATION:\n${JSON.stringify(tryonSpec, null, 2)}`
-        const tryonFlatInstruction = 'Replace ONLY the clothing. IMAGE 1 is the PERSON (keep everything). IMAGE 2 is the GARMENT ONLY (extract clothing, IGNORE the model wearing it). Same face, body, pose, background.'
-        try {
-          const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: garmentFile, instruction: tryonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
-          if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
-          resultUrls = results
-        } catch (nb2Err) {
-          console.warn('NB2 try-on failed, trying Seedream:', nb2Err)
+      } else if (activeTool === 'tryon' && (garmentFile || outfitChip)) {
+        if (garmentFile) {
+          // Image-based try-on (existing flow)
+          const tryonSpec = {
+            task: 'VIRTUAL TRY-ON',
+            image_1_BASE: { role: 'THE PERSON \u2014 this is the subject to keep', preserve: ['face', 'hair', 'skin_tone', 'body_shape', 'pose', 'background', 'lighting'], rule: 'Do NOT change ANYTHING about this person except their clothing' },
+            image_2_REFERENCE: { role: 'GARMENT ONLY \u2014 extract the clothing item from this image', extract: 'clothing, fabric, pattern, color, texture, fit', ignore: 'COMPLETELY ignore the person/model wearing the garment \u2014 their face, body, skin, hair are IRRELEVANT' },
+            output: 'The PERSON from Image 1 wearing the GARMENT from Image 2. Same face, same body, same pose, same background. Only the clothing changes.',
+          }
+          const tryonInstruction = `TRY-ON SPECIFICATION:\n${JSON.stringify(tryonSpec, null, 2)}`
+          const tryonFlatInstruction = 'Replace ONLY the clothing. IMAGE 1 is the PERSON (keep everything). IMAGE 2 is the GARMENT ONLY (extract clothing, IGNORE the model wearing it). Same face, body, pose, background.'
           try {
-            resultUrls = await editImageWithSeedream5(inputFile!, tryonFlatInstruction, [garmentFile], (p) => setProgress(p))
-          } catch (sdErr) {
-            console.warn('Seedream try-on failed, trying Grok:', sdErr)
-            resultUrls = await editImageWithGrokFal(inputFile!, tryonFlatInstruction, (p) => setProgress(p), undefined, [garmentFile], true)
+            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: garmentFile, instruction: tryonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
+            if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
+            resultUrls = results
+          } catch (nb2Err) {
+            console.warn('NB2 try-on failed, trying Seedream:', nb2Err)
+            try {
+              resultUrls = await editImageWithSeedream5(inputFile!, tryonFlatInstruction, [garmentFile], (p) => setProgress(p))
+            } catch (sdErr) {
+              console.warn('Seedream try-on failed, trying Grok:', sdErr)
+              resultUrls = await editImageWithGrokFal(inputFile!, tryonFlatInstruction, (p) => setProgress(p), undefined, [garmentFile], true)
+            }
+          }
+        } else {
+          // Prompt-only try-on (outfit chip selected, no reference image)
+          const chipInstruction = `OUTFIT CHANGE: Replace ONLY the clothing on this person. Dress them in: ${outfitChip}. Keep the EXACT same face, hair, skin tone, body shape, pose, and background. ONLY change the clothing.`
+          try {
+            const results = await editImageWithAI({ baseImage: inputFile!, instruction: chipInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
+            if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
+            resultUrls = results
+          } catch (nb2Err) {
+            console.warn('NB2 prompt try-on failed, trying Seedream:', nb2Err)
+            try {
+              resultUrls = await editImageWithSeedream5(inputFile!, chipInstruction, [], (p) => setProgress(p))
+            } catch (sdErr) {
+              console.warn('Seedream prompt try-on failed, trying Grok:', sdErr)
+              resultUrls = await editImageWithGrokFal(inputFile!, chipInstruction, (p) => setProgress(p))
+            }
           }
         }
       } else if (activeTool === 'expand') {
@@ -856,8 +876,8 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         <div>
           <div style={sectionLabel}>Referencia de Outfit</div>
           <div className="aspect-square rounded-xl cursor-pointer overflow-hidden transition-all"
-            onClick={() => garmentInputRef.current?.click()}
-            onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; if (f?.type.startsWith('image/')) { setGarmentFile(f); setGarmentPreview(URL.createObjectURL(f)) } }}
+            onClick={() => { garmentInputRef.current?.click(); setOutfitChip(null) }}
+            onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; if (f?.type.startsWith('image/')) { setGarmentFile(f); setGarmentPreview(URL.createObjectURL(f)); setOutfitChip(null) } }}
             onDragOver={(e) => e.preventDefault()}
             style={{ background: '#F8F8F8', border: garmentPreview ? '2px solid #1A1A1A' : '2px dashed rgba(0,0,0,0.12)' }}>
             {garmentPreview ? (
@@ -876,12 +896,52 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
             )}
           </div>
           <input ref={garmentInputRef} type="file" accept="image/*" className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) { setGarmentFile(f); setGarmentPreview(URL.createObjectURL(f)) } if (e.target) e.target.value = '' }} />
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) { setGarmentFile(f); setGarmentPreview(URL.createObjectURL(f)); setOutfitChip(null) } if (e.target) e.target.value = '' }} />
         </div>
         {garmentPreview && (
           <button onClick={() => { setGarmentFile(null); if (garmentPreview) URL.revokeObjectURL(garmentPreview); setGarmentPreview(null) }}
             className="text-[11px] py-1.5 px-3 rounded-xl transition-all" style={{ color: '#999', border: '1px solid rgba(0,0,0,0.08)' }}>Quitar outfit</button>
         )}
+
+        {/* Quick outfit chips — prompt-only try-on */}
+        <div>
+          <div style={sectionLabel} className="mt-1">O elige una prenda</div>
+          <div className="flex flex-wrap gap-1.5">
+            {([
+              { id: 'black-dress', label: 'Vestido negro', emoji: '🖤', prompt: 'elegant fitted black dress, sophisticated cocktail style' },
+              { id: 'red-dress', label: 'Vestido rojo', emoji: '❤️', prompt: 'stunning red dress, bold and glamorous, satin or silk fabric' },
+              { id: 'white-tshirt', label: 'Camiseta blanca', emoji: '🤍', prompt: 'plain white t-shirt, casual clean minimal, cotton fabric' },
+              { id: 'blazer', label: 'Blazer', emoji: '🧥', prompt: 'tailored black blazer over white top, sharp and professional' },
+              { id: 'leather-jacket', label: 'Chaqueta cuero', emoji: '🖤', prompt: 'black leather biker jacket, edgy and cool, zippers and studs' },
+              { id: 'crop-top', label: 'Crop top', emoji: '👚', prompt: 'fitted crop top showing midriff, trendy casual style' },
+              { id: 'suit', label: 'Traje formal', emoji: '🤵', prompt: 'formal tailored business suit, crisp white shirt, tie, polished shoes' },
+              { id: 'hoodie', label: 'Hoodie', emoji: '🧤', prompt: 'cozy oversized hoodie, streetwear casual, relaxed comfortable look' },
+              { id: 'bikini', label: 'Bikini', emoji: '👙', prompt: 'stylish bikini swimwear, beach-ready, flattering fit' },
+              { id: 'denim-jacket', label: 'Mezclilla', emoji: '👖', prompt: 'classic denim jacket with jeans, casual denim-on-denim' },
+              { id: 'evening-gown', label: 'Vestido de gala', emoji: '✨', prompt: 'floor-length evening gown, elegant and glamorous, formal event' },
+              { id: 'sportswear', label: 'Deportivo', emoji: '🏃', prompt: 'athletic sportswear, leggings and sports bra or tank, fitness-ready' },
+              { id: 'sundress', label: 'Sundress', emoji: '🌸', prompt: 'light floral sundress, summer vibes, breezy and feminine' },
+              { id: 'turtleneck', label: 'Cuello alto', emoji: '🧶', prompt: 'fitted turtleneck sweater, sleek and minimal, autumn/winter elegance' },
+              { id: 'oversized-shirt', label: 'Camisa oversized', emoji: '👔', prompt: 'oversized button-down shirt worn loose, boyfriend-style, effortlessly chic' },
+              { id: 'corset-top', label: 'Corset', emoji: '🎀', prompt: 'structured corset top, cinched waist, dramatic and feminine, going-out look' },
+              { id: 'trench-coat', label: 'Trench coat', emoji: '🧥', prompt: 'classic beige trench coat, belted, timeless Parisian chic style' },
+              { id: 'kimono', label: 'Kimono', emoji: '🎌', prompt: 'traditional Japanese kimono, beautiful obi sash, silk fabric, elegant draping' },
+              { id: 'lingerie-set', label: 'Lencería', emoji: '🩱', prompt: 'elegant lace lingerie set, delicate boudoir style, sophisticated and tasteful' },
+              { id: 'athleisure', label: 'Athleisure', emoji: '🏋️', prompt: 'matching athleisure set, joggers and zip-up, sporty but stylish' },
+            ]).map(chip => (
+              <button key={chip.id}
+                onClick={() => { setOutfitChip(outfitChip === chip.prompt ? null : chip.prompt); if (garmentFile) { setGarmentFile(null); if (garmentPreview) URL.revokeObjectURL(garmentPreview); setGarmentPreview(null) } }}
+                className="px-2.5 py-1.5 rounded-full text-[11px] transition-all"
+                style={{
+                  background: outfitChip === chip.prompt ? '#1A1A1A' : '#F3F4F6',
+                  color: outfitChip === chip.prompt ? '#FFF' : '#555',
+                  fontWeight: outfitChip === chip.prompt ? 600 : 400,
+                }}>
+                {chip.emoji} {chip.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </>}
 
       {/* Composite / Scene */}
@@ -1356,15 +1416,30 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                         className="w-full h-full rounded-2xl"
                       />
                     </div>
-                    <button onClick={async () => {
-                      setInputImage(resultImage); setResultImage(null); setCompareMode(false)
-                      try { setInputFile(await urlToFile(resultImage!, 'result.png')) } catch { setInputFile(null) }
-                      toast.success('Resultado cargado como nueva base')
-                    }}
-                      className="px-5 py-2.5 rounded-2xl text-[12px] font-semibold transition-all hover:scale-[1.02]"
-                      style={{ background: '#1A1A1A', color: '#FFF' }}>
-                      Seguir editando este resultado
-                    </button>
+                    <div className="flex gap-2 flex-wrap justify-center">
+                      <button onClick={async () => {
+                        setInputImage(resultImage); setResultImage(null); setCompareMode(false)
+                        try { setInputFile(await urlToFile(resultImage!, 'result.png')) } catch { setInputFile(null) }
+                        toast.success('Resultado cargado como nueva base')
+                      }}
+                        className="px-5 py-2.5 rounded-2xl text-[12px] font-semibold transition-all hover:scale-[1.02]"
+                        style={{ background: '#1A1A1A', color: '#FFF' }}>
+                        Seguir editando
+                      </button>
+                      {activeTool === 'reimagine' && (
+                        <button onClick={async () => {
+                          setInputImage(resultImage); setResultImage(null); setCompareMode(false)
+                          try { setInputFile(await urlToFile(resultImage!, 'result.png')) } catch { setInputFile(null) }
+                          setGarmentFile(null); setGarmentPreview(null); setOutfitChip(null)
+                          setActiveTool('tryon')
+                          toast.success('Elige un outfit para esta foto')
+                        }}
+                          className="px-5 py-2.5 rounded-2xl text-[12px] font-semibold transition-all hover:scale-[1.02]"
+                          style={{ background: '#FFF', color: '#1A1A1A', border: '1px solid rgba(0,0,0,0.12)' }}>
+                          👗 Cambiar outfit
+                        </button>
+                      )}
+                    </div>
                   </>
                 ) : (
                   /* No result yet — show only input image large */
