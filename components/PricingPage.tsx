@@ -31,16 +31,17 @@ interface Plan {
 // These are read from import.meta.env so they're baked in at build time
 // and never need a server round-trip for the pricing page itself.
 
+// Lemon Squeezy variant IDs — public product identifiers, not secrets
 const V = {
-  proMonthly:     import.meta.env.VITE_LS_PRO_MONTHLY_VARIANT_ID     ?? '',
-  proAnnual:      import.meta.env.VITE_LS_PRO_ANNUAL_VARIANT_ID      ?? '',
-  studioMonthly:  import.meta.env.VITE_LS_STUDIO_MONTHLY_VARIANT_ID  ?? '',
-  studioAnnual:   import.meta.env.VITE_LS_STUDIO_ANNUAL_VARIANT_ID   ?? '',
-  brandMonthly:   import.meta.env.VITE_LS_BRAND_MONTHLY_VARIANT_ID   ?? '',
-  brandAnnual:    import.meta.env.VITE_LS_BRAND_ANNUAL_VARIANT_ID    ?? '',
-  credits200:     import.meta.env.VITE_LS_CREDITS_200_VARIANT_ID     ?? '',
-  credits750:     import.meta.env.VITE_LS_CREDITS_750_VARIANT_ID     ?? '',
-  credits3000:    import.meta.env.VITE_LS_CREDITS_3000_VARIANT_ID    ?? '',
+  proMonthly:     '1374166',
+  proAnnual:      '1374257',
+  studioMonthly:  '1374262',
+  studioAnnual:   '1374271',
+  brandMonthly:   '1374277',
+  brandAnnual:    '1374280',
+  credits200:     '1374283',
+  credits750:     '1374287',
+  credits3000:    '1374291',
 };
 
 // ─────────────────────────────────────────────
