@@ -7,6 +7,7 @@ import {
   uploadAvatar as uploadAvatarToCloud,
   decrementCreditsInDb,
 } from '../services/supabaseProfileService';
+import { supabase } from '../services/supabaseService';
 
 // ─────────────────────────────────────────────
 // Types
@@ -81,7 +82,6 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
         };
         setProfile(defaultProfile);
         // Persist to DB so credit deductions work
-        const { supabase } = await import('../services/supabaseService');
         supabase.from('profiles').upsert({
           id: user.id,
           display_name: defaultProfile.displayName,
