@@ -572,6 +572,74 @@ export const SOUL_STYLES: SoulStyle[] = [
   { id: 'custom-spicy-red', name: 'Red Room', category: 'spicy', icon: '❤️', hint: 'deep red lighting and red decor, velvet textures, roses, red lingerie or dress, passionate and intense mood, cinematic red tones' },
   { id: 'custom-spicy-blackwhite', name: 'B&W Intimate', category: 'spicy', icon: '🖤', hint: 'black and white intimate portrait, high contrast, dramatic shadows on body, artistic nude-adjacent, fine art photography aesthetic' },
   { id: 'custom-spicy-yoga', name: 'Yoga / Stretch', category: 'spicy', icon: '🧘', hint: 'yoga pose or deep stretch in minimal activewear, flexible body, natural lighting, serene but showing body lines, athletic sensuality' },
+
+  // ── General (new) ──
+  { id: 'gen-natural-light', name: 'Natural Light', category: 'general', icon: '💡', hint: 'soft diffused natural window light, clean white background, no dramatic shadows, gentle and flattering, everyday beauty' },
+  { id: 'gen-golden-hour', name: 'Golden Hour', category: 'general', icon: '🌅', hint: 'warm golden hour sunlight, long soft shadows, amber tones on skin, magic hour glow, outdoor setting' },
+  { id: 'gen-flash', name: 'Flash Photo', category: 'general', icon: '⚡', hint: 'direct camera flash, slightly harsh light, party snapshot feel, red-eye adjacent, candid and raw' },
+  { id: 'gen-silhouette', name: 'Silhouette', category: 'general', icon: '🌑', hint: 'dramatic backlit silhouette, figure outlined against bright background, rim light on edges, mysterious and artistic' },
+  { id: 'gen-morning', name: 'Morning Light', category: 'general', icon: '🌤️', hint: 'early morning cool light, soft blue-white tones, fresh dewy atmosphere, just woke up natural beauty' },
+  { id: 'gen-rainy', name: 'Rainy Day', category: 'general', icon: '🌧️', hint: 'overcast rainy day, wet surfaces reflecting light, moody grey tones, raindrops visible, cozy melancholy' },
+  { id: 'gen-backyard', name: 'Backyard', category: 'general', icon: '🏡', hint: 'casual backyard setting, natural daylight, garden or patio background, relaxed everyday moment, authentic feel' },
+  { id: 'gen-mirror', name: 'Mirror Selfie', category: 'general', icon: '🪞', hint: 'mirror reflection photo, phone visible in hand, bathroom or bedroom mirror, casual authentic framing' },
+  { id: 'gen-close-up', name: 'Extreme Close-up', category: 'general', icon: '🔍', hint: 'extreme close-up of face, every skin detail visible, macro lens quality, eyes in sharp focus, intimate portrait' },
+  { id: 'gen-full-body', name: 'Full Body', category: 'general', icon: '🧍', hint: 'full body portrait head to toe, clean simple background, good posture, shows complete outfit and proportions' },
+  { id: 'gen-side-profile', name: 'Side Profile', category: 'general', icon: '👤', hint: 'clean side profile view, strong jawline emphasis, single directional light, minimal background, sculptural' },
+  { id: 'gen-film-scan', name: 'Film Scan', category: 'general', icon: '🎞️', hint: 'scanned 35mm film negative, slight color shift, film border visible, organic grain, authentic analog look' },
+
+  // ── Content (new) ──
+  { id: 'cnt-podcast-guest', name: 'Podcast Guest', category: 'content', icon: '🎙️', hint: 'sitting at podcast desk with microphone, headphones around neck, warm studio lighting, professional but casual' },
+  { id: 'cnt-newsletter', name: 'Newsletter Hero', category: 'content', icon: '📧', hint: 'clean professional headshot for newsletter banner, friendly approachable expression, solid color background, email-header framing' },
+  { id: 'cnt-course-cover', name: 'Course Creator', category: 'content', icon: '🎓', hint: 'teaching pose with whiteboard or laptop, confident instructor energy, bright clean space, educational setting' },
+  { id: 'cnt-book-cover', name: 'Book Cover', category: 'content', icon: '📖', hint: 'author photo for book cover, thoughtful pose, dramatic lighting, literary and sophisticated, dark background' },
+  { id: 'cnt-event-speaker', name: 'Speaker / Stage', category: 'content', icon: '🎤', hint: 'on stage at event or conference, microphone in hand, spotlight, audience blur in background, TED-talk energy' },
+  { id: 'cnt-bts', name: 'Behind the Scenes', category: 'content', icon: '🎬', hint: 'behind-the-scenes moment, camera equipment visible, casual on-set vibe, crew working, authentic production feel' },
+  { id: 'cnt-collab-post', name: 'Brand Collab', category: 'content', icon: '🤝', hint: 'holding or interacting with a product, sponsored post aesthetic, natural integration, well-lit product placement' },
+  { id: 'cnt-carousel', name: 'Carousel Slide', category: 'content', icon: '📊', hint: 'clean portrait for Instagram carousel, text-overlay friendly composition, solid or gradient background, professional' },
+  { id: 'cnt-live-stream', name: 'Live Stream', category: 'content', icon: '🔴', hint: 'live streaming setup, ring light glow, webcam perspective, LED lights in background, gamer or creator room' },
+  { id: 'cnt-merch', name: 'Merch Photo', category: 'content', icon: '👕', hint: 'wearing branded merchandise, casual streetwear pose, urban backdrop, showcasing t-shirt or hoodie design' },
+
+  // ── Era (new) ──
+  { id: 'era-70s-glam', name: '1970s Glam Rock', category: 'era', icon: '🎸', hint: 'David Bowie-era glam rock, platform boots, metallic fabric, bold eye makeup, androgynous styling, stage lighting' },
+  { id: 'era-40s-noir', name: '1940s Film Noir', category: 'era', icon: '🎩', hint: '1940s film noir aesthetic, fedora hat, trench coat, venetian blind shadows across face, black and white, cigarette smoke' },
+  { id: 'era-belle-epoque', name: 'Belle Époque', category: 'era', icon: '🎭', hint: 'late 1800s Parisian elegance, ornate clothing, Art Nouveau backdrop, golden warm tones, aristocratic poses' },
+  { id: 'era-60s-psychedelic', name: '1960s Psychedelic', category: 'era', icon: '🌈', hint: 'late 60s psychedelic era, tie-dye, flower crowns, peace signs, kaleidoscope colors, Woodstock vibes, dreamy soft focus' },
+  { id: 'era-80s-preppy', name: '1980s Preppy', category: 'era', icon: '🎾', hint: '1980s preppy style, polo shirts, tennis sweater draped over shoulders, khakis, country club setting, pastel palette' },
+  { id: 'era-2010s-tumblr', name: '2010s Tumblr', category: 'era', icon: '💻', hint: '2010s Tumblr aesthetic, flower crowns, oversaturated colors, hipster indie style, fairy lights, vintage filters' },
+  { id: 'era-samurai', name: 'Samurai Era', category: 'era', icon: '⚔️', hint: 'feudal Japan aesthetic, traditional samurai armor or kimono, cherry blossoms, zen garden, katana, cinematic lighting' },
+  { id: 'era-soviet', name: 'Soviet Propaganda', category: 'era', icon: '☭', hint: 'Soviet-era propaganda poster style, bold red and gold, heroic upward gaze, strong geometric composition, constructivist design' },
+  { id: 'era-80s-aerobics', name: '1980s Aerobics', category: 'era', icon: '🏋️', hint: '1980s aerobics class, neon leotard, leg warmers, headband, VHS quality, pastel gym, Jane Fonda energy' },
+  { id: 'era-gatsby', name: 'Great Gatsby', category: 'era', icon: '🥂', hint: '1920s Great Gatsby party, Art Deco gold and black, champagne, flapper dress or tuxedo, jazz age opulence, bokeh lights' },
+
+  // ── Profession (new) ──
+  { id: 'prof-startup', name: 'Startup Founder', category: 'profession', icon: '🚀', hint: 'tech startup founder, casual hoodie with confidence, modern office or co-working space, MacBook visible, disruption energy' },
+  { id: 'prof-surgeon', name: 'Surgeon', category: 'profession', icon: '🩺', hint: 'surgeon in scrubs and surgical cap, operating room lighting, focused intense gaze, medical equipment in background' },
+  { id: 'prof-detective', name: 'Detective', category: 'profession', icon: '🕵️', hint: 'film noir detective, magnifying glass, dark office with files, desk lamp dramatic lighting, trench coat, suspense mood' },
+  { id: 'prof-librarian', name: 'Librarian', category: 'profession', icon: '📚', hint: 'in a grand library, surrounded by bookshelves, warm reading light, glasses, scholarly and intellectual, leather-bound books' },
+  { id: 'prof-florist', name: 'Florist', category: 'profession', icon: '💐', hint: 'flower shop owner, surrounded by colorful bouquets, apron, holding fresh flowers, natural light through shop window' },
+  { id: 'prof-race-driver', name: 'Race Driver', category: 'profession', icon: '🏎️', hint: 'racing suit and helmet under arm, standing next to race car, pit lane or track, adrenaline energy, high-speed aesthetic' },
+  { id: 'prof-tattoo', name: 'Tattoo Artist', category: 'profession', icon: '🎨', hint: 'tattoo artist in studio, tattoo machine in hand, covered in tattoos, neon open sign, edgy creative workspace' },
+  { id: 'prof-sommelier', name: 'Sommelier', category: 'profession', icon: '🍷', hint: 'wine sommelier in upscale restaurant, holding wine glass, tasting expression, cellar or dining room, elegant and refined' },
+  { id: 'prof-marine-bio', name: 'Marine Biologist', category: 'profession', icon: '🐋', hint: 'marine biologist near ocean, wetsuit, research vessel, underwater footage on screen, coral reef backdrop, discovery energy' },
+  { id: 'prof-boxer', name: 'Boxer', category: 'profession', icon: '🥊', hint: 'boxer in ring corner, gloves on, sweat glistening, gritty gym lighting, rope of boxing ring, intense focus, fight-ready' },
+
+  // ── Experimental (new) ──
+  { id: 'exp-ai-glitch', name: 'AI Corruption', category: 'experimental', icon: '🤖', hint: 'AI-generated artifacts and glitch patterns, face melting into pixels, data corruption aesthetic, surreal and unsettling' },
+  { id: 'exp-vhs-tape', name: 'VHS Tape', category: 'experimental', icon: '📼', hint: 'VHS recording quality, scan lines, tracking errors, date stamp, washed out colors, camcorder perspective, home video feel' },
+  { id: 'exp-lenticular', name: 'Lenticular', category: 'experimental', icon: '🔮', hint: 'lenticular card effect, two images blending as if tilting, holographic shimmer, motion blur between poses' },
+  { id: 'exp-infrared', name: 'Infrared', category: 'experimental', icon: '🔴', hint: 'infrared photography, false color, trees and foliage turned white/pink, surreal color inversion, dreamlike landscape' },
+  { id: 'exp-collage', name: 'Paper Collage', category: 'experimental', icon: '✂️', hint: 'cut-and-paste paper collage, magazine cutout style, mixed textures, visible edges and layers, analog mixed media art' },
+  { id: 'exp-cyanotype', name: 'Cyanotype', category: 'experimental', icon: '🔵', hint: 'cyanotype sun print, deep Prussian blue and white, botanical print aesthetic, alternative photography process, handmade feel' },
+  { id: 'exp-datamosh', name: 'Datamosh', category: 'experimental', icon: '💾', hint: 'datamosh video glitch frozen frame, pixel bleeding between frames, compression artifacts as art, digital chaos' },
+  { id: 'exp-tilt-shift', name: 'Tilt Shift', category: 'experimental', icon: '🏙️', hint: 'tilt-shift miniature effect, extreme shallow depth of field top and bottom, person looks like tiny figurine in diorama' },
+  { id: 'exp-scanner', name: 'Scanner Art', category: 'experimental', icon: '🖨️', hint: 'face pressed against flatbed scanner, distorted from movement, bright scan light, surreal and intimate, lo-fi art' },
+
+  // ── Social (new) ──
+  { id: 'soc-threads', name: 'Threads Post', category: 'social', icon: '🧵', hint: 'casual close-up selfie, minimal editing, authentic and unfiltered, text-post friendly crop, relatable energy' },
+  { id: 'soc-snap-story', name: 'Snapchat Story', category: 'social', icon: '👻', hint: 'Snapchat-style selfie, playful filter-adjacent, vertical format, text overlay space, casual and fun, flash selfie' },
+  { id: 'soc-fb-profile', name: 'Facebook Profile', category: 'social', icon: '👤', hint: 'clean profile photo, friendly smile, neutral background, well-lit, universally appropriate, approachable' },
+  { id: 'soc-tinder-pic', name: 'Dating App Bio', category: 'social', icon: '💘', hint: 'attractive but natural photo for dating app, good lighting, genuine smile, interesting background, not try-hard' },
+  { id: 'soc-x-header', name: 'X / Twitter Header', category: 'social', icon: '𝕏', hint: 'wide landscape crop for Twitter/X header, dramatic composition, left-aligned face, clean right side for text, professional' },
 ];
 
 /**
