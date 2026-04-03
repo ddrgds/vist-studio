@@ -15,7 +15,7 @@ const BUCKET = 'character-assets';
 export const uploadCharacterToCloud = async (
   char: SavedCharacter,
   userId: string,
-): Promise<void> => {
+): Promise<{ modelImageUrls: string[]; referencePhotoUrls: string[] }> => {
   // Upload model image blobs
   const modelImageUrls: string[] = [];
   for (let i = 0; i < char.modelImageBlobs.length; i++) {
@@ -49,6 +49,9 @@ export const uploadCharacterToCloud = async (
     outfitUrl = data.publicUrl;
   }
 
+  // Permanent reference URLs = model image URLs from Supabase storage
+  const referencePhotoUrls = modelImageUrls.length > 0 ? modelImageUrls : (char.referencePhotoUrls ?? []);
+
   // Upsert metadata row (no blobs — URLs only)
   const { error } = await supabase.from('characters').upsert({
     id: char.id,
@@ -66,13 +69,14 @@ export const uploadCharacterToCloud = async (
     created_at: char.createdAt,
     updated_at: char.updatedAt,
     usage_count: char.usageCount,
-    // Reference photos: use permanent cloud URLs if available, otherwise use whatever was set
-    reference_photo_urls: modelImageUrls.length > 0 ? modelImageUrls : (char.referencePhotoUrls ?? []),
+    reference_photo_urls: referencePhotoUrls,
     // DB: ALTER TABLE characters ADD COLUMN IF NOT EXISTS render_style text;
     render_style: char.renderStyle ?? null,
   });
 
   if (error) throw new Error(`characters upsert failed: ${error.message}`);
+
+  return { modelImageUrls, referencePhotoUrls };
 };
 
 // ─────────────────────────────────────────────

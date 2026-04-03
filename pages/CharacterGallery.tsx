@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useCharacterStore } from '../stores/characterStore'
 import { useGalleryStore } from '../stores/galleryStore'
 import { useToast } from '../contexts/ToastContext'
+import type { GalleryItem } from '../stores/galleryStore'
 
 const gradients = [
   'linear-gradient(135deg,#f06848,#4f46e5)',
@@ -11,7 +12,7 @@ const gradients = [
 ]
 function getGradientForIndex(i: number) { return gradients[i % gradients.length] }
 
-const detailTabs = ['Resumen','Fotos','Ediciones AI','Universo','Ajustes']
+const detailTabs = ['Resumen','Fotos','Ediciones AI','Ajustes']
 
 /** Generate a human-readable bio from character attributes (NOT the raw AI prompt) */
 function buildReadableBio(c: { name: string; renderStyle?: string; personalityTraits?: string[]; outfitDescription?: string }): string {
@@ -37,6 +38,56 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
 
   const [refSelectMode, setRefSelectMode] = useState(false)
   const [pendingRefs, setPendingRefs] = useState<string[]>([])
+
+  // Photo context menu
+  const [contextMenu, setContextMenu] = useState<{ item: GalleryItem; x: number; y: number } | null>(null)
+  const [reassignTarget, setReassignTarget] = useState<GalleryItem | null>(null)
+  const contextMenuRef = useRef<HTMLDivElement>(null)
+  const removeGalleryItem = useGalleryStore(s => s.removeItem)
+  const updateGalleryItem = useGalleryStore(s => s.updateItem)
+
+  // Close context menu on outside click
+  useEffect(() => {
+    if (!contextMenu) return
+    const handler = (e: MouseEvent) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) setContextMenu(null)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [contextMenu])
+
+  const handleDownloadPhoto = async (item: GalleryItem) => {
+    setContextMenu(null)
+    try {
+      const res = await fetch(item.url)
+      const blob = await res.blob()
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `vist-${item.id.slice(0, 8)}.jpg`
+      a.click()
+      URL.revokeObjectURL(a.href)
+    } catch { toast.error('Error al descargar') }
+  }
+
+  const handleDeletePhoto = (item: GalleryItem) => {
+    setContextMenu(null)
+    if (!confirm('¿Eliminar esta foto? No se puede deshacer.')) return
+    removeGalleryItem(item.id)
+    toast.success('Foto eliminada')
+  }
+
+  const handleReassign = (item: GalleryItem) => {
+    setContextMenu(null)
+    setReassignTarget(item)
+  }
+
+  const confirmReassign = (targetCharId: string) => {
+    if (!reassignTarget) return
+    updateGalleryItem(reassignTarget.id, { characterId: targetCharId })
+    const targetChar = storeCharacters.find(c => c.id === targetCharId)
+    toast.success(`Foto reasignada a ${targetChar?.name || 'otro personaje'}`)
+    setReassignTarget(null)
+  }
 
   const characters = useMemo(() => storeCharacters.map((c, idx) => {
     const charItems = galleryItems.filter(i => i.characterId === c.id)
@@ -485,7 +536,7 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                             return (
                               <div
                                 key={item.id}
-                                className="relative aspect-[3/4] rounded-lg overflow-hidden cursor-pointer hover:scale-[1.03] transition-transform"
+                                className="relative aspect-[3/4] rounded-lg overflow-hidden cursor-pointer hover:scale-[1.03] transition-transform group"
                                 style={{ border: `1px solid ${isRef && refSelectMode ? 'rgba(99,102,241,.35)' : 'rgba(255,255,255,.04)'}` }}
                                 onClick={() => {
                                   if (!refSelectMode) return
@@ -495,8 +546,27 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                                     setPendingRefs(prev => [...prev, item.url])
                                   }
                                 }}
+                                onContextMenu={(e) => {
+                                  if (refSelectMode) return
+                                  e.preventDefault()
+                                  setContextMenu({ item, x: e.clientX, y: e.clientY })
+                                }}
                               >
                                 <img src={item.url} className="w-full h-full object-cover" />
+                                {/* 3-dot button on hover (non-select mode) */}
+                                {!refSelectMode && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      const rect = e.currentTarget.getBoundingClientRect()
+                                      setContextMenu({ item, x: rect.right, y: rect.bottom })
+                                    }}
+                                    className="absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                    style={{ background: 'rgba(0,0,0,0.55)', color: 'white', fontSize: 12 }}
+                                  >
+                                    &#x22EE;
+                                  </button>
+                                )}
                                 {/* Pink overlay when selected in select mode */}
                                 {refSelectMode && (
                                   <div
@@ -520,7 +590,7 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                                 {/* Pink dot badge when not in select mode but photo is a reference */}
                                 {!refSelectMode && isRef && (
                                   <div
-                                    className="absolute top-1 right-1 w-2 h-2 rounded-full"
+                                    className="absolute top-1 left-1 w-2 h-2 rounded-full"
                                     style={{ background: 'var(--joi-pink)' }}
                                   />
                                 )}
@@ -536,50 +606,50 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                   </div>
                 )}
                 {detailTab === 'Ediciones AI' && (
-                  <div className="space-y-3">
-                    {charEditItems.length > 0
-                      ? charEditItems.map(item => (
-                          <div key={item.id} className="flex items-center gap-3 p-3 rounded-lg" style={{ background:'var(--joi-bg-3)' }}>
-                            <div className="w-12 h-12 rounded-lg shrink-0 overflow-hidden">
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-[11px]" style={{ color: 'var(--joi-text-3)' }}>
+                        {charEditItems.length} ediciones
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {charEditItems.length > 0
+                        ? charEditItems.map(item => (
+                            <div
+                              key={item.id}
+                              className="relative aspect-[3/4] rounded-lg overflow-hidden cursor-pointer hover:scale-[1.03] transition-transform group"
+                              style={{ border: '1px solid rgba(255,255,255,.04)' }}
+                              onContextMenu={(e) => {
+                                e.preventDefault()
+                                setContextMenu({ item, x: e.clientX, y: e.clientY })
+                              }}
+                            >
                               <img src={item.url} className="w-full h-full object-cover" />
-                            </div>
-                            <div className="flex-1">
-                              <div className="text-[12px] font-medium" style={{ color:'var(--joi-text-1)' }}>{item.prompt || item.model || 'AI Edit'}</div>
-                              <div className="text-[9px] font-mono" style={{ color:'var(--joi-text-3)' }}>
-                                {new Date(item.timestamp).toLocaleDateString('es', { day:'numeric', month:'short' })}
-                                {item.model ? ` · ${item.model}` : ''}
+                              {/* 3-dot button on hover */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  const rect = e.currentTarget.getBoundingClientRect()
+                                  setContextMenu({ item, x: rect.right, y: rect.bottom })
+                                }}
+                                className="absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                style={{ background: 'rgba(0,0,0,0.55)', color: 'white', fontSize: 12 }}
+                              >
+                                &#x22EE;
+                              </button>
+                              {/* Tool label */}
+                              <div className="absolute bottom-0 inset-x-0 px-1.5 py-1 text-[8px] font-mono truncate"
+                                style={{ background: 'rgba(0,0,0,0.6)', color: 'rgba(255,255,255,0.8)' }}>
+                                {item.model || 'AI Edit'}
                               </div>
                             </div>
-                            <button className="btn-ghost px-3 py-1 text-[10px]">Ver</button>
-                          </div>
-                        ))
-                      : ['Relight Golden Hour','Face Swap con Kai','Try-On Vestido Negro','360° Studio','Background Tokio','Enhance 4x','Style Anime'].map((e,i)=>(
-                          <div key={i} className="flex items-center gap-3 p-3 rounded-lg" style={{ background:'var(--joi-bg-3)' }}>
-                            <div className="w-12 h-12 rounded-lg shimmer shrink-0" />
-                            <div className="flex-1">
-                              <div className="text-[12px] font-medium" style={{ color:'var(--joi-text-1)' }}>{e}</div>
-                              <div className="text-[9px] font-mono" style={{ color:'var(--joi-text-3)' }}>{Math.floor(Math.random()*28)+1} Mar · {['Relight','Face Swap','Try-On','360°','Background','Enhance','Style'][i]}</div>
-                            </div>
-                            <button className="btn-ghost px-3 py-1 text-[10px]">Ver</button>
-                          </div>
-                        ))
-                    }
-                  </div>
-                )}
-                {detailTab === 'Universo' && (
-                  <div className="space-y-4">
-                    {['Historia y Origen','Mundo y Espacios','Círculo Social','Marca Personal','Vida Diaria'].map((cat,i)=>(
-                      <div key={cat} className="p-4 rounded-lg" style={{ background:'var(--joi-bg-3)' }}>
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-[12px] font-semibold" style={{ color:'var(--joi-text-1)' }}>{cat}</span>
-                          <span className="text-[10px] font-mono" style={{ color: i<2?'var(--accent)':'var(--magenta)' }}>{[45,30,50,20,25][i]}%</span>
-                        </div>
-                        <div className="w-full h-1.5 rounded-full" style={{ background:'var(--joi-bg-1)' }}>
-                          <div className="h-full rounded-full" style={{ width:`${[45,30,50,20,25][i]}%`, background: i<2?'var(--accent)':'var(--magenta)' }} />
-                        </div>
-                      </div>
-                    ))}
-                    <button className="btn-primary w-full py-2.5 text-sm">✦ Expandir Universo con AI</button>
+                          ))
+                        : Array.from({ length: 8 }, (_, i) => (
+                            <div key={i} className="aspect-[3/4] rounded-lg shimmer"
+                              style={{ border: '1px solid rgba(255,255,255,.04)' }} />
+                          ))
+                      }
+                    </div>
                   </div>
                 )}
                 {detailTab === 'Ajustes' && selectedChar !== null && (() => {
@@ -672,6 +742,105 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
           </div>
         )}
       </div>
+
+      {/* ─── Context Menu (floating) ─── */}
+      {contextMenu && (
+        <div
+          ref={contextMenuRef}
+          className="fixed z-[100] rounded-xl overflow-hidden shadow-xl"
+          style={{
+            top: Math.min(contextMenu.y, window.innerHeight - 160),
+            left: Math.min(contextMenu.x, window.innerWidth - 180),
+            background: 'rgba(255,255,255,0.97)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(0,0,0,0.08)',
+            minWidth: 170,
+          }}
+        >
+          <button
+            onClick={() => handleDownloadPhoto(contextMenu.item)}
+            className="flex items-center gap-2.5 w-full px-4 py-2.5 text-left text-[13px] transition-colors hover:bg-gray-50"
+            style={{ color: '#333' }}
+          >
+            <span style={{ fontSize: 14 }}>&#x2913;</span>
+            Descargar
+          </button>
+          <button
+            onClick={() => handleReassign(contextMenu.item)}
+            className="flex items-center gap-2.5 w-full px-4 py-2.5 text-left text-[13px] transition-colors hover:bg-gray-50"
+            style={{ color: '#333', borderTop: '1px solid rgba(0,0,0,0.05)' }}
+          >
+            <span style={{ fontSize: 14 }}>&#x21C4;</span>
+            Reasignar personaje
+          </button>
+          <button
+            onClick={() => handleDeletePhoto(contextMenu.item)}
+            className="flex items-center gap-2.5 w-full px-4 py-2.5 text-left text-[13px] transition-colors hover:bg-red-50"
+            style={{ color: '#DC2626', borderTop: '1px solid rgba(0,0,0,0.05)' }}
+          >
+            <span style={{ fontSize: 14 }}>&#x2717;</span>
+            Eliminar
+          </button>
+        </div>
+      )}
+
+      {/* ─── Reassign Modal ─── */}
+      {reassignTarget && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center"
+          style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)' }}
+          onClick={(e) => { if (e.target === e.currentTarget) setReassignTarget(null) }}
+        >
+          <div className="rounded-2xl overflow-hidden max-w-sm w-full mx-4" style={{ background: 'white', border: '1px solid rgba(0,0,0,0.08)' }}>
+            <div className="px-5 py-4" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+              <h3 className="text-sm font-semibold" style={{ color: '#111' }}>Reasignar foto</h3>
+              <p className="text-xs mt-1" style={{ color: '#999' }}>Elige el personaje al que pertenece esta foto</p>
+            </div>
+            <div className="p-3 max-h-[300px] overflow-y-auto space-y-1">
+              {storeCharacters.map(c => {
+                const isCurrent = c.id === reassignTarget.characterId
+                return (
+                  <button
+                    key={c.id}
+                    disabled={isCurrent}
+                    onClick={() => confirmReassign(c.id)}
+                    className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-colors"
+                    style={{
+                      background: isCurrent ? 'rgba(0,0,0,0.04)' : 'transparent',
+                      opacity: isCurrent ? 0.5 : 1,
+                    }}
+                    onMouseEnter={e => { if (!isCurrent) e.currentTarget.style.background = 'rgba(0,0,0,0.04)' }}
+                    onMouseLeave={e => { if (!isCurrent) e.currentTarget.style.background = 'transparent' }}
+                  >
+                    <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0" style={{ background: '#F3F4F6' }}>
+                      {c.thumbnail ? (
+                        <img src={c.thumbnail} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-sm font-bold" style={{ color: '#999' }}>
+                          {c.name[0]?.toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-medium truncate" style={{ color: '#111' }}>{c.name}</div>
+                      {isCurrent && <span className="text-[10px]" style={{ color: '#999' }}>Actual</span>}
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+            <div className="px-5 py-3" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+              <button
+                onClick={() => setReassignTarget(null)}
+                className="w-full py-2 rounded-lg text-xs font-medium"
+                style={{ background: '#F3F4F6', color: '#555' }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

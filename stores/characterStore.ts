@@ -120,10 +120,19 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
     set((s) => ({ characters: [char, ...s.characters] }));
     // Persist to IndexedDB
     saveCharacter(char).catch(() => {});
-    // Fire-and-forget cloud sync
+    // Cloud sync — update local store with permanent URLs after upload
     const userId = get()._userId;
     if (userId) {
-      uploadCharacterToCloud(char, userId).catch(() => {});
+      uploadCharacterToCloud(char, userId).then(({ modelImageUrls, referencePhotoUrls }) => {
+        // Replace temporary API URLs with permanent Supabase storage URLs
+        set((s) => ({
+          characters: s.characters.map((c) =>
+            c.id === char.id
+              ? { ...c, modelImageUrls, referencePhotoUrls, thumbnail: modelImageUrls[0] || c.thumbnail }
+              : c
+          ),
+        }));
+      }).catch(() => {});
     }
   },
 

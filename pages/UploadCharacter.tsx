@@ -484,6 +484,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
       soulStyleId: undefined,
       personalityTraits: selPersonality,
       referencePhotoUrls: defaultRefs,
+      modelImageUrls: defaultRefs, // temporary URLs — replaced with permanent Supabase URLs after cloud upload
     }
 
     try {

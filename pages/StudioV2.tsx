@@ -343,6 +343,8 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
   // Generate Hero
   const handleHeroGenerate = async () => {
     if (!selectedChar && faceRefs.length === 0) { toast.error('Selecciona un personaje o sube fotos de referencia'); return }
+    // Capture character ID at start to prevent race condition if user switches during generation
+    const charIdAtStart = selectedChar?.id
     const cost = CREDIT_COSTS['grok-edit']
     const ok = await decrementCredits(cost)
     if (!ok) { toast.error('Créditos insuficientes'); return }
@@ -376,8 +378,8 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
 
       if (results.length > 0) {
         triggerFlash(); setHeroImage(results[0]); pipelineSetHeroShot(results[0])
-        useGalleryStore.getState().addItems(results.map(url => ({ id: crypto.randomUUID(), url, prompt: scenario || 'Studio hero shot', model: eng?.userFriendlyName || 'gemini-nb2', timestamp: Date.now(), type: 'create' as const, characterId: selectedChar?.id, tags: ['studio', 'hero-shot'], source: 'director' as const })))
-        if (selectedChar) useCharacterStore.getState().incrementUsage(selectedChar.id)
+        useGalleryStore.getState().addItems(results.map(url => ({ id: crypto.randomUUID(), url, prompt: scenario || 'Studio hero shot', model: eng?.userFriendlyName || 'gemini-nb2', timestamp: Date.now(), type: 'create' as const, characterId: charIdAtStart, tags: ['studio', 'hero-shot'], source: 'director' as const })))
+        if (charIdAtStart) useCharacterStore.getState().incrementUsage(charIdAtStart)
         toast.success('Hero shot generado')
       } else {
         restoreCredits(cost + (poseCreditsDeducted ? 5 : 0))
@@ -504,13 +506,13 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
     else toast.error('No se generaron fotos')
   }
 
-  // Save selected photos to gallery
+  // Save selected photos to gallery — use selectedCharId (stable) instead of selectedChar (derived, can change)
   const handleSaveSelected = () => {
     if (selectedCells.size === 0) return
     const items: GalleryItem[] = Array.from(selectedCells).filter(idx => gridCells[idx]).map((idx, i) => ({
       id: crypto.randomUUID(), url: gridCells[idx], prompt: `Session: ${scenario || 'Studio'} · ${cellVibeMap[idx] || 'Photo'}`,
       model: 'gemini-nb2', timestamp: Date.now() + i, type: 'create' as const,
-      characterId: selectedChar?.id, tags: ['studio', 'session', `vibe:${cellVibeMap[idx]}`], source: 'director' as const,
+      characterId: selectedCharId ?? undefined, tags: ['studio', 'session', `vibe:${cellVibeMap[idx]}`], source: 'director' as const,
     }))
     useGalleryStore.getState().addItems(items)
     toast.success(`${items.length} foto${items.length > 1 ? 's' : ''} guardada${items.length > 1 ? 's' : ''} en galería`)
