@@ -724,6 +724,18 @@ export const ENGINE_METADATA: EngineMetadata[] = [
   },
   // ── Replicate ──
   {
+    key: 'replicate:wan27pro',
+    userFriendlyName: 'Wan 2.7 Pro',
+    description: 'Alibaba 4K, thinking mode, 9 refs',
+    bestFor: 'Character creation, coherent image sets',
+    tags: ['photorealism', 'quality', 'consistency'],
+    requiresFaceRef: false,
+    estimatedTime: '~15s',
+    creditCost: CREDIT_COSTS[ReplicateModel.Wan27ImagePro],
+    provider: AIProvider.Replicate,
+    replicateModel: ReplicateModel.Wan27ImagePro,
+  },
+  {
     key: 'replicate:grok',
     userFriendlyName: 'Grok Imagine',
     description: 'xAI creative interpretation',
