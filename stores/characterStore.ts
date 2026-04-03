@@ -11,8 +11,6 @@ import {
   loadCharactersFromCloud,
   deleteCharacterFromCloud,
 } from '../services/supabaseCharacterService';
-import { useGalleryStore } from './galleryStore';
-
 export interface SavedCharacter {
   id: string;
   name: string;
@@ -79,32 +77,6 @@ export const useCharacterStore = create<CharacterState>((set, get) => ({
           c.referencePhotoUrls = c.modelImageUrls.slice(0, 5);
         }
       }
-
-      // Auto-migrate: ensure character creation photos exist in galleryStore
-      // Only migrate if no gallery items exist for this character yet (prevents duplicates from URL changes)
-      try {
-        const galleryState = useGalleryStore.getState();
-        const charsWithGalleryItems = new Set(galleryState.items.filter(i => i.tags?.includes('character-creation')).map(i => i.characterId));
-        const sheetLabels = ['Retrato', 'Ángulos de Rostro', 'Ángulos de Cuerpo', 'Expresiones'];
-        const newGalleryItems: any[] = [];
-        for (const c of chars) {
-          if (!c.modelImageUrls || c.modelImageUrls.length === 0) continue;
-          if (charsWithGalleryItems.has(c.id)) continue; // already migrated
-          for (let i = 0; i < c.modelImageUrls.length; i++) {
-            const url = c.modelImageUrls[i];
-            if (!url) continue;
-            newGalleryItems.push({
-              id: crypto.randomUUID(), url,
-              prompt: `${c.name} — ${sheetLabels[i] || 'Referencia'}`,
-              model: 'character-creator', timestamp: c.createdAt + i,
-              type: 'create', characterId: c.id,
-              tags: ['character-creation', i === 0 ? 'portrait' : 'sheet'],
-              source: 'director',
-            });
-          }
-        }
-        if (newGalleryItems.length > 0) galleryState.addItems(newGalleryItems);
-      } catch { /* gallery migration failed — non-critical, chars still load */ }
 
       set({ characters: chars, isLoading: false });
     } catch {
