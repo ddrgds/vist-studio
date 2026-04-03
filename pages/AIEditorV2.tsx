@@ -682,7 +682,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                 {!q && reimagineCategory === 'all' && !showAllStyles && <button onClick={() => setShowAllStyles(true)} className="text-[10px] font-medium" style={{ color: 'var(--accent)' }}>Ver todos ({SOUL_STYLES.length})</button>}
                 {!q && reimagineCategory === 'all' && showAllStyles && <button onClick={() => setShowAllStyles(false)} className="text-[10px] font-medium" style={{ color: '#999' }}>Menos</button>}
               </div>
-              <div className="grid grid-cols-2 gap-1 max-h-[200px] overflow-y-auto mt-1.5" style={{ scrollbarWidth: 'thin' }}>
+              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1 max-h-[200px] lg:max-h-[40vh] overflow-y-auto mt-1.5" style={{ scrollbarWidth: 'thin' }}>
                 {filtered.map(style => (
                   <button key={style.id} onClick={() => { setReimagineStyleIds(prev => { const n = new Set(prev); n.has(style.id) ? n.delete(style.id) : n.add(style.id); return n }); setReimagineCustom('') }}
                     className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition-all"

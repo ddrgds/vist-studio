@@ -132,6 +132,16 @@ h1, h2, h3, h4, h5, h6 {
 /* ── Noise Overlay — removed for light mode ───────────────── */
 /* body::after removed — film grain doesn't work in light mode */
 
+/* ── Interactive Elements — Desktop UX ────────────────────── */
+button, [role="button"], input[type="submit"], input[type="button"], select {
+  cursor: pointer;
+}
+button:focus-visible, [role="button"]:focus-visible, a:focus-visible,
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* ── Selection ────────────────────────────────────────────── */
 ::selection { background: rgba(0,0,0,0.12); color: inherit; }
 

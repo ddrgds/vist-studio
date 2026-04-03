@@ -729,7 +729,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
         /* ═══════════════════════════════════════════════════════════
            CREATE MODE — 3 step wizard
            ═══════════════════════════════════════════════════════════ */
-        <div className={`px-4 md:px-8 pb-20 md:pb-8 ${variants.length > 0 || generating ? 'flex flex-col md:flex-row gap-6' : 'max-w-3xl mx-auto'}`}>
+        <div className={`px-4 md:px-8 pb-20 md:pb-8 ${variants.length > 0 || generating ? 'flex flex-col md:flex-row gap-6' : 'max-w-3xl lg:max-w-5xl mx-auto lg:flex lg:gap-6'}`}>
           <div className="flex-1">
             {/* Steps Navigation */}
             <div className="flex gap-1 mb-6 overflow-x-auto pb-1">
@@ -1355,7 +1355,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
           </div>
 
           {/* ─── Right: Preview Panel — only shown when variants exist ── */}
-          <div className="w-full md:w-[320px] shrink-0" style={{ display: variants.length > 0 || generating ? undefined : 'none' }}>
+          <div className={`w-full md:w-[320px] shrink-0 ${variants.length > 0 || generating ? '' : 'hidden lg:block'}`}>
             <div className="p-5 sticky top-8 rounded-xl" style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 12 }}>
               <div className="flex items-center justify-between mb-3">
                 <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#555' }}>Vista Previa</div>
