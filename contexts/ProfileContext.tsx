@@ -63,18 +63,37 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setIsLoading(true);
       lastLoadedUserId.current = user.id;
       const data = await loadProfile(user.id);
-      setProfile(data ?? {
-        id: user.id,
-        displayName: user.email?.split('@')[0] ?? '',
-        bio: '',
-        avatarUrl: null,
-        subscriptionPlan: 'starter',
-        subscriptionStatus: 'free',
-        creditsRemaining: 150,
-        subscriptionRenewsAt: null,
-        lemonSqueezySubscriptionId: null,
-        createdAt: new Date().toISOString(),
-      });
+      if (data) {
+        setProfile(data);
+      } else {
+        // First login — create profile row in Supabase with initial credits
+        const defaultProfile: UserProfile = {
+          id: user.id,
+          displayName: user.email?.split('@')[0] ?? '',
+          bio: '',
+          avatarUrl: null,
+          subscriptionPlan: 'starter',
+          subscriptionStatus: 'free',
+          creditsRemaining: 150,
+          subscriptionRenewsAt: null,
+          lemonSqueezySubscriptionId: null,
+          createdAt: new Date().toISOString(),
+        };
+        setProfile(defaultProfile);
+        // Persist to DB so credit deductions work
+        const { supabase } = await import('../services/supabaseService');
+        supabase.from('profiles').upsert({
+          id: user.id,
+          display_name: defaultProfile.displayName,
+          credits_remaining: 150,
+          subscription_plan: 'starter',
+          subscription_status: 'free',
+          created_at: defaultProfile.createdAt,
+          updated_at: defaultProfile.createdAt,
+        }).then(({ error }) => {
+          if (error) console.warn('Failed to create initial profile row:', error.message);
+        });
+      }
     } catch (err) {
       console.warn('ProfileContext: failed to load profile', err);
     } finally {

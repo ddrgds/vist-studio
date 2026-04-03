@@ -12,11 +12,12 @@ import { Sidebar } from './components/Sidebar';
 // Layout
 import MobileNav from './layout/MobileNav';
 
-// ── Core pages (3-step flow: Create → Content → Gallery) ──
+// ── Core pages ──
 const CreatePersona = lazy(() => import('./pages/UploadCharacter'));
-const ContentStudio = lazy(() => import('./pages/ContentStudio'));
 const Gallery = lazy(() => import('./pages/Gallery'));
 const CharacterGallery = lazy(() => import('./pages/CharacterGallery'));
+const StudioV2 = lazy(() => import('./pages/StudioV2').then(m => ({ default: m.StudioV2 })));
+const AIEditor = lazy(() => import('./pages/AIEditorV2'));
 
 // ── Auth ──
 const AuthScreen = lazy(() => import('./components/AuthScreen'));
@@ -25,13 +26,10 @@ const Landing = lazy(() => import('./pages/Landing'));
 // ── Extra ──
 const PricingPage = lazy(() => import('./components/PricingPage'));
 const ProfilePage = lazy(() => import('./components/ProfilePage'));
-const AIEditor = lazy(() => import('./pages/AIEditorV2'));
 const ExportModal = lazy(() => import('./features/export/ExportModal'));
-const PhotoSession = lazy(() => import('./pages/PhotoSession'));
 const VideoStudio = lazy(() => import('./pages/VideoStudio'));
-const StudioV2 = lazy(() => import('./pages/StudioV2').then(m => ({ default: m.StudioV2 })));
 
-export type Page = 'create' | 'studio' | 'editor' | 'gallery' | 'characters' | 'pricing' | 'profile' | 'carousel' | 'video';
+export type Page = 'create' | 'studio' | 'editor' | 'gallery' | 'characters' | 'pricing' | 'profile' | 'video';
 
 function App() {
   return (
@@ -147,7 +145,6 @@ function AuthenticatedApp() {
     characters: <CharacterGallery onNav={handleNav} />,
     pricing: <PricingPage />,
     profile: <ProfilePage />,
-    carousel: <PhotoSession onNav={handleNav} />,
     video: <VideoStudio onNav={handleNav} />,
   };
 
