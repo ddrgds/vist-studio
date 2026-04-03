@@ -377,7 +377,7 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
       <div className="px-4 lg:px-8 py-3 flex gap-1.5 overflow-x-auto flex-nowrap">
         {filters.map(f => (
           <button key={f} onClick={()=>setActiveFilter(f)}
-            className="px-3.5 py-1.5 rounded-lg text-[11px] font-medium shrink-0 transition-all"
+            className="pill-btn px-3.5 py-1.5 rounded-lg text-[11px] font-medium shrink-0 transition-all"
             style={{
               background: activeFilter===f ? '#1A1A1A' : '#fff',
               border: `1px solid ${activeFilter===f ? '#1A1A1A' : 'rgba(0,0,0,0.06)'}`,
@@ -396,7 +396,7 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
           { id: 'publicado', label: '↑ Publicado' },
         ] as const).map(s => (
           <button key={String(s.id)} onClick={() => setStatusFilter(s.id as string | null)}
-            className="px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all"
+            className="pill-btn px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all"
             style={{
               background: statusFilter === s.id ? '#1A1A1A' : '#fff',
               border: `1px solid ${statusFilter === s.id ? '#1A1A1A' : 'rgba(0,0,0,0.06)'}`,
@@ -459,7 +459,7 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                   if (batchMode) { toggleSelect(img.id) }
                   else { setLightboxIndex(idx); setLbZoom(1); setLbPan({ x: 0, y: 0 }) }
                 }}
-                className={`group cursor-pointer rounded-xl overflow-hidden relative transition-all hover:scale-[1.02] ${viewMode==='masonry' ? 'break-inside-avoid' : ''}`}
+                className={`card-hover group cursor-pointer rounded-xl overflow-hidden relative transition-all hover:scale-[1.02] ${viewMode==='masonry' ? 'break-inside-avoid' : ''}`}
                 style={{
                   border: `1px solid ${selected.includes(img.id) ? '#6366F1' : 'rgba(0,0,0,0.06)'}`,
                   boxShadow: selected.includes(img.id) ? '0 0 0 2px rgba(99,102,241,.2)' : '0 2px 8px rgba(0,0,0,0.04)',

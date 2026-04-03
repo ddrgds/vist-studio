@@ -47,7 +47,7 @@ const MobileNav: React.FC<Props> = ({ page, onNav }) => {
   const isMoreActive = MORE_ITEMS.some(i => i.id === page)
 
   return (
-    <nav className="flex lg:hidden fixed bottom-0 left-0 right-0 z-50"
+    <nav role="navigation" aria-label="Navegación móvil" className="flex lg:hidden fixed bottom-0 left-0 right-0 z-50"
       style={{
         background: 'rgba(255,255,255,0.92)',
         backdropFilter: 'blur(20px)',
@@ -62,6 +62,8 @@ const MobileNav: React.FC<Props> = ({ page, onNav }) => {
               key={id}
               ref={el => (itemRefs.current[idx] = el)}
               onClick={() => onNav(id)}
+              aria-label={label}
+              aria-current={isActive ? 'page' : undefined}
               className="flex flex-col items-center gap-0.5 relative transition-all duration-200"
               style={{
                 '--line-w': '0px',
@@ -112,6 +114,8 @@ const MobileNav: React.FC<Props> = ({ page, onNav }) => {
         <div ref={moreRef} className="relative">
           <button
             onClick={() => setShowMore(!showMore)}
+            aria-label="Más opciones"
+            aria-expanded={showMore}
             className="flex flex-col items-center gap-0.5 transition-all duration-200"
             style={{
               color: isMoreActive || showMore ? '#1A1A1A' : '#999',
@@ -130,7 +134,7 @@ const MobileNav: React.FC<Props> = ({ page, onNav }) => {
           </button>
 
           {showMore && (
-            <div className="absolute bottom-full right-0 mb-2 rounded-2xl overflow-hidden min-w-[180px]"
+            <div role="menu" aria-label="Más opciones" className="absolute bottom-full right-0 mb-2 rounded-2xl overflow-hidden min-w-[180px]"
               style={{
                 background: 'rgba(255,255,255,0.95)',
                 backdropFilter: 'blur(20px)',
@@ -140,6 +144,8 @@ const MobileNav: React.FC<Props> = ({ page, onNav }) => {
               {MORE_ITEMS.map(({ id, icon: Icon, label }, idx) => (
                 <button
                   key={id}
+                  role="menuitem"
+                  aria-label={label}
                   onClick={() => { onNav(id); setShowMore(false) }}
                   className="flex items-center gap-3 px-4 py-3 w-full text-left transition-all duration-150"
                   style={{

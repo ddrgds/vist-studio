@@ -76,6 +76,8 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
 
   return (
     <aside
+      role="navigation"
+      aria-label="Navegación principal"
       className="h-screen flex-col shrink-0 transition-all duration-300 hidden lg:flex"
       style={{
         width: collapsed ? 68 : 230,
@@ -134,6 +136,8 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
                   <button
                     key={n.id}
                     onClick={() => onNav(n.id)}
+                    aria-label={n.label}
+                    aria-current={active ? 'page' : undefined}
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all group relative"
                     style={{
                       background: active ? '#F3F4F6' : 'transparent',
@@ -185,6 +189,7 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}
+          aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
           className="flex items-center gap-2 px-3 py-2 rounded-xl w-full transition-all mb-1"
           style={{ color: '#999999', background: 'transparent' }}
           onMouseEnter={e => (e.currentTarget.style.background = '#F3F4F6')}
@@ -196,11 +201,11 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
           )}
         </button>
         <div className="flex gap-1">
-          <button onClick={() => onNav('pricing')} className="flex-1 py-1.5 rounded-lg text-[11px] transition-colors"
+          <button onClick={() => onNav('pricing')} aria-label="Precios" className="flex-1 py-1.5 rounded-lg text-[11px] transition-colors"
             style={{ color: '#555555', background: '#F3F4F6' }}>
             {collapsed ? <CreditCard size={14} className="mx-auto" /> : 'Precios'}
           </button>
-          <button onClick={onToggle} className="flex-1 py-1.5 rounded-lg text-[11px] transition-colors flex items-center justify-center gap-1"
+          <button onClick={onToggle} aria-label={collapsed ? 'Expandir sidebar' : 'Colapsar sidebar'} className="flex-1 py-1.5 rounded-lg text-[11px] transition-colors flex items-center justify-center gap-1"
             style={{ color: '#555555', background: '#F3F4F6' }}>
             {collapsed ? <PanelLeftOpen size={14} /> : <><PanelLeftClose size={14} /> Colapsar</>}
           </button>

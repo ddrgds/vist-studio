@@ -142,6 +142,60 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   outline-offset: 2px;
 }
 
+/* ── Chips & Pills ─────────────────────────────────────────── */
+.chip-idle {
+  background: var(--bg-1);
+  border-color: rgba(0,0,0,0.06);
+  color: var(--text-3);
+}
+.chip-idle:hover {
+  background: #F0F0F1;
+  border-color: rgba(0,0,0,0.12);
+  color: var(--text-2);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+.chip-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.chip-active:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+.chip-interactive {
+  transition: all 0.15s ease;
+}
+
+/* ── Pill buttons (Quick Styles, filters, source tabs) ───── */
+.pill-btn {
+  transition: all 0.15s ease;
+}
+.pill-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+.pill-btn:active {
+  transform: translateY(0);
+}
+
+/* ── Card hover (gallery items, character cards) ──────────── */
+.card-hover {
+  transition: all 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+
+/* ── Icon button hover ─────────────────────────────────────── */
+.icon-btn:hover {
+  background: rgba(0,0,0,0.04);
+  border-radius: 8px;
+}
+
 /* ── Selection ────────────────────────────────────────────── */
 ::selection { background: rgba(0,0,0,0.12); color: inherit; }
 

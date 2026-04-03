@@ -79,6 +79,9 @@ function AppLayout() {
         </Suspense>
         {showAuth && (
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Iniciar sesión"
             className="fixed inset-0 z-[200] flex items-center justify-center"
             style={{ background: 'rgba(8,7,12,0.8)', backdropFilter: 'blur(12px)' }}
             onClick={(e) => { if (e.target === e.currentTarget) setShowAuth(false); }}
@@ -156,6 +159,8 @@ function AuthenticatedApp() {
 
       <main
         ref={mainRef}
+        role="main"
+        aria-label="Contenido principal"
         className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative pb-16 lg:pb-0"
         style={{
           opacity: transitioning ? 0 : 1,

@@ -528,8 +528,8 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
   // ─── Shared UI pieces ─────────────────────────────────
   const phaseToggle = (
     <div style={{ display: 'flex', background: 'var(--bg-0)', borderRadius: 14, padding: 4, border: '1px solid var(--border)' }}>
-      <button onClick={() => setPhase('hero')} style={{ flex: 1, padding: '10px 16px', borderRadius: 10, fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer', textAlign: 'center', border: 'none', background: phase === 'hero' ? 'var(--accent)' : 'transparent', color: phase === 'hero' ? 'white' : 'var(--text-3)', transition: 'all 0.2s' }}>⚡ Crear Hero</button>
-      <button onClick={() => { if (heroImage) handleSessionTransition(); else toast.error('Genera un hero primero') }} style={{ flex: 1, padding: '10px 16px', borderRadius: 10, fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer', textAlign: 'center', border: 'none', background: phase === 'session' ? 'var(--accent)' : 'transparent', color: phase === 'session' ? 'white' : 'var(--text-3)', transition: 'all 0.2s' }}>📸 Sesión de Fotos</button>
+      <button className="pill-btn" onClick={() => setPhase('hero')} style={{ flex: 1, padding: '10px 16px', borderRadius: 10, fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer', textAlign: 'center', border: 'none', background: phase === 'hero' ? 'var(--accent)' : 'transparent', color: phase === 'hero' ? 'white' : 'var(--text-3)', transition: 'all 0.2s' }}>⚡ Crear Hero</button>
+      <button className="pill-btn" onClick={() => { if (heroImage) handleSessionTransition(); else toast.error('Genera un hero primero') }} style={{ flex: 1, padding: '10px 16px', borderRadius: 10, fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer', textAlign: 'center', border: 'none', background: phase === 'session' ? 'var(--accent)' : 'transparent', color: phase === 'session' ? 'white' : 'var(--text-3)', transition: 'all 0.2s' }}>📸 Sesión de Fotos</button>
     </div>
   )
 
@@ -541,7 +541,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       {/* Source tabs */}
       <div style={{ display: 'flex', gap: 6 }}>
         {[{ key: 'crear' as const, label: '✨ Crear' }, { key: 'subir' as const, label: '📷 Subir' }, { key: 'galeria' as const, label: '🖼 Galería' }].map(t => (
-          <button key={t.key} onClick={() => { setSourceTab(t.key); if (t.key === 'subir') uploadInputRef.current?.click(); if (t.key === 'galeria') { useNavigationStore.getState().openGalleryForSelection('studio'); onNav?.('gallery') } }}
+          <button key={t.key} className="pill-btn" onClick={() => { setSourceTab(t.key); if (t.key === 'subir') uploadInputRef.current?.click(); if (t.key === 'galeria') { useNavigationStore.getState().openGalleryForSelection('studio'); onNav?.('gallery') } }}
             style={{ padding: compact ? '5px 10px' : '7px 14px', borderRadius: 20, fontSize: compact ? '0.75rem' : '0.78rem', cursor: 'pointer', border: `1px solid ${sourceTab === t.key ? 'var(--accent)' : 'var(--border)'}`, background: sourceTab === t.key ? 'var(--accent)' : 'white', color: sourceTab === t.key ? 'white' : 'var(--text-2)', transition: 'all 0.15s' }}>{t.label}</button>
         ))}
       </div>
@@ -569,7 +569,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
         <span style={labelStyle}>Estilo Rápido</span>
         <div style={{ display: 'flex', gap: compact ? 6 : 8, flexWrap: compact ? 'nowrap' : 'wrap', overflowX: compact ? 'auto' : undefined, paddingBottom: compact ? 4 : 0 }}>
           {QUICK_STYLE_PRESETS.map(p => (
-            <button key={p.id} onClick={() => applyQuickStyle(p)} style={{ padding: compact ? '6px 12px' : '8px 16px', borderRadius: 20, fontSize: compact ? '0.75rem' : '0.8rem', cursor: 'pointer', whiteSpace: 'nowrap', border: `1px solid ${activeQuickStyle === p.id ? 'var(--accent)' : 'var(--border)'}`, background: activeQuickStyle === p.id ? 'var(--accent)' : 'white', color: activeQuickStyle === p.id ? 'white' : 'var(--text-2)', transition: 'all 0.15s' }}>{p.emoji} {p.label}</button>
+            <button key={p.id} className="pill-btn" onClick={() => applyQuickStyle(p)} style={{ padding: compact ? '6px 12px' : '8px 16px', borderRadius: 20, fontSize: compact ? '0.75rem' : '0.8rem', cursor: 'pointer', whiteSpace: 'nowrap', border: `1px solid ${activeQuickStyle === p.id ? 'var(--accent)' : 'var(--border)'}`, background: activeQuickStyle === p.id ? 'var(--accent)' : 'white', color: activeQuickStyle === p.id ? 'white' : 'var(--text-2)', transition: 'all 0.15s' }}>{p.emoji} {p.label}</button>
           ))}
         </div>
       </div>
@@ -668,7 +668,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
         <span style={labelStyle}>Dirección Creativa <span style={{ fontSize: '0.55rem', fontFamily: "'JetBrains Mono', monospace", background: '#eee', padding: '1px 4px', borderRadius: 3, textTransform: 'none', letterSpacing: 0 }}>auto</span></span>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {PHOTO_SESSION_PRESETS.map(p => (
-            <button key={p.id} onClick={() => handleVibeToggle(p.id)} style={{ padding: '5px 12px', borderRadius: 20, fontSize: '0.75rem', cursor: 'pointer', border: `1px solid ${selectedVibes.has(p.id) ? 'var(--accent)' : 'var(--border)'}`, background: selectedVibes.has(p.id) ? 'var(--accent)' : 'white', color: selectedVibes.has(p.id) ? 'white' : 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 4, transition: 'all 0.2s' }}>
+            <button key={p.id} className="pill-btn" onClick={() => handleVibeToggle(p.id)} style={{ padding: '5px 12px', borderRadius: 20, fontSize: '0.75rem', cursor: 'pointer', border: `1px solid ${selectedVibes.has(p.id) ? 'var(--accent)' : 'var(--border)'}`, background: selectedVibes.has(p.id) ? 'var(--accent)' : 'white', color: selectedVibes.has(p.id) ? 'white' : 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 4, transition: 'all 0.2s' }}>
               {p.icon} {p.label}
               {autoVibes.has(p.id) && <span style={{ fontSize: '0.55rem', fontFamily: "'JetBrains Mono', monospace", background: selectedVibes.has(p.id) ? 'rgba(255,255,255,0.2)' : '#eee', padding: '1px 4px', borderRadius: 3 }}>auto</span>}
             </button>
@@ -692,7 +692,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
           <span style={labelStyle}>Resolución</span>
           <div style={{ display: 'flex', gap: 4 }}>
             {(['1k', '2k', '4k'] as const).map(r => (
-              <button key={r} onClick={() => setSessionResolution(r)} style={{ padding: '5px 12px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 500, cursor: 'pointer', border: `1px solid ${sessionResolution === r ? 'var(--accent)' : 'var(--border)'}`, background: sessionResolution === r ? 'var(--accent)' : 'transparent', color: sessionResolution === r ? 'white' : 'var(--text-2)', fontFamily: "'JetBrains Mono', monospace", transition: 'all 0.2s' }}>{r.toUpperCase()}</button>
+              <button key={r} className="pill-btn" onClick={() => setSessionResolution(r)} style={{ padding: '5px 12px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 500, cursor: 'pointer', border: `1px solid ${sessionResolution === r ? 'var(--accent)' : 'var(--border)'}`, background: sessionResolution === r ? 'var(--accent)' : 'transparent', color: sessionResolution === r ? 'white' : 'var(--text-2)', fontFamily: "'JetBrains Mono', monospace", transition: 'all 0.2s' }}>{r.toUpperCase()}</button>
             ))}
           </div>
         </div>
@@ -700,7 +700,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
           <span style={labelStyle}>Formato</span>
           <div style={{ display: 'flex', gap: 4 }}>
             {[{ ar: AspectRatio.Portrait, label: 'Publicación' }, { ar: AspectRatio.Tall, label: 'Historia' }, { ar: AspectRatio.Square, label: '□' }].map(({ ar, label }) => (
-              <button key={ar} onClick={() => setSessionAspectRatio(ar)} style={{ padding: '5px 12px', borderRadius: 8, fontSize: '0.7rem', cursor: 'pointer', border: `1px solid ${sessionAspectRatio === ar ? 'var(--accent)' : 'var(--border)'}`, background: sessionAspectRatio === ar ? 'var(--accent)' : 'transparent', color: sessionAspectRatio === ar ? 'white' : 'var(--text-2)', transition: 'all 0.2s' }}>{label}</button>
+              <button key={ar} className="pill-btn" onClick={() => setSessionAspectRatio(ar)} style={{ padding: '5px 12px', borderRadius: 8, fontSize: '0.7rem', cursor: 'pointer', border: `1px solid ${sessionAspectRatio === ar ? 'var(--accent)' : 'var(--border)'}`, background: sessionAspectRatio === ar ? 'var(--accent)' : 'transparent', color: sessionAspectRatio === ar ? 'white' : 'var(--text-2)', transition: 'all 0.2s' }}>{label}</button>
             ))}
           </div>
         </div>
@@ -787,8 +787,8 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
             {phaseToggle}
             {phase === 'hero' && (
               <div style={{ display: 'flex', background: 'var(--bg-0)', borderRadius: 10, padding: 3, border: '1px solid var(--border)' }}>
-                <button onClick={() => setIsSimpleMode(true)} style={{ flex: 1, padding: '6px 12px', borderRadius: 7, fontSize: '0.78rem', fontWeight: 500, cursor: 'pointer', border: 'none', background: isSimpleMode ? 'var(--accent)' : 'transparent', color: isSimpleMode ? 'white' : 'var(--text-3)', transition: 'all 0.2s' }}>Simple</button>
-                <button onClick={() => setIsSimpleMode(false)} style={{ flex: 1, padding: '6px 12px', borderRadius: 7, fontSize: '0.78rem', fontWeight: 500, cursor: 'pointer', border: 'none', background: !isSimpleMode ? 'var(--accent)' : 'transparent', color: !isSimpleMode ? 'white' : 'var(--text-3)', transition: 'all 0.2s' }}>Avanzado</button>
+                <button className="pill-btn" onClick={() => setIsSimpleMode(true)} style={{ flex: 1, padding: '6px 12px', borderRadius: 7, fontSize: '0.78rem', fontWeight: 500, cursor: 'pointer', border: 'none', background: isSimpleMode ? 'var(--accent)' : 'transparent', color: isSimpleMode ? 'white' : 'var(--text-3)', transition: 'all 0.2s' }}>Simple</button>
+                <button className="pill-btn" onClick={() => setIsSimpleMode(false)} style={{ flex: 1, padding: '6px 12px', borderRadius: 7, fontSize: '0.78rem', fontWeight: 500, cursor: 'pointer', border: 'none', background: !isSimpleMode ? 'var(--accent)' : 'transparent', color: !isSimpleMode ? 'white' : 'var(--text-3)', transition: 'all 0.2s' }}>Avanzado</button>
               </div>
             )}
           </div>
@@ -844,8 +844,8 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
           <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'white', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
             <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Studio</span>
             <div style={{ display: 'flex', gap: 4 }}>
-              <button onClick={() => setPhase('hero')} style={{ padding: '4px 10px', borderRadius: 16, fontSize: '0.7rem', cursor: 'pointer', border: `1px solid ${phase === 'hero' ? 'var(--accent)' : 'var(--border)'}`, background: phase === 'hero' ? 'var(--accent)' : 'white', color: phase === 'hero' ? 'white' : 'var(--text-3)' }}>Hero</button>
-              <button onClick={() => { if (heroImage) handleSessionTransition(); else toast.error('Genera un hero primero') }} style={{ padding: '4px 10px', borderRadius: 16, fontSize: '0.7rem', cursor: 'pointer', border: `1px solid var(--border)`, background: 'white', color: 'var(--text-3)' }}>Sesión</button>
+              <button className="pill-btn" onClick={() => setPhase('hero')} style={{ padding: '4px 10px', borderRadius: 16, fontSize: '0.7rem', cursor: 'pointer', border: `1px solid ${phase === 'hero' ? 'var(--accent)' : 'var(--border)'}`, background: phase === 'hero' ? 'var(--accent)' : 'white', color: phase === 'hero' ? 'white' : 'var(--text-3)' }}>Hero</button>
+              <button className="pill-btn" onClick={() => { if (heroImage) handleSessionTransition(); else toast.error('Genera un hero primero') }} style={{ padding: '4px 10px', borderRadius: 16, fontSize: '0.7rem', cursor: 'pointer', border: `1px solid var(--border)`, background: 'white', color: 'var(--text-3)' }}>Sesión</button>
             </div>
           </div>
 
@@ -929,7 +929,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
                 {/* Vibes */}
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, justifyContent: 'center' }}>
                   {PHOTO_SESSION_PRESETS.slice(0, 6).map(p => (
-                    <button key={p.id} onClick={() => handleVibeToggle(p.id)} style={{ padding: '4px 10px', borderRadius: 16, fontSize: '0.7rem', cursor: 'pointer', border: `1px solid ${selectedVibes.has(p.id) ? 'var(--accent)' : 'var(--border)'}`, background: selectedVibes.has(p.id) ? 'var(--accent)' : 'white', color: selectedVibes.has(p.id) ? 'white' : 'var(--text-2)' }}>{p.icon} {p.label}</button>
+                    <button key={p.id} className="pill-btn" onClick={() => handleVibeToggle(p.id)} style={{ padding: '4px 10px', borderRadius: 16, fontSize: '0.7rem', cursor: 'pointer', border: `1px solid ${selectedVibes.has(p.id) ? 'var(--accent)' : 'var(--border)'}`, background: selectedVibes.has(p.id) ? 'var(--accent)' : 'white', color: selectedVibes.has(p.id) ? 'white' : 'var(--text-2)' }}>{p.icon} {p.label}</button>
                   ))}
                 </div>
                 {/* Photo count stepper */}

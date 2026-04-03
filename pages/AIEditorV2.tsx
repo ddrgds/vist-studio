@@ -642,7 +642,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         </div>
         <div className="flex gap-1.5 flex-wrap">
           {['Hacerla cinematica','Fondo con blur suave','Iluminacion golden hour','Cambiar a blanco y negro','Agregar grano de pelicula','Mejorar detalles'].map(q => (
-            <button key={q} onClick={() => setFreePrompt(q)} style={pill(freePrompt === q)}>{q}</button>
+            <button key={q} onClick={() => setFreePrompt(q)} className="pill-btn" style={pill(freePrompt === q)}>{q}</button>
           ))}
         </div>
       </>}
@@ -659,9 +659,9 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         {!reimagineSearch.trim() && (
           <div className="relative">
             <div className="flex gap-1.5 overflow-x-auto pb-1 min-w-0" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' }}>
-              <button onClick={() => setReimagineCategory('all')} className="shrink-0 text-[11px] px-3 py-1.5 rounded-full transition-all" style={{ background: reimagineCategory === 'all' ? '#1A1A1A' : 'transparent', color: reimagineCategory === 'all' ? '#FFF' : '#777', fontWeight: reimagineCategory === 'all' ? 600 : 400 }}>Todos</button>
+              <button onClick={() => setReimagineCategory('all')} className="pill-btn shrink-0 text-[11px] px-3 py-1.5 rounded-full transition-all" style={{ background: reimagineCategory === 'all' ? '#1A1A1A' : 'transparent', color: reimagineCategory === 'all' ? '#FFF' : '#777', fontWeight: reimagineCategory === 'all' ? 600 : 400 }}>Todos</button>
               {(Object.entries(SOUL_STYLE_CATEGORIES) as [SoulStyleCategory, { label: string; icon: string }][]).map(([key, cat]) => (
-                <button key={key} onClick={() => setReimagineCategory(key)} className="shrink-0 text-[11px] px-3 py-1.5 rounded-full transition-all whitespace-nowrap" style={{ background: reimagineCategory === key ? '#1A1A1A' : 'transparent', color: reimagineCategory === key ? '#FFF' : '#777', fontWeight: reimagineCategory === key ? 600 : 400 }}>{cat.icon} {cat.label}</button>
+                <button key={key} onClick={() => setReimagineCategory(key)} className="pill-btn shrink-0 text-[11px] px-3 py-1.5 rounded-full transition-all whitespace-nowrap" style={{ background: reimagineCategory === key ? '#1A1A1A' : 'transparent', color: reimagineCategory === key ? '#FFF' : '#777', fontWeight: reimagineCategory === key ? 600 : 400 }}>{cat.icon} {cat.label}</button>
               ))}
             </div>
           </div>
@@ -735,7 +735,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           <div style={sectionLabel}>Direccion</div>
           <div className="flex flex-wrap gap-1.5">
             {relightDirections.map(d => (
-              <button key={d.id} onClick={() => setRelightDir(d.id)} style={pill(relightDir === d.id)}>{d.label}</button>
+              <button key={d.id} onClick={() => setRelightDir(d.id)} className="pill-btn" style={pill(relightDir === d.id)}>{d.label}</button>
             ))}
           </div>
         </div>
@@ -743,7 +743,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           <div style={sectionLabel}>Intensidad</div>
           <div className="flex gap-1.5">
             {relightIntensities.map(i => (
-              <button key={i.id} onClick={() => setRelightIntensity(i.id)} className="flex-1 text-center" style={pill(relightIntensity === i.id)}>{i.label}</button>
+              <button key={i.id} onClick={() => setRelightIntensity(i.id)} className="pill-btn flex-1 text-center" style={pill(relightIntensity === i.id)}>{i.label}</button>
             ))}
           </div>
         </div>
@@ -944,7 +944,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         <div style={{ ...sectionLabel, marginTop: 12 }}>Escenas rapidas</div>
         <div className="flex gap-1.5 flex-wrap">
           {['Studio white background','Nature park','City street','Cozy interior','Tokyo neon streets','Cafe in Paris','Beach sunset','NYC rooftop','Enchanted forest','Space station'].map(q => (
-            <button key={q} onClick={() => { setSceneSource('prompt'); setScenePrompt(q) }} style={pill(scenePrompt === q)}>{q}</button>
+            <button key={q} onClick={() => { setSceneSource('prompt'); setScenePrompt(q) }} className="pill-btn" style={pill(scenePrompt === q)}>{q}</button>
           ))}
         </div>
         {sceneSource !== 'prompt' && sceneImage && (
@@ -1086,7 +1086,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           <div style={sectionLabel}>Direccion</div>
           <div className="grid grid-cols-3 gap-1.5">
             {['up', 'down', 'left', 'right', 'all'].map(dir => (
-              <button key={dir} onClick={() => setExpandDirection(dir)} className="capitalize text-center" style={pill(expandDirection === dir)}>{dir}</button>
+              <button key={dir} onClick={() => setExpandDirection(dir)} className="pill-btn capitalize text-center" style={pill(expandDirection === dir)}>{dir}</button>
             ))}
           </div>
         </div>
@@ -1107,7 +1107,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         {/* Category carousel */}
         <div className="flex gap-1 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none', touchAction: 'pan-x' }}>
           {[{ id: 'all', label: 'Todos' }, { id: 'film', label: '🎞️ Películas' }, { id: 'cam', label: '📷 Cámaras' }, { id: 'fx', label: '✨ Efectos' }].map(c => (
-            <button key={c.id} onClick={() => setDazzCategory(c.id)} className="shrink-0 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all" style={{ background: dazzCategory === c.id ? '#1A1A1A' : 'transparent', color: dazzCategory === c.id ? '#FFF' : '#777' }}>{c.label}</button>
+            <button key={c.id} onClick={() => setDazzCategory(c.id)} className="pill-btn shrink-0 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all" style={{ background: dazzCategory === c.id ? '#1A1A1A' : 'transparent', color: dazzCategory === c.id ? '#FFF' : '#777' }}>{c.label}</button>
           ))}
         </div>
         {/* Preset grid */}
@@ -1509,12 +1509,12 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           <div className="px-4 py-3 space-y-3 shrink-0" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
             <div className="flex gap-1.5">
               {(['1k', '2k', '4k'] as const).map(r => (
-                <button key={r} onClick={() => setEditorResolution(r)} style={pill(editorResolution === r)} className="flex-1 text-center">{r.toUpperCase()}</button>
+                <button key={r} onClick={() => setEditorResolution(r)} style={pill(editorResolution === r)} className="pill-btn flex-1 text-center">{r.toUpperCase()}</button>
               ))}
             </div>
             <div className="flex gap-1 flex-wrap">
               {[{ ar: AspectRatio.Portrait, label: 'Publicacion' }, { ar: AspectRatio.Square, label: 'Cuadrado' }, { ar: AspectRatio.Landscape, label: 'Portada' }, { ar: AspectRatio.Wide, label: 'Banner' }, { ar: AspectRatio.Tall, label: 'Historia' }].map(({ ar, label }) => (
-                <button key={ar} onClick={() => setEditorAspectRatio(ar)} style={pill(editorAspectRatio === ar)}>{label}</button>
+                <button key={ar} onClick={() => setEditorAspectRatio(ar)} className="pill-btn" style={pill(editorAspectRatio === ar)}>{label}</button>
               ))}
             </div>
             <button onClick={handleApply} disabled={processing || !inputImage}
@@ -1584,7 +1584,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
             <div className="px-4 pb-3 pt-2 shrink-0" style={{ borderTop: '1px solid rgba(0,0,0,0.06)', background: 'white' }}>
               <div className="flex gap-1.5 mb-2">
                 {(['1k', '2k', '4k'] as const).map(r => (
-                  <button key={r} onClick={() => setEditorResolution(r)} style={pill(editorResolution === r)} className="flex-1 text-center">{r.toUpperCase()}</button>
+                  <button key={r} onClick={() => setEditorResolution(r)} style={pill(editorResolution === r)} className="pill-btn flex-1 text-center">{r.toUpperCase()}</button>
                 ))}
               </div>
               <button onClick={() => { handleApply(); setSheetExpanded(false) }} disabled={processing || !inputImage}

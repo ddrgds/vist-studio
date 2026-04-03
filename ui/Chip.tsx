@@ -17,11 +17,7 @@ const sizeClasses = {
 const Chip: React.FC<ChipProps> = ({ label, selected, onClick, icon, size = 'md', className }) => (
   <button
     onClick={onClick}
-    style={selected
-      ? { background: 'rgba(99,102,241,0.08)', borderColor: 'rgba(99,102,241,0.2)', color: 'var(--joi-pink)' }
-      : { background: 'var(--joi-bg-2)', borderColor: 'rgba(255,255,255,.04)', color: 'var(--joi-text-3)' }
-    }
-    className={`inline-flex items-center gap-1.5 rounded-lg cursor-pointer transition-all duration-150 font-medium select-none border hover:scale-[1.02] ${sizeClasses[size]} ${className ?? ''}`}
+    className={`chip-interactive inline-flex items-center gap-1.5 rounded-lg cursor-pointer transition-all duration-150 font-medium select-none border ${selected ? 'chip-active' : 'chip-idle'} ${sizeClasses[size]} ${className ?? ''}`}
   >
     {icon}
     {label}

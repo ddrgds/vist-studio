@@ -90,6 +90,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
       {onClose && (
         <button
           onClick={onClose}
+          aria-label="Cerrar"
           style={{
             position: 'absolute', top: 16, right: 16,
             background: 'none', border: 'none', color: 'var(--joi-text-3)',
