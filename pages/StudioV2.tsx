@@ -375,19 +375,20 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       else if (eng?.provider === AIProvider.OpenAI) results = await generateWithOpenAI(params, eng.openaiModel, p => setHeroProgress(p), abortHeroRef.current.signal)
       else if (eng?.provider === AIProvider.Fal) results = await generateWithFal(params, eng.falModel, p => setHeroProgress(p), abortHeroRef.current.signal)
       else {
-        // Default: NB2 → Wan 2.7 Pro → FLUX.2 Pro → Grok fallback chain
+        // Default: NB2 → Kontext Pro (identity) → Grok (fal.ai) fallback chain
         try {
           results = await generateInfluencerImage(params, p => setHeroProgress(p), abortHeroRef.current.signal)
           if (!results || results.length === 0) throw new Error('NB2 returned empty')
         } catch (nb2Err) {
-          console.warn('NB2 hero failed, trying Wan 2.7 Pro:', nb2Err)
+          console.warn('NB2 hero failed, trying Kontext Pro:', nb2Err)
           try {
-            const { generateWithWan27 } = await import('../services/replicateService')
-            results = await generateWithWan27(params, ReplicateModel.Wan27ImagePro, p => setHeroProgress(p), abortHeroRef.current.signal)
-            if (!results || results.length === 0) throw new Error('Wan 2.7 returned empty')
-          } catch (wanErr) {
-            console.warn('Wan 2.7 hero failed, trying Grok:', wanErr)
-            results = await generateWithReplicate(params, ReplicateModel.GrokImagine, p => setHeroProgress(p), abortHeroRef.current.signal)
+            const { generateWithKontextPro } = await import('../services/falService')
+            results = await generateWithKontextPro(params, p => setHeroProgress(p), abortHeroRef.current.signal)
+            if (!results || results.length === 0) throw new Error('Kontext Pro returned empty')
+          } catch (kontextErr) {
+            console.warn('Kontext Pro hero failed, trying Grok:', kontextErr)
+            const { generateWithGrokFal } = await import('../services/falService')
+            results = await generateWithGrokFal(params, p => setHeroProgress(p), abortHeroRef.current.signal)
           }
         }
       }
@@ -488,19 +489,19 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       } catch (err: any) {
         if (err?.name === 'AbortError') return
         if (abortSessionRef.current?.signal.aborted) return // check before fallback
-        // Fallback: FLUX.2 Pro Edit → Grok
+        // Fallback: Kontext Pro (identity consistency) → Grok
         try {
-          const { editImageWithFlux2Pro } = await import('../services/falService')
+          const { editImageWithFluxKontext } = await import('../services/falService')
           const sessionInstruction = `Create a new photo of this exact person with: ${pose}. Scene: ${sceneContext}. Keep face and body identity identical. ${charStyleInfo.isRealistic ? 'Natural skin with visible pores.' : 'Style-consistent render.'}`
-          const fluxRes = await editImageWithFlux2Pro(heroFile, sessionInstruction, identityRefs, (p) => setSessionProgress(Math.round((idx / photoCount) * 100 + p * (1 / photoCount))), undefined, abortSessionRef.current!.signal)
-          if (fluxRes.length > 0 && fluxRes[0]) {
-            setGridCells(prev => { const n = [...prev]; n[idx] = fluxRes[0]; return n })
+          const kontextRes = await editImageWithFluxKontext(heroFile, sessionInstruction, (p) => setSessionProgress(Math.round((idx / photoCount) * 100 + p * (1 / photoCount))), undefined, abortSessionRef.current!.signal)
+          if (kontextRes.length > 0 && kontextRes[0]) {
+            setGridCells(prev => { const n = [...prev]; n[idx] = kontextRes[0]; return n })
             setRevealedCells(prev => new Set([...prev, idx]))
             successCount++
-          } else { throw new Error('FLUX.2 Pro returned empty') }
-        } catch (fluxErr: any) {
-          if ((fluxErr as any)?.name === 'AbortError') return
-          console.warn('FLUX.2 Pro session failed, trying Grok:', fluxErr)
+          } else { throw new Error('Kontext Pro returned empty') }
+        } catch (kontextErr: any) {
+          if ((kontextErr as any)?.name === 'AbortError') return
+          console.warn('Kontext Pro session failed, trying Grok:', kontextErr)
           try {
             const grokRes = await generatePhotoSessionWithGrok(heroFile, 1, {
               scenario: sceneContext, realistic: charStyleInfo.isRealistic, angles: [pose],

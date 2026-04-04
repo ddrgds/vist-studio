@@ -581,8 +581,10 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         } catch (nb2Err) {
           console.warn('NB2 reimagine failed, trying FLUX.2 Pro:', nb2Err)
           try {
-            const sdResults = await editImageWithFlux2Pro(inputFile!, flatInstruction, charRefs, (p) => setProgress(p))
-            if (!sdResults || sdResults.filter(Boolean).length === 0) throw new Error('FLUX.2 Pro returned empty')
+            // Kontext Pro for reimagine — best at preserving identity
+            const kontextResults = await editImageWithFluxKontext(inputFile!, flatInstruction, (p) => setProgress(p), undefined, abortRef.current?.signal)
+            const sdResults = kontextResults.length > 0 ? kontextResults : await editImageWithFlux2Pro(inputFile!, flatInstruction, charRefs, (p) => setProgress(p))
+            if (!sdResults || sdResults.filter(Boolean).length === 0) throw new Error('Kontext/FLUX.2 Pro returned empty')
             resultUrls = sdResults
           } catch (sdErr) {
             console.warn('Seedream reimagine failed, trying Grok:', sdErr)

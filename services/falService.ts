@@ -1598,6 +1598,10 @@ export const generateWithFal = async (
       return generateWithGrokFal(params, onProgress, abortSignal);
     case FalModel.Wan27ProGen:
       return generateWithWan27Fal(params, onProgress, abortSignal);
+    case FalModel.KontextPro:
+      return generateWithKontextPro(params, onProgress, abortSignal);
+    case FalModel.ZImageTurbo:
+      return generateWithZImageTurbo(params, onProgress, abortSignal);
     default:
       return generateWithKontextMulti(params, FalModel.KontextMulti, onProgress);
   }
