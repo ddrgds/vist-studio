@@ -265,6 +265,60 @@ const generateWithFallback = async (
 // ─────────────────────────────────────────────
 // Enhance Prompt
 // ─────────────────────────────────────────────
+/**
+ * Expand generic character chips into specific, randomized visual descriptors.
+ * Runs once at character creation. The expanded result should be SAVED with the character
+ * so that identity is preserved across future generations.
+ *
+ * Input:  { ethnicity: "Northern European", hair: "blonde", outfit: "leather", tattoos: true }
+ * Output: "Fair-skinned Scandinavian woman with high cheekbones and a narrow nose bridge,
+ *          ash-blonde hair in a messy low bun with loose strands framing the face,
+ *          distressed black leather moto jacket with silver hardware over a plain white tee..."
+ */
+export const expandCharacterChips = async (chipDescription: string, outfitDescription: string, accessories: string): Promise<string> => {
+  if (!chipDescription.trim()) return chipDescription;
+
+  const ai = createGeminiClient();
+
+  try {
+    const response = await withExponentialBackoff(() =>
+      ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `You are a character designer for a virtual influencer platform. Your job is to expand generic character trait labels into SPECIFIC, UNIQUE visual descriptions that an image generation model can render consistently.
+
+CRITICAL RULES:
+- Transform generic labels into SPECIFIC visual details. Never pass through generic terms.
+- Add RANDOMIZED specifics: exact tattoo placement and design, specific jewelry style, hairstyle details, fabric textures.
+- Make each expansion UNIQUE — two characters with "tattoos" should have completely different tattoo descriptions.
+- Keep it VISUAL — describe what the camera sees, not personality or psychology.
+- Personality traits must become VISUAL cues: "mysterious" → "intense half-lidded gaze, face partially in shadow"
+- Output must be a single flowing paragraph, no headers or categories.
+- Under 120 words total.
+- English only in output.
+
+EXPANSION EXAMPLES:
+- "tattoos" → "small minimalist moon phase tattoo behind left ear, delicate botanical vine tattoo wrapping right forearm"
+- "streetwear" → "oversized vintage Stone Island cargo pants in olive, cropped graphic baby tee, chunky New Balance 550s"
+- "piercings" → "thin gold septum ring, three tiny studs ascending left helix, single pearl stud on right lobe"
+- "mysterious personality" → "intense half-lidded gaze directed slightly past camera, subtle asymmetric smirk, chin slightly tilted down"
+
+CHARACTER CHIPS TO EXPAND:
+Appearance: ${chipDescription}
+Outfit: ${outfitDescription || 'casual everyday clothing'}
+Accessories: ${accessories || 'none'}`,
+        config: {
+          safetySettings: relaxedSafetySettings,
+        },
+      })
+    );
+
+    return response.text?.trim() || chipDescription;
+  } catch (error) {
+    console.error("Error expanding character chips:", error);
+    return chipDescription; // fallback to raw chips
+  }
+};
+
 export const enhancePrompt = async (text: string, category: string): Promise<string> => {
   if (!text.trim()) return "";
 

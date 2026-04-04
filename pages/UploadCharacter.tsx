@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useCharacterStore, type SavedCharacter } from '../stores/characterStore'
 import { useProfile } from '../contexts/ProfileContext'
 import { useToast } from '../contexts/ToastContext'
-import { generateInfluencerImage, enhancePrompt } from '../services/geminiService'
+import { generateInfluencerImage, enhancePrompt, expandCharacterChips } from '../services/geminiService'
 import { generateWithSoul } from '../services/higgsfieldService'
 import { generateWithReplicate } from '../services/replicateService'
 import { generateWithOpenAI } from '../services/openaiService'
@@ -386,15 +386,16 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     const isSoul = engineMeta?.provider === AIProvider.Higgsfield
     let fullPrompt = isSoul ? buildSoulPrompt() : buildFullPrompt()
 
-    // Enhance prompt for Wan/FLUX — Gemini expands chips into rich visual descriptions
-    // This gives FLUX facial variety and Wan clearer instructions
-    const needsEnhance = engineMeta?.provider === AIProvider.Replicate || selectedEngine === 'auto'
-    if (needsEnhance && style.id === 'photorealistic') {
+    // Expand generic chips into specific visual descriptors via Gemini Flash.
+    // Runs for ALL engines and photorealistic style. The expanded description
+    // produces unique characters (two "blonde + tattoos" won't look identical).
+    if (style.id === 'photorealistic') {
       try {
-        setGenerationPhase('generating')
-        const enhanced = await enhancePrompt(fullPrompt, 'character portrait')
-        if (enhanced && enhanced.length > fullPrompt.length * 0.5) fullPrompt = enhanced
-      } catch { /* keep original if enhance fails */ }
+        const outfitDesc = selFashion.map(id => FASHION_STYLES.find(f => f.id === id)?.promptText || '').filter(Boolean).join(', ')
+        const accDesc = selAccessories.map(id => ACCESSORIES.find(a => a.id === id)?.label || '').filter(Boolean).join(', ')
+        const expanded = await expandCharacterChips(fullPrompt, outfitDesc, accDesc)
+        if (expanded && expanded.length > 20) fullPrompt = expanded
+      } catch { /* keep original if expansion fails */ }
     }
 
     const results: string[] = []
