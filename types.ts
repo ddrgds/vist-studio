@@ -724,6 +724,18 @@ export const ENGINE_METADATA: EngineMetadata[] = [
   },
   // ── Replicate ──
   {
+    key: 'replicate:flux2pro',
+    userFriendlyName: 'FLUX.2 Pro',
+    description: 'Black Forest Labs, zero-config, fast',
+    bestFor: 'Photorealism, character consistency, speed',
+    tags: ['photorealism', 'fast', 'quality'],
+    requiresFaceRef: false,
+    estimatedTime: '~10s',
+    creditCost: CREDIT_COSTS[ReplicateModel.Flux2Pro],
+    provider: AIProvider.Replicate,
+    replicateModel: ReplicateModel.Flux2Pro,
+  },
+  {
     key: 'replicate:wan27pro',
     userFriendlyName: 'Wan 2.7 Pro',
     description: 'Alibaba 4K, thinking mode, 9 refs',
