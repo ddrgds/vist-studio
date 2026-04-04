@@ -26,7 +26,7 @@ import { generateCharacterSheet, enhanceSheetWithGrok, type SheetType } from '..
 const CHARACTER_ENGINES = [
   { id: 'gemini:nb2', label: 'Nano Banana 2', desc: 'Rápido, buena consistencia', badge: 'Recomendado' },
   { id: 'replicate:wan27pro', label: 'Wan 2.7 Pro', desc: '4K, muy realista, Alibaba', badge: 'Nuevo' },
-  { id: 'replicate:flux2pro', label: 'FLUX.2 Pro', desc: 'Rápido (~10s), sigue instrucciones', badge: 'Nuevo' },
+  { id: 'fal:flux2pro-gen', label: 'FLUX.2 Pro', desc: 'Rápido (~8s), JSON, sin filtros', badge: 'Nuevo' },
   { id: 'replicate:grok', label: 'Grok Imagine', desc: 'Estético, sin filtros, xAI', badge: 'Nuevo' },
   { id: 'fal:seedream50', label: 'Seedream 5.0', desc: 'Multi-referencia, ByteDance', badge: null },
   { id: 'grok-enhance', label: 'NB2 + Grok', desc: 'Genera con NB2, mejora con Grok', badge: 'Ultra' },

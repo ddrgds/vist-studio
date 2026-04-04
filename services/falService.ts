@@ -1333,6 +1333,73 @@ export const generateWithFluxPro = async (
 };
 
 // ─────────────────────────────────────────────
+// FLUX.2 Pro — text-to-image via fal.ai (JSON structured prompts)
+// ─────────────────────────────────────────────
+
+export const generateWithFlux2ProFal = async (
+  params: InfluencerParams,
+  onProgress?: (percent: number) => void,
+  abortSignal?: AbortSignal,
+): Promise<string[]> => {
+  if (abortSignal?.aborted) throw new Error('Cancelado');
+  const character = params.characters[0];
+  if (onProgress) onProgress(10);
+
+  // Extract clean subject description (strip NB2 JSON spec)
+  let subjectDesc = character?.characteristics || '';
+  const flatMatch = subjectDesc.match(/FLAT DESCRIPTION:\s*(.+?)(?:\n|$)/g);
+  if (flatMatch) subjectDesc = flatMatch.map(m => m.replace('FLAT DESCRIPTION:', '').trim()).join(', ');
+
+  // Build JSON structured prompt (FLUX excels at this format)
+  const jsonPrompt = JSON.stringify({
+    scene: params.scenario || 'Professional photography studio, clean neutral background',
+    subjects: [{
+      type: 'fashion model',
+      description: subjectDesc || 'a person',
+      outfit: character?.outfitDescription || 'stylish editorial outfit',
+      pose: character?.pose || 'Standing casual, facing camera',
+      accessories: character?.accessory || undefined,
+    }],
+    style: params.imageBoost || 'Ultra-photorealistic editorial photograph, natural skin with visible pores, fine detail',
+    lighting: params.lighting || 'Soft directional studio light, natural skin tones',
+    mood: 'Confident, editorial, striking',
+    camera: { angle: 'eye level', distance: 'medium shot', lens: '85mm f/1.4' },
+  });
+
+  if (onProgress) onProgress(20);
+
+  const result = await fal.subscribe(FalModel.Flux2ProGen, {
+    input: {
+      prompt: jsonPrompt,
+      image_size: toFalImageSize(params.aspectRatio),
+      safety_tolerance: '5',
+      enable_safety_checker: false,
+      output_format: 'jpeg',
+      ...(params.seed !== undefined && { seed: params.seed }),
+    },
+    onQueueUpdate: (update: any) => {
+      if (update.status === 'IN_PROGRESS' && onProgress) {
+        onProgress(Math.min(88, 25 + Math.random() * 60));
+      }
+    },
+  }) as any;
+
+  const r = unwrap(result);
+  const images = r?.images || [];
+  if (images.length === 0) throw new Error('FLUX.2 Pro did not return any images.');
+
+  const urls: string[] = [];
+  for (const img of images) {
+    const url = img?.url;
+    if (url && typeof url === 'string') urls.push(url);
+  }
+
+  if (urls.length === 0) throw new Error('FLUX.2 Pro: no valid URLs in response.');
+  if (onProgress) onProgress(100);
+  return urls;
+};
+
+// ─────────────────────────────────────────────
 // Main router — selects the fal model based on configuration
 // ─────────────────────────────────────────────
 export const generateWithFal = async (
@@ -1358,6 +1425,8 @@ export const generateWithFal = async (
       return generateWithPulidV2(params, onProgress, abortSignal);
     case FalModel.FluxPro:
       return generateWithFluxPro(params, onProgress, abortSignal);
+    case FalModel.Flux2ProGen:
+      return generateWithFlux2ProFal(params, onProgress, abortSignal);
     default:
       return generateWithKontextMulti(params, FalModel.KontextMulti, onProgress);
   }

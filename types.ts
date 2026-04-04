@@ -288,6 +288,7 @@ export enum FalModel {
   KontextMulti = 'fal-ai/flux-pro/kontext/multi',      // FLUX.1 Kontext — multi-ref identity gen · 2026
   KontextMaxMulti = 'fal-ai/flux-pro/kontext/max/multi',  // FLUX.1 Kontext Max — maximum quality · 2026
   Flux2Pro = 'fal-ai/flux-2-pro/edit',                    // FLUX.2 Pro Edit — multi-ref image editor
+  Flux2ProGen = 'fal-ai/flux-2-pro',                      // FLUX.2 Pro — text-to-image, JSON prompts, safety_tolerance
   Seedream45 = 'fal-ai/bytedance/seedream/v4.5/text-to-image',   // ByteDance — photorealism 4K
   Seedream50 = 'fal-ai/bytedance/seedream/v5/lite/text-to-image', // ByteDance — web search + reasoning
   ZImageTurbo = 'fal-ai/z-image/turbo',                  // Alibaba Tongyi-MAI 6B — uncensored, $0.005/mp · 2025
@@ -471,6 +472,7 @@ export const CREDIT_COSTS: Record<string, number> = {
   [FalModel.KontextMulti]:     14,
   [FalModel.KontextMaxMulti]:  15,
   [FalModel.Flux2Pro]:         12,   // FAL variant (edit endpoint)
+  [FalModel.Flux2ProGen]:      10,
   [FalModel.Seedream45]:       8,
   [FalModel.Seedream50]:       8,
   [FalModel.ZImageTurbo]:      8,
@@ -724,16 +726,16 @@ export const ENGINE_METADATA: EngineMetadata[] = [
   },
   // ── Replicate ──
   {
-    key: 'replicate:flux2pro',
+    key: 'fal:flux2pro-gen',
     userFriendlyName: 'FLUX.2 Pro',
-    description: 'Black Forest Labs, zero-config, fast',
-    bestFor: 'Photorealism, character consistency, speed',
+    description: 'Black Forest Labs, JSON prompts, fast',
+    bestFor: 'Photorealism, follows instructions, JSON structured',
     tags: ['photorealism', 'fast', 'quality'],
     requiresFaceRef: false,
-    estimatedTime: '~10s',
-    creditCost: CREDIT_COSTS[ReplicateModel.Flux2Pro],
-    provider: AIProvider.Replicate,
-    replicateModel: ReplicateModel.Flux2Pro,
+    estimatedTime: '~8s',
+    creditCost: CREDIT_COSTS[FalModel.Flux2ProGen],
+    provider: AIProvider.Fal,
+    falModel: FalModel.Flux2ProGen,
   },
   {
     key: 'replicate:wan27pro',
