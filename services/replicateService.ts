@@ -767,7 +767,7 @@ export async function generateWithWan27(
 /**
  * Wan 2.7 Pro — image editing with multi-reference
  * Takes a base image + instruction + optional reference images.
- * Good for reimagine, try-on, style transfer with character consistency.
+ * NOTE: thinking_mode is NOT supported in editing mode (only text-to-image).
  */
 export async function editWithWan27Pro(
   baseImage: File,
@@ -775,7 +775,7 @@ export async function editWithWan27Pro(
   referenceImages: File[] = [],
   onProgress?: (p: number) => void,
   abortSignal?: AbortSignal,
-  options?: { numOutputs?: number; thinking?: boolean; seed?: number },
+  options?: { numOutputs?: number; seed?: number },
 ): Promise<string[]> {
   onProgress?.(10);
 
@@ -794,7 +794,7 @@ export async function editWithWan27Pro(
     images,
     size: '2K',
     num_outputs: options?.numOutputs ?? 1,
-    thinking_mode: options?.thinking ?? true,
+    // No thinking_mode in editing mode — only supported for text-to-image
     ...(options?.seed !== undefined && { seed: options.seed }),
   };
 
@@ -804,8 +804,74 @@ export async function editWithWan27Pro(
   });
 
   onProgress?.(100);
-  const urls = Array.isArray(output) ? output : [output];
-  return urls.map(u => typeof u === 'string' ? u : (u as any).url || String(u));
+  const raw = Array.isArray(output) ? output : [output];
+  const urls: string[] = [];
+  for (const item of raw) {
+    if (typeof item === 'string') { urls.push(item); continue; }
+    if (item && typeof item === 'object') {
+      const asAny = item as any;
+      if (asAny.url && typeof asAny.url === 'function') { urls.push(await asAny.url()); continue; }
+      if (asAny.url && typeof asAny.url === 'string') { urls.push(asAny.url); continue; }
+      if (asAny.href) { urls.push(asAny.href); continue; }
+      const str = String(item);
+      if (str.startsWith('http')) { urls.push(str); continue; }
+    }
+  }
+  return urls.filter(u => u.startsWith('http'));
+}
+
+/**
+ * Wan 2.7 Pro — batch session generation via image_set_mode
+ * Takes a hero image + character refs → generates 4-12 coherent photos in one call.
+ */
+export async function generateSessionWithWan27(
+  heroImage: File,
+  count: number,
+  instruction: string,
+  identityRefs: File[] = [],
+  onProgress?: (p: number) => void,
+  abortSignal?: AbortSignal,
+): Promise<string[]> {
+  onProgress?.(10);
+
+  const { fal } = await import('@fal-ai/client');
+  const images: string[] = [];
+  images.push(await fal.storage.upload(heroImage));
+  for (const ref of identityRefs.slice(0, 7)) {
+    try { images.push(await fal.storage.upload(ref)); } catch { /* skip */ }
+  }
+
+  onProgress?.(25);
+
+  const input: Record<string, unknown> = {
+    prompt: instruction,
+    images,
+    size: '2K',
+    num_outputs: Math.min(Math.max(count, 1), 12),
+    image_set_mode: true,
+    // No thinking_mode — not supported with images
+  };
+
+  const output = await replicate.run(ReplicateModel.Wan27ImagePro as `${string}/${string}`, {
+    input,
+    signal: abortSignal,
+  });
+
+  onProgress?.(100);
+  const raw = Array.isArray(output) ? output : [output];
+  const urls: string[] = [];
+  for (const item of raw) {
+    if (typeof item === 'string') { urls.push(item); continue; }
+    if (item && typeof item === 'object') {
+      const asAny = item as any;
+      if (asAny.url && typeof asAny.url === 'function') { urls.push(await asAny.url()); continue; }
+      if (asAny.url && typeof asAny.url === 'string') { urls.push(asAny.url); continue; }
+      if (asAny.href) { urls.push(asAny.href); continue; }
+      const str = String(item);
+      if (str.startsWith('http')) { urls.push(str); continue; }
+    }
+  }
+  return urls.filter(u => u.startsWith('http'));
 }
 
 /** Helper: File → data URL */
