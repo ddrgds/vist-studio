@@ -745,8 +745,23 @@ export async function generateWithWan27(
   });
 
   onProgress?.(100);
-  const urls = Array.isArray(output) ? output : [output];
-  return urls.map(u => typeof u === 'string' ? u : (u as any).url || String(u));
+  const raw = Array.isArray(output) ? output : [output];
+  // Replicate SDK may return FileOutput objects, URLs, or ReadableStreams
+  const urls: string[] = [];
+  for (const item of raw) {
+    if (typeof item === 'string') { urls.push(item); continue; }
+    if (item && typeof item === 'object') {
+      // FileOutput has .url() method or is URL-like with toString()
+      const asAny = item as any;
+      if (asAny.url && typeof asAny.url === 'function') { urls.push(await asAny.url()); continue; }
+      if (asAny.url && typeof asAny.url === 'string') { urls.push(asAny.url); continue; }
+      if (asAny.href) { urls.push(asAny.href); continue; }
+      // Last resort: toString might give a URL
+      const str = String(item);
+      if (str.startsWith('http')) { urls.push(str); continue; }
+    }
+  }
+  return urls.filter(u => u.startsWith('http'));
 }
 
 /**
