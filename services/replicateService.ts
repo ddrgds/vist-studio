@@ -702,18 +702,72 @@ export async function generateWithWan27(
   const character = params.characters[0];
   const isPro = model === ReplicateModel.Wan27ImagePro;
 
+  // Extract clean description from characteristics (strip NB2 JSON spec, keep flat description)
+  let subjectDesc = character?.characteristics || '';
+  // If it has "FLAT DESCRIPTION:", extract only that part
+  const flatMatch = subjectDesc.match(/FLAT DESCRIPTION:\s*(.+?)(?:\n|$)/g);
+  if (flatMatch) {
+    subjectDesc = flatMatch.map(m => m.replace('FLAT DESCRIPTION:', '').trim()).join(', ');
+  } else if (subjectDesc.includes('CHARACTER SPECIFICATION:')) {
+    // Has JSON spec but no flat description — try to extract values from JSON
+    try {
+      const jsonStr = subjectDesc.replace(/CHARACTER SPECIFICATION:\s*/, '').split('\n\n')[0];
+      const spec = JSON.parse(jsonStr);
+      const vals: string[] = [];
+      const extract = (obj: Record<string, unknown>) => {
+        for (const v of Object.values(obj)) {
+          if (typeof v === 'string') vals.push(v);
+          else if (typeof v === 'object' && v) extract(v as Record<string, unknown>);
+        }
+      };
+      extract(spec);
+      subjectDesc = vals.join(', ');
+    } catch { /* keep as-is if parsing fails */ }
+  }
+  // Strip camera/lens jargon that Wan doesn't need
+  subjectDesc = subjectDesc
+    .replace(/shot on [^,.]*/gi, '')
+    .replace(/Phase One[^,.]*/gi, '')
+    .replace(/Schneider[^,.]*/gi, '')
+    .replace(/physically-based material response/gi, '')
+    .replace(/individual hair strand rendering/gi, '')
+    .replace(/,{2,}/g, ',')
+    .replace(/\.\s*\./g, '.')
+    .trim();
+
+  // Build clean natural-language prompt for Wan (thinking mode works best with descriptive language)
   const parts: string[] = [];
-  if (params.imageBoost) parts.push(params.imageBoost);
-  else parts.push('Ultra-photorealistic editorial photograph, natural skin with visible pores and fine texture');
-  if (character?.characteristics) parts.push(`Subject: ${character.characteristics}`);
-  if (character?.outfitDescription) parts.push(`Wearing: ${character.outfitDescription}`);
-  if (character?.pose) parts.push(`Pose: ${character.pose}`);
-  if (character?.accessory) parts.push(`With: ${character.accessory}`);
-  if (params.scenario) parts.push(`Scene: ${params.scenario}`);
-  if (params.lighting) parts.push(`Lighting: ${params.lighting}`);
-  if (params.camera) parts.push(`Camera: ${params.camera}`);
-  if (params.negativePrompt) parts.push(`Avoid: ${params.negativePrompt}`);
-  const prompt = parts.filter(Boolean).join('. ') + '.';
+
+  // Style prefix
+  if (params.imageBoost) {
+    parts.push(params.imageBoost);
+  } else {
+    parts.push('A photorealistic portrait photograph with natural skin texture, visible pores, and fine detail');
+  }
+
+  // Subject
+  if (subjectDesc) parts.push(subjectDesc);
+
+  // Outfit
+  if (character?.outfitDescription) parts.push(`Wearing ${character.outfitDescription}`);
+
+  // Pose & composition
+  if (character?.pose) parts.push(character.pose);
+
+  // Accessories
+  if (character?.accessory) parts.push(`With ${character.accessory}`);
+
+  // Scene
+  if (params.scenario) {
+    // Also strip camera jargon from scenario
+    const cleanScene = params.scenario.replace(/shot on [^,.]*/gi, '').replace(/Profoto[^,.]*/gi, '').trim();
+    parts.push(cleanScene);
+  }
+
+  // Lighting (simplify)
+  if (params.lighting) parts.push(params.lighting);
+
+  const prompt = parts.filter(Boolean).join('. ').replace(/\.\s*\./g, '.').trim() + '.';
 
   onProgress?.(10);
 
