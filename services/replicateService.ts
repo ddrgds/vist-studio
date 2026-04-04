@@ -745,23 +745,33 @@ export async function generateWithWan27(
   });
 
   onProgress?.(100);
+
+  // Debug: log raw output to diagnose Replicate SDK response format
+  console.log('[Wan27] raw output:', output, 'type:', typeof output, 'isArray:', Array.isArray(output));
+
+  // Replicate SDK v1+ returns FileOutput objects that act as async iterables
+  // but also have a .url() method. Try multiple extraction strategies.
   const raw = Array.isArray(output) ? output : [output];
-  // Replicate SDK may return FileOutput objects, URLs, or ReadableStreams
   const urls: string[] = [];
   for (const item of raw) {
-    if (typeof item === 'string') { urls.push(item); continue; }
-    if (item && typeof item === 'object') {
-      // FileOutput has .url() method or is URL-like with toString()
+    if (!item) continue;
+    // Strategy 1: already a URL string
+    if (typeof item === 'string' && item.startsWith('http')) { urls.push(item); continue; }
+    // Strategy 2: FileOutput — calling String() on it gives the URL in newer SDK versions
+    const asStr = String(item);
+    if (asStr.startsWith('http')) { urls.push(asStr); continue; }
+    // Strategy 3: object with .url property
+    if (typeof item === 'object') {
       const asAny = item as any;
-      if (asAny.url && typeof asAny.url === 'function') { urls.push(await asAny.url()); continue; }
-      if (asAny.url && typeof asAny.url === 'string') { urls.push(asAny.url); continue; }
-      if (asAny.href) { urls.push(asAny.href); continue; }
-      // Last resort: toString might give a URL
-      const str = String(item);
-      if (str.startsWith('http')) { urls.push(str); continue; }
+      if (typeof asAny.url === 'function') { try { urls.push(await asAny.url()); } catch {} continue; }
+      if (typeof asAny.url === 'string' && asAny.url.startsWith('http')) { urls.push(asAny.url); continue; }
+      if (typeof asAny.href === 'string') { urls.push(asAny.href); continue; }
     }
   }
-  return urls.filter(u => typeof u === 'string' && u.startsWith('http'));
+
+  console.log('[Wan27] parsed urls:', urls);
+  if (urls.length === 0) throw new Error(`Wan 2.7 returned no valid URLs. Raw output: ${JSON.stringify(output)?.slice(0, 200)}`);
+  return urls;
 }
 
 /**
