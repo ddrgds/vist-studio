@@ -275,6 +275,11 @@ const generateWithFallback = async (
  *          ash-blonde hair in a messy low bun with loose strands framing the face,
  *          distressed black leather moto jacket with silver hardware over a plain white tee..."
  */
+/**
+ * Expand generic character chips into specific, randomized visual descriptors.
+ * Returns BOTH a JSON structure (for NB2/FLUX) and a flat description (for Grok/Wan/Turbo).
+ * Runs once at character creation. The result should be SAVED with the character.
+ */
 export const expandCharacterChips = async (chipDescription: string, outfitDescription: string, accessories: string): Promise<string> => {
   if (!chipDescription.trim()) return chipDescription;
 
@@ -284,23 +289,58 @@ export const expandCharacterChips = async (chipDescription: string, outfitDescri
     const response = await withExponentialBackoff(() =>
       ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: `You are a character designer for a virtual influencer platform. Your job is to expand generic character trait labels into SPECIFIC, UNIQUE visual descriptions that an image generation model can render consistently.
+        contents: `You are a character designer for a virtual influencer platform. Expand generic trait labels into SPECIFIC, UNIQUE visual descriptions.
 
-CRITICAL RULES:
-- Transform generic labels into SPECIFIC visual details. Never pass through generic terms.
-- Add RANDOMIZED specifics: exact tattoo placement and design, specific jewelry style, hairstyle details, fabric textures.
-- Make each expansion UNIQUE — two characters with "tattoos" should have completely different tattoo descriptions.
-- Keep it VISUAL — describe what the camera sees, not personality or psychology.
-- Personality traits must become VISUAL cues: "mysterious" → "intense half-lidded gaze, face partially in shadow"
-- Output must be a single flowing paragraph, no headers or categories.
-- Under 120 words total.
-- English only in output.
+OUTPUT FORMAT — You MUST return valid JSON followed by a flat description, exactly like this:
 
-EXPANSION EXAMPLES:
-- "tattoos" → "small minimalist moon phase tattoo behind left ear, delicate botanical vine tattoo wrapping right forearm"
-- "streetwear" → "oversized vintage Stone Island cargo pants in olive, cropped graphic baby tee, chunky New Balance 550s"
-- "piercings" → "thin gold septum ring, three tiny studs ascending left helix, single pearl stud on right lobe"
-- "mysterious personality" → "intense half-lidded gaze directed slightly past camera, subtle asymmetric smirk, chin slightly tilted down"
+CHARACTER SPECIFICATION:
+{
+  "identity": {
+    "ethnicity": "specific ethnic features, bone structure, skin undertone",
+    "age_appearance": "specific age markers"
+  },
+  "face": {
+    "eyes": "specific color with unique details (flecks, limbal ring, etc)",
+    "eye_shape": "specific shape with unique detail",
+    "nose": "specific shape",
+    "lips": "specific shape and color",
+    "jawline": "specific structure",
+    "distinctive": "unique marks, freckle patterns, dimples, beauty marks"
+  },
+  "body": {
+    "build": "specific body type with proportions",
+    "height_impression": "tall/petite/average with specific cues",
+    "skin": "exact tone, texture, any unique skin details"
+  },
+  "hair": {
+    "color": "specific shade with highlights/lowlights",
+    "style": "exact current styling with details",
+    "texture": "specific hair texture"
+  },
+  "outfit": {
+    "top": "specific garment with fabric, color, fit, brand aesthetic",
+    "bottom": "specific garment details",
+    "shoes": "specific footwear",
+    "overall_vibe": "one-line aesthetic summary"
+  },
+  "accessories": {
+    "details": "specific placement, material, design of each accessory"
+  },
+  "expression": {
+    "gaze": "specific eye direction and intensity",
+    "mouth": "specific lip position",
+    "mood_visual": "visual translation of personality into posture and face"
+  }
+}
+
+FLAT DESCRIPTION: [single flowing sentence combining all the above, under 100 words]
+
+RULES:
+- RANDOMIZE specifics: two "blonde + tattoos" characters must get different results
+- Be VISUAL only — describe what the camera sees
+- Personality → visual cues: "mysterious" → "half-lidded gaze, face partially in shadow"
+- NEVER use generic terms. "tattoos" → "minimalist moon phase tattoo behind left ear"
+- English only. Valid JSON only (no trailing commas).
 
 CHARACTER CHIPS TO EXPAND:
 Appearance: ${chipDescription}
@@ -315,7 +355,7 @@ Accessories: ${accessories || 'none'}`,
     return response.text?.trim() || chipDescription;
   } catch (error) {
     console.error("Error expanding character chips:", error);
-    return chipDescription; // fallback to raw chips
+    return chipDescription;
   }
 };
 
