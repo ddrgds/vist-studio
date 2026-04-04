@@ -24,11 +24,11 @@ import { generateCharacterSheet, enhanceSheetWithGrok, type SheetType } from '..
 
 // ─── Character creation engine presets (Soul 2.0 prominent) ──────────
 const CHARACTER_ENGINES = [
-  { id: 'gemini:nb2', label: 'Nano Banana 2', desc: 'Rápido, buena consistencia', badge: 'Recomendado' },
-  { id: 'fal:flux2pro-gen', label: 'FLUX.2 Pro', desc: 'JSON structurado, sin filtros', badge: 'Calidad' },
-  { id: 'fal:wan27pro-gen', label: 'Wan 2.7 Pro', desc: 'Muy realista, Alibaba', badge: 'Realista' },
-  { id: 'fal:grok-gen', label: 'Grok Imagine', desc: 'Estético, permisivo, xAI', badge: null },
-  { id: 'fal:turbo', label: 'Turbo Draft', desc: '~0.3s, ultra-rápido, para iterar', badge: 'Rápido' },
+  { id: 'gemini:nb2', label: 'Nano Banana 2', desc: 'Buena consistencia, sigue instrucciones', badge: 'Recomendado' },
+  { id: 'fal:turbo', label: 'Turbo', desc: '~0.3s, orgánico, natural', badge: 'Rápido' },
+  { id: 'fal:grok-gen', label: 'Grok Imagine', desc: 'Estético, bold, sin filtros', badge: 'Popular' },
+  { id: 'fal:wan27pro-gen', label: 'Wan 2.7 Pro', desc: 'Piel ultra-realista, Alibaba', badge: 'Realista' },
+  { id: 'fal:flux2pro-gen', label: 'FLUX.2 Pro', desc: 'JSON structurado, máximo detalle', badge: 'Pro' },
   { id: 'grok-enhance', label: 'NB2 + Grok', desc: 'Genera con NB2, mejora con Grok', badge: 'Ultra' },
 ] as const;
 
