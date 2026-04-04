@@ -724,14 +724,29 @@ export async function generateWithWan27(
       subjectDesc = vals.join(', ');
     } catch { /* keep as-is if parsing fails */ }
   }
-  // Strip camera/lens jargon that Wan doesn't need
+  // Strip render style prefix + camera/lens jargon that Wan doesn't need
   subjectDesc = subjectDesc
+    // Remove render style prefixes (these come from renderStyles[] in UploadCharacter)
+    .replace(/Ultra-photorealistic digital human[^,]*/gi, '')
+    .replace(/Premium anime character[^,]*/gi, '')
+    .replace(/AAA game-quality 3D character render[^,]*/gi, '')
+    .replace(/High-end digital character illustration[^,]*/gi, '')
+    .replace(/Distinctive stylized character[^,]*/gi, '')
+    .replace(/Premium pixel art character sprite[^,]*/gi, '')
+    // Remove camera/lens jargon
     .replace(/shot on [^,.]*/gi, '')
     .replace(/Phase One[^,.]*/gi, '')
     .replace(/Schneider[^,.]*/gi, '')
     .replace(/physically-based material response/gi, '')
     .replace(/individual hair strand rendering/gi, '')
+    .replace(/accurate eye moisture/gi, '')
+    .replace(/subsurface blood flow/gi, '')
+    .replace(/Unreal Engine[^,.]*/gi, '')
+    .replace(/PBR material[^,.]*/gi, '')
+    .replace(/HDRI environment[^,.]*/gi, '')
+    .replace(/ray-traced[^,.]*/gi, '')
     .replace(/,{2,}/g, ',')
+    .replace(/^\s*,\s*/, '')
     .replace(/\.\s*\./g, '.')
     .trim();
 
