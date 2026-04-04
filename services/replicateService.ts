@@ -688,17 +688,6 @@ export const generateWithReplicate = async (
 // Thinking mode for better reasoning on complex prompts
 // ─────────────────────────────────────────────
 
-const toWanSize = (ar: AspectRatio): string => {
-  const map: Record<string, string> = {
-    [AspectRatio.Portrait]: '1024x1536',
-    [AspectRatio.Square]: '1024x1024',
-    [AspectRatio.Landscape]: '1536x1024',
-    [AspectRatio.Wide]: '1536x864',
-    [AspectRatio.Tall]: '864x1536',
-  };
-  return map[ar] ?? '1024x1536';
-};
-
 export async function generateWithWan27(
   params: InfluencerParams,
   model: ReplicateModel.Wan27Image | ReplicateModel.Wan27ImagePro = ReplicateModel.Wan27ImagePro,
@@ -726,21 +715,11 @@ export async function generateWithWan27(
 
   onProgress?.(10);
 
-  // Upload reference images if available (face refs for character consistency)
-  const images: string[] = [];
-  if (character?.modelImages?.length) {
-    for (const file of character.modelImages.slice(0, 5)) {
-      const dataUrl = await fileToDataUrl(file);
-      images.push(dataUrl);
-    }
-  }
-
   const input: Record<string, unknown> = {
     prompt,
-    size: toWanSize(params.aspectRatio),
+    size: isPro ? '2K' : '1K',
     num_outputs: Math.min(params.numberOfImages || 1, isPro ? 12 : 4),
-    thinking: isPro, // thinking mode for Pro
-    ...(images.length > 0 && { images }),
+    thinking_mode: isPro,
     ...(params.seed !== undefined && { seed: params.seed }),
   };
 
@@ -785,7 +764,7 @@ export async function editWithWan27Pro(
     images,
     size: '2K',
     num_outputs: options?.numOutputs ?? 1,
-    thinking: options?.thinking ?? true,
+    thinking_mode: options?.thinking ?? true,
     ...(options?.seed !== undefined && { seed: options.seed }),
   };
 
