@@ -668,8 +668,10 @@ export async function generateWithFlux2Pro(
     onProgress?.(Math.min(25 + ((Date.now() - start) / 60_000) * 65, 90));
     if (status.status === 'succeeded') {
       onProgress?.(100);
-      if (!status.output || !Array.isArray(status.output)) throw new Error('FLUX.2 Pro: no output');
-      return status.output.filter((u: unknown) => typeof u === 'string' && u.startsWith('http'));
+      if (!status.output) throw new Error('FLUX.2 Pro: no output');
+      // FLUX returns a single string URL, not an array
+      const out = Array.isArray(status.output) ? status.output : [status.output];
+      return out.filter((u: unknown) => typeof u === 'string' && u.startsWith('http'));
     }
     if (status.status === 'failed') throw new Error(`FLUX.2 Pro failed: ${status.error || 'unknown'}`);
     if (status.status === 'canceled') throw new Error('FLUX.2 Pro: canceled');
