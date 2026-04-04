@@ -347,7 +347,18 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
     const style = renderStyles[selRenderStyle]
     const isSoul = engineMeta?.provider === AIProvider.Higgsfield
-    const fullPrompt = isSoul ? buildSoulPrompt() : buildFullPrompt()
+    let fullPrompt = isSoul ? buildSoulPrompt() : buildFullPrompt()
+
+    // Enhance prompt for Wan/FLUX — Gemini expands chips into rich visual descriptions
+    // This gives FLUX facial variety and Wan clearer instructions
+    const needsEnhance = engineMeta?.provider === AIProvider.Replicate || selectedEngine === 'auto'
+    if (needsEnhance && style.id === 'photorealistic') {
+      try {
+        setGenerationPhase('generating')
+        const enhanced = await enhancePrompt(fullPrompt, 'character portrait')
+        if (enhanced && enhanced.length > fullPrompt.length * 0.5) fullPrompt = enhanced
+      } catch { /* keep original if enhance fails */ }
+    }
 
     const results: string[] = []
     let failCount = 0
