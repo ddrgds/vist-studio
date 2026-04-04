@@ -378,7 +378,10 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
           pose: 'Standing casual, facing camera, portrait shot',
           accessory: selAccessories.map(id => ACCESSORIES.find(a => a.id === id)?.label || '').filter(Boolean).join(', '),
         }],
-        scenario: isSoul ? 'Professional editorial fashion photography studio, clean elegant neutral background' : style.scenario,
+        scenario: engineMeta?.provider === AIProvider.Fal
+          ? 'Clean neutral background' // fal.ai models don't need camera jargon
+          : isSoul ? 'Professional editorial fashion photography studio, clean elegant neutral background'
+          : style.scenario,
         lighting: isSoul ? 'Natural soft studio lighting' : (style.id === 'anime' ? 'Flat anime lighting, cel-shaded' : style.id === 'pixel-art' ? 'Flat pixel art lighting' : 'Soft studio lighting'),
         imageSize: ImageSize.Size2K,
         aspectRatio: AspectRatio.Portrait,

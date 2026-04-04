@@ -2304,20 +2304,20 @@ export const generateWithZImageTurbo = async (
   if (onProgress) onProgress(10);
 
   // Z-Image Turbo prompt strategy:
-  // Concise and direct (1-300 chars ideal). Subject → outfit → setting → lighting → camera.
-  // No FLUX-style "IDENTITY LOCKED" anchors — model is T2I only, no reference images.
-  const parts: string[] = ['Ultra-photorealistic photograph.'];
+  // Concise and direct (1-300 chars ideal). Subject → outfit → mood.
+  // No camera jargon, no studio descriptions — Turbo works best with simple prompts.
+  let subjectDesc = character?.characteristics || '';
+  const flatMatch = subjectDesc.match(/FLAT DESCRIPTION:\s*(.+?)(?:\n|$)/g);
+  if (flatMatch) subjectDesc = flatMatch.map(m => m.replace('FLAT DESCRIPTION:', '').trim()).join(', ');
+  subjectDesc = subjectDesc.replace(/Ultra-photorealistic[^,]*/gi, '').replace(/shot on [^,.]*/gi, '').replace(/,{2,}/g, ',').replace(/^\s*,/, '').trim();
 
-  if (character?.characteristics) parts.push(character.characteristics + '.');
-  if (character?.outfitDescription) parts.push(`Wearing: ${character.outfitDescription}.`);
-  if (character?.pose) parts.push(character.pose + '.');
-  if (character?.accessory) parts.push(`With: ${character.accessory}.`);
-  if (params.scenario) parts.push(`Setting: ${params.scenario}.`);
-  if (params.lighting) parts.push(`${params.lighting}.`);
-  else parts.push('Soft directional studio light.');
-  if (params.camera) parts.push(params.camera + '.');
-  if (params.imageBoost) parts.push(params.imageBoost + '.');
-  parts.push('Sharp detail, natural skin texture.');
+  const parts: string[] = [];
+  if (params.imageBoost) parts.push(params.imageBoost);
+  else parts.push('Portrait photograph, natural lighting');
+  if (subjectDesc) parts.push(subjectDesc);
+  if (character?.outfitDescription) parts.push(`Wearing ${character.outfitDescription}`);
+  if (character?.pose) parts.push(character.pose);
+  if (character?.accessory) parts.push(`With ${character.accessory}`);
 
   const prompt = parts.join(' ');
   const count = Math.min(params.numberOfImages ?? 1, 4);
