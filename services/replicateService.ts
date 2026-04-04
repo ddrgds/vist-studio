@@ -629,22 +629,52 @@ export async function generateWithFlux2Pro(
   const prompt = parts.filter(Boolean).join('. ') + '.';
 
   onProgress?.(10);
-  const output = await replicate.run('black-forest-labs/flux-2-pro' as `${string}/${string}`, {
-    input: {
-      prompt,
-      aspect_ratio: params.aspectRatio === AspectRatio.Portrait ? '3:4' :
-                     params.aspectRatio === AspectRatio.Landscape ? '4:3' :
-                     params.aspectRatio === AspectRatio.Wide ? '16:9' : '1:1',
-      num_outputs: params.numberOfImages || 1,
-      guidance: params.guidanceScale || 3.5,
-      safety_tolerance: 5, // most permissive
-      ...(params.seed ? { seed: params.seed } : {}),
-    },
+
+  // Direct fetch submit+poll (bypasses SDK FileOutput issues with our proxy)
+  const input: Record<string, unknown> = {
+    prompt,
+    aspect_ratio: params.aspectRatio === AspectRatio.Portrait ? '3:4' :
+                   params.aspectRatio === AspectRatio.Landscape ? '4:3' :
+                   params.aspectRatio === AspectRatio.Wide ? '16:9' : '1:1',
+    num_outputs: params.numberOfImages || 1,
+    guidance: params.guidanceScale || 3.5,
+    safety_tolerance: 5,
+    ...(params.seed ? { seed: params.seed } : {}),
+  };
+
+  const submitRes = await fetch(`${REPLICATE_PROXY}/v1/models/black-forest-labs/flux-2-pro/predictions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ input }),
     signal: abortSignal,
   });
-  onProgress?.(100);
-  const urls = Array.isArray(output) ? output : [output];
-  return urls.map(u => typeof u === 'string' ? u : (u as any)?.url ?? (u as any)?.href ?? String(u ?? '')).filter(s => typeof s === 'string' && s.startsWith('http'));
+  if (!submitRes.ok) {
+    const errText = await submitRes.text().catch(() => submitRes.statusText);
+    throw new Error(`FLUX.2 Pro submit failed (${submitRes.status}): ${errText.slice(0, 200)}`);
+  }
+  const prediction = await submitRes.json();
+  const predictionUrl = prediction.urls?.get;
+  if (!predictionUrl) throw new Error('FLUX.2 Pro: no prediction URL');
+
+  onProgress?.(25);
+
+  const start = Date.now();
+  while (Date.now() - start < 60_000) {
+    if (abortSignal?.aborted) throw new Error('Cancelled');
+    await new Promise(r => setTimeout(r, 1500));
+    const pollRes = await fetch(predictionUrl.replace('https://api.replicate.com', REPLICATE_PROXY), { signal: abortSignal });
+    if (!pollRes.ok) continue;
+    const status = await pollRes.json();
+    onProgress?.(Math.min(25 + ((Date.now() - start) / 60_000) * 65, 90));
+    if (status.status === 'succeeded') {
+      onProgress?.(100);
+      if (!status.output || !Array.isArray(status.output)) throw new Error('FLUX.2 Pro: no output');
+      return status.output.filter((u: unknown) => typeof u === 'string' && u.startsWith('http'));
+    }
+    if (status.status === 'failed') throw new Error(`FLUX.2 Pro failed: ${status.error || 'unknown'}`);
+    if (status.status === 'canceled') throw new Error('FLUX.2 Pro: canceled');
+  }
+  throw new Error('FLUX.2 Pro: timed out');
 }
 
 // ─────────────────────────────────────────────
