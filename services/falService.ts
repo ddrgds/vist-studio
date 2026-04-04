@@ -1400,6 +1400,74 @@ export const generateWithFlux2ProFal = async (
 };
 
 // ─────────────────────────────────────────────
+// Wan 2.7 Pro — text-to-image via fal.ai
+// ─────────────────────────────────────────────
+
+export const generateWithWan27Fal = async (
+  params: InfluencerParams,
+  onProgress?: (percent: number) => void,
+  abortSignal?: AbortSignal,
+): Promise<string[]> => {
+  if (abortSignal?.aborted) throw new Error('Cancelado');
+  const character = params.characters[0];
+  if (onProgress) onProgress(10);
+
+  // Build natural-language prompt (Wan excels with vivid descriptions)
+  let subjectDesc = character?.characteristics || '';
+  const flatMatch = subjectDesc.match(/FLAT DESCRIPTION:\s*(.+?)(?:\n|$)/g);
+  if (flatMatch) subjectDesc = flatMatch.map(m => m.replace('FLAT DESCRIPTION:', '').trim()).join(', ');
+  // Strip render style prefixes and camera jargon
+  subjectDesc = subjectDesc
+    .replace(/Ultra-photorealistic digital human[^,]*/gi, '')
+    .replace(/Premium anime character[^,]*/gi, '')
+    .replace(/AAA game-quality[^,]*/gi, '')
+    .replace(/shot on [^,.]*/gi, '')
+    .replace(/Phase One[^,.]*/gi, '')
+    .replace(/,{2,}/g, ',').replace(/^\s*,\s*/, '').trim();
+
+  const parts: string[] = [];
+  if (params.imageBoost) parts.push(params.imageBoost);
+  else parts.push('High-end fashion editorial photograph, Vogue magazine quality, striking and bold, natural skin texture with visible pores');
+  if (subjectDesc) parts.push(subjectDesc);
+  if (character?.outfitDescription) parts.push(`Wearing ${character.outfitDescription}`);
+  if (character?.pose) parts.push(character.pose);
+  if (character?.accessory) parts.push(`With ${character.accessory}`);
+  if (params.scenario) {
+    parts.push(params.scenario.replace(/shot on [^,.]*/gi, '').replace(/Profoto[^,.]*/gi, '').trim());
+  }
+  if (params.lighting) parts.push(params.lighting);
+  const prompt = parts.filter(Boolean).join('. ').replace(/\.\s*\./g, '.').trim() + '.';
+
+  const negativePrompt = params.negativePrompt || '';
+
+  if (onProgress) onProgress(20);
+
+  const result = await fal.subscribe(FalModel.Wan27ProGen, {
+    input: {
+      prompt,
+      negative_prompt: negativePrompt,
+      image_size: toFalImageSize(params.aspectRatio),
+      enable_safety_checker: false,
+      enable_output_safety_checker: false,
+      guidance_scale: 3.5,
+      num_inference_steps: 40,
+      image_format: 'jpeg',
+      ...(params.seed !== undefined && { seed: params.seed }),
+    },
+    onQueueUpdate: (update: any) => {
+      if (update.status === 'IN_PROGRESS' && onProgress) onProgress(Math.min(88, 25 + Math.random() * 60));
+    },
+  }) as any;
+
+  const r = unwrap(result);
+  const images = r?.images || [];
+  const urls = images.map((img: any) => img?.url).filter((u: string) => typeof u === 'string' && u.startsWith('http'));
+  if (urls.length === 0) throw new Error('Wan 2.7 Pro did not return any images.');
+  if (onProgress) onProgress(100);
+  return urls;
+};
+
+// ─────────────────────────────────────────────
 // Grok Imagine — text-to-image via fal.ai (xAI, permissive)
 // ─────────────────────────────────────────────
 
@@ -1528,6 +1596,8 @@ export const generateWithFal = async (
       return generateWithFlux2ProFal(params, onProgress, abortSignal);
     case FalModel.GrokImagineGen:
       return generateWithGrokFal(params, onProgress, abortSignal);
+    case FalModel.Wan27ProGen:
+      return generateWithWan27Fal(params, onProgress, abortSignal);
     default:
       return generateWithKontextMulti(params, FalModel.KontextMulti, onProgress);
   }

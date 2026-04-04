@@ -289,6 +289,7 @@ export enum FalModel {
   KontextMaxMulti = 'fal-ai/flux-pro/kontext/max/multi',  // FLUX.1 Kontext Max — maximum quality · 2026
   Flux2Pro = 'fal-ai/flux-2-pro/edit',                    // FLUX.2 Pro Edit — multi-ref image editor
   Flux2ProGen = 'fal-ai/flux-2-pro',                      // FLUX.2 Pro — text-to-image, JSON prompts, safety_tolerance
+  Wan27ProGen = 'fal-ai/wan/v2.7/pro/text-to-image',       // Wan 2.7 Pro — text-to-image via fal.ai
   Wan27Edit = 'fal-ai/wan/v2.7/edit',                      // Wan 2.7 — image editing, natural language
   Wan27ProEdit = 'fal-ai/wan/v2.7/pro/edit',               // Wan 2.7 Pro — premium image editing
   GrokImagineGen = 'xai/grok-imagine-image',               // Grok Imagine — text-to-image via fal.ai, permissive
@@ -476,6 +477,7 @@ export const CREDIT_COSTS: Record<string, number> = {
   [FalModel.KontextMaxMulti]:  15,
   [FalModel.Flux2Pro]:         12,   // FAL variant (edit endpoint)
   [FalModel.Flux2ProGen]:      10,
+  [FalModel.Wan27ProGen]:      12,
   [FalModel.Wan27Edit]:        8,
   [FalModel.Wan27ProEdit]:     12,
   [FalModel.GrokImagineGen]:   8,
@@ -756,16 +758,16 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     falModel: FalModel.GrokImagineGen,
   },
   {
-    key: 'replicate:wan27pro',
+    key: 'fal:wan27pro-gen',
     userFriendlyName: 'Wan 2.7 Pro',
-    description: 'Alibaba 4K, thinking mode, 9 refs',
-    bestFor: 'Character creation, coherent image sets',
-    tags: ['photorealism', 'quality', 'consistency'],
+    description: 'Alibaba via fal.ai, very realistic',
+    bestFor: 'Photorealistic character creation',
+    tags: ['photorealism', 'quality'],
     requiresFaceRef: false,
     estimatedTime: '~15s',
-    creditCost: CREDIT_COSTS[ReplicateModel.Wan27ImagePro],
-    provider: AIProvider.Replicate,
-    replicateModel: ReplicateModel.Wan27ImagePro,
+    creditCost: CREDIT_COSTS[FalModel.Wan27ProGen],
+    provider: AIProvider.Fal,
+    falModel: FalModel.Wan27ProGen,
   },
   {
     key: 'replicate:grok',

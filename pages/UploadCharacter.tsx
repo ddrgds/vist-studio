@@ -7,7 +7,7 @@ import { generateWithSoul } from '../services/higgsfieldService'
 import { generateWithReplicate } from '../services/replicateService'
 import { generateWithOpenAI } from '../services/openaiService'
 import { generateWithFal, editImageWithGrokFal } from '../services/falService'
-import { ImageSize, AspectRatio, ENGINE_METADATA, FEATURE_ENGINES, AIProvider, ReplicateModel } from '../types'
+import { ImageSize, AspectRatio, ENGINE_METADATA, FEATURE_ENGINES, AIProvider, ReplicateModel, FalModel } from '../types'
 import type { InfluencerParams } from '../types'
 import { useNavigationStore } from '../stores/navigationStore'
 import { usePipelineStore } from '../stores/pipelineStore'
@@ -25,7 +25,7 @@ import { generateCharacterSheet, enhanceSheetWithGrok, type SheetType } from '..
 // ─── Character creation engine presets (Soul 2.0 prominent) ──────────
 const CHARACTER_ENGINES = [
   { id: 'gemini:nb2', label: 'Nano Banana 2', desc: 'Rápido, buena consistencia', badge: 'Recomendado' },
-  { id: 'replicate:wan27pro', label: 'Wan 2.7 Pro', desc: '4K, muy realista, Alibaba', badge: 'Nuevo' },
+  { id: 'fal:wan27pro-gen', label: 'Wan 2.7 Pro', desc: 'Muy realista, Alibaba', badge: 'Nuevo' },
   { id: 'fal:flux2pro-gen', label: 'FLUX.2 Pro', desc: 'Rápido (~8s), JSON, sin filtros', badge: 'Nuevo' },
   { id: 'fal:grok-gen', label: 'Grok Imagine', desc: 'Estético, sin filtros, xAI', badge: 'Nuevo' },
   { id: 'fal:seedream50', label: 'Seedream 5.0', desc: 'Multi-referencia, ByteDance', badge: null },
@@ -299,21 +299,18 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
       return enhanced
     }
     if (!engineMeta || selectedEngine === 'auto') {
-      // NB2 → Wan 2.7 Pro → Grok fallback chain
+      // NB2 → Wan 2.7 Pro (fal.ai) → Grok (fal.ai) fallback chain
       try {
         const nb2Results = await generateInfluencerImage(params, () => {})
         if (nb2Results.length > 0) return nb2Results
         throw new Error('NB2 returned empty')
       } catch (nb2Err) {
-        console.warn('NB2 creator failed, trying Wan 2.7 Pro:', nb2Err)
+        console.warn('NB2 creator failed, trying Wan 2.7 Pro (fal):', nb2Err)
         try {
-          const { generateWithWan27 } = await import('../services/replicateService')
-          const wanResults = await generateWithWan27(params, ReplicateModel.Wan27ImagePro)
-          if (wanResults.length > 0) return wanResults
-          throw new Error('Wan 2.7 returned empty')
+          return await generateWithFal(params, FalModel.Wan27ProGen)
         } catch (wanErr) {
-          console.warn('Wan 2.7 creator failed, trying Grok:', wanErr)
-          return generateWithReplicate(params, ReplicateModel.GrokImagine)
+          console.warn('Wan 2.7 creator failed, trying Grok (fal):', wanErr)
+          return generateWithFal(params, FalModel.GrokImagineGen)
         }
       }
     }
