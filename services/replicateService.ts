@@ -609,7 +609,25 @@ export async function generateWithFlux2Pro(
   onProgress?: (p: number) => void,
   abortSignal?: AbortSignal,
 ): Promise<string[]> {
-  const prompt = params.scenario || 'a beautiful photo';
+  const character = params.characters[0];
+
+  // Build descriptive prompt (FLUX doesn't support negative prompts — keep it positive)
+  const parts: string[] = [];
+  if (params.imageBoost) parts.push(params.imageBoost);
+  else parts.push('High-end fashion editorial photograph, magazine quality');
+  if (character?.characteristics) {
+    // Extract flat description if NB2 JSON spec is present
+    const flat = character.characteristics.match(/FLAT DESCRIPTION:\s*(.+?)(?:\n|$)/g);
+    parts.push(flat ? flat.map(m => m.replace('FLAT DESCRIPTION:', '').trim()).join(', ') : character.characteristics);
+  }
+  if (character?.outfitDescription) parts.push(`Wearing ${character.outfitDescription}`);
+  if (character?.pose) parts.push(character.pose);
+  if (character?.accessory) parts.push(`With ${character.accessory}`);
+  if (params.scenario) parts.push(params.scenario);
+  if (params.lighting) parts.push(params.lighting);
+
+  const prompt = parts.filter(Boolean).join('. ') + '.';
+
   onProgress?.(10);
   const output = await replicate.run('black-forest-labs/flux-2-pro' as `${string}/${string}`, {
     input: {
@@ -619,8 +637,10 @@ export async function generateWithFlux2Pro(
                      params.aspectRatio === AspectRatio.Wide ? '16:9' : '1:1',
       num_outputs: params.numberOfImages || 1,
       guidance: params.guidanceScale || 3.5,
+      safety_tolerance: 5, // most permissive
       ...(params.seed ? { seed: params.seed } : {}),
     },
+    signal: abortSignal,
   });
   onProgress?.(100);
   const urls = Array.isArray(output) ? output : [output];
