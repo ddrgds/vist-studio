@@ -470,40 +470,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
 
     let successCount = 0; let failCount = 0
 
-    // Try Wan 2.7 Pro batch first (1 call = multiple photos)
-    // With identity refs: max 4 outputs. Without refs: max 12 (image_set_mode).
-    const wanMaxBatch = identityRefs.length > 0 ? 4 : 12
-    if (photoCount >= 2 && photoCount <= wanMaxBatch) {
-      try {
-        const { generateSessionWithWan27 } = await import('../services/replicateService')
-        const batchPrompt = `Generate ${photoCount} different photos of this exact person. Scene: ${sceneContext}. Poses: ${poses.join(', ')}. ${charStyleInfo.isRealistic ? 'Photorealistic, natural skin with visible pores.' : `Style: ${characteristics || 'editorial'}.`} Each photo should have a different pose, angle, and composition while keeping the same person.`
-        setSessionProgress(10)
-        const batchUrls = await generateSessionWithWan27(heroFile, photoCount, batchPrompt, identityRefs, (p) => setSessionProgress(p), abortSessionRef.current!.signal)
-        if (batchUrls.length > 0) {
-          // Fill grid with batch results
-          setGridCells(prev => {
-            const n = [...prev]
-            batchUrls.forEach((url, i) => { if (i < n.length) n[i] = url })
-            return n
-          })
-          setRevealedCells(new Set(batchUrls.map((_, i) => i)))
-          successCount = batchUrls.length
-          failCount = Math.max(0, photoCount - batchUrls.length)
-          // Restore credits for missing photos
-          if (failCount > 0) restoreCredits(failCount * costPerShot)
-          triggerFlash(); setGeneratingSession(false); setSessionProgress(0)
-          toast.success(`${successCount} foto${successCount > 1 ? 's' : ''} generada${successCount > 1 ? 's' : ''} (batch)`)
-          return
-        }
-      } catch (wanErr: any) {
-        if (wanErr?.message === 'Cancelled' || abortSessionRef.current?.signal.aborted) {
-          restoreCredits(totalCost); setGeneratingSession(false); setSessionProgress(0); return
-        }
-        console.warn('Wan batch session failed, falling back to individual shots:', wanErr)
-      }
-    }
-
-    // Fallback: generate each photo individually with concurrency limit
+    // Generate each photo individually: NB2 → FLUX.2 Pro Edit → Grok
     const generateShot = async (pose: string, idx: number) => {
       if (abortSessionRef.current?.signal.aborted) return
       try {
