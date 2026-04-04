@@ -470,8 +470,10 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
 
     let successCount = 0; let failCount = 0
 
-    // Try Wan 2.7 Pro batch first (1 call = all photos, coherent set)
-    if (photoCount >= 4 && photoCount <= 12) {
+    // Try Wan 2.7 Pro batch first (1 call = multiple photos)
+    // With identity refs: max 4 outputs. Without refs: max 12 (image_set_mode).
+    const wanMaxBatch = identityRefs.length > 0 ? 4 : 12
+    if (photoCount >= 2 && photoCount <= wanMaxBatch) {
       try {
         const { generateSessionWithWan27 } = await import('../services/replicateService')
         const batchPrompt = `Generate ${photoCount} different photos of this exact person. Scene: ${sceneContext}. Poses: ${poses.join(', ')}. ${charStyleInfo.isRealistic ? 'Photorealistic, natural skin with visible pores.' : `Style: ${characteristics || 'editorial'}.`} Each photo should have a different pose, angle, and composition while keeping the same person.`

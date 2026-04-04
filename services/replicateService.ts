@@ -897,12 +897,17 @@ export async function generateSessionWithWan27(
   }
   onProgress?.(20);
 
+  // image_set_mode supports 1-12 outputs but only without reference images.
+  // With images, max is 4. Use image_set_mode only when no refs.
+  const hasRefs = images.length > 1; // first image is hero, rest are refs
+  const maxOutputs = hasRefs ? 4 : 12;
+
   return wanSubmitAndPoll({
     prompt: instruction,
     images,
     size: '2K',
-    num_outputs: Math.min(Math.max(count, 1), 12),
-    image_set_mode: true,
+    num_outputs: Math.min(Math.max(count, 1), maxOutputs),
+    ...(!hasRefs && { image_set_mode: true }),
   }, onProgress, abortSignal);
 }
 
