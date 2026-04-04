@@ -715,11 +715,25 @@ export async function generateWithWan27(
 
   onProgress?.(10);
 
+  // Upload reference images to HTTP URLs (Replicate needs HTTP, not data URIs)
+  const images: string[] = [];
+  if (character?.modelImages?.length) {
+    const { fal } = await import('@fal-ai/client');
+    for (const file of character.modelImages.slice(0, 5)) {
+      try {
+        const httpUrl = await fal.storage.upload(file);
+        images.push(httpUrl);
+      } catch { /* skip failed uploads */ }
+    }
+  }
+  onProgress?.(20);
+
   const input: Record<string, unknown> = {
     prompt,
     size: isPro ? '2K' : '1K',
     num_outputs: Math.min(params.numberOfImages || 1, isPro ? 12 : 4),
     thinking_mode: isPro,
+    ...(images.length > 0 && { images }),
     ...(params.seed !== undefined && { seed: params.seed }),
   };
 
@@ -750,11 +764,12 @@ export async function editWithWan27Pro(
 ): Promise<string[]> {
   onProgress?.(10);
 
-  // Convert images to data URLs for Replicate
+  // Upload images to HTTP URLs (Replicate needs HTTP, not data URIs)
+  const { fal } = await import('@fal-ai/client');
   const images: string[] = [];
-  images.push(await fileToDataUrl(baseImage));
+  images.push(await fal.storage.upload(baseImage));
   for (const ref of referenceImages.slice(0, 8)) {
-    images.push(await fileToDataUrl(ref));
+    try { images.push(await fal.storage.upload(ref)); } catch { /* skip */ }
   }
 
   onProgress?.(25);
