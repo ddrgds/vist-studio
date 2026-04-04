@@ -1400,6 +1400,105 @@ export const generateWithFlux2ProFal = async (
 };
 
 // ─────────────────────────────────────────────
+// Grok Imagine — text-to-image via fal.ai (xAI, permissive)
+// ─────────────────────────────────────────────
+
+export const generateWithGrokFal = async (
+  params: InfluencerParams,
+  onProgress?: (percent: number) => void,
+  abortSignal?: AbortSignal,
+): Promise<string[]> => {
+  if (abortSignal?.aborted) throw new Error('Cancelado');
+  const character = params.characters[0];
+  if (onProgress) onProgress(10);
+
+  // Build descriptive prompt — Grok is permissive, vivid descriptions work well
+  const parts: string[] = [];
+  if (params.imageBoost) parts.push(params.imageBoost);
+  else parts.push('Ultra-photorealistic fashion editorial, striking and bold, Vogue quality');
+  if (character?.characteristics) {
+    const flat = character.characteristics.match(/FLAT DESCRIPTION:\s*(.+?)(?:\n|$)/g);
+    parts.push(flat ? flat.map(m => m.replace('FLAT DESCRIPTION:', '').trim()).join(', ') : character.characteristics);
+  }
+  if (character?.outfitDescription) parts.push(`Wearing ${character.outfitDescription}`);
+  if (character?.pose) parts.push(character.pose);
+  if (character?.accessory) parts.push(`With ${character.accessory}`);
+  if (params.scenario) parts.push(params.scenario);
+  if (params.lighting) parts.push(params.lighting);
+  if (params.negativePrompt) parts.push(`Avoid: ${params.negativePrompt}`);
+  const prompt = parts.filter(Boolean).join('. ') + '.';
+
+  if (onProgress) onProgress(20);
+
+  const toGrokAR = (ar: AspectRatio): string => {
+    const map: Record<string, string> = { [AspectRatio.Portrait]: '3:4', [AspectRatio.Square]: '1:1', [AspectRatio.Landscape]: '4:3', [AspectRatio.Wide]: '16:9', [AspectRatio.Tall]: '9:16' };
+    return map[ar] ?? '1:1';
+  };
+
+  const result = await fal.subscribe(FalModel.GrokImagineGen, {
+    input: {
+      prompt,
+      num_images: params.numberOfImages || 1,
+      aspect_ratio: toGrokAR(params.aspectRatio),
+      output_format: 'jpeg',
+    },
+    onQueueUpdate: (update: any) => {
+      if (update.status === 'IN_PROGRESS' && onProgress) onProgress(Math.min(88, 25 + Math.random() * 60));
+    },
+  }) as any;
+
+  const r = unwrap(result);
+  const images = r?.images || [];
+  const urls = images.map((img: any) => img?.url).filter((u: string) => typeof u === 'string' && u.startsWith('http'));
+  if (urls.length === 0) throw new Error('Grok Imagine did not return any images.');
+  if (onProgress) onProgress(100);
+  return urls;
+};
+
+// ─────────────────────────────────────────────
+// Wan 2.7 (Pro) Edit — image editing via fal.ai
+// ─────────────────────────────────────────────
+
+export const editWithWan27Fal = async (
+  baseImage: File,
+  instruction: string,
+  referenceImages: File[] = [],
+  onProgress?: (percent: number) => void,
+  options?: { pro?: boolean; guidanceScale?: number; seed?: number },
+  abortSignal?: AbortSignal,
+): Promise<string[]> => {
+  if (abortSignal?.aborted) throw new Error('Cancelado');
+  if (onProgress) onProgress(10);
+
+  const allImages = [baseImage, ...referenceImages.slice(0, 8)];
+  const imageUrls = await Promise.all(allImages.map(f => uploadToFalStorage(f)));
+  if (onProgress) onProgress(30);
+
+  const model = options?.pro ? FalModel.Wan27ProEdit : FalModel.Wan27Edit;
+
+  const result = await fal.subscribe(model, {
+    input: {
+      prompt: instruction,
+      image_urls: imageUrls,
+      image_size: 'square_hd',
+      enable_safety_checker: false,
+      enable_output_safety_checker: false,
+      guidance_scale: options?.guidanceScale ?? 3.5,
+      ...(options?.seed !== undefined && { seed: options.seed }),
+    },
+    onQueueUpdate: (update: any) => {
+      if (update.status === 'IN_PROGRESS' && onProgress) onProgress(Math.min(88, 35 + Math.random() * 50));
+    },
+  }) as any;
+
+  const r = unwrap(result);
+  const imageUrl: string = r?.images?.[0]?.url;
+  if (!imageUrl) throw new Error('Wan 2.7 Edit did not return any images.');
+  if (onProgress) onProgress(100);
+  return [imageUrl];
+};
+
+// ─────────────────────────────────────────────
 // Main router — selects the fal model based on configuration
 // ─────────────────────────────────────────────
 export const generateWithFal = async (
@@ -1427,6 +1526,8 @@ export const generateWithFal = async (
       return generateWithFluxPro(params, onProgress, abortSignal);
     case FalModel.Flux2ProGen:
       return generateWithFlux2ProFal(params, onProgress, abortSignal);
+    case FalModel.GrokImagineGen:
+      return generateWithGrokFal(params, onProgress, abortSignal);
     default:
       return generateWithKontextMulti(params, FalModel.KontextMulti, onProgress);
   }

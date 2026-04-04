@@ -289,6 +289,9 @@ export enum FalModel {
   KontextMaxMulti = 'fal-ai/flux-pro/kontext/max/multi',  // FLUX.1 Kontext Max — maximum quality · 2026
   Flux2Pro = 'fal-ai/flux-2-pro/edit',                    // FLUX.2 Pro Edit — multi-ref image editor
   Flux2ProGen = 'fal-ai/flux-2-pro',                      // FLUX.2 Pro — text-to-image, JSON prompts, safety_tolerance
+  Wan27Edit = 'fal-ai/wan/v2.7/edit',                      // Wan 2.7 — image editing, natural language
+  Wan27ProEdit = 'fal-ai/wan/v2.7/pro/edit',               // Wan 2.7 Pro — premium image editing
+  GrokImagineGen = 'xai/grok-imagine-image',               // Grok Imagine — text-to-image via fal.ai, permissive
   Seedream45 = 'fal-ai/bytedance/seedream/v4.5/text-to-image',   // ByteDance — photorealism 4K
   Seedream50 = 'fal-ai/bytedance/seedream/v5/lite/text-to-image', // ByteDance — web search + reasoning
   ZImageTurbo = 'fal-ai/z-image/turbo',                  // Alibaba Tongyi-MAI 6B — uncensored, $0.005/mp · 2025
@@ -473,6 +476,9 @@ export const CREDIT_COSTS: Record<string, number> = {
   [FalModel.KontextMaxMulti]:  15,
   [FalModel.Flux2Pro]:         12,   // FAL variant (edit endpoint)
   [FalModel.Flux2ProGen]:      10,
+  [FalModel.Wan27Edit]:        8,
+  [FalModel.Wan27ProEdit]:     12,
+  [FalModel.GrokImagineGen]:   8,
   [FalModel.Seedream45]:       8,
   [FalModel.Seedream50]:       8,
   [FalModel.ZImageTurbo]:      8,
@@ -736,6 +742,18 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     creditCost: CREDIT_COSTS[FalModel.Flux2ProGen],
     provider: AIProvider.Fal,
     falModel: FalModel.Flux2ProGen,
+  },
+  {
+    key: 'fal:grok-gen',
+    userFriendlyName: 'Grok Imagine',
+    description: 'xAI via fal.ai, permissive, aesthetic',
+    bestFor: 'Bold creative portraits, no content filters',
+    tags: ['artistic', 'permissive', 'fast'],
+    requiresFaceRef: false,
+    estimatedTime: '~5s',
+    creditCost: CREDIT_COSTS[FalModel.GrokImagineGen],
+    provider: AIProvider.Fal,
+    falModel: FalModel.GrokImagineGen,
   },
   {
     key: 'replicate:wan27pro',
