@@ -1360,7 +1360,7 @@ export const generateWithFlux2ProFal = async (
       pose: character?.pose || 'Standing casual, facing camera',
       accessories: character?.accessory || undefined,
     }],
-    style: params.imageBoost || 'Raw candid photography, authentic everyday lifestyle, taken on iPhone 14 Pro, unedited',
+    style: params.imageBoost || 'Raw candid photography, authentic everyday moment, taken on a mid-range smartphone, digital noise, slight motion blur, unedited',
     lighting: params.lighting || 'Natural daylight',
     mood: 'Casual, authentic, real life',
     camera: { angle: 'eye level', distance: 'medium shot', lens: 'mobile phone lens' },

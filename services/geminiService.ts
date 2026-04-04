@@ -295,42 +295,13 @@ OUTPUT FORMAT — You MUST return valid JSON followed by a flat description, exa
 
 CHARACTER SPECIFICATION:
 {
-  "identity": {
-    "ethnicity": "specific ethnic features, bone structure, skin undertone",
-    "age_appearance": "specific age markers"
-  },
-  "face": {
-    "eyes": "specific color with unique details (flecks, limbal ring, etc)",
-    "eye_shape": "specific shape with unique detail",
-    "nose": "specific shape",
-    "lips": "specific shape and color",
-    "jawline": "specific structure",
-    "distinctive": "unique marks, freckle patterns, dimples, beauty marks"
-  },
-  "body": {
-    "build": "specific body type with proportions",
-    "height_impression": "tall/petite/average with specific cues",
-    "skin": "exact tone, texture, any unique skin details"
-  },
-  "hair": {
-    "color": "specific shade with highlights/lowlights",
-    "style": "exact current styling with details",
-    "texture": "specific hair texture"
-  },
-  "outfit": {
-    "top": "specific garment with fabric, color, fit, brand aesthetic",
-    "bottom": "specific garment details",
-    "shoes": "specific footwear",
-    "overall_vibe": "one-line aesthetic summary"
-  },
-  "accessories": {
-    "details": "specific placement, material, design of each accessory"
-  },
-  "expression": {
-    "gaze": "specific eye direction and intensity",
-    "mouth": "specific lip position",
-    "mood_visual": "visual translation of personality into posture and face"
-  }
+  "identity": "specific ethnic features, bone structure, skin undertone, age markers",
+  "face": "ONE holistic flowing description of the entire face as a single concept — combine bone structure, eyes (color, shape, unique details like flecks or limbal ring), nose shape, lip shape and color, jawline, and any distinctive marks (freckles, beauty marks, dimples) into a single vivid sentence",
+  "body": "build, proportions, height impression, skin tone and texture",
+  "hair": "specific shade with highlights, exact current styling, texture",
+  "outfit": "complete outfit description with specific garments, fabrics, colors, fit — grounded in everyday wearable fashion, NOT runway or costume",
+  "accessories": "specific placement, material, design of each accessory",
+  "expression": "gaze direction, mouth position, posture — visual translation of personality"
 }
 
 FLAT DESCRIPTION: [single flowing sentence combining all the above, under 100 words]
@@ -340,6 +311,8 @@ RULES:
 - Be VISUAL only — describe what the camera sees
 - Personality → visual cues: "mysterious" → "half-lidded gaze, face partially in shadow"
 - NEVER use generic terms. "tattoos" → "minimalist moon phase tattoo behind left ear"
+- GROUND outfits in everyday wearable fashion. "Alta Moda" → "structured oversized blazer with raw hem, not runway costume". "Cyberpunk" → "dark technical jacket with reflective trim, not neon armor"
+- Face must be ONE holistic flowing description, not atomized fields
 - English only. Valid JSON only (no trailing commas).
 
 CHARACTER CHIPS TO EXPAND:

@@ -33,35 +33,36 @@ const CHARACTER_ENGINES = [
 ] as const;
 
 // ─── Dynamic setting inference from outfit ─────────────────────────
+// Mundane, imperfect, lifestyle-grounded settings (NOT cinematic/editorial)
 const OUTFIT_SETTINGS: Record<string, string> = {
-  'bikini': 'sun-drenched tropical beach with turquoise water',
-  'swimwear': 'luxury poolside with palm trees',
-  'beach': 'golden hour beach with soft waves',
-  'leather': 'moody urban alley with wet pavement',
-  'punk': 'gritty downtown street with graffiti walls',
-  'grunge': 'dimly lit underground club entrance',
-  'streetwear': 'vibrant city street with colorful storefronts',
-  'business': 'modern glass office building lobby',
-  'suit': 'sleek downtown financial district sidewalk',
-  'formal': 'elegant marble staircase with warm lighting',
-  'gala': 'grand ballroom entrance with chandeliers',
-  'sporty': 'outdoor running track at golden hour',
-  'athleisure': 'trendy coffee shop patio',
-  'cottagecore': 'sunlit wildflower meadow',
-  'bohemian': 'cozy bohemian loft with warm textiles',
-  'cowboy': 'dusty ranch fence at sunset',
-  'western': 'desert highway with dramatic sky',
-  'kimono': 'traditional Japanese garden with cherry blossoms',
-  'lingerie': 'soft morning light bedroom with white linen sheets',
-  'casual': 'neighborhood sidewalk cafe with natural daylight',
+  'bikini': 'sitting on a slightly faded beach towel, cluttered sand, harsh midday sun',
+  'swimwear': 'standing by a public pool with chain-link fence in background, flat afternoon light',
+  'beach': 'walking along a crowded ordinary beach, overcast sky, sandals in hand',
+  'leather': 'waiting at a crosswalk on an overcast day, out of focus cars passing by',
+  'punk': 'leaning against a bus stop with peeling posters, flat gray daylight',
+  'grunge': 'sitting on concrete steps outside a corner store, slightly overexposed',
+  'streetwear': 'walking through a busy ordinary sidewalk, blurred pedestrians behind',
+  'business': 'stepping out of a regular office building, glass doors reflecting sky',
+  'suit': 'standing on an ordinary downtown sidewalk waiting for an Uber, phone in hand',
+  'formal': 'standing in a hotel hallway with patterned carpet, overhead fluorescent mixed with window light',
+  'gala': 'getting out of a car at night, flash from a nearby phone, slightly blown highlights',
+  'sporty': 'catching breath at an ordinary neighborhood park, slightly sweaty, morning light',
+  'athleisure': 'ordering at a coffee counter, warm indoor light, slightly out of focus menu board behind',
+  'cottagecore': 'sitting on a wooden porch with a chipped paint railing, dappled afternoon shade',
+  'bohemian': 'browsing at a flea market stall, cluttered vintage items around, diffused overcast light',
+  'cowboy': 'leaning on a dusty pickup truck at a gas station, harsh desert sun',
+  'western': 'standing on a dirt road shoulder, flat dry landscape, squinting in bright sun',
+  'kimono': 'walking through an ordinary residential street in Japan, vending machines visible, soft cloudy day',
+  'lingerie': 'messy bedroom with clothes on a chair, unmade bed, natural window light',
+  'casual': 'sitting at an outdoor plastic table at a taco stand, string lights overhead',
 }
 const FALLBACK_SETTINGS = [
-  'cozy coffee shop with warm natural light through large windows',
-  'quiet tree-lined residential street in afternoon light',
-  'rooftop terrace overlooking a city skyline at golden hour',
-  'sunlit park bench surrounded by greenery',
-  'casual outdoor market with bokeh background',
-  'minimalist apartment with large windows and natural light',
+  'leaning against a brick wall on an ordinary side street, flat overcast light',
+  'sitting on a park bench with a takeout coffee, pigeons nearby, morning light',
+  'waiting in line at a grocery store entrance, automatic doors half-open',
+  'standing at a bus stop with a backpack, slightly bored expression, cloudy day',
+  'walking through a parking lot toward a mall entrance, cart return in background',
+  'sitting on apartment building front steps, neighbors door slightly ajar, afternoon shade',
 ]
 
 function inferSetting(outfitDesc: string): string {
@@ -329,7 +330,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
           const file = new File([blob], 'nb2-result.jpg', { type: blob.type || 'image/jpeg' })
           const grokResult = await editImageWithGrokFal(
             file,
-            'Redraw this portrait to look like an authentic, unedited candid snapshot taken on a smartphone. Introduce natural skin texture, human imperfections, and realistic ambient lighting. Remove any studio, plastic, or artificial AI look to make it indistinguishable from a real photograph.',
+            'IDENTITY LOCK: Do NOT change the face structure, bone structure, eye shape, nose, or any facial features. Only modify the SURFACE QUALITY. Add natural skin texture (pores, micro-imperfections, subtle unevenness), reduce any artificial smoothness or HDR look, make lighting feel like natural ambient light instead of studio. The person must be instantly recognizable as the exact same individual.',
           )
           enhanced.push(grokResult[0] || url)
         } catch {
