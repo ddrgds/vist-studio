@@ -32,11 +32,51 @@ const CHARACTER_ENGINES = [
   { id: 'grok-enhance', label: 'NB2 + Grok', desc: 'Genera con NB2, mejora con Grok', badge: 'Ultra' },
 ] as const;
 
+// ─── Dynamic setting inference from outfit ─────────────────────────
+const OUTFIT_SETTINGS: Record<string, string> = {
+  'bikini': 'sun-drenched tropical beach with turquoise water',
+  'swimwear': 'luxury poolside with palm trees',
+  'beach': 'golden hour beach with soft waves',
+  'leather': 'moody urban alley with wet pavement',
+  'punk': 'gritty downtown street with graffiti walls',
+  'grunge': 'dimly lit underground club entrance',
+  'streetwear': 'vibrant city street with colorful storefronts',
+  'business': 'modern glass office building lobby',
+  'suit': 'sleek downtown financial district sidewalk',
+  'formal': 'elegant marble staircase with warm lighting',
+  'gala': 'grand ballroom entrance with chandeliers',
+  'sporty': 'outdoor running track at golden hour',
+  'athleisure': 'trendy coffee shop patio',
+  'cottagecore': 'sunlit wildflower meadow',
+  'bohemian': 'cozy bohemian loft with warm textiles',
+  'cowboy': 'dusty ranch fence at sunset',
+  'western': 'desert highway with dramatic sky',
+  'kimono': 'traditional Japanese garden with cherry blossoms',
+  'lingerie': 'soft morning light bedroom with white linen sheets',
+  'casual': 'neighborhood sidewalk cafe with natural daylight',
+}
+const FALLBACK_SETTINGS = [
+  'cozy coffee shop with warm natural light through large windows',
+  'quiet tree-lined residential street in afternoon light',
+  'rooftop terrace overlooking a city skyline at golden hour',
+  'sunlit park bench surrounded by greenery',
+  'casual outdoor market with bokeh background',
+  'minimalist apartment with large windows and natural light',
+]
+
+function inferSetting(outfitDesc: string): string {
+  const lower = outfitDesc.toLowerCase()
+  for (const [keyword, setting] of Object.entries(OUTFIT_SETTINGS)) {
+    if (lower.includes(keyword)) return setting
+  }
+  return FALLBACK_SETTINGS[Math.floor(Math.random() * FALLBACK_SETTINGS.length)]
+}
+
 // ─── Render styles ───────────────────────────────────────────────────
 const renderStyles = [
-  { id:'photorealistic', label:'Fotorrealista', icon:'📷', desc:'Aspecto humano, fotografía de estudio',
-    prompt:'Ultra-photorealistic digital human, indistinguishable from photograph, shot on Phase One IQ4 150MP with Schneider 110mm f/2.8, natural skin with visible pores and subsurface blood flow, accurate eye moisture, individual hair strand rendering, physically-based material response,',
-    scenario:'Professional photography studio with Profoto B10 key through 4ft octabox, V-flat fill, clean neutral background, shot on medium format digital, natural skin imperfections',
+  { id:'photorealistic', label:'Fotorrealista', icon:'📷', desc:'Aspecto humano, foto real',
+    prompt:'Authentic candid photograph of a real person, natural skin texture with visible pores and slight imperfections, taken on iPhone 15 Pro, unedited raw photo,',
+    scenario:'_dynamic_', // will be replaced by inferSetting()
     bg:'linear-gradient(135deg, #f0b86020, #d4956b10)' },
   { id:'anime', label:'Anime / Manga', icon:'🎨', desc:'Estilo de animación japonesa',
     prompt:'Premium anime character, Production I.G / studio Bones quality, clean precise linework with variable stroke weight, cel-shaded with sophisticated shadow gradients, luminous multi-layered iris reflections, stylized proportions, dynamic hair strand groups,',
@@ -289,7 +329,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
           const file = new File([blob], 'nb2-result.jpg', { type: blob.type || 'image/jpeg' })
           const grokResult = await editImageWithGrokFal(
             file,
-            'Enhance this portrait to be more photorealistic and detailed. Add natural skin texture, pores, fine hair detail, realistic eye reflections, and subtle skin imperfections. Keep the exact same person, pose, and composition. Make it look like a professional studio photograph.',
+            'Redraw this portrait to look like an authentic, unedited candid snapshot taken on a smartphone. Introduce natural skin texture, human imperfections, and realistic ambient lighting. Remove any studio, plastic, or artificial AI look to make it indistinguishable from a real photograph.',
           )
           enhanced.push(grokResult[0] || url)
         } catch {
@@ -378,11 +418,13 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
           pose: 'Standing casual, facing camera, portrait shot',
           accessory: selAccessories.map(id => ACCESSORIES.find(a => a.id === id)?.label || '').filter(Boolean).join(', '),
         }],
-        scenario: engineMeta?.provider === AIProvider.Fal
-          ? 'Clean neutral background' // fal.ai models don't need camera jargon
-          : isSoul ? 'Professional editorial fashion photography studio, clean elegant neutral background'
-          : style.scenario,
-        lighting: isSoul ? 'Natural soft studio lighting' : (style.id === 'anime' ? 'Flat anime lighting, cel-shaded' : style.id === 'pixel-art' ? 'Flat pixel art lighting' : 'Soft studio lighting'),
+        scenario: (() => {
+          const outfitDesc = selFashion.map(id => FASHION_STYLES.find(f => f.id === id)?.promptText || '').filter(Boolean).join(', ');
+          if (style.scenario === '_dynamic_') return inferSetting(outfitDesc);
+          if (isSoul) return 'Natural outdoor setting with soft ambient light';
+          return style.scenario;
+        })(),
+        lighting: isSoul ? 'Natural ambient lighting' : (style.id === 'anime' ? 'Flat anime lighting, cel-shaded' : style.id === 'pixel-art' ? 'Flat pixel art lighting' : 'Natural ambient lighting'),
         imageSize: ImageSize.Size2K,
         aspectRatio: AspectRatio.Portrait,
         numberOfImages: 1,

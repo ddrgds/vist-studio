@@ -1352,18 +1352,18 @@ export const generateWithFlux2ProFal = async (
 
   // Build JSON structured prompt (FLUX excels at this format)
   const jsonPrompt = JSON.stringify({
-    scene: params.scenario || 'Professional photography studio, clean neutral background',
+    scene: (params.scenario || 'casual everyday setting') + ' with natural depth of field',
     subjects: [{
-      type: 'fashion model',
-      description: subjectDesc || 'a person',
-      outfit: character?.outfitDescription || 'stylish editorial outfit',
+      type: 'real person',
+      description: (subjectDesc || 'a person') + ', natural skin texture with slight realistic imperfections',
+      outfit: character?.outfitDescription || 'casual everyday clothing',
       pose: character?.pose || 'Standing casual, facing camera',
       accessories: character?.accessory || undefined,
     }],
-    style: params.imageBoost || 'Ultra-photorealistic editorial photograph, natural skin with visible pores, fine detail',
-    lighting: params.lighting || 'Soft directional studio light, natural skin tones',
-    mood: 'Confident, editorial, striking',
-    camera: { angle: 'eye level', distance: 'medium shot', lens: '85mm f/1.4' },
+    style: params.imageBoost || 'Raw candid photography, authentic everyday lifestyle, taken on iPhone 14 Pro, unedited',
+    lighting: params.lighting || 'Natural daylight',
+    mood: 'Casual, authentic, real life',
+    camera: { angle: 'eye level', distance: 'medium shot', lens: 'mobile phone lens' },
   });
 
   if (onProgress) onProgress(20);
@@ -1427,18 +1427,19 @@ export const generateWithWan27Fal = async (
 
   const parts: string[] = [];
   if (params.imageBoost) parts.push(params.imageBoost);
-  else parts.push('High-end fashion editorial photograph, Vogue magazine quality, striking and bold, natural skin texture with visible pores');
+  else parts.push('Raw, unedited lifestyle portrait, casual amateur photography, natural skin texture, visible pores, slight human imperfections');
   if (subjectDesc) parts.push(subjectDesc);
   if (character?.outfitDescription) parts.push(`Wearing ${character.outfitDescription}`);
   if (character?.pose) parts.push(character.pose);
   if (character?.accessory) parts.push(`With ${character.accessory}`);
-  if (params.scenario) {
-    parts.push(params.scenario.replace(/shot on [^,.]*/gi, '').replace(/Profoto[^,.]*/gi, '').trim());
-  }
-  if (params.lighting) parts.push(params.lighting);
+  if (params.scenario) parts.push(params.scenario);
+  parts.push('Natural ambient light, organic colors');
   const prompt = parts.filter(Boolean).join('. ').replace(/\.\s*\./g, '.').trim() + '.';
 
-  const negativePrompt = params.negativePrompt || '';
+  const negativePrompt = [
+    params.negativePrompt || '',
+    'studio lighting, editorial, Vogue, professional photoshoot, plastic skin, airbrushed, CGI, perfect symmetry, over-sharpened, 3d render, artificial backdrop'
+  ].filter(Boolean).join(', ');
 
   if (onProgress) onProgress(20);
 
@@ -1483,7 +1484,7 @@ export const generateWithGrokFal = async (
   // Build descriptive prompt — Grok is permissive, vivid descriptions work well
   const parts: string[] = [];
   if (params.imageBoost) parts.push(params.imageBoost);
-  else parts.push('Ultra-photorealistic fashion editorial, striking and bold, Vogue quality');
+  else parts.push('Authentic, unedited candid photograph of a real person');
   if (character?.characteristics) {
     const flat = character.characteristics.match(/FLAT DESCRIPTION:\s*(.+?)(?:\n|$)/g);
     parts.push(flat ? flat.map(m => m.replace('FLAT DESCRIPTION:', '').trim()).join(', ') : character.characteristics);
@@ -1492,8 +1493,7 @@ export const generateWithGrokFal = async (
   if (character?.pose) parts.push(character.pose);
   if (character?.accessory) parts.push(`With ${character.accessory}`);
   if (params.scenario) parts.push(params.scenario);
-  if (params.lighting) parts.push(params.lighting);
-  if (params.negativePrompt) parts.push(`Avoid: ${params.negativePrompt}`);
+  parts.push('Natural ambient lighting, raw skin texture with visible pores, casual everyday lifestyle, true-to-life');
   const prompt = parts.filter(Boolean).join('. ') + '.';
 
   if (onProgress) onProgress(20);
@@ -2313,11 +2313,13 @@ export const generateWithZImageTurbo = async (
 
   const parts: string[] = [];
   if (params.imageBoost) parts.push(params.imageBoost);
-  else parts.push('Portrait photograph, natural lighting');
+  else parts.push('Candid smartphone photo of a real person');
   if (subjectDesc) parts.push(subjectDesc);
   if (character?.outfitDescription) parts.push(`Wearing ${character.outfitDescription}`);
   if (character?.pose) parts.push(character.pose);
   if (character?.accessory) parts.push(`With ${character.accessory}`);
+  if (params.scenario && params.scenario !== '_dynamic_') parts.push(params.scenario);
+  parts.push('Natural lighting, unedited, raw, photorealistic');
 
   const prompt = parts.join(' ');
   const count = Math.min(params.numberOfImages ?? 1, 4);

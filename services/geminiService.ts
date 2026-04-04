@@ -410,12 +410,12 @@ export const generateInfluencerImage = async (
   // 2026 trend: "emotional vibe-coding" — define emotional resonance, not just technical specs.
   const styleDirective = params.imageBoost
     ? params.imageBoost
-    : 'ultra-photorealistic fashion editorial photograph — emotionally resonant, cinematic presence, Sony A7R V camera, 85mm f/1.4 portrait lens, shallow DOF with natural bokeh, RAW, 4K, Vogue / Harper\'s Bazaar quality';
+    : 'Authentic lifestyle photography, candid smartphone snapshot style, unedited raw photo, natural skin with visible pores and human imperfections';
 
   // TECHNICAL QUALITY adapts to the rendering style requested
   const technicalQuality = params.imageBoost
     ? `Render quality consistent with the style directive above. Sharp focus on faces, precise fabric detail, no AI artifacts.`
-    : `Sharp focus on faces, natural skin texture (pores, subtle imperfections), realistic hair strands, fabric microdetail, no AI artifacts, no plastic skin, no over-smoothing.`;
+    : `Natural skin texture (pores, subtle imperfections, micro-freckles), realistic hair strands, no AI artifacts, no plastic skin, no over-smoothing, no studio lighting look.`;
 
   // ── JSON-structured prompt for NB2/NB Pro (research-backed 2026):
   // Gemini processes JSON blocks as distinct semantic units — fields don't bleed into each other.
