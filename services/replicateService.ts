@@ -688,6 +688,11 @@ export const generateWithReplicate = async (
 // Thinking mode for better reasoning on complex prompts
 // ─────────────────────────────────────────────
 
+/**
+ * Wan 2.7 — direct fetch submit+poll (bypasses SDK FileOutput issues).
+ * The Replicate SDK returns FileOutput/ReadableStream objects that don't
+ * work well through our proxy. Direct API calls are more reliable.
+ */
 export async function generateWithWan27(
   params: InfluencerParams,
   model: ReplicateModel.Wan27Image | ReplicateModel.Wan27ImagePro = ReplicateModel.Wan27ImagePro,
@@ -697,11 +702,9 @@ export async function generateWithWan27(
   const character = params.characters[0];
   const isPro = model === ReplicateModel.Wan27ImagePro;
 
-  // Build a rich natural-language prompt (Wan responds well to detailed descriptions)
   const parts: string[] = [];
   if (params.imageBoost) parts.push(params.imageBoost);
   else parts.push('Ultra-photorealistic editorial photograph, natural skin with visible pores and fine texture');
-
   if (character?.characteristics) parts.push(`Subject: ${character.characteristics}`);
   if (character?.outfitDescription) parts.push(`Wearing: ${character.outfitDescription}`);
   if (character?.pose) parts.push(`Pose: ${character.pose}`);
@@ -710,74 +713,73 @@ export async function generateWithWan27(
   if (params.lighting) parts.push(`Lighting: ${params.lighting}`);
   if (params.camera) parts.push(`Camera: ${params.camera}`);
   if (params.negativePrompt) parts.push(`Avoid: ${params.negativePrompt}`);
-
   const prompt = parts.filter(Boolean).join('. ') + '.';
 
   onProgress?.(10);
 
-  // Upload reference images to HTTP URLs (Replicate needs HTTP, not data URIs)
+  // Upload reference images to HTTP URLs
   const images: string[] = [];
   if (character?.modelImages?.length) {
     const { fal } = await import('@fal-ai/client');
     for (const file of character.modelImages.slice(0, 5)) {
-      try {
-        const httpUrl = await fal.storage.upload(file);
-        images.push(httpUrl);
-      } catch { /* skip failed uploads */ }
+      try { images.push(await fal.storage.upload(file)); } catch { /* skip */ }
     }
   }
-  onProgress?.(20);
+  onProgress?.(15);
 
   const input: Record<string, unknown> = {
     prompt,
     size: isPro ? '2K' : '1K',
     num_outputs: Math.min(params.numberOfImages || 1, isPro ? 12 : 4),
-    thinking_mode: isPro,
+    ...(images.length === 0 && { thinking_mode: isPro }), // only for text-to-image (no images)
     ...(images.length > 0 && { images }),
     ...(params.seed !== undefined && { seed: params.seed }),
   };
 
-  onProgress?.(25);
-
-  const output = await replicate.run(model as `${string}/${string}`, {
-    input,
+  // Submit prediction via direct fetch (not SDK)
+  const submitRes = await fetch(`${REPLICATE_PROXY}/v1/models/${model}/predictions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ input }),
     signal: abortSignal,
   });
-
-  onProgress?.(100);
-
-  // Debug: log raw output to diagnose Replicate SDK response format
-  console.log('[Wan27] raw output:', output, 'type:', typeof output, 'isArray:', Array.isArray(output));
-
-  // Replicate SDK v1+ returns FileOutput objects that act as async iterables
-  // but also have a .url() method. Try multiple extraction strategies.
-  const raw = Array.isArray(output) ? output : [output];
-  const urls: string[] = [];
-  for (const item of raw) {
-    if (!item) continue;
-    // Strategy 1: already a URL string
-    if (typeof item === 'string' && item.startsWith('http')) { urls.push(item); continue; }
-    // Strategy 2: FileOutput — calling String() on it gives the URL in newer SDK versions
-    const asStr = String(item);
-    if (asStr.startsWith('http')) { urls.push(asStr); continue; }
-    // Strategy 3: object with .url property
-    if (typeof item === 'object') {
-      const asAny = item as any;
-      if (typeof asAny.url === 'function') { try { urls.push(await asAny.url()); } catch {} continue; }
-      if (typeof asAny.url === 'string' && asAny.url.startsWith('http')) { urls.push(asAny.url); continue; }
-      if (typeof asAny.href === 'string') { urls.push(asAny.href); continue; }
-    }
+  if (!submitRes.ok) {
+    const errText = await submitRes.text().catch(() => submitRes.statusText);
+    throw new Error(`Wan submit failed (${submitRes.status}): ${errText.slice(0, 200)}`);
   }
+  const prediction = await submitRes.json();
+  const predictionUrl = prediction.urls?.get;
+  if (!predictionUrl) throw new Error('Wan: no prediction URL returned');
 
-  console.log('[Wan27] parsed urls:', urls);
-  if (urls.length === 0) throw new Error(`Wan 2.7 returned no valid URLs. Raw output: ${JSON.stringify(output)?.slice(0, 200)}`);
-  return urls;
+  onProgress?.(25);
+
+  // Poll for completion (max 2 min)
+  const start = Date.now();
+  while (Date.now() - start < 120_000) {
+    if (abortSignal?.aborted) throw new Error('Cancelled');
+    await new Promise(r => setTimeout(r, 2000));
+
+    const pollRes = await fetch(predictionUrl.replace('https://api.replicate.com', REPLICATE_PROXY), { signal: abortSignal });
+    if (!pollRes.ok) continue;
+
+    const status = await pollRes.json();
+    const elapsed = (Date.now() - start) / 120_000;
+    onProgress?.(Math.min(25 + elapsed * 65, 90));
+
+    if (status.status === 'succeeded') {
+      onProgress?.(100);
+      const output = status.output;
+      if (!output || !Array.isArray(output)) throw new Error('Wan: no output array');
+      return output.filter((u: unknown) => typeof u === 'string' && u.startsWith('http'));
+    }
+    if (status.status === 'failed') throw new Error(`Wan failed: ${status.error || 'unknown'}`);
+    if (status.status === 'canceled') throw new Error('Wan: prediction canceled');
+  }
+  throw new Error('Wan: timed out after 2 minutes');
 }
 
 /**
- * Wan 2.7 Pro — image editing with multi-reference
- * Takes a base image + instruction + optional reference images.
- * NOTE: thinking_mode is NOT supported in editing mode (only text-to-image).
+ * Wan 2.7 Pro — image editing with multi-reference (direct fetch, no SDK).
  */
 export async function editWithWan27Pro(
   baseImage: File,
@@ -788,51 +790,25 @@ export async function editWithWan27Pro(
   options?: { numOutputs?: number; seed?: number },
 ): Promise<string[]> {
   onProgress?.(10);
-
-  // Upload images to HTTP URLs (Replicate needs HTTP, not data URIs)
   const { fal } = await import('@fal-ai/client');
   const images: string[] = [];
   images.push(await fal.storage.upload(baseImage));
   for (const ref of referenceImages.slice(0, 8)) {
     try { images.push(await fal.storage.upload(ref)); } catch { /* skip */ }
   }
+  onProgress?.(20);
 
-  onProgress?.(25);
-
-  const input: Record<string, unknown> = {
+  return wanSubmitAndPoll({
     prompt: instruction,
     images,
     size: '2K',
     num_outputs: options?.numOutputs ?? 1,
-    // No thinking_mode in editing mode — only supported for text-to-image
     ...(options?.seed !== undefined && { seed: options.seed }),
-  };
-
-  const output = await replicate.run(ReplicateModel.Wan27ImagePro as `${string}/${string}`, {
-    input,
-    signal: abortSignal,
-  });
-
-  onProgress?.(100);
-  const raw = Array.isArray(output) ? output : [output];
-  const urls: string[] = [];
-  for (const item of raw) {
-    if (typeof item === 'string') { urls.push(item); continue; }
-    if (item && typeof item === 'object') {
-      const asAny = item as any;
-      if (asAny.url && typeof asAny.url === 'function') { urls.push(await asAny.url()); continue; }
-      if (asAny.url && typeof asAny.url === 'string') { urls.push(asAny.url); continue; }
-      if (asAny.href) { urls.push(asAny.href); continue; }
-      const str = String(item);
-      if (str.startsWith('http')) { urls.push(str); continue; }
-    }
-  }
-  return urls.filter(u => typeof u === 'string' && u.startsWith('http'));
+  }, onProgress, abortSignal);
 }
 
 /**
- * Wan 2.7 Pro — batch session generation via image_set_mode
- * Takes a hero image + character refs → generates 4-12 coherent photos in one call.
+ * Wan 2.7 Pro — batch session generation via image_set_mode (direct fetch, no SDK).
  */
 export async function generateSessionWithWan27(
   heroImage: File,
@@ -843,45 +819,61 @@ export async function generateSessionWithWan27(
   abortSignal?: AbortSignal,
 ): Promise<string[]> {
   onProgress?.(10);
-
   const { fal } = await import('@fal-ai/client');
   const images: string[] = [];
   images.push(await fal.storage.upload(heroImage));
   for (const ref of identityRefs.slice(0, 7)) {
     try { images.push(await fal.storage.upload(ref)); } catch { /* skip */ }
   }
+  onProgress?.(20);
 
-  onProgress?.(25);
-
-  const input: Record<string, unknown> = {
+  return wanSubmitAndPoll({
     prompt: instruction,
     images,
     size: '2K',
     num_outputs: Math.min(Math.max(count, 1), 12),
     image_set_mode: true,
-    // No thinking_mode — not supported with images
-  };
+  }, onProgress, abortSignal);
+}
 
-  const output = await replicate.run(ReplicateModel.Wan27ImagePro as `${string}/${string}`, {
-    input,
+/** Shared submit+poll for all Wan 2.7 Pro calls */
+async function wanSubmitAndPoll(
+  input: Record<string, unknown>,
+  onProgress?: (p: number) => void,
+  abortSignal?: AbortSignal,
+): Promise<string[]> {
+  const submitRes = await fetch(`${REPLICATE_PROXY}/v1/models/${ReplicateModel.Wan27ImagePro}/predictions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ input }),
     signal: abortSignal,
   });
-
-  onProgress?.(100);
-  const raw = Array.isArray(output) ? output : [output];
-  const urls: string[] = [];
-  for (const item of raw) {
-    if (typeof item === 'string') { urls.push(item); continue; }
-    if (item && typeof item === 'object') {
-      const asAny = item as any;
-      if (asAny.url && typeof asAny.url === 'function') { urls.push(await asAny.url()); continue; }
-      if (asAny.url && typeof asAny.url === 'string') { urls.push(asAny.url); continue; }
-      if (asAny.href) { urls.push(asAny.href); continue; }
-      const str = String(item);
-      if (str.startsWith('http')) { urls.push(str); continue; }
-    }
+  if (!submitRes.ok) {
+    const errText = await submitRes.text().catch(() => submitRes.statusText);
+    throw new Error(`Wan submit failed (${submitRes.status}): ${errText.slice(0, 200)}`);
   }
-  return urls.filter(u => typeof u === 'string' && u.startsWith('http'));
+  const prediction = await submitRes.json();
+  const predictionUrl = prediction.urls?.get;
+  if (!predictionUrl) throw new Error('Wan: no prediction URL returned');
+  onProgress?.(30);
+
+  const start = Date.now();
+  while (Date.now() - start < 120_000) {
+    if (abortSignal?.aborted) throw new Error('Cancelled');
+    await new Promise(r => setTimeout(r, 2000));
+    const pollRes = await fetch(predictionUrl.replace('https://api.replicate.com', REPLICATE_PROXY), { signal: abortSignal });
+    if (!pollRes.ok) continue;
+    const status = await pollRes.json();
+    onProgress?.(Math.min(30 + ((Date.now() - start) / 120_000) * 60, 90));
+    if (status.status === 'succeeded') {
+      onProgress?.(100);
+      if (!status.output || !Array.isArray(status.output)) throw new Error('Wan: no output array');
+      return status.output.filter((u: unknown) => typeof u === 'string' && u.startsWith('http'));
+    }
+    if (status.status === 'failed') throw new Error(`Wan failed: ${status.error || 'unknown'}`);
+    if (status.status === 'canceled') throw new Error('Wan: canceled');
+  }
+  throw new Error('Wan: timed out');
 }
 
 /** Helper: File → data URL */
