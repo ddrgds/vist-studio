@@ -417,69 +417,67 @@ export const generateWithGrokImagine = async (
   abortSignal?: AbortSignal
 ): Promise<string[]> => {
   if (onProgress) onProgress(10);
-
   const character = params.characters[0];
 
-  let prompt = 'An ultra-photorealistic fashion editorial photograph of a model. Shot with Vogue magazine quality, sharp facial detail, natural skin texture.';
-
-  if (character.characteristics) prompt += ` The model is: ${character.characteristics}.`;
-
-  if (character.outfitDescription) {
-    prompt += ` Wearing: ${character.outfitDescription}.`;
-  } else if (character.outfitImages?.length) {
-    prompt += ` Wearing a high-fashion outfit based on the reference clothing.`;
+  // Build prompt — Grok is permissive and responds well to direct, vivid descriptions
+  const parts: string[] = [];
+  if (params.imageBoost) parts.push(params.imageBoost);
+  else parts.push('Ultra-photorealistic fashion editorial photograph, Vogue quality, natural skin texture');
+  if (character?.characteristics) {
+    const flat = character.characteristics.match(/FLAT DESCRIPTION:\s*(.+?)(?:\n|$)/g);
+    parts.push(flat ? flat.map(m => m.replace('FLAT DESCRIPTION:', '').trim()).join(', ') : character.characteristics);
   }
+  if (character?.outfitDescription) parts.push(`Wearing: ${character.outfitDescription}`);
+  if (character?.pose) parts.push(character.pose);
+  if (character?.accessory) parts.push(`With: ${character.accessory}`);
+  if (params.scenario) parts.push(params.scenario);
+  if (params.lighting) parts.push(params.lighting);
+  if (params.negativePrompt) parts.push(`Avoid: ${params.negativePrompt}`);
+  const prompt = parts.filter(Boolean).join('. ') + '.';
 
-  if (character.pose) {
-    prompt += ` Pose: ${character.pose}.`;
-  }
+  if (onProgress) onProgress(15);
 
-  if (character.accessory) {
-    prompt += ` Holding or wearing: ${character.accessory}.`;
-  }
-
-  if (params.scenario) prompt += ` Scene: ${params.scenario}.`;
-  if (params.lighting) prompt += ` Lighting: ${params.lighting}.`;
-  if (params.camera) prompt += ` Camera: ${params.camera}.`;
-  if (params.imageBoost) prompt += ` ${params.imageBoost}.`;
-  if (params.negativePrompt) prompt += ` Avoid: ${params.negativePrompt}.`;
-
-  const count = params.numberOfImages || 1;
-  if (onProgress) onProgress(20);
-
-  const output = await replicate.run(
-    'xai/grok-imagine-image' as `${string}/${string}`,
-    {
+  // Direct fetch submit+poll (bypasses SDK FileOutput issues)
+  const submitRes = await fetch(`${REPLICATE_PROXY}/v1/models/xai/grok-imagine-image/predictions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
       input: {
         prompt,
-        num_images: count,
+        num_images: params.numberOfImages || 1,
         aspect_ratio: toGrokAspectRatio(params.aspectRatio),
         output_format: 'jpeg',
       },
-      signal: abortSignal,
-    }
-  ) as unknown;
-
-  if (onProgress) onProgress(80);
-
-  // Output: array of URL strings or objects with .url
-  const rawUrls: string[] = [];
-  if (Array.isArray(output)) {
-    for (const item of output as unknown[]) {
-      if (typeof item === 'string') rawUrls.push(item);
-      else if (item && typeof (item as any).url === 'string') rawUrls.push((item as any).url);
-    }
-  } else if (typeof output === 'string') {
-    rawUrls.push(output);
+    }),
+    signal: abortSignal,
+  });
+  if (!submitRes.ok) {
+    const errText = await submitRes.text().catch(() => submitRes.statusText);
+    throw new Error(`Grok submit failed (${submitRes.status}): ${errText.slice(0, 200)}`);
   }
+  const prediction = await submitRes.json();
+  const predictionUrl = prediction.urls?.get;
+  if (!predictionUrl) throw new Error('Grok: no prediction URL');
 
-  if (rawUrls.length === 0) {
-    throw new Error('Grok Imagine did not return any images. Check your Replicate API key.');
+  onProgress?.(25);
+
+  const start = Date.now();
+  while (Date.now() - start < 30_000) {
+    if (abortSignal?.aborted) throw new Error('Cancelled');
+    await new Promise(r => setTimeout(r, 1000));
+    const pollRes = await fetch(predictionUrl.replace('https://api.replicate.com', REPLICATE_PROXY), { signal: abortSignal });
+    if (!pollRes.ok) continue;
+    const status = await pollRes.json();
+    onProgress?.(Math.min(25 + ((Date.now() - start) / 30_000) * 65, 90));
+    if (status.status === 'succeeded') {
+      onProgress?.(100);
+      const out = Array.isArray(status.output) ? status.output : [status.output];
+      return out.filter((u: unknown) => typeof u === 'string' && u.startsWith('http'));
+    }
+    if (status.status === 'failed') throw new Error(`Grok failed: ${status.error || 'unknown'}`);
+    if (status.status === 'canceled') throw new Error('Grok: canceled');
   }
-
-  const results = await Promise.all(rawUrls.map(urlToDataUrl));
-  if (onProgress) onProgress(100);
-  return results;
+  throw new Error('Grok: timed out');
 };
 
 // ─────────────────────────────────────────────
