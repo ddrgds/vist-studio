@@ -624,7 +624,7 @@ export async function generateWithFlux2Pro(
   });
   onProgress?.(100);
   const urls = Array.isArray(output) ? output : [output];
-  return urls.map(u => typeof u === 'string' ? u : (u as any).url || String(u));
+  return urls.map(u => typeof u === 'string' ? u : (u as any)?.url ?? (u as any)?.href ?? String(u ?? '')).filter(s => typeof s === 'string' && s.startsWith('http'));
 }
 
 // ─────────────────────────────────────────────
@@ -649,7 +649,7 @@ export async function generateWithFlux2Klein(
   });
   onProgress?.(100);
   const urls = Array.isArray(output) ? output : [output];
-  return urls.map(u => typeof u === 'string' ? u : (u as any).url || String(u));
+  return urls.map(u => typeof u === 'string' ? u : (u as any)?.url ?? (u as any)?.href ?? String(u ?? '')).filter(s => typeof s === 'string' && s.startsWith('http'));
 }
 
 // ─────────────────────────────────────────────
@@ -761,7 +761,7 @@ export async function generateWithWan27(
       if (str.startsWith('http')) { urls.push(str); continue; }
     }
   }
-  return urls.filter(u => u.startsWith('http'));
+  return urls.filter(u => typeof u === 'string' && u.startsWith('http'));
 }
 
 /**
@@ -817,7 +817,7 @@ export async function editWithWan27Pro(
       if (str.startsWith('http')) { urls.push(str); continue; }
     }
   }
-  return urls.filter(u => u.startsWith('http'));
+  return urls.filter(u => typeof u === 'string' && u.startsWith('http'));
 }
 
 /**
@@ -871,7 +871,7 @@ export async function generateSessionWithWan27(
       if (str.startsWith('http')) { urls.push(str); continue; }
     }
   }
-  return urls.filter(u => u.startsWith('http'));
+  return urls.filter(u => typeof u === 'string' && u.startsWith('http'));
 }
 
 /** Helper: File → data URL */
