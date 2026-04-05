@@ -165,6 +165,9 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   // so regenerations with minor chip changes keep the same "person"
   const [lockedExpansion, setLockedExpansion] = useState<string | null>(null)
   const [lockedSeed, setLockedSeed] = useState<number | null>(null)
+  const [useEnhancer, setUseEnhancer] = useState(() => {
+    try { return localStorage.getItem('vist-enhancer') !== 'off' } catch { return true }
+  })
   const [enhancing, setEnhancing] = useState(false)
   const [referenceFiles, setReferenceFiles] = useState<File[]>([])
 
@@ -396,12 +399,10 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     // Expand generic chips into specific visual descriptors via Gemini Flash.
     // On first generation: expand and lock the result + seed.
     // On regeneration: reuse locked expansion (same person, minor adjustments only).
-    if (style.id === 'photorealistic') {
+    if (style.id === 'photorealistic' && useEnhancer) {
       if (lockedExpansion && variants.length > 0) {
-        // Regenerating — reuse locked expansion to keep same person
         fullPrompt = lockedExpansion
       } else {
-        // First generation — expand and lock
         try {
           const outfitDesc = selFashion.map(id => FASHION_STYLES.find(f => f.id === id)?.promptText || '').filter(Boolean).join(', ')
           const accDesc = selAccessories.map(id => ACCESSORIES.find(a => a.id === id)?.label || '').filter(Boolean).join(', ')
@@ -844,17 +845,36 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                 </button>
               ))}
 
-              {/* Engine wrench button */}
-              <div className="relative shrink-0 ml-auto">
-                <button onClick={() => setShowEngineModal(v => !v)}
-                  className="w-8 h-8 rounded-xl flex items-center justify-center text-sm relative"
-                  style={{ background: 'white', border: '1px solid rgba(0,0,0,0.08)', color: '#555' }}
-                  title="Motor de Generación">
-                  🔧
-                  {selectedEngine !== 'auto' && (
-                    <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full" style={{ background: '#1A1A1A' }} />
-                  )}
+              {/* Enhancer toggle + Engine wrench */}
+              <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+                <button
+                  onClick={() => {
+                    const next = !useEnhancer
+                    setUseEnhancer(next)
+                    setLockedExpansion(null)
+                    setLockedSeed(null)
+                    try { localStorage.setItem('vist-enhancer', next ? 'on' : 'off') } catch {}
+                  }}
+                  className="h-8 px-2.5 rounded-xl flex items-center gap-1.5 text-[10px] font-medium transition-all"
+                  style={{
+                    background: useEnhancer ? '#1A1A1A' : 'white',
+                    color: useEnhancer ? '#FFF' : '#999',
+                    border: `1px solid ${useEnhancer ? '#1A1A1A' : 'rgba(0,0,0,0.08)'}`,
+                  }}
+                  title={useEnhancer ? 'Enhancer ON: Gemini expande los chips en descriptores únicos' : 'Enhancer OFF: chips pasan directo al motor'}>
+                  ✦ AI
                 </button>
+                <div className="relative">
+                  <button onClick={() => setShowEngineModal(v => !v)}
+                    className="w-8 h-8 rounded-xl flex items-center justify-center text-sm relative"
+                    style={{ background: 'white', border: '1px solid rgba(0,0,0,0.08)', color: '#555' }}
+                    title="Motor de Generación">
+                    🔧
+                    {selectedEngine !== 'auto' && (
+                      <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full" style={{ background: '#1A1A1A' }} />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
 
