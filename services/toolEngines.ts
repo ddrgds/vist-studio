@@ -488,6 +488,22 @@ export async function generateCharacterSheet(
   if (physicalTraits && sheetType === 'body') {
     prompt = `${prompt}\n\nCRITICAL — The subject's body MUST match these EXACT physical characteristics (do NOT deviate): ${physicalTraits}. These proportions are non-negotiable and must be clearly visible in every angle.`;
   }
+
+  // Body sheets use Grok (no content filters → preserves body proportions accurately)
+  // Face and expression sheets use NB2 (better at facial consistency)
+  if (sheetType === 'body') {
+    try {
+      const { editImageWithGrokFal } = await import('./falService');
+      const response = await fetch(approvedImageUrl);
+      const blob = await response.blob();
+      const file = new File([blob], 'input.jpeg', { type: blob.type });
+      const results = await editImageWithGrokFal(file, prompt);
+      if (results.length > 0 && results[0]) return results[0];
+    } catch (err) {
+      console.warn('Grok body sheet failed, falling back to NB2:', err);
+    }
+  }
+
   return nb2Edit(approvedImageUrl, prompt);
 }
 

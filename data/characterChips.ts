@@ -323,6 +323,24 @@ export const SKIN_DETAILS: ChipOption[] = [
   { id: 'smooth-perfect', label: 'Piel perfecta',  emoji: '🧴', promptText: 'exceptionally smooth clear skin, minimal pores, glass skin effect' },
   { id: 'mature-skin',    label: 'Piel madura',    emoji: '🕰️', promptText: 'mature skin with fine lines around eyes, subtle laugh lines, natural aging' },
   { id: 'oily-dewy',      label: 'Piel grasa/dewy',emoji: '💧', promptText: 'dewy oily skin with visible shine on T-zone, glossy forehead and nose' },
+  { id: 'visible-pores',  label: 'Poros visibles', emoji: '🔬', promptText: 'prominently visible open pores on nose and cheeks, real skin macro texture' },
+  { id: 'body-hair',      label: 'Vello corporal', emoji: '🦁', promptText: 'natural visible body hair on arms and legs, fine peach fuzz on face visible in light', variants: [
+    'visible light peach fuzz on cheeks and jawline catching the light, fine arm hair',
+    'natural dark arm hair and light leg hair visible, subtle facial peach fuzz',
+    'fine blonde vellus hair on forearms and upper lip visible in sidelight',
+  ]},
+  { id: 'arm-hair',       label: 'Vello en brazos',emoji: '💪', promptText: 'visible natural hair on forearms and upper arms' },
+  { id: 'stretch-marks',  label: 'Estrías',       emoji: '〰️', promptText: 'natural stretch marks on hips, thighs or bust area, subtle silvery lines' },
+  { id: 'cellulite',      label: 'Celulitis',     emoji: '🍊', promptText: 'natural cellulite texture visible on thighs and buttocks, real body texture' },
+  { id: 'veins-visible',  label: 'Venas visibles',emoji: '💙', promptText: 'visible blue-green veins under thin skin on wrists, inner arms, and temples' },
+  { id: 'sunburn',        label: 'Quemadura solar',emoji: '🔥', promptText: 'slight sunburn redness on shoulders, nose and cheekbones, peeling skin on nose' },
+  { id: 'dry-skin',       label: 'Piel seca',     emoji: '🏜️', promptText: 'dry skin with slight flaking on lips and around nose, matte texture' },
+  { id: 'goosebumps',     label: 'Piel de gallina',emoji: '❄️', promptText: 'goosebumps visible on arms and shoulders, raised hair follicles from cold' },
+  { id: 'birthmark',      label: 'Marca de nacimiento',emoji:'🟤', promptText: 'distinctive birthmark on skin', variants: [
+    'light brown birthmark on left shoulder blade, roughly oval shaped',
+    'small port-wine stain birthmark on right side of neck',
+    'faint cafe-au-lait spot on right upper arm',
+  ]},
 ]
 
 // ─── Skin Textures (fantastical) ─────────────────────────────────────
