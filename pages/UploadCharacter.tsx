@@ -73,31 +73,47 @@ function inferSetting(outfitDesc: string): string {
   return FALLBACK_SETTINGS[Math.floor(Math.random() * FALLBACK_SETTINGS.length)]
 }
 
-// ─── Render styles ───────────────────────────────────────────────────
+// ─── Render styles — modular prefix/suffix system ────────────────────
+// Phase 1 (Creator) = reference sheet. ALL styles use neutral background.
+// Scenario/environment is only for Phase 2 (Studio/Session).
+const CREATOR_BG = 'Character reference sheet, centered composition, solid light grey background, clean flat studio lighting, no background elements, no props'
+
 const renderStyles = [
   { id:'photorealistic', label:'Fotorrealista', icon:'📷', desc:'Aspecto humano, foto real',
-    prompt:'Authentic candid photograph of a real person, natural skin texture with visible pores and slight imperfections, taken on iPhone 15 Pro, unedited raw photo,',
-    scenario:'_dynamic_', // will be replaced by inferSetting()
+    prefix: 'Ultra-realistic raw photograph of a person',
+    suffix: 'natural human imperfections, real skin texture with visible pores, unedited candid quality',
+    prompt:'Ultra-realistic raw photograph of a person, natural human imperfections, real skin texture with visible pores,',
+    scenario: CREATOR_BG,
     bg:'linear-gradient(135deg, #f0b86020, #d4956b10)' },
   { id:'anime', label:'Anime / Manga', icon:'🎨', desc:'Estilo de animación japonesa',
-    prompt:'Premium anime character, Production I.G / studio Bones quality, clean precise linework with variable stroke weight, cel-shaded with sophisticated shadow gradients, luminous multi-layered iris reflections, stylized proportions, dynamic hair strand groups,',
-    scenario:'Anime background with atmospheric depth, soft painted sky, drawn in high-end anime style, NOT a photograph, NOT photorealistic, 2D illustration with volumetric lighting',
+    prefix: 'High quality anime key visual character design',
+    suffix: 'cel shaded, 2d vector art, flat anime colors, clean linework, NOT photorealistic',
+    prompt:'High quality anime key visual character design, cel-shaded, clean precise linework, luminous iris reflections, stylized proportions,',
+    scenario: CREATOR_BG + ', drawn in anime style',
     bg:'linear-gradient(135deg, #e8749a15, #9a90c415)' },
   { id:'3d-render', label:'Render 3D', icon:'🖥️', desc:'CGI, estilo Pixar, personaje de juego',
-    prompt:'AAA game-quality 3D character render, Unreal Engine 5 quality, high-poly sculpted mesh, PBR material workflow on all surfaces, subsurface scattering skin shader with detail maps, strand-based groomed hair, HDRI environment lighting with ray-traced AO,',
-    scenario:'3D rendered environment with Lumen global illumination, cinematic depth of field with physically accurate bokeh, rendered in Octane/Unreal Engine 5',
+    prefix: '3D stylized character render',
+    suffix: 'Pixar/Unreal Engine style, octane render, smooth volumetric lighting, 3d model',
+    prompt:'3D stylized character render, high-poly sculpted mesh, subsurface scattering skin, strand-based hair,',
+    scenario: CREATOR_BG + ', 3D rendered with soft volumetric lighting',
     bg:'linear-gradient(135deg, #4858e015, #50d8a010)' },
   { id:'illustration', label:'Ilustración', icon:'✍️', desc:'Arte digital, concept art',
-    prompt:'High-end digital character illustration, concept art portfolio quality, painterly technique blending precise linework with expressive color blocking, sophisticated light study with warm/cool shifts, character design clarity with strong silhouette,',
-    scenario:'Fantasy concept art environment with atmospheric perspective, rich texture variation suggesting mixed media, art book presentation quality',
+    prefix: 'Digital concept art character illustration',
+    suffix: 'ArtStation style, expressive brush strokes, 2d digital painting',
+    prompt:'Digital concept art character illustration, painterly technique, expressive color blocking, strong silhouette,',
+    scenario: CREATOR_BG + ', art book presentation quality',
     bg:'linear-gradient(135deg, #f0b86015, #e8725c10)' },
   { id:'stylized', label:'Estilizado', icon:'✨', desc:'Semi-realista, Arcane / Spider-Verse',
-    prompt:'Distinctive stylized character with exaggerated design language, Arcane/Spider-Verse quality, strong graphic silhouette with memorable proportions, bold shape language defining personality, limited palette with strategic accent pops,',
-    scenario:'Stylized cinematic environment with dramatic moody lighting and color grading, cel-shaded with painterly details, NOT photorealistic, poster-quality composition',
+    prefix: 'Stylized character design, Arcane/Spider-Verse quality',
+    suffix: 'bold shape language, limited palette, cel-shaded with painterly details, NOT photorealistic',
+    prompt:'Distinctive stylized character, Arcane/Spider-Verse quality, strong graphic silhouette, bold shape language,',
+    scenario: CREATOR_BG + ', stylized cinematic lighting',
     bg:'linear-gradient(135deg, #4f46e515, #f0684815)' },
   { id:'pixel-art', label:'Pixel Art', icon:'🟨', desc:'Retro 8-bit / 16-bit',
-    prompt:'Premium pixel art character sprite 64-128px base resolution, carefully placed individual pixels with intentional color choice, limited 32-color palette with strategic dithering, sub-pixel animation-ready, clear silhouette at small scale,',
-    scenario:'Retro pixel art environment, 16-bit video game quality, Hyper Light Drifter visual sophistication, pixelated throughout, NOT smooth, NOT photorealistic',
+    prefix: 'Pixel art character sprite',
+    suffix: '16-bit retro game quality, limited color palette, pixelated, NOT smooth, NOT photorealistic',
+    prompt:'Pixel art character sprite, 64-128px base resolution, limited 32-color palette, intentional dithering, clear silhouette,',
+    scenario: CREATOR_BG + ', pixelated throughout, retro game aesthetic',
     bg:'linear-gradient(135deg, #50d8a015, #4858e010)' },
 ]
 
@@ -394,16 +410,15 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     let fullPrompt = isSoul ? buildSoulPrompt() : buildFullPrompt()
 
     // Expand generic chips into specific visual descriptors via Gemini Flash.
-    // On first generation: expand and lock the result + seed.
-    // On regeneration: reuse locked expansion (same person, minor adjustments only).
-    if (style.id === 'photorealistic' && useEnhancer) {
+    // Passes render style so Flash adapts detail level (photorealistic=anatomy, anime=simple shapes).
+    if (useEnhancer) {
       if (lockedExpansion && variants.length > 0) {
         fullPrompt = lockedExpansion
       } else {
         try {
           const outfitDesc = selFashion.map(id => FASHION_STYLES.find(f => f.id === id)?.promptText || '').filter(Boolean).join(', ')
           const accDesc = selAccessories.map(id => ACCESSORIES.find(a => a.id === id)?.label || '').filter(Boolean).join(', ')
-          const expanded = await expandCharacterChips(fullPrompt, outfitDesc, accDesc)
+          const expanded = await expandCharacterChips(fullPrompt, outfitDesc, accDesc, style.id)
           if (expanded && expanded.length > 20) {
             fullPrompt = expanded
             setLockedExpansion(expanded)
@@ -433,9 +448,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
           pose: 'Standing casual, facing camera, portrait shot',
           accessory: selAccessories.map(id => ACCESSORIES.find(a => a.id === id)?.label || '').filter(Boolean).join(', '),
         }],
-        scenario: style.scenario === '_dynamic_'
-          ? 'Simple clean background, soft natural light, focus on the person'
-          : style.scenario,
+        scenario: style.scenario, // All styles now use CREATOR_BG (neutral reference sheet)
         lighting: isSoul ? 'Natural ambient lighting' : (style.id === 'anime' ? 'Flat anime lighting, cel-shaded' : style.id === 'pixel-art' ? 'Flat pixel art lighting' : 'Natural ambient lighting'),
         imageSize: ImageSize.Size2K,
         aspectRatio: AspectRatio.Portrait,

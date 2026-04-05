@@ -280,7 +280,7 @@ const generateWithFallback = async (
  * Returns BOTH a JSON structure (for NB2/FLUX) and a flat description (for Grok/Wan/Turbo).
  * Runs once at character creation. The result should be SAVED with the character.
  */
-export const expandCharacterChips = async (chipDescription: string, outfitDescription: string, accessories: string): Promise<string> => {
+export const expandCharacterChips = async (chipDescription: string, outfitDescription: string, accessories: string, renderStyle: string = 'photorealistic'): Promise<string> => {
   if (!chipDescription.trim()) return chipDescription;
 
   const ai = createGeminiClient();
@@ -323,6 +323,14 @@ RULES:
 - FLAT DESCRIPTION must be ONE sentence, MAX 40 words, prioritizing face structure and overall impression
 - NO poetic language. NO "ethereal", "luminous", "striking", "captivating". Just factual visual description.
 - English only. Valid JSON only (no trailing commas).
+
+RENDER STYLE: ${renderStyle}
+${renderStyle === 'photorealistic' ? 'DETAIL LEVEL: Use anatomically detailed descriptors — real skin texture, specific facial bone structure, hair strand detail, fabric weave.' : ''}
+${renderStyle === 'anime' ? 'DETAIL LEVEL: Use anime-appropriate descriptors — solid eye colors (no iris texture), simple hair shapes, clean bold outlines, 2D flat colors. NO photorealistic anatomy.' : ''}
+${renderStyle === '3d-render' ? 'DETAIL LEVEL: Use 3D model descriptors — smooth surfaces, stylized proportions, clean topology, material shaders. NOT photorealistic skin.' : ''}
+${renderStyle === 'pixel-art' ? 'DETAIL LEVEL: Use pixel art descriptors — solid block colors, simple shapes, limited palette, 16-bit aesthetic. NO detailed anatomy.' : ''}
+${renderStyle === 'illustration' ? 'DETAIL LEVEL: Use painterly descriptors — expressive color blocking, visible brush strokes, concept art style. NOT photorealistic.' : ''}
+${renderStyle === 'stylized' ? 'DETAIL LEVEL: Use stylized descriptors — exaggerated proportions, bold shape language, Arcane/Spider-Verse aesthetic. NOT photorealistic.' : ''}
 
 CHARACTER CHIPS TO EXPAND:
 Appearance: ${chipDescription}
