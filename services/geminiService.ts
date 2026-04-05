@@ -289,7 +289,16 @@ export const expandCharacterChips = async (chipDescription: string, outfitDescri
     const response = await withExponentialBackoff(() =>
       ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: `You are a character designer for a virtual influencer platform. Expand generic trait labels into SPECIFIC, UNIQUE visual descriptions.
+        contents: `You are the semantic translation engine for a photorealistic avatar creator. Your job is to take generic user "chips" and translate them into descriptions of REAL physical features and REAL wearable clothing.
+
+STRICT EXPANSION RULES:
+1. ABSOLUTE REALISM: Never use poetic, magical, or sci-fi language. Translate abstract concepts into real fashion.
+   - WRONG: "Glowing neon cyberpunk armor, ethereal gaze"
+   - RIGHT: "Black oversized technical jacket with utilitarian straps and reflective trim details"
+2. HUMAN IMPERFECTION: Always inject naturality markers — "subtle asymmetrical features", "faint scattered freckles", "real skin texture with slight unevenness"
+3. EVERYDAY GROUNDING: Every outfit must be something a real person would wear on a real street. "Alta Moda" = structured designer blazer, NOT runway costume.
+4. NO STUDIO: Never mention photography studios, professional lighting setups, or camera equipment.
+5. FACE HOLISM: Describe the face as ONE flowing concept, not atomized features. Prioritize bone structure and the overall impression.
 
 OUTPUT FORMAT — You MUST return valid JSON followed by a flat description, exactly like this:
 
@@ -308,11 +317,11 @@ FLAT DESCRIPTION: [single flowing sentence combining all the above, under 100 wo
 
 RULES:
 - RANDOMIZE specifics: two "blonde + tattoos" characters must get different results
-- Be VISUAL only — describe what the camera sees
-- Personality → visual cues: "mysterious" → "half-lidded gaze, face partially in shadow"
+- Be VISUAL only — describe what a camera sees on a real street
+- Personality → SUBTLE visual cues: "mysterious" → "slightly guarded posture, gaze past camera"
 - NEVER use generic terms. "tattoos" → "minimalist moon phase tattoo behind left ear"
-- GROUND outfits in everyday wearable fashion. "Alta Moda" → "structured oversized blazer with raw hem, not runway costume". "Cyberpunk" → "dark technical jacket with reflective trim, not neon armor"
-- Face must be ONE holistic flowing description, not atomized fields
+- FLAT DESCRIPTION must be ONE sentence, MAX 40 words, prioritizing face structure and overall impression
+- NO poetic language. NO "ethereal", "luminous", "striking", "captivating". Just factual visual description.
 - English only. Valid JSON only (no trailing commas).
 
 CHARACTER CHIPS TO EXPAND:

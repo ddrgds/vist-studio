@@ -161,6 +161,10 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   })
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [promptText, setPromptText] = useState('')
+  // Seed locking: save the expanded description + seed from first generation
+  // so regenerations with minor chip changes keep the same "person"
+  const [lockedExpansion, setLockedExpansion] = useState<string | null>(null)
+  const [lockedSeed, setLockedSeed] = useState<number | null>(null)
   const [enhancing, setEnhancing] = useState(false)
   const [referenceFiles, setReferenceFiles] = useState<File[]>([])
 
@@ -231,6 +235,8 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
   const resetAll = () => {
     resetGeneration()
+    setLockedExpansion(null)
+    setLockedSeed(null)
     setName('')
     setStep(0)
     setSelGender(null)
@@ -388,15 +394,25 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     let fullPrompt = isSoul ? buildSoulPrompt() : buildFullPrompt()
 
     // Expand generic chips into specific visual descriptors via Gemini Flash.
-    // Runs for ALL engines and photorealistic style. The expanded description
-    // produces unique characters (two "blonde + tattoos" won't look identical).
+    // On first generation: expand and lock the result + seed.
+    // On regeneration: reuse locked expansion (same person, minor adjustments only).
     if (style.id === 'photorealistic') {
-      try {
-        const outfitDesc = selFashion.map(id => FASHION_STYLES.find(f => f.id === id)?.promptText || '').filter(Boolean).join(', ')
-        const accDesc = selAccessories.map(id => ACCESSORIES.find(a => a.id === id)?.label || '').filter(Boolean).join(', ')
-        const expanded = await expandCharacterChips(fullPrompt, outfitDesc, accDesc)
-        if (expanded && expanded.length > 20) fullPrompt = expanded
-      } catch { /* keep original if expansion fails */ }
+      if (lockedExpansion && variants.length > 0) {
+        // Regenerating — reuse locked expansion to keep same person
+        fullPrompt = lockedExpansion
+      } else {
+        // First generation — expand and lock
+        try {
+          const outfitDesc = selFashion.map(id => FASHION_STYLES.find(f => f.id === id)?.promptText || '').filter(Boolean).join(', ')
+          const accDesc = selAccessories.map(id => ACCESSORIES.find(a => a.id === id)?.label || '').filter(Boolean).join(', ')
+          const expanded = await expandCharacterChips(fullPrompt, outfitDesc, accDesc)
+          if (expanded && expanded.length > 20) {
+            fullPrompt = expanded
+            setLockedExpansion(expanded)
+            setLockedSeed(Math.floor(Math.random() * 2147483647))
+          }
+        } catch { /* keep original if expansion fails */ }
+      }
     }
 
     const results: string[] = []
@@ -431,6 +447,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
         aspectRatio: AspectRatio.Portrait,
         numberOfImages: 1,
         realistic: style.id === 'photorealistic',
+        seed: lockedSeed ?? undefined,
         imageBoost: style.id !== 'photorealistic' ? style.prompt : undefined,
         negativePrompt: [
           style.id === 'photorealistic' ? 'plastic skin, airbrushed skin, wax figure, CGI render, overly smooth face, doll-like, mannequin' : '',
