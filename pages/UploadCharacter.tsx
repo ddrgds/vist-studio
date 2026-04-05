@@ -28,8 +28,10 @@ const CHARACTER_ENGINES = [
   { id: 'fal:turbo', label: 'Turbo', desc: '~0.3s, orgánico, natural', badge: 'Rápido' },
   { id: 'fal:grok-gen', label: 'Grok Imagine', desc: 'Estético, bold, sin filtros', badge: 'Popular' },
   { id: 'fal:wan27pro-gen', label: 'Wan 2.7 Pro', desc: 'Piel ultra-realista, Alibaba', badge: 'Realista' },
-  { id: 'fal:flux2pro-gen', label: 'FLUX.2 Pro', desc: 'JSON structurado, máximo detalle', badge: 'Pro' },
-  { id: 'grok-enhance', label: 'NB2 + Grok', desc: 'Genera con NB2, mejora con Grok', badge: 'Ultra' },
+  { id: 'fal:flux2pro-gen', label: 'FLUX.2 Pro', desc: 'JSON structurado, sigue instrucciones', badge: 'Pro' },
+  { id: 'turbo-grok', label: 'Turbo + Grok', desc: 'Turbo genera, Grok agrega textura real', badge: 'Nuevo' },
+  { id: 'flux-grok', label: 'FLUX + Grok', desc: 'FLUX genera, Grok agrega textura real', badge: 'Nuevo' },
+  { id: 'grok-enhance', label: 'NB2 + Grok', desc: 'NB2 genera, Grok mejora realismo', badge: 'Ultra' },
 ] as const;
 
 // ─── Dynamic setting inference from outfit ─────────────────────────
@@ -339,25 +341,35 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   const engineMeta = selectedEngine !== 'auto' ? ENGINE_METADATA.find(e => e.key === selectedEngine) : null
   const costPerVariant = engineMeta?.creditCost ?? 2
 
+  const GROK_ENHANCE_PROMPT = 'IDENTITY LOCK: Do NOT change the face structure, bone structure, eye shape, nose, or any facial features. Only modify the SURFACE QUALITY. Add natural skin texture (pores, micro-imperfections, subtle unevenness), reduce any artificial smoothness or HDR look, make lighting feel like natural ambient light instead of studio. The person must be instantly recognizable as the exact same individual.'
+
+  /** Helper: take a generated image URL, pass it through Grok for texture enhancement */
+  const enhanceWithGrok = async (url: string): Promise<string> => {
+    const res = await fetch(url)
+    const blob = await res.blob()
+    const file = new File([blob], 'base-result.jpg', { type: blob.type || 'image/jpeg' })
+    const grokResult = await editImageWithGrokFal(file, GROK_ENHANCE_PROMPT)
+    return grokResult[0] || url
+  }
+
   const routeGeneration = async (params: InfluencerParams): Promise<string[]> => {
-    // NB2 + Grok hybrid: generate with NB2, then enhance with Grok
-    if (selectedEngine === 'grok-enhance') {
-      const nb2Results = await generateInfluencerImage(params, () => {})
-      if (nb2Results.length === 0) return []
+    // Hybrid engines: generate with X, then enhance with Grok
+    if (selectedEngine === 'grok-enhance' || selectedEngine === 'turbo-grok' || selectedEngine === 'flux-grok') {
+      let baseResults: string[] = []
+
+      if (selectedEngine === 'grok-enhance') {
+        baseResults = await generateInfluencerImage(params, () => {})
+      } else if (selectedEngine === 'turbo-grok') {
+        baseResults = await generateWithFal(params, FalModel.ZImageTurbo)
+      } else if (selectedEngine === 'flux-grok') {
+        baseResults = await generateWithFal(params, FalModel.Flux2ProGen)
+      }
+
+      if (baseResults.length === 0) return []
       const enhanced: string[] = []
-      for (const url of nb2Results) {
-        try {
-          const res = await fetch(url)
-          const blob = await res.blob()
-          const file = new File([blob], 'nb2-result.jpg', { type: blob.type || 'image/jpeg' })
-          const grokResult = await editImageWithGrokFal(
-            file,
-            'IDENTITY LOCK: Do NOT change the face structure, bone structure, eye shape, nose, or any facial features. Only modify the SURFACE QUALITY. Add natural skin texture (pores, micro-imperfections, subtle unevenness), reduce any artificial smoothness or HDR look, make lighting feel like natural ambient light instead of studio. The person must be instantly recognizable as the exact same individual.',
-          )
-          enhanced.push(grokResult[0] || url)
-        } catch {
-          enhanced.push(url) // fallback to NB2 result if Grok fails
-        }
+      for (const url of baseResults) {
+        try { enhanced.push(await enhanceWithGrok(url)) }
+        catch { enhanced.push(url) }
       }
       return enhanced
     }
