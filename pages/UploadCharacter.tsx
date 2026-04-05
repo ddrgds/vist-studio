@@ -436,12 +436,9 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
           pose: 'Standing casual, facing camera, portrait shot',
           accessory: selAccessories.map(id => ACCESSORIES.find(a => a.id === id)?.label || '').filter(Boolean).join(', '),
         }],
-        scenario: (() => {
-          const outfitDesc = selFashion.map(id => FASHION_STYLES.find(f => f.id === id)?.promptText || '').filter(Boolean).join(', ');
-          if (style.scenario === '_dynamic_') return inferSetting(outfitDesc);
-          if (isSoul) return 'Natural outdoor setting with soft ambient light';
-          return style.scenario;
-        })(),
+        scenario: style.scenario === '_dynamic_'
+          ? 'Simple clean background, soft natural light, focus on the person'
+          : style.scenario,
         lighting: isSoul ? 'Natural ambient lighting' : (style.id === 'anime' ? 'Flat anime lighting, cel-shaded' : style.id === 'pixel-art' ? 'Flat pixel art lighting' : 'Natural ambient lighting'),
         imageSize: ImageSize.Size2K,
         aspectRatio: AspectRatio.Portrait,
