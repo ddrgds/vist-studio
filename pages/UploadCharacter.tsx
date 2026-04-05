@@ -16,7 +16,7 @@ import { PipelineCTA } from '../components/PipelineCTA'
 import {
   type ChipOption, ETHNICITIES, HAIR_STYLES, HAIR_COLORS, SKIN_TONES, EYE_COLORS,
   EYE_SHAPES, NOSE_TYPES, LIP_SHAPES, FACE_SHAPES, JAWLINES, EYEBROWS,
-  BODY_TYPES, HEIGHTS, BUST_SIZES, HIP_SIZES, MUSCULATURE, LEG_PROPORTIONS, FACIAL_HAIR, SKIN_TEXTURES, GENDERS, AGE_RANGES,
+  BODY_TYPES, HEIGHTS, BUST_SIZES, WAIST_SIZES, HIP_SIZES, MUSCULATURE, LEG_PROPORTIONS, FACIAL_HAIR, SKIN_DETAILS, SKIN_TEXTURES, GENDERS, AGE_RANGES,
   PERSONALITY_TRAITS, FASHION_STYLES, ACCESSORIES, buildPromptFromChips,
 } from '../data/characterChips'
 import { SOUL_STYLES, SOUL_STYLES_CURATED, SOUL_STYLE_CATEGORIES, type SoulStyleCategory } from '../data/soulStyles'
@@ -157,14 +157,12 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   const [chipSelections, setChipSelections] = useState<Record<string, string[]>>({
     ethnicity: [], hairStyle: [], hairColor: [], skinTone: [], eyeColor: [],
     eyeShape: [], noseType: [], lipShape: [], faceShape: [], jawline: [], eyebrows: [],
-    bodyType: [], height: [], bust: [], hips: [], musculature: [], legs: [], facialHair: [], skinTexture: [],
+    bodyType: [], height: [], bust: [], waist: [], hips: [], musculature: [], legs: [], facialHair: [], skinDetails: [], skinTexture: [],
   })
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [promptText, setPromptText] = useState('')
-  // Seed locking: save the expanded description + seed from first generation
-  // so regenerations with minor chip changes keep the same "person"
+  // Cache the expanded description so regenerations don't re-expand
   const [lockedExpansion, setLockedExpansion] = useState<string | null>(null)
-  const [lockedSeed, setLockedSeed] = useState<number | null>(null)
   const [useEnhancer, setUseEnhancer] = useState(() => {
     try { return localStorage.getItem('vist-enhancer') !== 'off' } catch { return true }
   })
@@ -239,7 +237,6 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   const resetAll = () => {
     resetGeneration()
     setLockedExpansion(null)
-    setLockedSeed(null)
     setName('')
     setStep(0)
     setSelGender(null)
@@ -248,7 +245,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     setChipSelections({
       ethnicity: [], hairStyle: [], hairColor: [], skinTone: [], eyeColor: [],
       eyeShape: [], noseType: [], lipShape: [], faceShape: [], jawline: [], eyebrows: [],
-      bodyType: [], height: [], bust: [], hips: [], musculature: [], legs: [], facialHair: [], skinTexture: [],
+      bodyType: [], height: [], bust: [], waist: [], hips: [], musculature: [], legs: [], facialHair: [], skinDetails: [], skinTexture: [],
     })
     setSelFashion([])
     setSelAccessories([])
@@ -410,7 +407,6 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
           if (expanded && expanded.length > 20) {
             fullPrompt = expanded
             setLockedExpansion(expanded)
-            setLockedSeed(Math.floor(Math.random() * 2147483647))
           }
         } catch { /* keep original if expansion fails */ }
       }
@@ -445,7 +441,6 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
         aspectRatio: AspectRatio.Portrait,
         numberOfImages: 1,
         realistic: style.id === 'photorealistic',
-        seed: lockedSeed ?? undefined,
         imageBoost: style.id !== 'photorealistic' ? style.prompt : undefined,
         negativePrompt: [
           style.id === 'photorealistic' ? 'plastic skin, airbrushed skin, wax figure, CGI render, overly smooth face, doll-like, mannequin' : '',
@@ -488,7 +483,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
     try {
       // Extract physical traits for body sheet accuracy
-      const bodyChipMap: Record<string, ChipOption[]> = { bodyType: BODY_TYPES, height: HEIGHTS, bust: BUST_SIZES, hips: HIP_SIZES, musculature: MUSCULATURE, legs: LEG_PROPORTIONS }
+      const bodyChipMap: Record<string, ChipOption[]> = { bodyType: BODY_TYPES, height: HEIGHTS, bust: BUST_SIZES, waist: WAIST_SIZES, hips: HIP_SIZES, musculature: MUSCULATURE, legs: LEG_PROPORTIONS }
       const physicalTraits = Object.entries(bodyChipMap)
         .flatMap(([key, options]) => (chipSelections[key] || []).map(id => options.find(o => o.id === id)?.promptText).filter(Boolean))
         .join('. ')
@@ -965,6 +960,11 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                           onSelect={ids => updateChip('skinTone', ids)} />
                       </div>
                       <div>
+                        <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Detalles de Piel <span className="text-[9px] font-normal normal-case tracking-normal" style={{ color: '#999' }}>(hasta 3)</span></label>
+                        <ChipSelector options={SKIN_DETAILS} selected={chipSelections.skinDetails}
+                          onSelect={ids => updateChip('skinDetails', ids)} maxSelect={3} />
+                      </div>
+                      <div>
                         <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Tipo de Cuerpo <span className="text-[9px] font-normal normal-case tracking-normal" style={{ color: '#999' }}>(hasta 3)</span></label>
                         <ChipSelector options={BODY_TYPES} selected={chipSelections.bodyType}
                           onSelect={ids => updateChip('bodyType', ids)} maxSelect={3} />
@@ -993,6 +993,11 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                               <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Busto</label>
                               <ChipSelector options={BUST_SIZES} selected={chipSelections.bust}
                                 onSelect={ids => updateChip('bust', ids)} />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Cintura</label>
+                              <ChipSelector options={WAIST_SIZES} selected={chipSelections.waist}
+                                onSelect={ids => updateChip('waist', ids)} />
                             </div>
                             <div>
                               <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Cadera</label>

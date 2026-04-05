@@ -6,6 +6,8 @@ export interface ChipOption {
   emoji: string
   promptText: string
   color?: string   // hex — renders as color swatch instead of emoji
+  /** If set, promptText is replaced by a random pick from this pool at generation time */
+  variants?: string[]
 }
 
 export interface ChipCategory {
@@ -255,6 +257,15 @@ export const HIP_SIZES: ChipOption[] = [
   { id: 'full-hips',    label: 'Voluptuosas', emoji: '💎', promptText: 'BODY PROPORTION: full wide hips and large round glutes, dramatic hourglass lower body, very pronounced curves' },
 ]
 
+// ─── Waist ─────────────────────────────────────────────────────────
+export const WAIST_SIZES: ChipOption[] = [
+  { id: 'very-narrow-waist', label: 'Muy estrecha', emoji: '⏳', promptText: 'BODY PROPORTION: very narrow defined waist, dramatic hourglass figure, extreme waist-to-hip ratio' },
+  { id: 'narrow-waist',      label: 'Estrecha',     emoji: '🔹', promptText: 'BODY PROPORTION: narrow waist, visible waist definition, feminine hourglass' },
+  { id: 'medium-waist',      label: 'Media',        emoji: '🔷', promptText: 'BODY PROPORTION: medium proportional waist, natural subtle curve' },
+  { id: 'wide-waist',        label: 'Ancha',        emoji: '▫️', promptText: 'BODY PROPORTION: wide waist, straight torso, minimal waist definition' },
+  { id: 'thick-waist',       label: 'Gruesa',       emoji: '💎', promptText: 'BODY PROPORTION: thick full midsection, soft belly, no waist indent' },
+]
+
 // ─── Musculature ───────────────────────────────────────────────────
 export const MUSCULATURE: ChipOption[] = [
   { id: 'soft',         label: 'Suave',        emoji: '☁️', promptText: 'BODY PROPORTION: soft body with no visible muscle definition, smooth rounded limbs' },
@@ -285,6 +296,33 @@ export const LEG_PROPORTIONS: ChipOption[] = [
   { id: 'thick-legs',    label: 'Piernas gruesas',emoji: '💪', promptText: 'BODY PROPORTION: thick muscular legs, strong thighs and calves' },
   { id: 'slim-legs',     label: 'Piernas delgadas',emoji: '🦩', promptText: 'BODY PROPORTION: slim slender legs, thin thighs and calves' },
   { id: 'athletic-legs', label: 'Piernas atléticas',emoji:'🏃', promptText: 'BODY PROPORTION: athletic toned legs, defined quad and calf muscles, runner body' },
+]
+
+// ─── Skin Details (realistic) ─────────────────────────────────────────
+export const SKIN_DETAILS: ChipOption[] = [
+  { id: 'freckles-light', label: 'Pecas suaves',   emoji: '✨', promptText: 'light scattered freckles across nose and cheeks', variants: [
+    'faint golden freckles dusted across the nose bridge and upper cheeks',
+    'sparse light brown freckles concentrated on the nose and under eyes',
+    'delicate sun freckles scattered across both cheeks and forehead',
+  ]},
+  { id: 'freckles-heavy', label: 'Pecas marcadas', emoji: '🔴', promptText: 'heavy dense freckles across face, shoulders and chest', variants: [
+    'dense constellation of dark freckles covering cheeks, nose, and forehead',
+    'heavy freckle coverage from cheekbones down to shoulders and collarbone',
+  ]},
+  { id: 'moles',          label: 'Lunares',         emoji: '🖤', promptText: 'distinctive beauty marks and moles', variants: [
+    'small dark beauty mark on left cheekbone near the eye',
+    'beauty mark above the right corner of the upper lip',
+    'two small moles on the neck, one near the jawline',
+    'distinctive mole on the chin, slightly off-center',
+  ]},
+  { id: 'acne-scars',     label: 'Marcas de acné', emoji: '🫧', promptText: 'subtle acne scarring and texture on cheeks' },
+  { id: 'dimples',        label: 'Hoyuelos',       emoji: '😊', promptText: 'visible dimples on both cheeks when smiling' },
+  { id: 'vitiligo',       label: 'Vitiligo',       emoji: '🤍', promptText: 'vitiligo skin condition with lighter depigmented patches on face and hands' },
+  { id: 'rosy-cheeks',    label: 'Mejillas rosadas',emoji: '🌸', promptText: 'naturally flushed rosy cheeks, slight redness on nose tip' },
+  { id: 'sun-damage',     label: 'Piel bronceada', emoji: '☀️', promptText: 'sun-kissed skin with visible tan lines, slight sun damage and warmth' },
+  { id: 'smooth-perfect', label: 'Piel perfecta',  emoji: '🧴', promptText: 'exceptionally smooth clear skin, minimal pores, glass skin effect' },
+  { id: 'mature-skin',    label: 'Piel madura',    emoji: '🕰️', promptText: 'mature skin with fine lines around eyes, subtle laugh lines, natural aging' },
+  { id: 'oily-dewy',      label: 'Piel grasa/dewy',emoji: '💧', promptText: 'dewy oily skin with visible shine on T-zone, glossy forehead and nose' },
 ]
 
 // ─── Skin Textures (fantastical) ─────────────────────────────────────
@@ -392,14 +430,42 @@ export const FASHION_STYLES: ChipOption[] = [
 
 // ─── Accessories ─────────────────────────────────────────────────────
 export const ACCESSORIES: ChipOption[] = [
-  { id: 'sunglasses',  label: 'Gafas de sol',  emoji: '🕶️', promptText: 'wearing stylish sunglasses' },
-  { id: 'piercings',   label: 'Piercings',      emoji: '💎', promptText: 'with multiple piercings' },
-  { id: 'tattoos',     label: 'Tatuajes',       emoji: '🎨', promptText: 'with visible artistic tattoos' },
-  { id: 'jewelry',     label: 'Joyería',        emoji: '💍', promptText: 'wearing elegant fine jewelry' },
-  { id: 'hat',         label: 'Sombrero',       emoji: '🎩', promptText: 'wearing a stylish hat' },
+  { id: 'sunglasses',  label: 'Gafas de sol',  emoji: '🕶️', promptText: 'wearing stylish sunglasses', variants: [
+    'wearing black oversized cat-eye sunglasses', 'wearing gold-rimmed aviator sunglasses', 'wearing round tortoiseshell sunglasses',
+    'wearing slim rectangular dark sunglasses', 'wearing white retro oversized sunglasses', 'wearing mirrored sport wrap sunglasses',
+  ]},
+  { id: 'piercings',   label: 'Piercings',      emoji: '💎', promptText: 'with multiple piercings', variants: [
+    'with thin gold septum ring, three tiny studs ascending left helix', 'with small silver nose stud on left nostril, double lobe piercings',
+    'with industrial bar through right ear, small labret stud below lower lip', 'with multiple ear cuffs on both ears, tiny diamond nostril stud',
+    'with delicate chain connecting ear cuff to lobe piercing, septum clicker ring', 'with single eyebrow barbell, tragus piercing on right ear',
+  ]},
+  { id: 'tattoos',     label: 'Tatuajes',       emoji: '🎨', promptText: 'with visible artistic tattoos', variants: [
+    'with minimalist moon phase tattoo behind left ear, small botanical vine on inner right forearm',
+    'with traditional blackwork sleeve tattoo on left arm, geometric mandala on right shoulder',
+    'with delicate script tattoo on left collarbone, small star constellation on inner wrist',
+    'with fine-line portrait tattoo on upper right arm, tiny heart outline on ring finger',
+    'with Japanese wave tattoo on right forearm, small compass rose behind right ear',
+    'with abstract watercolor splash tattoo on left shoulder blade, thin arrow on right ankle',
+  ]},
+  { id: 'jewelry',     label: 'Joyería',        emoji: '💍', promptText: 'wearing elegant fine jewelry', variants: [
+    'wearing layered thin gold chain necklaces and small hoop earrings', 'wearing chunky silver rings on multiple fingers and a chain bracelet',
+    'wearing delicate pearl stud earrings and a thin tennis bracelet', 'wearing oversized gold door-knocker earrings and layered bangles',
+    'wearing a single long pendant necklace and mismatched earrings', 'wearing vintage cameo brooch and antique ring set',
+  ]},
+  { id: 'hat',         label: 'Sombrero',       emoji: '🎩', promptText: 'wearing a stylish hat', variants: [
+    'wearing a worn-in baseball cap slightly tilted', 'wearing a wide-brim straw sun hat',
+    'wearing a black wool fedora', 'wearing a knitted beanie pulled back slightly',
+    'wearing a vintage newsboy cap', 'wearing a bucket hat in neutral canvas',
+  ]},
   { id: 'scarf',       label: 'Bufanda',        emoji: '🧣', promptText: 'wearing a fashionable scarf' },
-  { id: 'watch',       label: 'Reloj',          emoji: '⌚', promptText: 'wearing a luxury watch' },
-  { id: 'choker',      label: 'Gargantilla',    emoji: '📿', promptText: 'wearing a choker necklace' },
+  { id: 'watch',       label: 'Reloj',          emoji: '⌚', promptText: 'wearing a luxury watch', variants: [
+    'wearing a vintage gold Casio digital watch', 'wearing a chunky silver diver watch',
+    'wearing a minimalist black leather strap watch', 'wearing a rose gold bracelet watch',
+  ]},
+  { id: 'choker',      label: 'Gargantilla',    emoji: '📿', promptText: 'wearing a choker necklace', variants: [
+    'wearing a thin black velvet choker', 'wearing a delicate gold chain choker with tiny pendant',
+    'wearing a pearl strand choker necklace', 'wearing a leather wrap choker with silver clasp',
+  ]},
   { id: 'crown',       label: 'Corona / Tiara', emoji: '👑', promptText: 'wearing an ornate crown or tiara' },
   { id: 'mask',        label: 'Máscara',        emoji: '🎭', promptText: 'wearing a decorative masquerade mask' },
   { id: 'wings',       label: 'Alas',           emoji: '🪽', promptText: 'with large ornate feathered wings' },
@@ -447,8 +513,8 @@ const ALL_CHIP_MAPS: Record<string, ChipOption[]> = {
   skinTone: SKIN_TONES, eyeColor: EYE_COLORS, eyeShape: EYE_SHAPES,
   noseType: NOSE_TYPES, lipShape: LIP_SHAPES, faceShape: FACE_SHAPES,
   jawline: JAWLINES, eyebrows: EYEBROWS, bodyType: BODY_TYPES,
-  height: HEIGHTS, bust: BUST_SIZES, hips: HIP_SIZES,
-  musculature: MUSCULATURE, legs: LEG_PROPORTIONS, facialHair: FACIAL_HAIR, skinTexture: SKIN_TEXTURES,
+  height: HEIGHTS, bust: BUST_SIZES, hips: HIP_SIZES, waist: WAIST_SIZES,
+  musculature: MUSCULATURE, legs: LEG_PROPORTIONS, facialHair: FACIAL_HAIR, skinDetails: SKIN_DETAILS, skinTexture: SKIN_TEXTURES,
   gender: GENDERS, age: AGE_RANGES, personality: PERSONALITY_TRAITS,
   fashion: FASHION_STYLES, accessories: ACCESSORIES,
 }
@@ -458,7 +524,15 @@ function getSelected(selections: Record<string, string[]>, category: string): st
   if (!ids || ids.length === 0) return undefined
   const chips = ALL_CHIP_MAPS[category]
   if (!chips) return undefined
-  return ids.map(id => chips.find(c => c.id === id)?.promptText).filter(Boolean).join(', ')
+  return ids.map(id => {
+    const chip = chips.find(c => c.id === id)
+    if (!chip) return undefined
+    // If chip has variants, pick one randomly for variety
+    if (chip.variants && chip.variants.length > 0) {
+      return chip.variants[Math.floor(Math.random() * chip.variants.length)]
+    }
+    return chip.promptText
+  }).filter(Boolean).join(', ')
 }
 
 /**
