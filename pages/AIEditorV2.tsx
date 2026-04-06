@@ -579,15 +579,14 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
-          console.warn('NB2 reimagine failed, trying FLUX.2 Pro:', nb2Err)
+          console.warn('NB2 reimagine failed, trying Wan Edit:', nb2Err)
           try {
-            // Kontext Pro for reimagine — best at preserving identity
-            const kontextResults = await editImageWithFluxKontext(inputFile!, flatInstruction, (p) => setProgress(p), undefined, abortRef.current?.signal)
-            const sdResults = kontextResults.length > 0 ? kontextResults : await editImageWithFlux2Pro(inputFile!, flatInstruction, charRefs, (p) => setProgress(p))
-            if (!sdResults || sdResults.filter(Boolean).length === 0) throw new Error('Kontext/FLUX.2 Pro returned empty')
-            resultUrls = sdResults
-          } catch (sdErr) {
-            console.warn('Seedream reimagine failed, trying Grok:', sdErr)
+            const { editWithWan27Fal } = await import('../services/falService')
+            const wanResults = await editWithWan27Fal(inputFile!, flatInstruction, charRefs, (p) => setProgress(p))
+            if (!wanResults || wanResults.filter(Boolean).length === 0) throw new Error('Wan Edit returned empty')
+            resultUrls = wanResults
+          } catch (wanErr) {
+            console.warn('Wan Edit reimagine failed, trying Grok:', wanErr)
             resultUrls = await editImageWithGrokFal(inputFile!, flatInstruction, (p) => setProgress(p), undefined, charRefs)
           }
         }
