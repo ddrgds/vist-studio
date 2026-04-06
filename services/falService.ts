@@ -1467,19 +1467,49 @@ export const generateWithNB2Fal = async (
   const character = params.characters[0];
   if (onProgress) onProgress(10);
 
-  // NB2 understands the full CHARACTER SPECIFICATION JSON natively
-  // Pass characteristics as-is (includes JSON spec + flat description)
-  const parts: string[] = [];
-  if (params.imageBoost) parts.push(params.imageBoost);
-  else parts.push('Ultra-photorealistic fashion editorial photograph, Sony A7R V camera, 85mm f/1.4, shallow DOF, Vogue quality');
-  if (character?.characteristics) parts.push(character.characteristics);
-  if (character?.outfitDescription) parts.push(`Wearing ${character.outfitDescription}`);
-  else parts.push(`Wearing ${DEFAULT_OUTFIT}`);
-  if (character?.pose) parts.push(character.pose);
-  if (character?.accessory) parts.push(`With ${character.accessory}`);
-  if (params.scenario) parts.push(params.scenario);
-  if (params.lighting) parts.push(params.lighting);
-  const prompt = parts.filter(Boolean).join('. ').trim() + '.';
+  // Build structured JSON prompt — NB2 processes JSON as semantic fields.
+  // Structure based on Gemini's recommended format for NB2.
+
+  // Extract body and face from characteristics
+  const rawChars = character?.characteristics || '';
+  let charSpec: Record<string, any> | null = null;
+  if (rawChars.includes('CHARACTER SPECIFICATION:')) {
+    try {
+      charSpec = JSON.parse(rawChars.replace(/CHARACTER SPECIFICATION:\s*/, '').split('\n\nFLAT')[0]);
+    } catch { /* use flat */ }
+  }
+  const flatDesc = rawChars.match(/FLAT DESCRIPTION:\s*(.+?)$/s)?.[1]?.trim() || rawChars;
+
+  const nb2Json = {
+    generation_config: {
+      output_format: 'high_fidelity_portrait',
+    },
+    influencer_identity: {
+      physical_precision: {
+        ...(charSpec?.identity || {}),
+        ...(charSpec?.face ? { face_structure: typeof charSpec.face === 'string' ? charSpec.face : Object.values(charSpec.face).join(', ') } : {}),
+        ...(charSpec?.body ? { body_type: typeof charSpec.body === 'string' ? charSpec.body : Object.values(charSpec.body).join(', ') } : {}),
+        ...(charSpec?.appearance ? { appearance: typeof charSpec.appearance === 'string' ? charSpec.appearance : Object.values(charSpec.appearance).join(', ') } : {}),
+        ...(!charSpec ? { description: flatDesc } : {}),
+      },
+      outfit: character?.outfitDescription || DEFAULT_OUTFIT,
+      accessories: character?.accessory || undefined,
+      pose: character?.pose || 'Standing casual, facing camera',
+      ...(charSpec?.expression ? { expression: charSpec.expression } : {}),
+    },
+    aesthetic_context: {
+      art_style: params.imageBoost || 'Cinematic high-end fashion editorial photography',
+      lighting: params.lighting || 'Soft directional studio light, slight rim highlight, warm skin tones',
+      environment: params.scenario || 'Clean neutral background, soft studio lighting',
+      camera_settings: '85mm lens, f/1.8 aperture, sharp focus on face, shallow depth of field',
+    },
+    safety_and_integrity: {
+      intent: 'Professional portrait for digital fashion campaign and virtual influencer content',
+      avoid_elements: ['anatomical distortion', 'generic averaged features', 'plastic skin texture', 'caricaturization', 'over-smoothed skin'],
+    },
+  };
+
+  const prompt = JSON.stringify(nb2Json, null, 2);
 
   if (onProgress) onProgress(20);
 
@@ -1529,9 +1559,12 @@ export const editWithNB2Fal = async (
   const imageUrls = await Promise.all(allImages.map(f => uploadToFalStorage(f)));
   if (onProgress) onProgress(30);
 
+  // Wrap instruction with safety intent context
+  const wrappedPrompt = `[Professional virtual influencer content creation] ${instruction}`;
+
   const result = await fal.subscribe(FalModel.NanoBanana2Edit, {
     input: {
-      prompt: instruction,
+      prompt: wrappedPrompt,
       image_urls: imageUrls,
       num_images: 1,
       resolution: options?.resolution || '1K',
