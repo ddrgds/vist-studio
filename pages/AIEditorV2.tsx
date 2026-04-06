@@ -10,7 +10,7 @@ import { editImageWithGPT } from '../services/openaiService'
 let _cachedFal: typeof import('../services/falService') | null = null;
 const loadFal = async () => _cachedFal || (_cachedFal = await import('../services/falService'));
 import { ENGINE_METADATA, FEATURE_ENGINES, AIProvider, AspectRatio, CREDIT_COSTS } from '../types'
-import { runEditWithFallback, generateCharacterSheet, enhanceSheetWithGrok, type SheetType } from '../services/toolEngines'
+import type { SheetType } from '../services/toolEngines'
 import { SOUL_STYLES, SOUL_STYLE_CATEGORIES, type SoulStyleCategory } from '../data/soulStyles'
 import { useNavigationStore } from '../stores/navigationStore'
 import { usePipelineStore } from '../stores/pipelineStore'
@@ -412,7 +412,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         const dir = relightDirections.find(d => d.id === relightDir) || relightDirections[1]
         const intensity = relightIntensities.find(i => i.id === relightIntensity) || relightIntensities[1]
         const instruction = `${preset.prompt}. ${dir.prompt}. ${intensity.prompt}`
-        const result = await runEditWithFallback(inputImage!, instruction, 'nb2', 'relight', outputOpts)
+        const result = await (await import('../services/toolEngines')).runEditWithFallback(inputImage!, instruction, 'nb2', 'relight', outputOpts)
         resultUrls = [result.url]
       } else if (activeTool === 'rotate360') {
         const view = angleViews[sel360]
@@ -428,7 +428,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         }
         const envHint = envHints[view] || 'background changes naturally to match the new camera position'
         const instruction = `Create a new photograph of this person from a ${view.toLowerCase()} camera angle. The camera has moved around the subject. Keep exact same person, clothing, hairstyle, body. Background MUST change: ${envHint}. Render from the new camera perspective.`
-        const result = await runEditWithFallback(inputImage!, instruction, 'nb2', 'angles', outputOpts)
+        const result = await (await import('../services/toolEngines')).runEditWithFallback(inputImage!, instruction, 'nb2', 'angles', outputOpts)
         resultUrls = [result.url]
       } else if (activeTool === 'composite') {
         const sceneDesc = scenePrompt.trim()
@@ -473,7 +473,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
             resultUrls = await (await loadFal()).editWithWan27Fal(inputFile!, instruction, charRefs, (p) => setProgress(p))
           }
         } else {
-          const result = await runEditWithFallback(inputImage!, instruction, 'nb2', 'style-transfer', outputOpts)
+          const result = await (await import('../services/toolEngines')).runEditWithFallback(inputImage!, instruction, 'nb2', 'style-transfer', outputOpts)
           resultUrls = [result.url]
         }
       } else if (activeTool === 'realskin') {
@@ -827,7 +827,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                   if (!ok) { toast.error('Creditos insuficientes'); return }
                   setSheetGenerating(s.type); setSheetResult(null)
                   try {
-                    const url = await generateCharacterSheet(inputImage, s.type)
+                    const url = await (await import('../services/toolEngines')).generateCharacterSheet(inputImage, s.type)
                     setSheetResult(url)
                     toast.success(`${s.label} generado`)
                   } catch (err: any) {
