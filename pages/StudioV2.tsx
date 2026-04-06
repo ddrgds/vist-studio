@@ -387,7 +387,14 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
             const refBlob = await refRes.blob()
             const refFile = new File([refBlob], 'char-ref.jpg', { type: refBlob.type || 'image/jpeg' })
             const identityFiles = await fetchUrlsAsFiles(charRefUrls.slice(1, 4))
-            const heroInstruction = `Transform this person into a new photo: ${params.scenario || 'professional photo'}. ${params.characters[0]?.pose || ''}. Keep the exact same face and body. ${params.characters[0]?.outfitDescription ? `Wearing: ${params.characters[0].outfitDescription}` : ''}`
+
+            // Build instruction with image references
+            const refLabels = ['image 1 is the main portrait photo of this person']
+            if (identityFiles.length >= 1) refLabels.push('image 2 is face angles reference sheet — use for face identity')
+            if (identityFiles.length >= 2) refLabels.push('image 3 is body angles reference sheet — use for body proportions')
+            if (identityFiles.length >= 3) refLabels.push('image 4 is expressions reference sheet — use for facial features')
+
+            const heroInstruction = `${refLabels.join('. ')}. Transform the person from image 1 into a completely new photo. Scene: ${params.scenario || 'professional photo'}. ${params.characters[0]?.pose || ''}. The person must look IDENTICAL to the references — same face, same body shape, same proportions. ${params.characters[0]?.outfitDescription ? `Wearing: ${params.characters[0].outfitDescription}` : ''}`
             const resMap: Record<string, '1K' | '2K'> = { '1k': '1K', '2k': '2K' }
             results = await editWithWanFal(refFile, heroInstruction, identityFiles, p => setHeroProgress(p), { aspectRatio: selectedAspectRatio, resolution: resMap[selectedResolution] || '1K' }, abortHeroRef.current.signal)
             if (!results || results.length === 0) throw new Error('Wan Edit returned empty')
