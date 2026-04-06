@@ -271,12 +271,14 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
   const abortSessionRef = useRef<AbortController | null>(null)
   const uploadInputRef = useRef<HTMLInputElement>(null)
 
-  // Character auto-select
+  // Character auto-select — only on initial mount or when no character is selected
   const selectedChar = characters.find(c => c.id === selectedCharId)
   useEffect(() => {
+    // Only auto-select if nothing is selected yet
+    if (selectedCharId && characters.find(c => c.id === selectedCharId)) return
     if (pipelineCharId && characters.find(c => c.id === pipelineCharId)) setSelectedCharId(pipelineCharId)
-    else if (characters.length > 0 && !selectedCharId) setSelectedCharId(characters[0].id)
-  }, [characters, selectedCharId, pipelineCharId])
+    else if (characters.length > 0) setSelectedCharId(characters[0].id)
+  }, [characters, pipelineCharId]) // removed selectedCharId from deps to prevent override loop
   useEffect(() => { if (selectedChar) setCharacteristics(selectedChar.characteristics || '') }, [selectedChar?.id])
 
   // Restore hero from pipeline store on mount (persists across page changes)
@@ -375,31 +377,26 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       else if (eng?.provider === AIProvider.OpenAI) results = await generateWithOpenAI(params, eng.openaiModel, p => setHeroProgress(p), abortHeroRef.current.signal)
       else if (eng?.provider === AIProvider.Fal) results = await generateWithFal(params, eng.falModel, p => setHeroProgress(p), abortHeroRef.current.signal)
       else {
-        // Default: Wan 2.7 t2i ($0.03) → Wan Edit ($0.03) → Grok ($0.02) fallback chain
-        try {
-          results = await generateWithWan27Fal(params, p => setHeroProgress(p), abortHeroRef.current.signal)
-          if (!results || results.length === 0) throw new Error('Wan returned empty')
-        } catch (nb2Err) {
-          console.warn('NB2 hero failed, trying Wan Edit:', nb2Err)
+        // Default: Wan Edit (with char photo) → Grok t2i fallback
+        const charRefUrls = getCharacterReferenceUrls()
+        if (charRefUrls.length > 0) {
+          // Has character photo — use Wan Edit to transform it into hero scene
           try {
-            // Use character's approved photo as base → Wan Edit transforms it into the hero scene
-            const charRefUrls = getCharacterReferenceUrls()
-            if (charRefUrls.length > 0) {
-              const { editWithWan27Fal } = await import('../services/falService')
-              const refRes = await fetch(charRefUrls[0])
-              const refBlob = await refRes.blob()
-              const refFile = new File([refBlob], 'char-ref.jpg', { type: refBlob.type || 'image/jpeg' })
-              const heroInstruction = `Transform this person into a new photo: ${params.scenario || 'professional photo'}. ${params.characters[0]?.pose || ''}. Keep the exact same face and body. ${params.characters[0]?.outfitDescription ? `Wearing: ${params.characters[0].outfitDescription}` : ''}`
-              results = await editWithWan27Fal(refFile, heroInstruction, [], p => setHeroProgress(p), undefined, abortHeroRef.current.signal)
-              if (!results || results.length === 0) throw new Error('Wan Edit returned empty')
-            } else {
-              throw new Error('No character refs for Wan Edit')
-            }
+            const refRes = await fetch(charRefUrls[0])
+            const refBlob = await refRes.blob()
+            const refFile = new File([refBlob], 'char-ref.jpg', { type: refBlob.type || 'image/jpeg' })
+            const identityFiles = await fetchUrlsAsFiles(charRefUrls.slice(1, 4))
+            const heroInstruction = `Transform this person into a new photo: ${params.scenario || 'professional photo'}. ${params.characters[0]?.pose || ''}. Keep the exact same face and body. ${params.characters[0]?.outfitDescription ? `Wearing: ${params.characters[0].outfitDescription}` : ''}`
+            results = await editWithWanFal(refFile, heroInstruction, identityFiles, p => setHeroProgress(p), undefined, abortHeroRef.current.signal)
+            if (!results || results.length === 0) throw new Error('Wan Edit returned empty')
           } catch (wanErr) {
             console.warn('Wan Edit hero failed, trying Grok:', wanErr)
             const { generateWithGrokFal } = await import('../services/falService')
             results = await generateWithGrokFal(params, p => setHeroProgress(p), abortHeroRef.current.signal)
           }
+        } else {
+          // No character photo — use NB2 fal t2i (understands JSON prompts)
+          results = await generateWithNB2Fal(params, p => setHeroProgress(p), abortHeroRef.current.signal)
         }
       }
 
