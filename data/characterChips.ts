@@ -343,6 +343,30 @@ export const SKIN_DETAILS: ChipOption[] = [
   ]},
 ]
 
+// ─── Makeup ─────────────────────────────────────────────────────────
+export const MAKEUP_STYLES: ChipOption[] = [
+  { id: 'no-makeup',      label: 'Sin maquillaje', emoji: '🧖', promptText: 'no makeup, completely bare face, natural skin' },
+  { id: 'natural-makeup',  label: 'Natural',       emoji: '🌿', promptText: 'subtle natural makeup, light foundation, mascara, nude lip tint' },
+  { id: 'glam',           label: 'Glam',           emoji: '💄', promptText: 'full glam makeup, contoured cheekbones, false lashes, highlighted dewy skin, glossy lips' },
+  { id: 'smoky-eyes',     label: 'Smoky eyes',     emoji: '🖤', promptText: 'dramatic smoky eye makeup, dark blended eyeshadow, smudged liner, nude lips' },
+  { id: 'bold-lips',      label: 'Labios rojos',   emoji: '❤️', promptText: 'bold matte red lipstick, minimal eye makeup, clean skin', variants: [
+    'classic matte cherry-red lipstick with clean minimal eye makeup',
+    'deep burgundy-wine matte lip with subtle bronzer',
+    'bright coral-red glossy lip with dewy skin',
+  ]},
+  { id: 'cat-eye',        label: 'Cat eye',        emoji: '🐱', promptText: 'sharp cat-eye winged eyeliner, clean skin, nude lip' },
+  { id: 'korean-makeup',  label: 'K-beauty',       emoji: '🇰🇷', promptText: 'Korean glass skin makeup, gradient lip tint, subtle blush, dewy luminous skin, straight eyebrows' },
+  { id: 'editorial-makeup',label: 'Editorial',     emoji: '🎨', promptText: 'bold editorial makeup, artistic eye look, unconventional color placement', variants: [
+    'graphic neon green eyeliner with bare skin and bleached brows',
+    'abstract gold leaf accents on eyelids with matte burgundy lip',
+    'color-blocked pastel eyeshadow with sharp geometric lines',
+  ]},
+  { id: 'soft-glam',      label: 'Soft glam',      emoji: '✨', promptText: 'soft glam makeup, warm brown eyeshadow, fluffy brows, peachy blush, nude gloss' },
+  { id: 'goth',           label: 'Gótico',         emoji: '🦇', promptText: 'dark goth makeup, black lipstick, heavy dark eye makeup, pale foundation, dramatic contour' },
+  { id: 'sun-kissed',     label: 'Sun-kissed',     emoji: '☀️', promptText: 'sun-kissed bronzed look, warm bronzer, freckle-enhancing tint, peach lip' },
+  { id: 'clean-girl',     label: 'Clean girl',     emoji: '🧴', promptText: 'clean girl makeup, just concealer, brow gel, lip oil, skin tint, barely-there look' },
+]
+
 // ─── Skin Textures (fantastical) ─────────────────────────────────────
 export const SKIN_TEXTURES: ChipOption[] = [
   { id: 'human',       label: 'Humana',    emoji: '🧑', promptText: 'natural human skin texture with visible pores and subtle imperfections' },
@@ -532,7 +556,7 @@ const ALL_CHIP_MAPS: Record<string, ChipOption[]> = {
   noseType: NOSE_TYPES, lipShape: LIP_SHAPES, faceShape: FACE_SHAPES,
   jawline: JAWLINES, eyebrows: EYEBROWS, bodyType: BODY_TYPES,
   height: HEIGHTS, bust: BUST_SIZES, hips: HIP_SIZES, waist: WAIST_SIZES,
-  musculature: MUSCULATURE, legs: LEG_PROPORTIONS, facialHair: FACIAL_HAIR, skinDetails: SKIN_DETAILS, skinTexture: SKIN_TEXTURES,
+  musculature: MUSCULATURE, legs: LEG_PROPORTIONS, facialHair: FACIAL_HAIR, skinDetails: SKIN_DETAILS, makeup: MAKEUP_STYLES, skinTexture: SKIN_TEXTURES,
   gender: GENDERS, age: AGE_RANGES, personality: PERSONALITY_TRAITS,
   fashion: FASHION_STYLES, accessories: ACCESSORIES,
 }

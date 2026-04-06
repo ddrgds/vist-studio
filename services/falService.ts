@@ -1400,6 +1400,56 @@ export const generateWithFlux2ProFal = async (
 };
 
 // ─────────────────────────────────────────────
+/**
+ * Clean character description for fal.ai models (Wan, Grok, Turbo).
+ * These models work best with SIMPLE, DIRECT descriptions — no JSON specs,
+ * no camera jargon, no "Vogue quality", no photography terms.
+ * Extracts only the FLAT DESCRIPTION and strips all technical bloat.
+ */
+function cleanDescriptionForFal(characteristics: string): string {
+  let desc = characteristics;
+
+  // Extract FLAT DESCRIPTION if present (skip JSON spec entirely)
+  const flatMatches = desc.match(/FLAT DESCRIPTION:\s*(.+?)(?:\n|$)/g);
+  if (flatMatches) {
+    desc = flatMatches.map(m => m.replace('FLAT DESCRIPTION:', '').trim()).join(', ');
+  } else if (desc.includes('CHARACTER SPECIFICATION:')) {
+    // Has JSON but no flat — try to extract just the values
+    const afterJson = desc.split('\n\n').pop() || desc;
+    if (afterJson.length > 20 && !afterJson.includes('{')) desc = afterJson;
+  }
+
+  // Strip ALL technical/editorial jargon
+  return desc
+    .replace(/Ultra-photorealistic digital human[^,]*/gi, '')
+    .replace(/indistinguishable from photograph[^,]*/gi, '')
+    .replace(/Premium anime character[^,]*/gi, '')
+    .replace(/AAA game-quality[^,]*/gi, '')
+    .replace(/High-end digital character[^,]*/gi, '')
+    .replace(/Distinctive stylized character[^,]*/gi, '')
+    .replace(/Pixel art character sprite[^,]*/gi, '')
+    .replace(/shot on [^,.]*/gi, '')
+    .replace(/Phase One[^,.]*/gi, '')
+    .replace(/Schneider[^,.]*/gi, '')
+    .replace(/physically-based material response/gi, '')
+    .replace(/individual hair strand rendering/gi, '')
+    .replace(/accurate eye moisture/gi, '')
+    .replace(/subsurface blood flow/gi, '')
+    .replace(/subsurface scattering[^,]*/gi, '')
+    .replace(/Unreal Engine[^,.]*/gi, '')
+    .replace(/PBR material[^,.]*/gi, '')
+    .replace(/HDRI environment[^,.]*/gi, '')
+    .replace(/ray-traced[^,.]*/gi, '')
+    .replace(/CHARACTER SPECIFICATION:\s*/gi, '')
+    .replace(/FLAT DESCRIPTION:\s*/gi, '')
+    .replace(/\{[^}]*\}/g, '') // remove any remaining JSON blocks
+    .replace(/,{2,}/g, ',')
+    .replace(/\.\s*\./g, '.')
+    .replace(/^\s*[,.\s]+/, '')
+    .replace(/[,.\s]+$/, '')
+    .trim();
+}
+
 // Wan 2.7 Pro — text-to-image via fal.ai
 // ─────────────────────────────────────────────
 
@@ -1412,29 +1462,18 @@ export const generateWithWan27Fal = async (
   const character = params.characters[0];
   if (onProgress) onProgress(10);
 
-  // Build natural-language prompt (Wan excels with vivid descriptions)
-  let subjectDesc = character?.characteristics || '';
-  const flatMatch = subjectDesc.match(/FLAT DESCRIPTION:\s*(.+?)(?:\n|$)/g);
-  if (flatMatch) subjectDesc = flatMatch.map(m => m.replace('FLAT DESCRIPTION:', '').trim()).join(', ');
-  // Strip render style prefixes and camera jargon
-  subjectDesc = subjectDesc
-    .replace(/Ultra-photorealistic digital human[^,]*/gi, '')
-    .replace(/Premium anime character[^,]*/gi, '')
-    .replace(/AAA game-quality[^,]*/gi, '')
-    .replace(/shot on [^,.]*/gi, '')
-    .replace(/Phase One[^,.]*/gi, '')
-    .replace(/,{2,}/g, ',').replace(/^\s*,\s*/, '').trim();
+  // Build CLEAN natural-language prompt for Wan.
+  // Wan produces best results with simple, direct descriptions — no camera jargon,
+  // no JSON specs, no "Vogue quality", no technical photography terms.
+  const subjectDesc = cleanDescriptionForFal(character?.characteristics || '');
 
   const parts: string[] = [];
   if (params.imageBoost) parts.push(params.imageBoost);
-  else parts.push('High-end fashion editorial photograph, Vogue magazine quality, natural skin texture with visible pores');
   if (subjectDesc) parts.push(subjectDesc);
   if (character?.outfitDescription) parts.push(`Wearing ${character.outfitDescription}`);
   if (character?.pose) parts.push(character.pose);
   if (character?.accessory) parts.push(`With ${character.accessory}`);
-  if (params.scenario) parts.push(params.scenario);
-  parts.push('Natural ambient light, organic colors');
-  const prompt = parts.filter(Boolean).join('. ').replace(/\.\s*\./g, '.').trim() + '.';
+  const prompt = parts.filter(Boolean).join(', ').trim() + '.';
 
   const negativePrompt = params.negativePrompt || '';
 
@@ -1478,20 +1517,15 @@ export const generateWithGrokFal = async (
   const character = params.characters[0];
   if (onProgress) onProgress(10);
 
-  // Build descriptive prompt — Grok is permissive, vivid descriptions work well
+  // Build CLEAN prompt — Grok works best with simple direct descriptions, no jargon
+  const subjectDesc = cleanDescriptionForFal(character?.characteristics || '');
   const parts: string[] = [];
   if (params.imageBoost) parts.push(params.imageBoost);
-  else parts.push('Ultra-photorealistic fashion editorial, striking and bold, natural skin texture');
-  if (character?.characteristics) {
-    const flat = character.characteristics.match(/FLAT DESCRIPTION:\s*(.+?)(?:\n|$)/g);
-    parts.push(flat ? flat.map(m => m.replace('FLAT DESCRIPTION:', '').trim()).join(', ') : character.characteristics);
-  }
+  if (subjectDesc) parts.push(subjectDesc);
   if (character?.outfitDescription) parts.push(`Wearing ${character.outfitDescription}`);
   if (character?.pose) parts.push(character.pose);
   if (character?.accessory) parts.push(`With ${character.accessory}`);
-  if (params.scenario) parts.push(params.scenario);
-  parts.push('Sharp detail, natural skin texture');
-  const prompt = parts.filter(Boolean).join('. ') + '.';
+  const prompt = parts.filter(Boolean).join(', ').trim() + '.';
 
   if (onProgress) onProgress(20);
 
@@ -2300,23 +2334,15 @@ export const generateWithZImageTurbo = async (
   const character = params.characters[0];
   if (onProgress) onProgress(10);
 
-  // Z-Image Turbo prompt strategy:
-  // Concise and direct (1-300 chars ideal). Subject → outfit → mood.
-  // No camera jargon, no studio descriptions — Turbo works best with simple prompts.
-  let subjectDesc = character?.characteristics || '';
-  const flatMatch = subjectDesc.match(/FLAT DESCRIPTION:\s*(.+?)(?:\n|$)/g);
-  if (flatMatch) subjectDesc = flatMatch.map(m => m.replace('FLAT DESCRIPTION:', '').trim()).join(', ');
-  subjectDesc = subjectDesc.replace(/Ultra-photorealistic[^,]*/gi, '').replace(/shot on [^,.]*/gi, '').replace(/,{2,}/g, ',').replace(/^\s*,/, '').trim();
+  // Z-Image Turbo: CLEAN and CONCISE. Just subject + outfit. No jargon.
+  const subjectDesc = cleanDescriptionForFal(character?.characteristics || '');
 
   const parts: string[] = [];
   if (params.imageBoost) parts.push(params.imageBoost);
-  else parts.push('Ultra-photorealistic photograph, natural skin texture');
   if (subjectDesc) parts.push(subjectDesc);
   if (character?.outfitDescription) parts.push(`Wearing ${character.outfitDescription}`);
   if (character?.pose) parts.push(character.pose);
   if (character?.accessory) parts.push(`With ${character.accessory}`);
-  if (params.scenario && params.scenario !== '_dynamic_') parts.push(params.scenario);
-  parts.push('Sharp detail, natural skin texture');
 
   const prompt = parts.join(' ');
   const count = Math.min(params.numberOfImages ?? 1, 4);
