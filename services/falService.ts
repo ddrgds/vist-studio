@@ -1778,6 +1778,7 @@ export const editWithWan27Fal = async (
       image_size: options?.aspectRatio ? toWanImageSize(options.aspectRatio, options?.resolution || '1K') : 'square_hd',
       enable_safety_checker: false,
       enable_output_safety_checker: false,
+      enable_prompt_expansion: true,
       guidance_scale: options?.guidanceScale ?? 3.5,
       ...(options?.seed !== undefined && { seed: options.seed }),
     },

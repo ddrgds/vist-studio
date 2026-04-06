@@ -398,30 +398,38 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
             const allRefFiles = [...identityFiles]
             let imgIdx = 2 + identityFiles.length // next image index after portrait + identity refs
 
-            // Build simple direct instruction — Wan responds best to clear, concise directions
-            // like "person from image 1 wearing clothes from image 2 in scene from image 3"
-            const arLabel = selectedAspectRatio === AspectRatio.Square ? 'square 1:1 format' : selectedAspectRatio === AspectRatio.Portrait ? 'vertical 3:4 format' : selectedAspectRatio === AspectRatio.Landscape ? 'horizontal 4:3 format' : selectedAspectRatio === AspectRatio.Wide ? 'wide 16:9 format' : 'tall 9:16 vertical format'
+            // Conversational prompt in Spanish — Wan responds better to natural language
+            const formatLabel = selectedAspectRatio === AspectRatio.Square ? 'formato cuadrado' : selectedAspectRatio === AspectRatio.Portrait ? 'formato publicación vertical' : selectedAspectRatio === AspectRatio.Landscape ? 'formato horizontal' : selectedAspectRatio === AspectRatio.Wide ? 'formato banner ancho' : 'tamaño historia de instagram'
 
             // Outfit and scene refs
             if (outfitRef) { allRefFiles.push(outfitRef.file) }
             if (scenarioRef) { allRefFiles.push(scenarioRef.file) }
 
-            // Simple numbered instruction
-            const parts: string[] = [`Generate a new ${arLabel} photo of the person from image 1`]
-            if (outfitRef) {
-              parts.push(`wearing the exact outfit from image ${2 + identityFiles.length}`)
-            } else if (params.characters[0]?.outfitDescription) {
-              parts.push(`wearing ${params.characters[0].outfitDescription}`)
-            }
-            if (scenarioRef) {
-              parts.push(`in the scene from image ${2 + identityFiles.length + (outfitRef ? 1 : 0)}`)
-            } else if (params.scenario) {
-              parts.push(`in ${params.scenario}`)
-            }
-            if (params.characters[0]?.pose) parts.push(params.characters[0].pose)
-            parts.push('Same face, same body. NO text or watermarks')
+            // Build conversational instruction referencing images by number
+            let nextImgIdx = 2 + identityFiles.length
+            const instrParts: string[] = [`Modelo de imagen 1`]
 
-            const heroInstruction = parts.join('. ') + '.'
+            if (identityFiles.length >= 1) instrParts.push(`cuyos ángulos faciales están en imagen 2`)
+            if (identityFiles.length >= 2) instrParts.push(`proporciones corporales en imagen ${identityFiles.length >= 1 ? 3 : 2}`)
+            if (identityFiles.length >= 3) instrParts.push(`expresiones en imagen ${identityFiles.length >= 2 ? 4 : 3}`)
+
+            if (outfitRef) {
+              instrParts.push(`lleva puesta la ropa de imagen ${nextImgIdx}`)
+              nextImgIdx++
+            } else if (params.characters[0]?.outfitDescription) {
+              instrParts.push(`lleva puesto ${params.characters[0].outfitDescription}`)
+            }
+
+            if (scenarioRef) {
+              instrParts.push(`en el escenario de imagen ${nextImgIdx}`)
+            } else if (params.scenario) {
+              instrParts.push(`en ${params.scenario}`)
+            }
+
+            if (params.characters[0]?.pose) instrParts.push(params.characters[0].pose)
+            instrParts.push(`${formatLabel}. Misma cara, mismo cuerpo. Sin texto ni marcas de agua`)
+
+            const heroInstruction = instrParts.join(', ') + '.'
             const resMap: Record<string, '1K' | '2K'> = { '1k': '1K', '2k': '2K' }
             results = await editWithWanFal(refFile, heroInstruction, allRefFiles, p => setHeroProgress(p), { aspectRatio: selectedAspectRatio, resolution: resMap[selectedResolution] || '1K' }, abortHeroRef.current.signal)
             if (!results || results.length === 0) throw new Error('Wan Edit returned empty')
