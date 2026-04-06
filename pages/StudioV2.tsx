@@ -388,15 +388,37 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
             const refFile = new File([refBlob], 'char-ref.jpg', { type: refBlob.type || 'image/jpeg' })
             const identityFiles = await fetchUrlsAsFiles(charRefUrls.slice(1, 4))
 
-            // Build instruction with image references
-            const refLabels = ['image 1 is the main portrait photo of this person']
+            // Collect all reference images: identity + outfit + scenario
+            const allRefFiles = [...identityFiles]
+            let imgIdx = 2 + identityFiles.length // next image index after portrait + identity refs
+
+            // Build instruction with labeled image references
+            const refLabels = ['image 1 is the main portrait photo of this person — use for face and body identity']
             if (identityFiles.length >= 1) refLabels.push('image 2 is face angles reference sheet — use for face identity')
             if (identityFiles.length >= 2) refLabels.push('image 3 is body angles reference sheet — use for body proportions')
             if (identityFiles.length >= 3) refLabels.push('image 4 is expressions reference sheet — use for facial features')
 
-            const heroInstruction = `${refLabels.join('. ')}. Transform the person from image 1 into a completely new photo. Scene: ${params.scenario || 'professional photo'}. ${params.characters[0]?.pose || ''}. The person must look IDENTICAL to the references — same face, same body shape, same proportions. ${params.characters[0]?.outfitDescription ? `Wearing: ${params.characters[0].outfitDescription}` : ''}`
+            // Outfit reference image
+            if (outfitRef) {
+              allRefFiles.push(outfitRef.file)
+              refLabels.push(`image ${imgIdx} is the OUTFIT REFERENCE — dress the person in EXACTLY this clothing, copy every detail`)
+              imgIdx++
+            }
+
+            // Scenario reference image
+            if (scenarioRef) {
+              allRefFiles.push(scenarioRef.file)
+              refLabels.push(`image ${imgIdx} is the SCENE/BACKGROUND REFERENCE — place the person in this exact environment`)
+              imgIdx++
+            }
+
+            const outfitText = outfitRef ? 'Dress the person in the exact outfit from the outfit reference image.' : (params.characters[0]?.outfitDescription ? `Wearing: ${params.characters[0].outfitDescription}` : '')
+            const sceneText = scenarioRef ? 'Place the person in the exact scene from the scene reference image.' : `Scene: ${params.scenario || 'professional photo'}`
+            const arLabel = selectedAspectRatio === AspectRatio.Square ? 'square 1:1' : selectedAspectRatio === AspectRatio.Portrait ? 'vertical portrait 3:4' : selectedAspectRatio === AspectRatio.Landscape ? 'horizontal landscape 4:3' : selectedAspectRatio === AspectRatio.Wide ? 'wide banner 16:9' : 'tall story 9:16'
+
+            const heroInstruction = `${refLabels.join('. ')}. Transform the person from image 1 into a completely new photo in ${arLabel} format. ${sceneText}. ${params.characters[0]?.pose || ''}. The person must look IDENTICAL to the identity references — same face, same body shape, same proportions. ${outfitText}. NO text, watermarks, or overlays in the image.`
             const resMap: Record<string, '1K' | '2K'> = { '1k': '1K', '2k': '2K' }
-            results = await editWithWanFal(refFile, heroInstruction, identityFiles, p => setHeroProgress(p), { aspectRatio: selectedAspectRatio, resolution: resMap[selectedResolution] || '1K' }, abortHeroRef.current.signal)
+            results = await editWithWanFal(refFile, heroInstruction, allRefFiles, p => setHeroProgress(p), { aspectRatio: selectedAspectRatio, resolution: resMap[selectedResolution] || '1K' }, abortHeroRef.current.signal)
             if (!results || results.length === 0) throw new Error('Wan Edit returned empty')
           } catch (wanErr) {
             console.warn('Wan Edit hero failed, trying Grok:', wanErr)
@@ -487,11 +509,28 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
 
     let successCount = 0; let failCount = 0
 
-    // Generate each photo individually: NB2 fal.ai → Wan Edit → Grok
+    // Expand each pose into a unique photographic direction via Gemini Flash
+    const expandedPoses: string[] = []
+    try {
+      const { enhancePrompt } = await import('../services/geminiService')
+      for (const pose of poses) {
+        const expanded = await enhancePrompt(
+          `Photo direction for a session: pose "${pose}", scene "${sceneContext}". Keep the SAME scene/outfit/background as the hero image. Only vary the pose, angle, and expression. Add specific camera angle, body language, gaze direction. Under 30 words. NO text or watermarks.`,
+          'photo session direction'
+        )
+        expandedPoses.push(expanded || pose)
+      }
+    } catch {
+      // Fallback: use raw poses if Flash fails
+      expandedPoses.push(...poses)
+    }
+
+    // Generate each photo individually: Wan Edit → Grok
     const generateShot = async (pose: string, idx: number) => {
       if (abortSessionRef.current?.signal.aborted) return
       try {
-        const sessionInstruction = `Create a new photo of this exact person. Pose: ${pose}. Scene: ${sceneContext}. Keep face and body identity identical. ${charStyleInfo.isRealistic ? 'Natural skin with visible pores.' : 'Style-consistent render.'}`
+        const expandedPose = expandedPoses[idx] || pose
+        const sessionInstruction = `image 1 is the hero photo — keep the SAME scene, background, lighting, and outfit. Create a variation with a different pose: ${expandedPose}. The person must look identical. NO text, watermarks, or overlays.`
         const allRefs = identityRefs.length > 0 ? identityRefs : []
         const sesResMap: Record<string, '1K' | '2K'> = { '1k': '1K', '2k': '2K' }
         const results = await editWithWanFal(heroFile, sessionInstruction, allRefs, undefined, { aspectRatio: sessionAspectRatio, resolution: sesResMap[sessionResolution] || '1K' })
