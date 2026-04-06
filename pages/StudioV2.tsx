@@ -3,6 +3,7 @@ import { useCharacterStore } from '../stores/characterStore'
 import { useGalleryStore, type GalleryItem } from '../stores/galleryStore'
 import { usePipelineStore } from '../stores/pipelineStore'
 import { enhancePrompt } from '../services/geminiService'
+import { LumaSpin } from '../components/ui/luma-spin'
 import { generatePhotoSessionWithGrok, generateWithNB2Fal, editWithNB2Fal, generateWithWan27Fal, editWithWan27Fal as editWithWanFal } from '../services/falService'
 import { generateWithSoul } from '../services/higgsfieldService'
 import { generateWithReplicate } from '../services/replicateService'
@@ -756,8 +757,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
         )}
         {generatingHero && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 32, height: 32, border: '3px solid rgba(0,0,0,0.1)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>Generando... {Math.round(heroProgress)}%</span>
+            <LumaSpin label="Generando hero..." />
           </div>
         )}
         {heroImage && (
@@ -789,8 +789,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       )}
       {generatingSession && gridCells.filter(Boolean).length === 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, flex: 1, justifyContent: 'center' }}>
-          <div style={{ width: 32, height: 32, border: '3px solid rgba(0,0,0,0.1)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-          <span style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>Revelando... {Math.round(sessionProgress)}%</span>
+          <LumaSpin label="Revelando fotos..." />
         </div>
       )}
       {gridCells.length > 0 && (
@@ -990,10 +989,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
                 {!generatingSession ? (
                   <button onClick={handleSessionGenerate} style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '14px 32px', borderRadius: 28, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', boxShadow: '0 8px 32px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', gap: 8 }}>📸 Disparar {photoCount} Fotos <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', opacity: 0.7 }}>· {photoCount * CREDIT_COSTS['grok-edit']}cr</span></button>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 32, height: 32, border: '3px solid rgba(0,0,0,0.1)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>Revelando... {Math.round(sessionProgress)}%</span>
-                  </div>
+                  <LumaSpin label="Revelando fotos..." />
                 )}
               </div>
             ) : (
