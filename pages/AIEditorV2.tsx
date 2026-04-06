@@ -5,7 +5,7 @@ import { useCharacterStore } from '../stores/characterStore'
 import { useProfile } from '../contexts/ProfileContext'
 import { useToast } from '../contexts/ToastContext'
 import { faceSwapWithGemini } from '../services/geminiService'
-import { editImageWithFluxKontext, editImageWithSeedream5, editImageWithFlux2Pro, editImageWithGrokFal, editImageWithQwen, editImageWithFireRed, inpaintWithOneReward, editImageWithSeedream5Lite, removeBackground, editWithWan27Fal, editWithNB2Fal } from '../services/falService'
+import { editImageWithFluxKontext, editImageWithSeedream5, editImageWithFlux2Pro, editImageWithGrokFal, editImageWithQwen, editImageWithFireRed, inpaintWithOneReward, editImageWithSeedream5Lite, removeBackground, editWithWan27Fal } from '../services/falService'
 import { editImageWithGPT } from '../services/openaiService'
 import { editWithSoulReference } from '../services/higgsfieldService'
 import { editWithPruna } from '../services/replicateService'
@@ -120,7 +120,9 @@ async function editImageWithAI(
   abortSignal?: AbortSignal,
 ): Promise<string[]> {
   const refs = opts.referenceImage ? [opts.referenceImage] : [];
-  return editWithNB2Fal(opts.baseImage, opts.instruction, refs, onProgress, undefined, abortSignal);
+  // Dynamic import to avoid TDZ error from circular chunk initialization
+  const { editWithNB2Fal: nb2Edit } = await import('../services/falService');
+  return nb2Edit(opts.baseImage, opts.instruction, refs, onProgress, undefined, abortSignal);
 }
 
 const routeEdit = async (
