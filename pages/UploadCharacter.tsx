@@ -234,6 +234,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     setSheetResults({ face: null, body: null, expressions: null, faceUltra: null, expressionsUltra: null })
     setCharacterSaved(false)
     setSheetGenerating(null)
+    setLockedExpansion(null) // clear enhancer cache so next generation gets fresh expansion
   }
 
   const resetAll = () => {
