@@ -1487,11 +1487,11 @@ export const generateWithWan27Fal = async (
   const result = await fal.subscribe(model, {
     input: {
       prompt,
-      negative_prompt: negativePrompt,
+      negative_prompt: negativePrompt || 'average body, normal proportions, flat chest, boyish figure',
       image_size: toFalImageSize(params.aspectRatio),
       enable_safety_checker: false,
       enable_output_safety_checker: false,
-      guidance_scale: 3.5,
+      guidance_scale: 6,
       num_inference_steps: 40,
       image_format: 'jpeg',
       ...(params.seed !== undefined && { seed: params.seed }),
