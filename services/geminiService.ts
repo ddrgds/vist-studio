@@ -540,7 +540,7 @@ export const generateInfluencerImage = async (
     costume: {
       source: (ch.outfitImages?.length ?? 0) > 0
         ? `[CHARACTER ${i + 1} — OUTFIT REFERENCE] — reproduce every detail exactly`
-        : (ch.outfitDescription || charSpec?.outfit || "stylish editorial outfit"),
+        : (ch.outfitDescription || charSpec?.outfit || "form-fitting tank top and leggings that show body shape and proportions"),
       rule: "Replace any clothing visible in FACE reference entirely",
     },
     pose: ch.pose || "natural confident editorial stance",

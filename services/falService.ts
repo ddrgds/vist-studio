@@ -1401,7 +1401,7 @@ export const generateWithFlux2ProFal = async (
 
 // ─────────────────────────────────────────────
 /** Default outfit when user doesn't select one — prevents models from generating nude */
-const DEFAULT_OUTFIT = 'casual everyday clothing, simple fitted top and jeans';
+const DEFAULT_OUTFIT = 'form-fitting tank top and leggings that show body shape and proportions';
 
 /**
  * Clean character description for fal.ai models (Wan, Grok, Turbo).
