@@ -8,6 +8,18 @@ export interface ChipOption {
   color?: string   // hex — renders as color swatch instead of emoji
   /** If set, promptText is replaced by a random pick from this pool at generation time */
   variants?: string[]
+  /** Atomic fields for ethnicity presets — can be overridden by individual chips */
+  defaults?: {
+    skinTone?: string
+    eyeColor?: string
+    eyeShape?: string
+    hairColor?: string
+    hairStyle?: string
+    noseType?: string
+    lipShape?: string
+    faceShape?: string
+    jawline?: string
+  }
 }
 
 export interface ChipCategory {
@@ -18,24 +30,57 @@ export interface ChipCategory {
 }
 
 // ─── Ethnicity / Origin ──────────────────────────────────────────────
-// Technical anatomical descriptions — avoid ethnic labels that trigger model centroids
+// Ethnicities as OVERRIDEABLE PRESETS — bone structure in promptText, soft traits in defaults.
+// If user selects individual chips (skin, eyes, etc.), those override the ethnicity defaults.
 export const ETHNICITIES: ChipOption[] = [
-  { id: 'latina',        label: 'Latina',           emoji: '🌺', promptText: 'warm golden-brown skin with yellow undertones, dark wide-set expressive eyes, full rounded lips, prominent high cheekbones, thick dark wavy hair' },
-  { id: 'mediterranean', label: 'Mediterránea',     emoji: '🫒', promptText: 'warm olive skin with golden undertones, deep-set dark almond eyes, aquiline nose with defined bridge, dark thick wavy hair' },
-  { id: 'east-asian',    label: 'Asiática (Este)',  emoji: '🌸', promptText: 'smooth porcelain-toned skin, monolid or subtle fold almond eyes, small nose with low bridge, straight fine black hair, flat midface, soft rounded jawline' },
-  { id: 'south-asian',   label: 'Asiática (Sur)',   emoji: '🪷', promptText: 'warm caramel-brown skin, large deep-set eyes with thick lashes, arched dark eyebrows, aquiline nose, high angular cheekbones, thick dark hair' },
-  { id: 'mena',          label: 'Árabe / MENA',     emoji: '🌙', promptText: 'warm olive-amber skin, deep hooded almond eyes, strong aquiline nose with high bridge, heavy dark arched eyebrows, defined jawline' },
-  { id: 'west-african',  label: 'Africana',         emoji: '✨', promptText: 'deep rich dark brown skin with warm undertones, wide-set almond eyes, broad rounded nose, full prominent lips, high sculpted cheekbones' },
-  { id: 'east-african',  label: 'África del Este',  emoji: '🦁', promptText: 'deep brown skin with cool undertones, elongated narrow face, extremely high angular cheekbones, narrow nose with high bridge, almond eyes, long neck' },
-  { id: 'north-european',label: 'Nórdica',          emoji: '❄️', promptText: 'very fair cool-toned porcelain skin, light blue or gray deep-set eyes, narrow straight nose, thin lips, light blonde or auburn hair, angular bone structure' },
-  { id: 'east-european', label: 'Eslava',           emoji: '🌻', promptText: 'fair neutral-toned skin, wide-set cheekbones creating broad midface, light-colored round eyes, strong square jawline, straight medium-brown hair' },
-  { id: 'indian',        label: 'India',            emoji: '🪔', promptText: 'warm caramel skin with golden undertones, large expressive round eyes, thick dark arched eyebrows, straight defined nose, high cheekbones, thick dark hair' },
-  { id: 'indigenous',    label: 'Indígena',         emoji: '🌿', promptText: 'warm copper-brown skin, deep-set dark eyes, high prominent cheekbones, broad nose with rounded tip, straight coarse black hair' },
-  { id: 'brazilian',     label: 'Brasileña',        emoji: '🌴', promptText: 'warm golden-brown skin, green or amber eyes with limbal ring, wide nose with soft tip, full lips, curly-wavy dark brown hair, mixed angular and soft features' },
-  { id: 'caribbean',     label: 'Caribeña',         emoji: '🐚', promptText: 'warm brown skin with red undertones, wide-set expressive eyes, full prominent lips, broad nose, natural coily textured hair, rounded face shape' },
-  { id: 'japanese',      label: 'Japonesa',         emoji: '🗻', promptText: 'smooth very fair skin, narrow almond eyes with subtle fold, small low-bridge nose, thin delicate lips, straight fine black hair, oval refined face shape' },
-  { id: 'korean',        label: 'Coreana',          emoji: '🌟', promptText: 'fair smooth luminous skin, double eyelid or monolid with aegyo sal, small pointed chin, v-shaped jawline, straight fine hair, flat midface' },
-  { id: 'mixed',         label: 'Mixta',            emoji: '🌈', promptText: 'ambiguous ethnic features, unique asymmetric blend, warm medium skin tone, heterochromatic or unusual eye color, mixed hair texture' },
+  { id: 'latina',        label: 'Latina',           emoji: '🌺',
+    promptText: 'prominent high cheekbones, rounded jaw with soft angle, wide-set eye sockets',
+    defaults: { skinTone: 'warm golden-brown skin with yellow undertones', eyeColor: 'dark brown expressive eyes', hairColor: 'dark brown hair', hairStyle: 'thick wavy hair', lipShape: 'full rounded lips', noseType: 'medium nose with rounded tip' }},
+  { id: 'mediterranean', label: 'Mediterránea',     emoji: '🫒',
+    promptText: 'angular bone structure, defined brow ridge, strong nose bridge',
+    defaults: { skinTone: 'warm olive skin with golden undertones', eyeColor: 'deep dark brown eyes', hairColor: 'dark brown or black hair', hairStyle: 'thick wavy hair', noseType: 'aquiline nose with defined bridge' }},
+  { id: 'east-asian',    label: 'Asiática (Este)',  emoji: '🌸',
+    promptText: 'flat midface, soft rounded jawline, low nasal bridge, minimal brow ridge',
+    defaults: { skinTone: 'smooth porcelain-toned skin', eyeColor: 'dark brown eyes', eyeShape: 'monolid or subtle fold almond eyes', hairColor: 'black hair', hairStyle: 'straight fine hair', noseType: 'small nose with low bridge', lipShape: 'thin delicate lips' }},
+  { id: 'south-asian',   label: 'Asiática (Sur)',   emoji: '🪷',
+    promptText: 'high angular cheekbones, strong brow ridge, deep-set eye sockets',
+    defaults: { skinTone: 'warm caramel-brown skin', eyeColor: 'large dark brown eyes', hairColor: 'thick dark hair', noseType: 'straight defined nose with medium bridge' }},
+  { id: 'mena',          label: 'Árabe / MENA',     emoji: '🌙',
+    promptText: 'strong defined jawline, prominent brow ridge, high nose bridge',
+    defaults: { skinTone: 'warm olive-amber skin', eyeColor: 'deep dark hooded eyes', eyeShape: 'deep-set almond eyes', hairColor: 'dark black hair', noseType: 'strong aquiline nose with high bridge' }},
+  { id: 'west-african',  label: 'Africana',         emoji: '✨',
+    promptText: 'high sculpted cheekbones, wide nasal base, strong mandible',
+    defaults: { skinTone: 'deep rich dark brown skin with warm undertones', eyeColor: 'dark brown wide-set eyes', hairColor: 'black hair', hairStyle: 'natural coily textured hair', lipShape: 'full prominent lips', noseType: 'broad rounded nose' }},
+  { id: 'east-african',  label: 'África del Este',  emoji: '🦁',
+    promptText: 'elongated narrow face, extremely high angular cheekbones, narrow mandible, long neck',
+    defaults: { skinTone: 'deep brown skin with cool undertones', eyeColor: 'dark almond eyes', hairColor: 'black hair', noseType: 'narrow nose with high bridge' }},
+  { id: 'north-european',label: 'Nórdica',          emoji: '❄️',
+    promptText: 'angular bone structure, narrow face, defined brow ridge, strong chin',
+    defaults: { skinTone: 'very fair cool-toned porcelain skin', eyeColor: 'light blue or gray eyes', hairColor: 'light blonde or auburn hair', lipShape: 'thin lips', noseType: 'narrow straight nose' }},
+  { id: 'east-european', label: 'Eslava',           emoji: '🌻',
+    promptText: 'wide-set cheekbones creating broad midface, strong square jawline',
+    defaults: { skinTone: 'fair neutral-toned skin', eyeColor: 'light-colored round eyes', hairColor: 'medium-brown hair', hairStyle: 'straight hair' }},
+  { id: 'indian',        label: 'India',            emoji: '🪔',
+    promptText: 'high cheekbones, defined brow ridge, symmetrical proportions',
+    defaults: { skinTone: 'warm caramel skin with golden undertones', eyeColor: 'large expressive dark brown eyes', hairColor: 'thick dark black hair', noseType: 'straight defined nose' }},
+  { id: 'indigenous',    label: 'Indígena',         emoji: '🌿',
+    promptText: 'high prominent cheekbones, broad facial structure, strong brow',
+    defaults: { skinTone: 'warm copper-brown skin', eyeColor: 'deep-set dark brown eyes', hairColor: 'straight coarse black hair', noseType: 'broad nose with rounded tip' }},
+  { id: 'brazilian',     label: 'Brasileña',        emoji: '🌴',
+    promptText: 'mixed angular and soft features, balanced proportions',
+    defaults: { skinTone: 'warm golden-brown skin', eyeColor: 'green or amber eyes with limbal ring', hairColor: 'dark brown hair', hairStyle: 'curly-wavy hair', lipShape: 'full lips', noseType: 'wide nose with soft tip' }},
+  { id: 'caribbean',     label: 'Caribeña',         emoji: '🐚',
+    promptText: 'rounded face shape, wide-set eye sockets, strong mandible',
+    defaults: { skinTone: 'warm brown skin with red undertones', eyeColor: 'wide-set dark expressive eyes', hairColor: 'dark hair', hairStyle: 'natural coily textured hair', lipShape: 'full prominent lips', noseType: 'broad nose' }},
+  { id: 'japanese',      label: 'Japonesa',         emoji: '🗻',
+    promptText: 'oval refined face shape, flat midface, delicate bone structure, small chin',
+    defaults: { skinTone: 'smooth very fair skin', eyeColor: 'dark brown eyes', eyeShape: 'narrow almond eyes with subtle fold', hairColor: 'black hair', hairStyle: 'straight fine hair', noseType: 'small low-bridge nose', lipShape: 'thin delicate lips' }},
+  { id: 'korean',        label: 'Coreana',          emoji: '🌟',
+    promptText: 'v-shaped jawline, small pointed chin, flat midface',
+    defaults: { skinTone: 'fair smooth luminous skin', eyeColor: 'dark brown eyes', eyeShape: 'double eyelid or monolid with aegyo sal', hairColor: 'dark hair', hairStyle: 'straight fine hair' }},
+  { id: 'mixed',         label: 'Mixta',            emoji: '🌈',
+    promptText: 'unique asymmetric blend of features, ambiguous bone structure',
+    defaults: { skinTone: 'warm medium skin tone', eyeColor: 'unusual or heterochromatic eye color', hairStyle: 'mixed wavy hair texture' }},
 ]
 
 // ─── Hair Styles ─────────────────────────────────────────────────────
@@ -681,18 +726,25 @@ export function buildPromptFromChips(selections: Record<string, string[]>): stri
   // Identity
   const gender = getSelected(selections, 'gender')
   const age = getSelected(selections, 'age')
-  const ethnicity = getSelected(selections, 'ethnicity')
   if (gender) identity.gender = gender
   if (age) identity.age = age
-  if (ethnicity) identity.ethnicity = ethnicity
 
-  // Face
-  const faceShape = getSelected(selections, 'faceShape')
-  const eyeColor = getSelected(selections, 'eyeColor')
-  const eyeShape = getSelected(selections, 'eyeShape')
-  const noseType = getSelected(selections, 'noseType')
-  const lipShape = getSelected(selections, 'lipShape')
-  const jawline = getSelected(selections, 'jawline')
+  // Ethnicity as overrideable preset — bone structure always used,
+  // soft traits (skin, eyes, hair, etc.) used ONLY if user didn't pick individual chips
+  const ethnicityIds = selections['ethnicity'] || []
+  const ethnicityChip = ethnicityIds.length > 0 ? ETHNICITIES.find(e => e.id === ethnicityIds[0]) : null
+  const ethnicityDefaults = ethnicityChip?.defaults || {}
+
+  // Bone structure from ethnicity (always applied, never overridden)
+  if (ethnicityChip) identity.bone_structure = ethnicityChip.promptText
+
+  // Face — user chips override ethnicity defaults
+  const faceShape = getSelected(selections, 'faceShape') || ethnicityDefaults.faceShape
+  const eyeColor = getSelected(selections, 'eyeColor') || ethnicityDefaults.eyeColor
+  const eyeShape = getSelected(selections, 'eyeShape') || ethnicityDefaults.eyeShape
+  const noseType = getSelected(selections, 'noseType') || ethnicityDefaults.noseType
+  const lipShape = getSelected(selections, 'lipShape') || ethnicityDefaults.lipShape
+  const jawline = getSelected(selections, 'jawline') || ethnicityDefaults.jawline
   const eyebrows = getSelected(selections, 'eyebrows')
   const facialHair = getSelected(selections, 'facialHair')
   if (faceShape) face.shape = faceShape
@@ -720,10 +772,10 @@ export function buildPromptFromChips(selections: Record<string, string[]>): stri
   if (musculature) body.musculature = musculature
   if (legs) body.legs = legs
 
-  // Appearance
-  const hairStyle = getSelected(selections, 'hairStyle')
-  const hairColor = getSelected(selections, 'hairColor')
-  const skinTone = getSelected(selections, 'skinTone')
+  // Appearance — user chips override ethnicity defaults
+  const hairStyle = getSelected(selections, 'hairStyle') || ethnicityDefaults.hairStyle
+  const hairColor = getSelected(selections, 'hairColor') || ethnicityDefaults.hairColor
+  const skinTone = getSelected(selections, 'skinTone') || ethnicityDefaults.skinTone
   const skinTexture = getSelected(selections, 'skinTexture')
   if (hairStyle) appearance.hair_style = hairStyle
   if (hairColor) appearance.hair_color = hairColor
