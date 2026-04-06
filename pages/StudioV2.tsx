@@ -397,31 +397,30 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
             const allRefFiles = [...identityFiles]
             let imgIdx = 2 + identityFiles.length // next image index after portrait + identity refs
 
-            // Build instruction with labeled image references
-            const refLabels = ['image 1 is the main portrait photo of this person — use for face and body identity']
-            if (identityFiles.length >= 1) refLabels.push('image 2 is face angles reference sheet — use for face identity')
-            if (identityFiles.length >= 2) refLabels.push('image 3 is body angles reference sheet — use for body proportions')
-            if (identityFiles.length >= 3) refLabels.push('image 4 is expressions reference sheet — use for facial features')
+            // Build simple direct instruction — Wan responds best to clear, concise directions
+            // like "person from image 1 wearing clothes from image 2 in scene from image 3"
+            const arLabel = selectedAspectRatio === AspectRatio.Square ? 'square 1:1 format' : selectedAspectRatio === AspectRatio.Portrait ? 'vertical 3:4 format' : selectedAspectRatio === AspectRatio.Landscape ? 'horizontal 4:3 format' : selectedAspectRatio === AspectRatio.Wide ? 'wide 16:9 format' : 'tall 9:16 vertical format'
 
-            // Outfit reference image
+            // Outfit and scene refs
+            if (outfitRef) { allRefFiles.push(outfitRef.file) }
+            if (scenarioRef) { allRefFiles.push(scenarioRef.file) }
+
+            // Simple numbered instruction
+            const parts: string[] = [`Generate a new ${arLabel} photo of the person from image 1`]
             if (outfitRef) {
-              allRefFiles.push(outfitRef.file)
-              refLabels.push(`image ${imgIdx} is the OUTFIT REFERENCE — dress the person in EXACTLY this clothing, copy every detail`)
-              imgIdx++
+              parts.push(`wearing the exact outfit from image ${2 + identityFiles.length}`)
+            } else if (params.characters[0]?.outfitDescription) {
+              parts.push(`wearing ${params.characters[0].outfitDescription}`)
             }
-
-            // Scenario reference image
             if (scenarioRef) {
-              allRefFiles.push(scenarioRef.file)
-              refLabels.push(`image ${imgIdx} is the SCENE/BACKGROUND REFERENCE — place the person in this exact environment`)
-              imgIdx++
+              parts.push(`in the scene from image ${2 + identityFiles.length + (outfitRef ? 1 : 0)}`)
+            } else if (params.scenario) {
+              parts.push(`in ${params.scenario}`)
             }
+            if (params.characters[0]?.pose) parts.push(params.characters[0].pose)
+            parts.push('Same face, same body. NO text or watermarks')
 
-            const outfitText = outfitRef ? 'Dress the person in the exact outfit from the outfit reference image.' : (params.characters[0]?.outfitDescription ? `Wearing: ${params.characters[0].outfitDescription}` : '')
-            const sceneText = scenarioRef ? 'Place the person in the exact scene from the scene reference image.' : `Scene: ${params.scenario || 'professional photo'}`
-            const arLabel = selectedAspectRatio === AspectRatio.Square ? 'square 1:1' : selectedAspectRatio === AspectRatio.Portrait ? 'vertical portrait 3:4' : selectedAspectRatio === AspectRatio.Landscape ? 'horizontal landscape 4:3' : selectedAspectRatio === AspectRatio.Wide ? 'wide banner 16:9' : 'tall story 9:16'
-
-            const heroInstruction = `${refLabels.join('. ')}. Transform the person from image 1 into a completely new photo in ${arLabel} format. ${sceneText}. ${params.characters[0]?.pose || ''}. The person must look IDENTICAL to the identity references — same face, same body shape, same proportions. ${outfitText}. NO text, watermarks, or overlays in the image.`
+            const heroInstruction = parts.join('. ') + '.'
             const resMap: Record<string, '1K' | '2K'> = { '1k': '1K', '2k': '2K' }
             results = await editWithWanFal(refFile, heroInstruction, allRefFiles, p => setHeroProgress(p), { aspectRatio: selectedAspectRatio, resolution: resMap[selectedResolution] || '1K' }, abortHeroRef.current.signal)
             if (!results || results.length === 0) throw new Error('Wan Edit returned empty')
