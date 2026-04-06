@@ -431,8 +431,21 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
 
             const heroInstruction = instrParts.join(', ') + '.'
             const resMap: Record<string, '1K' | '2K'> = { '1k': '1K', '2k': '2K' }
-            results = await editWithWanFal(refFile, heroInstruction, allRefFiles, p => setHeroProgress(p), { aspectRatio: selectedAspectRatio, resolution: resMap[selectedResolution] || '1K' }, abortHeroRef.current.signal)
+            // Generate at 1K with Wan, then upscale if 2K selected
+            results = await editWithWanFal(refFile, heroInstruction, allRefFiles, p => setHeroProgress(p * 0.7), { aspectRatio: selectedAspectRatio, resolution: '1K' }, abortHeroRef.current.signal)
             if (!results || results.length === 0) throw new Error('Wan Edit returned empty')
+
+            // Auto-upscale to 2K if requested
+            if (selectedResolution === '2k' && results[0]) {
+              try {
+                setHeroProgress(75)
+                const { upscaleWithAuraSR } = await import('../services/falService')
+                const upscaled = await upscaleWithAuraSR(results[0], p => setHeroProgress(75 + p * 0.25))
+                if (upscaled) results = [upscaled]
+              } catch (upErr) {
+                console.warn('Upscale failed, using 1K:', upErr)
+              }
+            }
           } catch (wanErr) {
             console.warn('Wan Edit hero failed, trying Grok:', wanErr)
             const { generateWithGrokFal } = await import('../services/falService')
