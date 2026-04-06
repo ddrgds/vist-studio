@@ -4,14 +4,15 @@ import { useGalleryStore } from '../stores/galleryStore'
 import { useCharacterStore } from '../stores/characterStore'
 import { useProfile } from '../contexts/ProfileContext'
 import { useToast } from '../contexts/ToastContext'
-import { editImageWithGPT } from '../services/openaiService'
+// All service imports are dynamic to avoid TDZ circular chunk errors
 
 // Cached lazy loader for falService — all falService calls go through this
 let _cachedFal: typeof import('../services/falService') | null = null;
 const loadFal = async () => _cachedFal || (_cachedFal = await import('../services/falService'));
 import { ENGINE_METADATA, FEATURE_ENGINES, AIProvider, AspectRatio, CREDIT_COSTS } from '../types'
 import type { SheetType } from '../services/toolEngines'
-import { SOUL_STYLES, SOUL_STYLE_CATEGORIES, type SoulStyleCategory } from '../data/soulStyles'
+import { SOUL_STYLES, SOUL_STYLE_CATEGORIES } from '../data/soulStyles'
+import type { SoulStyleCategory } from '../data/soulStyles'
 import { useNavigationStore } from '../stores/navigationStore'
 import { usePipelineStore } from '../stores/pipelineStore'
 import { PipelineCTA } from '../components/PipelineCTA'
@@ -170,6 +171,7 @@ const routeEdit = async (
     return editWithPruna(file, instruction, onProgress, abortSignal, referenceImage ?? null).then(r => [r])
   }
   if (eng?.provider === AIProvider.OpenAI) {
+    const { editImageWithGPT } = await import('../services/openaiService');
     return editImageWithGPT(file, instruction, onProgress, undefined, abortSignal)
   }
   return editImageWithAI(
@@ -502,6 +504,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
       } else if (activeTool === 'faceswap' && faceSwapFile) {
         const faceInstruction = `Replace the face of the person in the base image with the face from the reference image. Keep hair, body, pose, clothing, and background exactly the same. Only change facial features.`
         try {
+          const { faceSwapWithGemini } = await import('../services/geminiService');
           const dataUrl = await faceSwapWithGemini(inputFile!, faceSwapFile, (p) => setProgress(p))
           if (!dataUrl) throw new Error('NB2 face swap returned empty')
           resultUrls = [dataUrl]
