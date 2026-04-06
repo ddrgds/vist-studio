@@ -21,6 +21,7 @@ import {
 } from '../data/characterChips'
 import { SOUL_STYLES, SOUL_STYLES_CURATED, SOUL_STYLE_CATEGORIES, type SoulStyleCategory } from '../data/soulStyles'
 import { generateCharacterSheet, enhanceSheetWithGrok, type SheetType } from '../services/toolEngines'
+import { LumaSpin } from '../components/ui/luma-spin'
 
 // ─── Character creation engine presets (Soul 2.0 prominent) ──────────
 const CHARACTER_ENGINES = [
@@ -1469,7 +1470,12 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                   background: '#F9FAFB',
                   border: '1px solid rgba(0,0,0,0.06)',
                 }}>
-                {selectedVariant !== null && variants[selectedVariant] ? (
+                {generating ? (
+                  /* Generating — show spinner */
+                  <div className="absolute inset-0 flex items-center justify-center" style={{ background: '#F9FAFB' }}>
+                    <LumaSpin label="Creando personaje..." />
+                  </div>
+                ) : selectedVariant !== null && variants[selectedVariant] ? (
                   /* Show selected variant */
                   <img src={variants[selectedVariant]} className="w-full h-full object-cover" alt={name} />
                 ) : variants.length > 0 ? (

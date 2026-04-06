@@ -17,6 +17,7 @@ import { useNavigationStore } from '../stores/navigationStore'
 import { usePipelineStore } from '../stores/pipelineStore'
 import { PipelineCTA } from '../components/PipelineCTA'
 import { ImageComparison } from '../components/ui/image-comparison-slider'
+import { LumaSpin } from '../components/ui/luma-spin'
 // Dazz engine deferred to post-MVP — using AI prompts for now
 
 // Lazy load modals (they're heavy)
@@ -1468,11 +1469,17 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                     </div>
                   </>
                 ) : (
-                  /* No result yet — show only input image large */
+                  /* No result yet — show input image with optional processing overlay */
                   <div className="w-full lg:max-w-[min(520px,_42vw)] rounded-xl lg:rounded-2xl overflow-hidden cursor-pointer relative"
-                    onClick={() => setEditorLightbox(inputImage)}
+                    onClick={() => !processing && setEditorLightbox(inputImage)}
                     style={{ ...cardStyle }}>
-                    <img src={inputImage} className="w-full object-contain select-none" draggable={false} alt="Input" />
+                    <img src={inputImage} className="w-full object-contain select-none" draggable={false} alt="Input"
+                      style={{ opacity: processing ? 0.4 : 1, transition: 'opacity 0.3s' }} />
+                    {processing && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <LumaSpin label={activeTool === 'reimagine' ? 'Reimaginando...' : activeTool === 'tryon' ? 'Probando outfit...' : activeTool === 'faceswap' ? 'Cambiando rostro...' : activeTool === 'relight' ? 'Reiluminando...' : activeTool === 'rembg' ? 'Quitando fondo...' : 'Procesando...'} />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1648,7 +1655,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
             <button onClick={handleApply} disabled={processing || !inputImage}
               className="w-full py-2.5 rounded-xl text-[12px] font-semibold transition-all"
               style={{ background: (!inputImage || processing) ? '#CCC' : '#1A1A1A', color: '#FFF', opacity: (!inputImage || processing) ? 0.6 : 1 }}>
-              {processing ? `Procesando... ${Math.round(progress)}%` : `${currentTool.icon} Aplicar ${currentTool.label} (${displayCost}cr)`}
+              {processing ? (activeTool === 'reimagine' ? 'Reimaginando...' : activeTool === 'tryon' ? 'Probando outfit...' : `Aplicando ${currentTool.label}...`) : `${currentTool.icon} Aplicar ${currentTool.label} (${displayCost}cr)`}
             </button>
           </div>
         </div>
@@ -1718,7 +1725,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
               <button onClick={() => { handleApply(); setSheetExpanded(false) }} disabled={processing || !inputImage}
                 className="w-full py-3 rounded-2xl text-[13px] font-semibold transition-all"
                 style={{ background: (!inputImage || processing) ? '#CCC' : '#1A1A1A', color: '#FFF', opacity: (!inputImage || processing) ? 0.6 : 1 }}>
-                {processing ? `Procesando... ${Math.round(progress)}%` : `${currentTool.icon} Aplicar ${currentTool.label} (${displayCost}cr)`}
+                {processing ? (activeTool === 'reimagine' ? 'Reimaginando...' : activeTool === 'tryon' ? 'Probando outfit...' : `Aplicando ${currentTool.label}...`) : `${currentTool.icon} Aplicar ${currentTool.label} (${displayCost}cr)`}
               </button>
             </div>
           </>
