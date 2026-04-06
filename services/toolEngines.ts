@@ -489,18 +489,18 @@ export async function generateCharacterSheet(
     prompt = `${prompt}\n\nCRITICAL — The subject's body MUST match these EXACT physical characteristics (do NOT deviate): ${physicalTraits}. These proportions are non-negotiable and must be clearly visible in every angle.`;
   }
 
-  // Body sheets use Grok (no content filters → preserves body proportions accurately)
-  // Face and expression sheets use NB2 (better at facial consistency)
+  // Body sheets use Wan Edit (realistic, preserves identity from image, no content filters)
+  // Face and expression sheets use NB2 (better at facial consistency grids)
   if (sheetType === 'body') {
     try {
-      const { editImageWithGrokFal } = await import('./falService');
+      const { editWithWan27Fal } = await import('./falService');
       const response = await fetch(approvedImageUrl);
       const blob = await response.blob();
       const file = new File([blob], 'input.jpeg', { type: blob.type });
-      const results = await editImageWithGrokFal(file, prompt);
+      const results = await editWithWan27Fal(file, prompt, [], undefined, { pro: false });
       if (results.length > 0 && results[0]) return results[0];
     } catch (err) {
-      console.warn('Grok body sheet failed, falling back to NB2:', err);
+      console.warn('Wan Edit body sheet failed, falling back to NB2:', err);
     }
   }
 
