@@ -24,7 +24,7 @@ import { generateCharacterSheet, enhanceSheetWithGrok, type SheetType } from '..
 
 // ─── Character creation engine presets (Soul 2.0 prominent) ──────────
 const CHARACTER_ENGINES = [
-  { id: 'gemini:nb2', label: 'Nano Banana 2', desc: 'Rápido, buena consistencia', badge: 'Recomendado' },
+  { id: 'fal:nb2', label: 'Nano Banana 2', desc: 'JSON structurado, safety 6', badge: 'Recomendado' },
   { id: 'fal:turbo', label: 'Turbo', desc: '~0.3s, orgánico, natural', badge: 'Rápido' },
   { id: 'fal:grok-gen', label: 'Grok Imagine', desc: 'Estético, bold, sin filtros', badge: 'Popular' },
   { id: 'fal:wan27-gen', label: 'Wan 2.7', desc: 'Realista, más barato', badge: 'Valor' },
@@ -329,17 +329,15 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
   const routeGeneration = async (params: InfluencerParams): Promise<string[]> => {
     if (!engineMeta || selectedEngine === 'auto') {
-      // NB2 → FLUX.2 Pro (JSON, fal.ai) → Grok (fal.ai) fallback chain
+      // NB2 fal.ai (safety 6) → Wan t2i → Grok fallback chain — all fal.ai
       try {
-        const nb2Results = await generateInfluencerImage(params, () => {})
-        if (nb2Results.length > 0) return nb2Results
-        throw new Error('NB2 returned empty')
+        return await generateWithFal(params, FalModel.NanoBanana2)
       } catch (nb2Err) {
-        console.warn('NB2 creator failed, trying FLUX.2 Pro (fal):', nb2Err)
+        console.warn('NB2 fal creator failed, trying Wan:', nb2Err)
         try {
-          return await generateWithFal(params, FalModel.Flux2ProGen)
-        } catch (fluxErr) {
-          console.warn('FLUX.2 Pro creator failed, trying Grok (fal):', fluxErr)
+          return await generateWithFal(params, FalModel.Wan27Gen)
+        } catch (wanErr) {
+          console.warn('Wan creator failed, trying Grok:', wanErr)
           return generateWithFal(params, FalModel.GrokImagineGen)
         }
       }

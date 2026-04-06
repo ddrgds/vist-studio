@@ -1455,6 +1455,61 @@ function cleanDescriptionForFal(characteristics: string): string {
 }
 
 // ─────────────────────────────────────────────
+// Nano Banana 2 via fal.ai — text-to-image, safety_tolerance 6
+// ─────────────────────────────────────────────
+
+export const generateWithNB2Fal = async (
+  params: InfluencerParams,
+  onProgress?: (percent: number) => void,
+  abortSignal?: AbortSignal,
+): Promise<string[]> => {
+  if (abortSignal?.aborted) throw new Error('Cancelado');
+  const character = params.characters[0];
+  if (onProgress) onProgress(10);
+
+  // NB2 understands the full CHARACTER SPECIFICATION JSON natively
+  // Pass characteristics as-is (includes JSON spec + flat description)
+  const parts: string[] = [];
+  if (params.imageBoost) parts.push(params.imageBoost);
+  else parts.push('Ultra-photorealistic fashion editorial photograph, Sony A7R V camera, 85mm f/1.4, shallow DOF, Vogue quality');
+  if (character?.characteristics) parts.push(character.characteristics);
+  if (character?.outfitDescription) parts.push(`Wearing ${character.outfitDescription}`);
+  else parts.push(`Wearing ${DEFAULT_OUTFIT}`);
+  if (character?.pose) parts.push(character.pose);
+  if (character?.accessory) parts.push(`With ${character.accessory}`);
+  if (params.scenario) parts.push(params.scenario);
+  if (params.lighting) parts.push(params.lighting);
+  const prompt = parts.filter(Boolean).join('. ').trim() + '.';
+
+  if (onProgress) onProgress(20);
+
+  const result = await fal.subscribe(FalModel.NanoBanana2, {
+    input: {
+      prompt,
+      num_images: params.numberOfImages || 1,
+      resolution: '1K',
+      aspect_ratio: params.aspectRatio === AspectRatio.Portrait ? '3:4' :
+                    params.aspectRatio === AspectRatio.Landscape ? '4:3' :
+                    params.aspectRatio === AspectRatio.Wide ? '16:9' :
+                    params.aspectRatio === AspectRatio.Tall ? '9:16' : '1:1',
+      safety_tolerance: '6',
+      output_format: 'jpeg',
+      ...(params.seed !== undefined && { seed: params.seed }),
+    },
+    onQueueUpdate: (update: any) => {
+      if (update.status === 'IN_PROGRESS' && onProgress) onProgress(Math.min(88, 25 + Math.random() * 60));
+    },
+  }) as any;
+
+  const r = unwrap(result);
+  const images = r?.images || [];
+  const urls = images.map((img: any) => img?.url).filter((u: string) => typeof u === 'string' && u.startsWith('http'));
+  if (urls.length === 0) throw new Error('NB2 (fal) did not return any images.');
+  if (onProgress) onProgress(100);
+  return urls;
+};
+
+// ─────────────────────────────────────────────
 // Nano Banana 2 Edit via fal.ai — safety_tolerance 6, up to 14 refs
 // Replaces direct Gemini API calls with more permissive fal.ai endpoint
 // ─────────────────────────────────────────────
@@ -1706,6 +1761,8 @@ export const generateWithFal = async (
       return generateWithKontextPro(params, onProgress, abortSignal);
     case FalModel.ZImageTurbo:
       return generateWithZImageTurbo(params, onProgress, abortSignal);
+    case FalModel.NanoBanana2:
+      return generateWithNB2Fal(params, onProgress, abortSignal);
     default:
       return generateWithKontextMulti(params, FalModel.KontextMulti, onProgress);
   }

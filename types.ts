@@ -289,6 +289,7 @@ export enum FalModel {
   KontextMaxMulti = 'fal-ai/flux-pro/kontext/max/multi',  // FLUX.1 Kontext Max — maximum quality · 2026
   Flux2Pro = 'fal-ai/flux-2-pro/edit',                    // FLUX.2 Pro Edit — multi-ref image editor
   Flux2ProGen = 'fal-ai/flux-2-pro',                      // FLUX.2 Pro — text-to-image, JSON prompts, safety_tolerance
+  NanoBanana2 = 'fal-ai/nano-banana-2',                      // NB2 t2i via fal.ai — safety_tolerance 6, thinking mode
   NanoBanana2Edit = 'fal-ai/nano-banana-2/edit',             // NB2 Edit via fal.ai — safety_tolerance 6, 14 refs
   Wan27Gen = 'fal-ai/wan/v2.7/text-to-image',               // Wan 2.7 — text-to-image, cheaper
   Wan27ProGen = 'fal-ai/wan/v2.7/pro/text-to-image',       // Wan 2.7 Pro — text-to-image via fal.ai
@@ -479,6 +480,7 @@ export const CREDIT_COSTS: Record<string, number> = {
   [FalModel.KontextMaxMulti]:  15,
   [FalModel.Flux2Pro]:         12,   // FAL variant (edit endpoint)
   [FalModel.Flux2ProGen]:      10,
+  [FalModel.NanoBanana2]:      12,
   [FalModel.NanoBanana2Edit]:  12,
   [FalModel.Wan27Gen]:         6,
   [FalModel.Wan27ProGen]:      12,
@@ -748,6 +750,18 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     creditCost: CREDIT_COSTS[FalModel.Flux2ProGen],
     provider: AIProvider.Fal,
     falModel: FalModel.Flux2ProGen,
+  },
+  {
+    key: 'fal:nb2',
+    userFriendlyName: 'Nano Banana 2',
+    description: 'NB2 via fal.ai, safety_tolerance 6',
+    bestFor: 'Structured prompts, follows instructions, permissive',
+    tags: ['quality', 'structured'],
+    requiresFaceRef: false,
+    estimatedTime: '~8s',
+    creditCost: CREDIT_COSTS[FalModel.NanoBanana2],
+    provider: AIProvider.Fal,
+    falModel: FalModel.NanoBanana2,
   },
   {
     key: 'fal:turbo',
