@@ -115,14 +115,22 @@ async function urlToFile(url: string, filename = 'character.png'): Promise<File>
   return new File([blob], filename, { type: blob.type || 'image/png' })
 }
 
-/** All edit functions loaded lazily to avoid TDZ errors from circular chunks */
+/** Default edit function — Wan Edit first (realistic, no safety filters) */
 async function editImageWithAI(
   opts: { baseImage: File; referenceImage?: File | null; instruction: string; imageSize?: string; aspectRatio?: string; model?: string },
   onProgress?: (p: number) => void,
   abortSignal?: AbortSignal,
 ): Promise<string[]> {
+  const fal = await loadFal();
   const refs = opts.referenceImage ? [opts.referenceImage] : [];
-  return (await loadFal()).editWithNB2Fal(opts.baseImage, opts.instruction, refs, onProgress, undefined, abortSignal);
+  // Wan Edit first (realistic, no content filters) → NB2 fal fallback
+  try {
+    const wanResults = await fal.editWithWan27Fal(opts.baseImage, opts.instruction, refs, onProgress);
+    if (wanResults.length > 0) return wanResults;
+    throw new Error('Wan returned empty');
+  } catch {
+    return fal.editWithNB2Fal(opts.baseImage, opts.instruction, refs, onProgress, undefined, abortSignal);
+  }
 }
 
 const routeEdit = async (
@@ -402,9 +410,9 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
-          console.warn('NB2 freeai failed, trying Wan Edit:', nb2Err)
+          console.warn('Wan/NB2 freeai failed, trying Grok:', nb2Err)
           try {
-            resultUrls = await (await loadFal()).editWithWan27Fal(inputFile!, instruction, charRefs, (p) => setProgress(p))
+            resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, instruction, charRefs, (p) => setProgress(p))
           } catch (sdErr) {
             console.warn('Seedream freeai failed, trying Grok:', sdErr)
             resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, instruction, (p) => setProgress(p), undefined, charRefs)
@@ -454,14 +462,9 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
-          console.warn('NB2 scene failed, trying Wan Edit:', nb2Err)
+          console.warn('Wan/NB2 scene failed, trying Grok:', nb2Err)
           const allRefs = [...(sceneFile ? [sceneFile] : []), ...charRefs]
-          try {
-            resultUrls = await (await loadFal()).editWithWan27Fal(inputFile!, flatSceneInstruction, allRefs, (p) => setProgress(p))
-          } catch (sdErr) {
-            console.warn('Seedream scene failed, trying Grok:', sdErr)
-            resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, flatSceneInstruction, (p) => setProgress(p), undefined, allRefs)
-          }
+          resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, flatSceneInstruction, (p) => setProgress(p), undefined, allRefs)
         }
       } else if (activeTool === 'style') {
         const style = styleTransfers[selStyle]
@@ -473,7 +476,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
             if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
             resultUrls = results
           } catch {
-            resultUrls = await (await loadFal()).editWithWan27Fal(inputFile!, instruction, charRefs, (p) => setProgress(p))
+            resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, instruction, (p) => setProgress(p), undefined, charRefs)
           }
         } else {
           const result = await (await import('../services/toolEngines')).runEditWithFallback(inputImage!, instruction, 'nb2', 'style-transfer', outputOpts)
@@ -510,13 +513,8 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           if (!dataUrl) throw new Error('NB2 face swap returned empty')
           resultUrls = [dataUrl]
         } catch (nb2Err) {
-          console.warn('NB2 face swap failed, trying Wan Edit:', nb2Err)
-          try {
-            resultUrls = await (await loadFal()).editWithWan27Fal(inputFile!, faceInstruction, [faceSwapFile], (p) => setProgress(p))
-          } catch (sdErr) {
-            console.warn('Seedream face swap failed, trying Grok:', sdErr)
-            resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, faceInstruction, (p) => setProgress(p), undefined, [faceSwapFile], true)
-          }
+          console.warn('Face swap failed, trying Grok:', nb2Err)
+          resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, faceInstruction, (p) => setProgress(p), undefined, [faceSwapFile], true)
         }
       } else if (activeTool === 'tryon' && (garmentFile || outfitChip)) {
         if (garmentFile) {
@@ -534,13 +532,8 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
             if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
             resultUrls = results
           } catch (nb2Err) {
-            console.warn('NB2 try-on failed, trying Wan Edit:', nb2Err)
-            try {
-              resultUrls = await (await loadFal()).editWithWan27Fal(inputFile!, tryonFlatInstruction, [garmentFile], (p) => setProgress(p))
-            } catch (sdErr) {
-              console.warn('Seedream try-on failed, trying Grok:', sdErr)
-              resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, tryonFlatInstruction, (p) => setProgress(p), undefined, [garmentFile], true)
-            }
+            console.warn('Wan/NB2 try-on failed, trying Grok:', nb2Err)
+            resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, tryonFlatInstruction, (p) => setProgress(p), undefined, [garmentFile], true)
           }
         } else {
           // Prompt-only try-on (outfit chip selected, no reference image)
@@ -550,13 +543,8 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
             if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
             resultUrls = results
           } catch (nb2Err) {
-            console.warn('NB2 prompt try-on failed, trying Wan Edit:', nb2Err)
-            try {
-              resultUrls = await (await loadFal()).editWithWan27Fal(inputFile!, chipInstruction, [], (p) => setProgress(p))
-            } catch (sdErr) {
-              console.warn('Seedream prompt try-on failed, trying Grok:', sdErr)
-              resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, chipInstruction, (p) => setProgress(p))
-            }
+            console.warn('Wan/NB2 prompt try-on failed, trying Grok:', nb2Err)
+            resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, chipInstruction, (p) => setProgress(p))
           }
         }
       } else if (activeTool === 'expand') {
@@ -595,15 +583,8 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
-          console.warn('NB2 reimagine failed, trying Wan Edit:', nb2Err)
-          try {
-            const wanResults = await editWithWan27Fal(inputFile!, flatInstruction, charRefs, (p) => setProgress(p))
-            if (!wanResults || wanResults.filter(Boolean).length === 0) throw new Error('Wan Edit returned empty')
-            resultUrls = wanResults
-          } catch (wanErr) {
-            console.warn('Wan Edit reimagine failed, trying Grok:', wanErr)
-            resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, flatInstruction, (p) => setProgress(p), undefined, charRefs)
-          }
+          console.warn('Wan/NB2 reimagine failed, trying Grok:', nb2Err)
+          resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, flatInstruction, (p) => setProgress(p), undefined, charRefs)
         }
       }
 
