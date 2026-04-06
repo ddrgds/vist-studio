@@ -3,7 +3,7 @@ import { useCharacterStore } from '../stores/characterStore'
 import { useGalleryStore, type GalleryItem } from '../stores/galleryStore'
 import { usePipelineStore } from '../stores/pipelineStore'
 import { enhancePrompt } from '../services/geminiService'
-import { generatePhotoSessionWithGrok, generateWithNB2Fal, editWithNB2Fal } from '../services/falService'
+import { generatePhotoSessionWithGrok, generateWithNB2Fal, editWithNB2Fal, generateWithWan27Fal, editWithWan27Fal as editWithWanFal } from '../services/falService'
 import { generateWithSoul } from '../services/higgsfieldService'
 import { generateWithReplicate } from '../services/replicateService'
 import { generateWithOpenAI } from '../services/openaiService'
@@ -375,10 +375,10 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       else if (eng?.provider === AIProvider.OpenAI) results = await generateWithOpenAI(params, eng.openaiModel, p => setHeroProgress(p), abortHeroRef.current.signal)
       else if (eng?.provider === AIProvider.Fal) results = await generateWithFal(params, eng.falModel, p => setHeroProgress(p), abortHeroRef.current.signal)
       else {
-        // Default: NB2 → Wan Edit → Grok fallback chain
+        // Default: Wan 2.7 t2i ($0.03) → Wan Edit ($0.03) → Grok ($0.02) fallback chain
         try {
-          results = await generateWithNB2Fal(params, p => setHeroProgress(p), abortHeroRef.current.signal)
-          if (!results || results.length === 0) throw new Error('NB2 returned empty')
+          results = await generateWithWan27Fal(params, p => setHeroProgress(p), abortHeroRef.current.signal)
+          if (!results || results.length === 0) throw new Error('Wan returned empty')
         } catch (nb2Err) {
           console.warn('NB2 hero failed, trying Wan Edit:', nb2Err)
           try {
@@ -487,7 +487,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       try {
         const sessionInstruction = `Create a new photo of this exact person. Pose: ${pose}. Scene: ${sceneContext}. Keep face and body identity identical. ${charStyleInfo.isRealistic ? 'Natural skin with visible pores.' : 'Style-consistent render.'}`
         const allRefs = identityRefs.length > 0 ? identityRefs : []
-        const results = await editWithNB2Fal(heroFile, sessionInstruction, allRefs, undefined, undefined, abortSessionRef.current!.signal)
+        const results = await editWithWanFal(heroFile, sessionInstruction, allRefs)
 
         if (results.length > 0 && results[0]) {
           setGridCells(prev => { const n = [...prev]; n[idx] = results[0]; return n })

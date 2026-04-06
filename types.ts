@@ -480,8 +480,8 @@ export const CREDIT_COSTS: Record<string, number> = {
   [FalModel.KontextMaxMulti]:  15,
   [FalModel.Flux2Pro]:         12,   // FAL variant (edit endpoint)
   [FalModel.Flux2ProGen]:      10,
-  [FalModel.NanoBanana2]:      12,
-  [FalModel.NanoBanana2Edit]:  12,
+  [FalModel.NanoBanana2]:      13,   // $0.08/img → 13cr for 35% margin
+  [FalModel.NanoBanana2Edit]:  13,   // $0.08/img → 13cr for 35% margin
   [FalModel.Wan27Gen]:         6,
   [FalModel.Wan27ProGen]:      12,
   [FalModel.Wan27Edit]:        8,
@@ -560,6 +560,9 @@ export const CREDIT_COSTS: Record<string, number> = {
 export const RESOLUTION_CREDIT_MULTIPLIER: Record<string, Record<string, number>> = {
   [GeminiImageModel.Flash2]: { '1K': 1, '2K': 1.53, '4K': 2.26 },  // 19 → 29 → 43
   [GeminiImageModel.Pro]:    { '2K': 1, '4K': 1.82 },               // 38 → 69
+  // NB2 fal.ai: $0.08 base, 1.5x for 2K, 2x for 4K, 0.75x for 0.5K
+  [FalModel.NanoBanana2]:     { '0.5K': 0.75, '1K': 1, '2K': 1.5, '4K': 2 },   // 10 → 13 → 19 → 25
+  [FalModel.NanoBanana2Edit]: { '0.5K': 0.75, '1K': 1, '2K': 1.5, '4K': 2 },   // 10 → 13 → 19 → 25
 };
 
 // ─────────────────────────────────────────────

@@ -7,7 +7,7 @@ import { generateWithSoul } from '../services/higgsfieldService'
 import { generateWithReplicate } from '../services/replicateService'
 import { generateWithOpenAI } from '../services/openaiService'
 import { generateWithFal, editImageWithGrokFal } from '../services/falService'
-import { ImageSize, AspectRatio, ENGINE_METADATA, FEATURE_ENGINES, AIProvider, ReplicateModel, FalModel } from '../types'
+import { ImageSize, AspectRatio, ENGINE_METADATA, FEATURE_ENGINES, AIProvider, ReplicateModel, FalModel, CREDIT_COSTS } from '../types'
 import type { InfluencerParams } from '../types'
 import { useNavigationStore } from '../stores/navigationStore'
 import { usePipelineStore } from '../stores/pipelineStore'
@@ -326,7 +326,10 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
   // ─── Engine cost & routing ──────────────────────────────────────
   const engineMeta = selectedEngine !== 'auto' ? ENGINE_METADATA.find(e => e.key === selectedEngine) : null
-  const costPerVariant = engineMeta?.creditCost ?? 2
+  // Credit cost considers engine + resolution
+  const baseCost = engineMeta?.creditCost ?? CREDIT_COSTS[FalModel.NanoBanana2] ?? 13
+  const resMultiplier = selectedResolution === '4k' ? 2 : selectedResolution === '2k' ? 1.5 : 1
+  const costPerVariant = Math.ceil(baseCost * resMultiplier)
 
   const routeGeneration = async (params: InfluencerParams): Promise<string[]> => {
     if (!engineMeta || selectedEngine === 'auto') {
@@ -416,7 +419,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
         }],
         scenario: style.scenario, // All styles now use CREATOR_BG (neutral reference sheet)
         lighting: isSoul ? 'Natural soft studio lighting' : (style.id === 'anime' ? 'Flat anime lighting, cel-shaded' : style.id === 'pixel-art' ? 'Flat pixel art lighting' : 'Soft studio lighting'),
-        imageSize: ImageSize.Size2K,
+        imageSize: selectedResolution === '4k' ? ImageSize.Size4K : selectedResolution === '2k' ? ImageSize.Size2K : ImageSize.Size1K,
         aspectRatio: AspectRatio.Portrait,
         numberOfImages: 1,
         realistic: style.id === 'photorealistic',
