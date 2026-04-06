@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useCharacterStore } from '../stores/characterStore'
 import { useGalleryStore, type GalleryItem } from '../stores/galleryStore'
 import { usePipelineStore } from '../stores/pipelineStore'
-import { generateInfluencerImage, enhancePrompt, generatePhotoSession } from '../services/geminiService'
-import { generatePhotoSessionWithGrok } from '../services/falService'
+import { enhancePrompt } from '../services/geminiService'
+import { generatePhotoSessionWithGrok, generateWithNB2Fal, editWithNB2Fal } from '../services/falService'
 import { generateWithSoul } from '../services/higgsfieldService'
 import { generateWithReplicate } from '../services/replicateService'
 import { generateWithOpenAI } from '../services/openaiService'
@@ -377,7 +377,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       else {
         // Default: NB2 → Wan Edit → Grok fallback chain
         try {
-          results = await generateInfluencerImage(params, p => setHeroProgress(p), abortHeroRef.current.signal)
+          results = await generateWithNB2Fal(params, p => setHeroProgress(p), abortHeroRef.current.signal)
           if (!results || results.length === 0) throw new Error('NB2 returned empty')
         } catch (nb2Err) {
           console.warn('NB2 hero failed, trying Wan Edit:', nb2Err)
@@ -481,18 +481,16 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
 
     let successCount = 0; let failCount = 0
 
-    // Generate each photo individually: NB2 → FLUX.2 Pro Edit → Grok
+    // Generate each photo individually: NB2 fal.ai → Wan Edit → Grok
     const generateShot = async (pose: string, idx: number) => {
       if (abortSessionRef.current?.signal.aborted) return
       try {
-        const results = await generatePhotoSession(heroFile, 1, {
-          scenario: sceneContext, realistic: charStyleInfo.isRealistic,
-          aspectRatio: arMap[sessionAspectRatio] || '3:4', imageSize: imgSize, angles: [pose],
-          identityRefs: identityRefs.length > 0 ? identityRefs : undefined,
-        }, undefined, abortSessionRef.current!.signal)
+        const sessionInstruction = `Create a new photo of this exact person. Pose: ${pose}. Scene: ${sceneContext}. Keep face and body identity identical. ${charStyleInfo.isRealistic ? 'Natural skin with visible pores.' : 'Style-consistent render.'}`
+        const allRefs = identityRefs.length > 0 ? identityRefs : []
+        const results = await editWithNB2Fal(heroFile, sessionInstruction, allRefs, undefined, undefined, abortSessionRef.current!.signal)
 
-        if (results.length > 0 && results[0].url) {
-          setGridCells(prev => { const n = [...prev]; n[idx] = results[0].url; return n })
+        if (results.length > 0 && results[0]) {
+          setGridCells(prev => { const n = [...prev]; n[idx] = results[0]; return n })
           setRevealedCells(prev => new Set([...prev, idx]))
           successCount++
         } else { failCount++ }

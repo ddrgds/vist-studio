@@ -504,6 +504,17 @@ export async function generateCharacterSheet(
     }
   }
 
+  // Use NB2 fal.ai (safety_tolerance 6) with Gemini direct as fallback
+  try {
+    const { editWithNB2Fal } = await import('./falService');
+    const response = await fetch(approvedImageUrl);
+    const blob = await response.blob();
+    const file = new File([blob], 'input.jpeg', { type: blob.type });
+    const results = await editWithNB2Fal(file, prompt, []);
+    if (results.length > 0 && results[0]) return results[0];
+  } catch (err) {
+    console.warn('NB2 fal sheet failed, falling back to Gemini direct:', err);
+  }
   return nb2Edit(approvedImageUrl, prompt);
 }
 

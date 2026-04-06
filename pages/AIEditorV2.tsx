@@ -4,8 +4,8 @@ import { useGalleryStore } from '../stores/galleryStore'
 import { useCharacterStore } from '../stores/characterStore'
 import { useProfile } from '../contexts/ProfileContext'
 import { useToast } from '../contexts/ToastContext'
-import { editImageWithAI, faceSwapWithGemini } from '../services/geminiService'
-import { editImageWithFluxKontext, editImageWithSeedream5, editImageWithFlux2Pro, editImageWithGrokFal, editImageWithQwen, editImageWithFireRed, inpaintWithOneReward, editImageWithSeedream5Lite, removeBackground, editWithWan27Fal } from '../services/falService'
+import { faceSwapWithGemini } from '../services/geminiService'
+import { editImageWithFluxKontext, editImageWithSeedream5, editImageWithFlux2Pro, editImageWithGrokFal, editImageWithQwen, editImageWithFireRed, inpaintWithOneReward, editImageWithSeedream5Lite, removeBackground, editWithWan27Fal, editWithNB2Fal } from '../services/falService'
 import { editImageWithGPT } from '../services/openaiService'
 import { editWithSoulReference } from '../services/higgsfieldService'
 import { editWithPruna } from '../services/replicateService'
@@ -111,6 +111,16 @@ async function urlToFile(url: string, filename = 'character.png'): Promise<File>
   const res = await fetch(url)
   const blob = await res.blob()
   return new File([blob], filename, { type: blob.type || 'image/png' })
+}
+
+/** NB2 edit via fal.ai — drop-in replacement for editImageWithAI (Gemini direct) */
+async function editImageWithAI(
+  opts: { baseImage: File; referenceImage?: File | null; instruction: string; imageSize?: string; aspectRatio?: string; model?: string },
+  onProgress?: (p: number) => void,
+  abortSignal?: AbortSignal,
+): Promise<string[]> {
+  const refs = opts.referenceImage ? [opts.referenceImage] : [];
+  return editWithNB2Fal(opts.baseImage, opts.instruction, refs, onProgress, undefined, abortSignal);
 }
 
 const routeEdit = async (
