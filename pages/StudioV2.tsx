@@ -388,7 +388,8 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
             const refFile = new File([refBlob], 'char-ref.jpg', { type: refBlob.type || 'image/jpeg' })
             const identityFiles = await fetchUrlsAsFiles(charRefUrls.slice(1, 4))
             const heroInstruction = `Transform this person into a new photo: ${params.scenario || 'professional photo'}. ${params.characters[0]?.pose || ''}. Keep the exact same face and body. ${params.characters[0]?.outfitDescription ? `Wearing: ${params.characters[0].outfitDescription}` : ''}`
-            results = await editWithWanFal(refFile, heroInstruction, identityFiles, p => setHeroProgress(p), undefined, abortHeroRef.current.signal)
+            const resMap: Record<string, '1K' | '2K'> = { '1k': '1K', '2k': '2K' }
+            results = await editWithWanFal(refFile, heroInstruction, identityFiles, p => setHeroProgress(p), { aspectRatio: selectedAspectRatio, resolution: resMap[selectedResolution] || '1K' }, abortHeroRef.current.signal)
             if (!results || results.length === 0) throw new Error('Wan Edit returned empty')
           } catch (wanErr) {
             console.warn('Wan Edit hero failed, trying Grok:', wanErr)
@@ -485,7 +486,8 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       try {
         const sessionInstruction = `Create a new photo of this exact person. Pose: ${pose}. Scene: ${sceneContext}. Keep face and body identity identical. ${charStyleInfo.isRealistic ? 'Natural skin with visible pores.' : 'Style-consistent render.'}`
         const allRefs = identityRefs.length > 0 ? identityRefs : []
-        const results = await editWithWanFal(heroFile, sessionInstruction, allRefs)
+        const sesResMap: Record<string, '1K' | '2K'> = { '1k': '1K', '2k': '2K' }
+        const results = await editWithWanFal(heroFile, sessionInstruction, allRefs, undefined, { aspectRatio: sessionAspectRatio, resolution: sesResMap[sessionResolution] || '1K' })
 
         if (results.length > 0 && results[0]) {
           setGridCells(prev => { const n = [...prev]; n[idx] = results[0]; return n })

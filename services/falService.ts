@@ -1759,7 +1759,7 @@ export const editWithWan27Fal = async (
   instruction: string,
   referenceImages: File[] = [],
   onProgress?: (percent: number) => void,
-  options?: { pro?: boolean; guidanceScale?: number; seed?: number },
+  options?: { pro?: boolean; guidanceScale?: number; seed?: number; aspectRatio?: AspectRatio; resolution?: '1K' | '2K' },
   abortSignal?: AbortSignal,
 ): Promise<string[]> => {
   if (abortSignal?.aborted) throw new Error('Cancelado');
@@ -1775,7 +1775,7 @@ export const editWithWan27Fal = async (
     input: {
       prompt: instruction,
       image_urls: imageUrls,
-      image_size: 'square_hd',
+      image_size: options?.aspectRatio ? toWanImageSize(options.aspectRatio, options?.resolution || '1K') : 'square_hd',
       enable_safety_checker: false,
       enable_output_safety_checker: false,
       guidance_scale: options?.guidanceScale ?? 3.5,
