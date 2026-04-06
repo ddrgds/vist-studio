@@ -1,13 +1,19 @@
 // data/characterChips.ts
 
+export type ModelHint = 'nb2' | 'wan' | 'grok' | 'default';
+
 export interface ChipOption {
   id: string
   label: string
   emoji: string
-  promptText: string
-  color?: string   // hex — renders as color swatch instead of emoji
+  promptText: string           // default (NB2 / general)
+  wanPrompt?: string           // geometric/material language for Wan 2.7
+  grokPrompt?: string          // direct/commanding language for Grok
+  color?: string               // hex — renders as color swatch instead of emoji
   /** If set, promptText is replaced by a random pick from this pool at generation time */
   variants?: string[]
+  wanVariants?: string[]       // Wan-specific variant pool
+  grokVariants?: string[]      // Grok-specific variant pool
   /** Atomic fields for ethnicity presets — can be overridden by individual chips */
   defaults?: {
     skinTone?: string
@@ -288,29 +294,55 @@ export const HEIGHTS: ChipOption[] = [
 // ─── Bust / Chest ──────────────────────────────────────────────────
 // Vocabulary uses indirect sensory descriptions to avoid safety filter triggers
 export const BUST_SIZES: ChipOption[] = [
-  { id: 'flat',        label: 'Plano',        emoji: '▫️', promptText: 'minimal upper frame curvature, very slim torso, streamlined silhouette' },
-  { id: 'small-bust',  label: 'Pequeño',      emoji: '🔹', promptText: 'subtle upper frame curvature, petite proportions, delicate silhouette' },
-  { id: 'medium-bust', label: 'Mediano',      emoji: '🔷', promptText: 'balanced upper body proportions, harmonious curvature, natural frame' },
-  { id: 'large-bust',  label: 'Grande',       emoji: '💎', promptText: 'pronounced upper body curvature, generous proportions clearly shaping the garment, full rounded silhouette' },
-  { id: 'very-large',  label: 'Muy grande',   emoji: '⭐', promptText: 'dramatically generous upper frame, prominent curvature that defines the entire garment drape, opulent rounded silhouette with significant volume' },
+  { id: 'flat',        label: 'Plano',        emoji: '▫️', promptText: 'minimal upper frame curvature, very slim torso, streamlined silhouette',
+    wanPrompt: '[GEOMETRY] Upper torso: flat anterior surface, zero mammary projection, narrow ribcage cross-section',
+    grokPrompt: 'completely flat chest, no bust whatsoever, boyish flat upper body' },
+  { id: 'small-bust',  label: 'Pequeño',      emoji: '🔹', promptText: 'subtle upper frame curvature, petite proportions, delicate silhouette',
+    wanPrompt: '[GEOMETRY] Upper torso: minimal anterior projection, subtle curvature on ribcage surface',
+    grokPrompt: 'small petite bust, subtle chest barely visible through clothing' },
+  { id: 'medium-bust', label: 'Mediano',      emoji: '🔷', promptText: 'balanced upper body proportions, harmonious curvature, natural frame',
+    wanPrompt: '[GEOMETRY] Upper torso: moderate anterior projection, balanced mass distribution, natural curvature radius',
+    grokPrompt: 'medium natural bust, proportional chest, neither small nor large' },
+  { id: 'large-bust',  label: 'Grande',       emoji: '💎', promptText: 'pronounced upper body curvature, generous proportions clearly shaping the garment, full rounded silhouette',
+    wanPrompt: '[GEOMETRY] Upper torso: significant anterior projection, large mass with visible gravitational drape on fabric, wide curvature radius',
+    grokPrompt: 'large full bust, big chest clearly stretching the clothing, voluptuous prominent upper body' },
+  { id: 'very-large',  label: 'Muy grande',   emoji: '⭐', promptText: 'dramatically generous upper frame, prominent curvature that defines the entire garment drape, opulent rounded silhouette with significant volume',
+    wanPrompt: '[GEOMETRY] Upper torso: extreme anterior projection, maximum mass volume, fabric stretched taut with visible strain, dominant silhouette feature, gravitational drape at maximum',
+    grokPrompt: 'extremely large bust, massive chest that dominates the entire figure, heavy full bust straining against clothing, impossible to ignore proportions' },
 ]
 
 // ─── Hips / Glutes ─────────────────────────────────────────────────
 export const HIP_SIZES: ChipOption[] = [
-  { id: 'narrow-hips',  label: 'Estrechas',   emoji: '▫️', promptText: 'narrow lower frame, straight columnar silhouette, minimal lateral curvature' },
-  { id: 'medium-hips',  label: 'Medianas',    emoji: '🔹', promptText: 'balanced lower body proportions, gentle lateral curvature' },
-  { id: 'wide-hips',    label: 'Anchas',      emoji: '🔷', promptText: 'wide lower frame with pronounced lateral curvature, strong waist-to-hip contrast, pear-shaped silhouette' },
-  { id: 'round-glutes', label: 'Glúteos marcados', emoji: '🍑', promptText: 'sculpted posterior curvature, athletic lower body definition, strong rounded profile from side view' },
-  { id: 'full-hips',    label: 'Voluptuosas', emoji: '💎', promptText: 'dramatically wide lower frame, extreme lateral curvature, pronounced pear-shaped silhouette, generous thigh volume, maximum waist-to-hip contrast' },
+  { id: 'narrow-hips',  label: 'Estrechas',   emoji: '▫️', promptText: 'narrow lower frame, straight columnar silhouette, minimal lateral curvature',
+    wanPrompt: '[GEOMETRY] Pelvis: narrow bilateral width, straight vertical silhouette from waist to thigh',
+    grokPrompt: 'narrow slim hips, straight boyish lower body, no hip curve at all' },
+  { id: 'medium-hips',  label: 'Medianas',    emoji: '🔹', promptText: 'balanced lower body proportions, gentle lateral curvature',
+    wanPrompt: '[GEOMETRY] Pelvis: moderate bilateral width, gentle lateral expansion from waist',
+    grokPrompt: 'medium proportional hips, natural subtle curve' },
+  { id: 'wide-hips',    label: 'Anchas',      emoji: '🔷', promptText: 'wide lower frame with pronounced lateral curvature, strong waist-to-hip contrast, pear-shaped silhouette',
+    wanPrompt: '[GEOMETRY] Pelvis: wide bilateral extension, strong waist-to-hip ratio differential, pronounced lateral mass',
+    grokPrompt: 'wide hips, pronounced curvy hip line, obvious waist-to-hip ratio, curvy pear-shaped lower body' },
+  { id: 'round-glutes', label: 'Glúteos marcados', emoji: '🍑', promptText: 'sculpted posterior curvature, athletic lower body definition, strong rounded profile from side view',
+    wanPrompt: '[GEOMETRY] Gluteal region: high posterior projection, spherical curvature, visible muscle definition in lateral view',
+    grokPrompt: 'round prominent butt, sculpted defined rear, thick athletic lower body, visible from any angle' },
+  { id: 'full-hips',    label: 'Voluptuosas', emoji: '💎', promptText: 'dramatically wide lower frame, extreme lateral curvature, pronounced pear-shaped silhouette, generous thigh volume, maximum waist-to-hip contrast',
+    wanPrompt: '[GEOMETRY] Pelvis: maximum bilateral width, extreme waist-to-hip differential, heavy lateral mass distribution, thigh volume at maximum, fabric stretched across pelvic region',
+    grokPrompt: 'extremely wide full hips, massive round butt, dramatic pear-shaped body, very thick thighs, impossible to miss curvy lower body' },
 ]
 
 // ─── Waist ─────────────────────────────────────────────────────────
 export const WAIST_SIZES: ChipOption[] = [
-  { id: 'very-narrow-waist', label: 'Muy estrecha', emoji: '⏳', promptText: 'extremely defined midsection indent, dramatic hourglass proportion, maximum torso taper' },
-  { id: 'narrow-waist',      label: 'Estrecha',     emoji: '🔹', promptText: 'visible midsection taper, hourglass proportion, defined torso indent' },
+  { id: 'very-narrow-waist', label: 'Muy estrecha', emoji: '⏳', promptText: 'extremely defined midsection indent, dramatic hourglass proportion, maximum torso taper',
+    wanPrompt: '[GEOMETRY] Waist: extreme circumference reduction at L3-L4 vertebrae, maximum taper angle, dramatic hourglass cross-section',
+    grokPrompt: 'impossibly tiny waist, extreme hourglass figure, waist so narrow it looks cinched, dramatic curves above and below' },
+  { id: 'narrow-waist',      label: 'Estrecha',     emoji: '🔹', promptText: 'visible midsection taper, hourglass proportion, defined torso indent',
+    wanPrompt: '[GEOMETRY] Waist: visible circumference reduction, defined taper angle, hourglass cross-section',
+    grokPrompt: 'narrow defined waist, clear hourglass shape, visible waist indent' },
   { id: 'medium-waist',      label: 'Media',        emoji: '🔷', promptText: 'natural midsection proportion, subtle torso taper' },
   { id: 'wide-waist',        label: 'Ancha',        emoji: '▫️', promptText: 'straight torso with minimal taper, rectangular frame proportion' },
-  { id: 'thick-waist',       label: 'Gruesa',       emoji: '💎', promptText: 'full soft midsection, no torso taper, generous trunk volume' },
+  { id: 'thick-waist',       label: 'Gruesa',       emoji: '💎', promptText: 'full soft midsection, no torso taper, generous trunk volume',
+    wanPrompt: '[GEOMETRY] Waist: no circumference reduction, cylindrical torso cross-section, soft tissue volume at midsection',
+    grokPrompt: 'thick wide waist, soft belly visible, no waist definition, plus-size midsection' },
 ]
 
 // ─── Musculature ───────────────────────────────────────────────────
@@ -391,7 +423,9 @@ export const SKIN_DETAILS: ChipOption[] = [
   { id: 'smooth-perfect', label: 'Piel perfecta',  emoji: '🧴', promptText: 'exceptionally smooth clear skin, minimal pores, glass skin effect' },
   { id: 'mature-skin',    label: 'Piel madura',    emoji: '🕰️', promptText: 'mature skin with fine lines around eyes, subtle laugh lines, natural aging' },
   { id: 'oily-dewy',      label: 'Piel grasa/dewy',emoji: '💧', promptText: 'dewy oily skin with visible shine on T-zone, glossy forehead and nose' },
-  { id: 'visible-pores',  label: 'Poros visibles', emoji: '🔬', promptText: 'prominently visible open pores on nose and cheeks, real skin macro texture' },
+  { id: 'visible-pores',  label: 'Poros visibles', emoji: '🔬', promptText: 'prominently visible open pores on nose and cheeks, real skin macro texture',
+    wanPrompt: '[SURFACE] Skin shader: increase micro-texture frequency, visible pore geometry on T-zone, non-uniform surface normal map',
+    grokPrompt: 'clearly visible open pores on nose and cheeks, raw unretouched skin, you can see every pore up close' },
   { id: 'body-hair',      label: 'Vello corporal', emoji: '🦁', promptText: 'natural visible body hair on arms and legs, fine peach fuzz on face visible in light', variants: [
     'visible light peach fuzz on cheeks and jawline catching the light, fine arm hair',
     'natural dark arm hair and light leg hair visible, subtle facial peach fuzz',
@@ -697,7 +731,19 @@ const ALL_CHIP_MAPS: Record<string, ChipOption[]> = {
   fashion: FASHION_STYLES, accessories: ACCESSORIES,
 }
 
-function getSelected(selections: Record<string, string[]>, category: string): string | undefined {
+function getChipText(chip: ChipOption, model: ModelHint = 'default'): string {
+  // Pick model-specific variant pool if available
+  if (model === 'wan' && chip.wanVariants?.length) return chip.wanVariants[Math.floor(Math.random() * chip.wanVariants.length)]
+  if (model === 'grok' && chip.grokVariants?.length) return chip.grokVariants[Math.floor(Math.random() * chip.grokVariants.length)]
+  // Pick default variant pool
+  if (chip.variants?.length) return chip.variants[Math.floor(Math.random() * chip.variants.length)]
+  // Pick model-specific prompt text
+  if (model === 'wan' && chip.wanPrompt) return chip.wanPrompt
+  if (model === 'grok' && chip.grokPrompt) return chip.grokPrompt
+  return chip.promptText
+}
+
+function getSelected(selections: Record<string, string[]>, model: ModelHint, category: string): string | undefined {
   const ids = selections[category]
   if (!ids || ids.length === 0) return undefined
   const chips = ALL_CHIP_MAPS[category]
@@ -705,11 +751,7 @@ function getSelected(selections: Record<string, string[]>, category: string): st
   return ids.map(id => {
     const chip = chips.find(c => c.id === id)
     if (!chip) return undefined
-    // If chip has variants, pick one randomly for variety
-    if (chip.variants && chip.variants.length > 0) {
-      return chip.variants[Math.floor(Math.random() * chip.variants.length)]
-    }
-    return chip.promptText
+    return getChipText(chip, model)
   }).filter(Boolean).join(', ')
 }
 
@@ -717,15 +759,15 @@ function getSelected(selections: Record<string, string[]>, category: string): st
  * Build a JSON-structured prompt for NB2.
  * NB2 processes JSON blocks as distinct semantic units — fields don't bleed into each other.
  */
-export function buildPromptFromChips(selections: Record<string, string[]>): string {
+export function buildPromptFromChips(selections: Record<string, string[]>, model: ModelHint = 'default'): string {
   const identity: Record<string, string> = {}
   const face: Record<string, string> = {}
   const body: Record<string, string> = {}
   const appearance: Record<string, string> = {}
 
   // Identity
-  const gender = getSelected(selections, 'gender')
-  const age = getSelected(selections, 'age')
+  const gender = getSelected(selections, model, 'gender')
+  const age = getSelected(selections, model, 'age')
   if (gender) identity.gender = gender
   if (age) identity.age = age
 
@@ -739,14 +781,14 @@ export function buildPromptFromChips(selections: Record<string, string[]>): stri
   if (ethnicityChip) identity.bone_structure = ethnicityChip.promptText
 
   // Face — user chips override ethnicity defaults
-  const faceShape = getSelected(selections, 'faceShape') || ethnicityDefaults.faceShape
-  const eyeColor = getSelected(selections, 'eyeColor') || ethnicityDefaults.eyeColor
-  const eyeShape = getSelected(selections, 'eyeShape') || ethnicityDefaults.eyeShape
-  const noseType = getSelected(selections, 'noseType') || ethnicityDefaults.noseType
-  const lipShape = getSelected(selections, 'lipShape') || ethnicityDefaults.lipShape
-  const jawline = getSelected(selections, 'jawline') || ethnicityDefaults.jawline
-  const eyebrows = getSelected(selections, 'eyebrows')
-  const facialHair = getSelected(selections, 'facialHair')
+  const faceShape = getSelected(selections, model, 'faceShape') || ethnicityDefaults.faceShape
+  const eyeColor = getSelected(selections, model, 'eyeColor') || ethnicityDefaults.eyeColor
+  const eyeShape = getSelected(selections, model, 'eyeShape') || ethnicityDefaults.eyeShape
+  const noseType = getSelected(selections, model, 'noseType') || ethnicityDefaults.noseType
+  const lipShape = getSelected(selections, model, 'lipShape') || ethnicityDefaults.lipShape
+  const jawline = getSelected(selections, model, 'jawline') || ethnicityDefaults.jawline
+  const eyebrows = getSelected(selections, model, 'eyebrows')
+  const facialHair = getSelected(selections, model, 'facialHair')
   if (faceShape) face.shape = faceShape
   if (eyeColor) face.eye_color = eyeColor
   if (eyeShape) face.eye_shape = eyeShape
@@ -757,13 +799,13 @@ export function buildPromptFromChips(selections: Record<string, string[]>): stri
   if (facialHair) face.facial_hair = facialHair
 
   // Body
-  const bodyType = getSelected(selections, 'bodyType')
-  const height = getSelected(selections, 'height')
-  const bust = getSelected(selections, 'bust')
-  const waist = getSelected(selections, 'waist')
-  const hips = getSelected(selections, 'hips')
-  const musculature = getSelected(selections, 'musculature')
-  const legs = getSelected(selections, 'legs')
+  const bodyType = getSelected(selections, model, 'bodyType')
+  const height = getSelected(selections, model, 'height')
+  const bust = getSelected(selections, model, 'bust')
+  const waist = getSelected(selections, model, 'waist')
+  const hips = getSelected(selections, model, 'hips')
+  const musculature = getSelected(selections, model, 'musculature')
+  const legs = getSelected(selections, model, 'legs')
   if (bodyType) body.type = bodyType
   if (height) body.height = height
   if (bust) body.bust = bust
@@ -773,23 +815,23 @@ export function buildPromptFromChips(selections: Record<string, string[]>): stri
   if (legs) body.legs = legs
 
   // Appearance — user chips override ethnicity defaults
-  const hairStyle = getSelected(selections, 'hairStyle') || ethnicityDefaults.hairStyle
-  const hairColor = getSelected(selections, 'hairColor') || ethnicityDefaults.hairColor
-  const skinTone = getSelected(selections, 'skinTone') || ethnicityDefaults.skinTone
-  const skinTexture = getSelected(selections, 'skinTexture')
+  const hairStyle = getSelected(selections, model, 'hairStyle') || ethnicityDefaults.hairStyle
+  const hairColor = getSelected(selections, model, 'hairColor') || ethnicityDefaults.hairColor
+  const skinTone = getSelected(selections, model, 'skinTone') || ethnicityDefaults.skinTone
+  const skinTexture = getSelected(selections, model, 'skinTexture')
   if (hairStyle) appearance.hair_style = hairStyle
   if (hairColor) appearance.hair_color = hairColor
   if (skinTone) appearance.skin_tone = skinTone
   if (skinTexture) appearance.skin_texture = skinTexture
-  const skinDetails = getSelected(selections, 'skinDetails')
+  const skinDetails = getSelected(selections, model, 'skinDetails')
   if (skinDetails) appearance.skin_details = skinDetails
-  const makeup = getSelected(selections, 'makeup')
+  const makeup = getSelected(selections, model, 'makeup')
   if (makeup) appearance.makeup = makeup
 
   // Extras
-  const personality = getSelected(selections, 'personality')
-  const fashion = getSelected(selections, 'fashion')
-  const accessories = getSelected(selections, 'accessories')
+  const personality = getSelected(selections, model, 'personality')
+  const fashion = getSelected(selections, model, 'fashion')
+  const accessories = getSelected(selections, model, 'accessories')
 
   const spec: Record<string, any> = {}
   if (Object.keys(identity).length > 0) spec.identity = identity
@@ -800,9 +842,9 @@ export function buildPromptFromChips(selections: Record<string, string[]>): stri
   if (fashion) spec.outfit = fashion
   if (accessories) spec.accessories = accessories
 
-  // Build flat version for non-NB2 models (Seedream, Grok)
+  // Build flat description from spec
   const flatParts: string[] = []
-  for (const [, val] of Object.entries(spec)) {
+  for (const val of Object.values(spec)) {
     if (typeof val === 'string') flatParts.push(val)
     else if (typeof val === 'object') {
       for (const v of Object.values(val as Record<string, string>)) {
@@ -812,9 +854,24 @@ export function buildPromptFromChips(selections: Record<string, string[]>): stri
   }
   const flatDescription = flatParts.join(', ')
 
-  // Return JSON block with flat fallback appended
-  // NB2 uses the JSON structure, other models use the flat description
-  return `CHARACTER SPECIFICATION:\n${JSON.stringify(spec, null, 2)}\n\nFLAT DESCRIPTION: ${flatDescription}`
+  // Build Wan and Grok specific body descriptions (only body chips differ)
+  const bodyCategories = ['bodyType', 'height', 'bust', 'waist', 'hips', 'musculature', 'legs'] as const
+  const skinCategories = ['skinDetails'] as const
+  const wanBodyParts = bodyCategories.map(c => getSelected(selections, 'wan', c)).filter(Boolean)
+  const grokBodyParts = bodyCategories.map(c => getSelected(selections, 'grok', c)).filter(Boolean)
+  const wanSkinParts = skinCategories.map(c => getSelected(selections, 'wan', c)).filter(Boolean)
+  const grokSkinParts = skinCategories.map(c => getSelected(selections, 'grok', c)).filter(Boolean)
+
+  // Replace default body/skin parts with model-specific ones in flat description
+  const defaultBodyParts = bodyCategories.map(c => getSelected(selections, 'default', c)).filter(Boolean)
+  const defaultSkinParts = skinCategories.map(c => getSelected(selections, 'default', c)).filter(Boolean)
+  const nonBodyFlat = flatParts.filter(p => !defaultBodyParts.includes(p) && !defaultSkinParts.includes(p)).join(', ')
+
+  const wanFlat = [nonBodyFlat, ...wanBodyParts, ...wanSkinParts].filter(Boolean).join(', ')
+  const grokFlat = [nonBodyFlat, ...grokBodyParts, ...grokSkinParts].filter(Boolean).join(', ')
+
+  // Return JSON block with model-specific flat descriptions
+  return `CHARACTER SPECIFICATION:\n${JSON.stringify(spec, null, 2)}\n\nFLAT DESCRIPTION: ${flatDescription}\nWAN DESCRIPTION: ${wanFlat}\nGROK DESCRIPTION: ${grokFlat}`
 }
 
 /** Extract flat text description from a JSON-structured characteristics string.

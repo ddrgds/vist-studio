@@ -1409,20 +1409,8 @@ const DEFAULT_OUTFIT = 'form-fitting tank top and leggings that show body shape 
  * no camera jargon, no "Vogue quality", no photography terms.
  * Extracts only the FLAT DESCRIPTION and strips all technical bloat.
  */
-function cleanDescriptionForFal(characteristics: string): string {
-  let desc = characteristics;
-
-  // Extract FLAT DESCRIPTION if present (skip JSON spec entirely)
-  const flatMatches = desc.match(/FLAT DESCRIPTION:\s*(.+?)(?:\n|$)/g);
-  if (flatMatches) {
-    desc = flatMatches.map(m => m.replace('FLAT DESCRIPTION:', '').trim()).join(', ');
-  } else if (desc.includes('CHARACTER SPECIFICATION:')) {
-    // Has JSON but no flat — try to extract just the values
-    const afterJson = desc.split('\n\n').pop() || desc;
-    if (afterJson.length > 20 && !afterJson.includes('{')) desc = afterJson;
-  }
-
-  // Strip ALL technical/editorial jargon
+/** Strip technical jargon from description */
+function cleanJargon(desc: string): string {
   return desc
     .replace(/Ultra-photorealistic digital human[^,]*/gi, '')
     .replace(/indistinguishable from photograph[^,]*/gi, '')
@@ -1445,13 +1433,41 @@ function cleanDescriptionForFal(characteristics: string): string {
     .replace(/ray-traced[^,.]*/gi, '')
     .replace(/CHARACTER SPECIFICATION:\s*/gi, '')
     .replace(/FLAT DESCRIPTION:\s*/gi, '')
+    .replace(/WAN DESCRIPTION:\s*/gi, '')
+    .replace(/GROK DESCRIPTION:\s*/gi, '')
     .replace(/BODY PROPORTION:\s*/gi, '')
-    .replace(/\{[^}]*\}/g, '') // remove any remaining JSON blocks
+    .replace(/\{[^}]*\}/g, '')
     .replace(/,{2,}/g, ',')
     .replace(/\.\s*\./g, '.')
     .replace(/^\s*[,.\s]+/, '')
     .replace(/[,.\s]+$/, '')
     .trim();
+}
+
+function cleanDescriptionForFal(characteristics: string, model: 'wan' | 'grok' | 'default' = 'default'): string {
+  let desc = characteristics;
+
+  // Extract model-specific description if available
+  if (model === 'wan') {
+    const wanMatch = desc.match(/WAN DESCRIPTION:\s*(.+?)(?:\n|$)/);
+    if (wanMatch) { desc = wanMatch[1].trim(); return cleanJargon(desc); }
+  }
+  if (model === 'grok') {
+    const grokMatch = desc.match(/GROK DESCRIPTION:\s*(.+?)(?:\n|$)/);
+    if (grokMatch) { desc = grokMatch[1].trim(); return cleanJargon(desc); }
+  }
+
+  // Fallback: extract FLAT DESCRIPTION
+  const flatMatches = desc.match(/FLAT DESCRIPTION:\s*(.+?)(?:\n|$)/g);
+  if (flatMatches) {
+    desc = flatMatches.map(m => m.replace('FLAT DESCRIPTION:', '').trim()).join(', ');
+  } else if (desc.includes('CHARACTER SPECIFICATION:')) {
+    // Has JSON but no flat — try to extract just the values
+    const afterJson = desc.split('\n\n').pop() || desc;
+    if (afterJson.length > 20 && !afterJson.includes('{')) desc = afterJson;
+  }
+
+  return cleanJargon(desc);
 }
 
 // ─────────────────────────────────────────────
@@ -1601,7 +1617,7 @@ export const generateWithWan27Fal = async (
 
   // Wan 2.7 Spec Sheet approach — treat prompt as technical specifications.
   // Professional context prefix → body geometry first → face → outfit → skin texture.
-  const rawDesc = cleanDescriptionForFal(character?.characteristics || '');
+  const rawDesc = cleanDescriptionForFal(character?.characteristics || '', 'wan');
 
   // Split body from face using geometric/proportion keywords
   const bodyKeywords = ['frame', 'curvature', 'silhouette', 'proportions', 'taper', 'midsection', 'torso', 'lower', 'upper', 'pear', 'hourglass', 'volume', 'lateral', 'bust', 'chest', 'waist', 'hips', 'glutes', 'thighs', 'slim', 'petite', 'athletic', 'muscular', 'slender', 'thick', 'height', 'tall', 'short', 'legs', 'narrow', 'wide', 'generous', 'pronounced', 'dramatic'];
@@ -1682,8 +1698,8 @@ export const generateWithGrokFal = async (
   const character = params.characters[0];
   if (onProgress) onProgress(10);
 
-  // Build CLEAN prompt — Grok works best with simple direct descriptions, no jargon
-  const subjectDesc = cleanDescriptionForFal(character?.characteristics || '');
+  // Build CLEAN prompt — Grok works best with direct commanding descriptions
+  const subjectDesc = cleanDescriptionForFal(character?.characteristics || '', 'grok');
   const parts: string[] = [];
   if (params.imageBoost) parts.push(params.imageBoost);
   if (subjectDesc) parts.push(subjectDesc);
