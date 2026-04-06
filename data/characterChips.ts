@@ -241,29 +241,29 @@ export const HEIGHTS: ChipOption[] = [
 
 // ─── Bust / Chest ──────────────────────────────────────────────────
 export const BUST_SIZES: ChipOption[] = [
-  { id: 'flat',        label: 'Plano',        emoji: '▫️', promptText: 'BODY PROPORTION: completely flat chest, no bust at all, very slim upper body' },
-  { id: 'small-bust',  label: 'Pequeño',      emoji: '🔹', promptText: 'BODY PROPORTION: small A-cup bust, subtle petite chest' },
-  { id: 'medium-bust', label: 'Mediano',      emoji: '🔷', promptText: 'BODY PROPORTION: medium B/C-cup bust, proportional balanced chest' },
-  { id: 'large-bust',  label: 'Grande',       emoji: '💎', promptText: 'BODY PROPORTION: large D-cup bust, full prominent chest clearly visible in clothing' },
-  { id: 'very-large',  label: 'Muy grande',   emoji: '⭐', promptText: 'BODY PROPORTION: very large DD+ bust, voluptuous prominent chest that defines the silhouette' },
+  { id: 'flat',        label: 'Plano',        emoji: '▫️', promptText: 'completely flat chest, very slim upper body, no bust' },
+  { id: 'small-bust',  label: 'Pequeño',      emoji: '🔹', promptText: 'small petite bust, subtle chest, slim upper body' },
+  { id: 'medium-bust', label: 'Mediano',      emoji: '🔷', promptText: 'medium proportional bust, balanced chest' },
+  { id: 'large-bust',  label: 'Grande',       emoji: '💎', promptText: 'large full bust, prominent chest clearly visible through clothing, voluptuous upper body' },
+  { id: 'very-large',  label: 'Muy grande',   emoji: '⭐', promptText: 'very large voluptuous bust, extremely full prominent chest that defines the entire silhouette, heavy cleavage visible' },
 ]
 
 // ─── Hips / Glutes ─────────────────────────────────────────────────
 export const HIP_SIZES: ChipOption[] = [
-  { id: 'narrow-hips',  label: 'Estrechas',   emoji: '▫️', promptText: 'BODY PROPORTION: narrow slim hips, straight rectangular silhouette, minimal hip curve' },
-  { id: 'medium-hips',  label: 'Medianas',    emoji: '🔹', promptText: 'BODY PROPORTION: medium proportional hips, moderate natural curve' },
-  { id: 'wide-hips',    label: 'Anchas',      emoji: '🔷', promptText: 'BODY PROPORTION: wide hips, pronounced feminine hip curve, visible waist-to-hip ratio' },
-  { id: 'round-glutes', label: 'Glúteos marcados', emoji: '🍑', promptText: 'BODY PROPORTION: round prominent glutes, defined sculpted rear, athletic lower body' },
-  { id: 'full-hips',    label: 'Voluptuosas', emoji: '💎', promptText: 'BODY PROPORTION: full wide hips and large round glutes, dramatic hourglass lower body, very pronounced curves' },
+  { id: 'narrow-hips',  label: 'Estrechas',   emoji: '▫️', promptText: 'narrow slim hips, straight rectangular silhouette, no hip curve' },
+  { id: 'medium-hips',  label: 'Medianas',    emoji: '🔹', promptText: 'medium proportional hips, gentle natural curve' },
+  { id: 'wide-hips',    label: 'Anchas',      emoji: '🔷', promptText: 'wide hips, pronounced feminine hip curve, visible waist-to-hip ratio, curvy lower body' },
+  { id: 'round-glutes', label: 'Glúteos marcados', emoji: '🍑', promptText: 'round prominent glutes, sculpted defined rear, thick athletic lower body' },
+  { id: 'full-hips',    label: 'Voluptuosas', emoji: '💎', promptText: 'very wide full hips and large round glutes, dramatic hourglass lower body, extremely pronounced curves, thick thighs' },
 ]
 
 // ─── Waist ─────────────────────────────────────────────────────────
 export const WAIST_SIZES: ChipOption[] = [
-  { id: 'very-narrow-waist', label: 'Muy estrecha', emoji: '⏳', promptText: 'BODY PROPORTION: very narrow defined waist, dramatic hourglass figure, extreme waist-to-hip ratio' },
-  { id: 'narrow-waist',      label: 'Estrecha',     emoji: '🔹', promptText: 'BODY PROPORTION: narrow waist, visible waist definition, feminine hourglass' },
-  { id: 'medium-waist',      label: 'Media',        emoji: '🔷', promptText: 'BODY PROPORTION: medium proportional waist, natural subtle curve' },
-  { id: 'wide-waist',        label: 'Ancha',        emoji: '▫️', promptText: 'BODY PROPORTION: wide waist, straight torso, minimal waist definition' },
-  { id: 'thick-waist',       label: 'Gruesa',       emoji: '💎', promptText: 'BODY PROPORTION: thick full midsection, soft belly, no waist indent' },
+  { id: 'very-narrow-waist', label: 'Muy estrecha', emoji: '⏳', promptText: 'very narrow tiny waist, dramatic hourglass figure, extreme waist-to-hip ratio, cinched midsection' },
+  { id: 'narrow-waist',      label: 'Estrecha',     emoji: '🔹', promptText: 'narrow defined waist, hourglass silhouette, visible waist indent' },
+  { id: 'medium-waist',      label: 'Media',        emoji: '🔷', promptText: 'medium proportional waist, natural subtle curve' },
+  { id: 'wide-waist',        label: 'Ancha',        emoji: '▫️', promptText: 'wide waist, straight torso, minimal waist definition, rectangular frame' },
+  { id: 'thick-waist',       label: 'Gruesa',       emoji: '💎', promptText: 'thick full midsection, soft belly, no waist indent, plus-size torso' },
 ]
 
 // ─── Musculature ───────────────────────────────────────────────────

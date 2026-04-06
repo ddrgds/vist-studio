@@ -1445,6 +1445,7 @@ function cleanDescriptionForFal(characteristics: string): string {
     .replace(/ray-traced[^,.]*/gi, '')
     .replace(/CHARACTER SPECIFICATION:\s*/gi, '')
     .replace(/FLAT DESCRIPTION:\s*/gi, '')
+    .replace(/BODY PROPORTION:\s*/gi, '')
     .replace(/\{[^}]*\}/g, '') // remove any remaining JSON blocks
     .replace(/,{2,}/g, ',')
     .replace(/\.\s*\./g, '.')
