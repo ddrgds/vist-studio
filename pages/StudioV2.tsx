@@ -731,7 +731,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
         <div>
           <span style={labelStyle}>Resolución</span>
           <div style={{ display: 'flex', gap: 4 }}>
-            {(['1k', '2k', '4k'] as const).map(r => (
+            {(['1k', '2k'] as const).map(r => (
               <button key={r} className="pill-btn" onClick={() => setSessionResolution(r)} style={{ padding: '5px 12px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 500, cursor: 'pointer', border: `1px solid ${sessionResolution === r ? 'var(--accent)' : 'var(--border)'}`, background: sessionResolution === r ? 'var(--accent)' : 'transparent', color: sessionResolution === r ? 'white' : 'var(--text-2)', fontFamily: "'JetBrains Mono', monospace", transition: 'all 0.2s' }}>{r.toUpperCase()}</button>
             ))}
           </div>

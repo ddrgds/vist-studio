@@ -1622,7 +1622,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           <div className="px-4 py-2.5 shrink-0 space-y-2" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
             <div className="flex items-center gap-2">
               <div className="flex gap-1">
-                {(['1k', '2k', '4k'] as const).map(r => (
+                {(['1k', '2k'] as const).map(r => (
                   <button key={r} onClick={() => setEditorResolution(r)} style={pill(editorResolution === r)} className="pill-btn text-center text-[10px] px-2 py-1">{r.toUpperCase()}</button>
                 ))}
               </div>
@@ -1699,7 +1699,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
             {/* Sticky CTA — always visible */}
             <div className="px-4 pb-3 pt-2 shrink-0" style={{ borderTop: '1px solid rgba(0,0,0,0.06)', background: 'white' }}>
               <div className="flex gap-1.5 mb-2">
-                {(['1k', '2k', '4k'] as const).map(r => (
+                {(['1k', '2k'] as const).map(r => (
                   <button key={r} onClick={() => setEditorResolution(r)} style={pill(editorResolution === r)} className="pill-btn flex-1 text-center">{r.toUpperCase()}</button>
                 ))}
               </div>
