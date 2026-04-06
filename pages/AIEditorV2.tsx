@@ -5,7 +5,19 @@ import { useCharacterStore } from '../stores/characterStore'
 import { useProfile } from '../contexts/ProfileContext'
 import { useToast } from '../contexts/ToastContext'
 import { faceSwapWithGemini } from '../services/geminiService'
-import { editImageWithFluxKontext, editImageWithSeedream5, editImageWithFlux2Pro, editImageWithGrokFal, editImageWithQwen, editImageWithFireRed, inpaintWithOneReward, editImageWithSeedream5Lite, removeBackground, editWithWan27Fal } from '../services/falService'
+// Lazy falService wrappers — resolve on first call, avoid circular chunk TDZ errors
+let _falMod: typeof import('../services/falService') | null = null;
+const falMod = async () => _falMod || (_falMod = await import('../services/falService'));
+const editImageWithFluxKontext = async (...args: Parameters<typeof import('../services/falService')['editImageWithFluxKontext']>) => (await falMod()).editImageWithFluxKontext(...args);
+const editImageWithSeedream5 = async (...args: Parameters<typeof import('../services/falService')['editImageWithSeedream5']>) => (await falMod()).editImageWithSeedream5(...args);
+const editImageWithFlux2Pro = async (...args: Parameters<typeof import('../services/falService')['editImageWithFlux2Pro']>) => (await falMod()).editImageWithFlux2Pro(...args);
+const editImageWithGrokFal = async (...args: Parameters<typeof import('../services/falService')['editImageWithGrokFal']>) => (await falMod()).editImageWithGrokFal(...args);
+const editImageWithQwen = async (...args: Parameters<typeof import('../services/falService')['editImageWithQwen']>) => (await falMod()).editImageWithQwen(...args);
+const editImageWithFireRed = async (...args: Parameters<typeof import('../services/falService')['editImageWithFireRed']>) => (await falMod()).editImageWithFireRed(...args);
+const inpaintWithOneReward = async (...args: Parameters<typeof import('../services/falService')['inpaintWithOneReward']>) => (await falMod()).inpaintWithOneReward(...args);
+const editImageWithSeedream5Lite = async (...args: Parameters<typeof import('../services/falService')['editImageWithSeedream5Lite']>) => (await falMod()).editImageWithSeedream5Lite(...args);
+const removeBackground = async (...args: Parameters<typeof import('../services/falService')['removeBackground']>) => (await falMod()).removeBackground(...args);
+const editWithWan27Fal = async (...args: Parameters<typeof import('../services/falService')['editWithWan27Fal']>) => (await falMod()).editWithWan27Fal(...args);
 import { editImageWithGPT } from '../services/openaiService'
 import { editWithSoulReference } from '../services/higgsfieldService'
 import { editWithPruna } from '../services/replicateService'
@@ -120,9 +132,8 @@ async function editImageWithAI(
   abortSignal?: AbortSignal,
 ): Promise<string[]> {
   const refs = opts.referenceImage ? [opts.referenceImage] : [];
-  // Dynamic import to avoid TDZ error from circular chunk initialization
-  const { editWithNB2Fal: nb2Edit } = await import('../services/falService');
-  return nb2Edit(opts.baseImage, opts.instruction, refs, onProgress, undefined, abortSignal);
+  const mod = await falMod();
+  return mod.editWithNB2Fal(opts.baseImage, opts.instruction, refs, onProgress, undefined, abortSignal);
 }
 
 const routeEdit = async (
