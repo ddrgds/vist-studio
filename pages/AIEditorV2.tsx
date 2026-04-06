@@ -5,7 +5,7 @@ import { useCharacterStore } from '../stores/characterStore'
 import { useProfile } from '../contexts/ProfileContext'
 import { useToast } from '../contexts/ToastContext'
 import { editImageWithAI, faceSwapWithGemini } from '../services/geminiService'
-import { editImageWithFluxKontext, editImageWithSeedream5, editImageWithFlux2Pro, editImageWithGrokFal, editImageWithQwen, editImageWithFireRed, inpaintWithOneReward, editImageWithSeedream5Lite, removeBackground } from '../services/falService'
+import { editImageWithFluxKontext, editImageWithSeedream5, editImageWithFlux2Pro, editImageWithGrokFal, editImageWithQwen, editImageWithFireRed, inpaintWithOneReward, editImageWithSeedream5Lite, removeBackground, editWithWan27Fal } from '../services/falService'
 import { editImageWithGPT } from '../services/openaiService'
 import { editWithSoulReference } from '../services/higgsfieldService'
 import { editWithPruna } from '../services/replicateService'
@@ -387,9 +387,9 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
-          console.warn('NB2 freeai failed, trying FLUX.2 Pro:', nb2Err)
+          console.warn('NB2 freeai failed, trying Wan Edit:', nb2Err)
           try {
-            resultUrls = await editImageWithFlux2Pro(inputFile!, instruction, charRefs, (p) => setProgress(p))
+            resultUrls = await editWithWan27Fal(inputFile!, instruction, charRefs, (p) => setProgress(p))
           } catch (sdErr) {
             console.warn('Seedream freeai failed, trying Grok:', sdErr)
             resultUrls = await editImageWithGrokFal(inputFile!, instruction, (p) => setProgress(p), undefined, charRefs)
@@ -439,10 +439,10 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
-          console.warn('NB2 scene failed, trying FLUX.2 Pro:', nb2Err)
+          console.warn('NB2 scene failed, trying Wan Edit:', nb2Err)
           const allRefs = [...(sceneFile ? [sceneFile] : []), ...charRefs]
           try {
-            resultUrls = await editImageWithFlux2Pro(inputFile!, flatSceneInstruction, allRefs, (p) => setProgress(p))
+            resultUrls = await editWithWan27Fal(inputFile!, flatSceneInstruction, allRefs, (p) => setProgress(p))
           } catch (sdErr) {
             console.warn('Seedream scene failed, trying Grok:', sdErr)
             resultUrls = await editImageWithGrokFal(inputFile!, flatSceneInstruction, (p) => setProgress(p), undefined, allRefs)
@@ -458,7 +458,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
             if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
             resultUrls = results
           } catch {
-            resultUrls = await editImageWithFlux2Pro(inputFile!, instruction, charRefs, (p) => setProgress(p))
+            resultUrls = await editWithWan27Fal(inputFile!, instruction, charRefs, (p) => setProgress(p))
           }
         } else {
           const result = await runEditWithFallback(inputImage!, instruction, 'nb2', 'style-transfer', outputOpts)
@@ -494,9 +494,9 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           if (!dataUrl) throw new Error('NB2 face swap returned empty')
           resultUrls = [dataUrl]
         } catch (nb2Err) {
-          console.warn('NB2 face swap failed, trying FLUX.2 Pro:', nb2Err)
+          console.warn('NB2 face swap failed, trying Wan Edit:', nb2Err)
           try {
-            resultUrls = await editImageWithFlux2Pro(inputFile!, faceInstruction, [faceSwapFile], (p) => setProgress(p))
+            resultUrls = await editWithWan27Fal(inputFile!, faceInstruction, [faceSwapFile], (p) => setProgress(p))
           } catch (sdErr) {
             console.warn('Seedream face swap failed, trying Grok:', sdErr)
             resultUrls = await editImageWithGrokFal(inputFile!, faceInstruction, (p) => setProgress(p), undefined, [faceSwapFile], true)
@@ -518,9 +518,9 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
             if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
             resultUrls = results
           } catch (nb2Err) {
-            console.warn('NB2 try-on failed, trying FLUX.2 Pro:', nb2Err)
+            console.warn('NB2 try-on failed, trying Wan Edit:', nb2Err)
             try {
-              resultUrls = await editImageWithFlux2Pro(inputFile!, tryonFlatInstruction, [garmentFile], (p) => setProgress(p))
+              resultUrls = await editWithWan27Fal(inputFile!, tryonFlatInstruction, [garmentFile], (p) => setProgress(p))
             } catch (sdErr) {
               console.warn('Seedream try-on failed, trying Grok:', sdErr)
               resultUrls = await editImageWithGrokFal(inputFile!, tryonFlatInstruction, (p) => setProgress(p), undefined, [garmentFile], true)
@@ -534,9 +534,9 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
             if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
             resultUrls = results
           } catch (nb2Err) {
-            console.warn('NB2 prompt try-on failed, trying FLUX.2 Pro:', nb2Err)
+            console.warn('NB2 prompt try-on failed, trying Wan Edit:', nb2Err)
             try {
-              resultUrls = await editImageWithFlux2Pro(inputFile!, chipInstruction, [], (p) => setProgress(p))
+              resultUrls = await editWithWan27Fal(inputFile!, chipInstruction, [], (p) => setProgress(p))
             } catch (sdErr) {
               console.warn('Seedream prompt try-on failed, trying Grok:', sdErr)
               resultUrls = await editImageWithGrokFal(inputFile!, chipInstruction, (p) => setProgress(p))
@@ -581,7 +581,6 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         } catch (nb2Err) {
           console.warn('NB2 reimagine failed, trying Wan Edit:', nb2Err)
           try {
-            const { editWithWan27Fal } = await import('../services/falService')
             const wanResults = await editWithWan27Fal(inputFile!, flatInstruction, charRefs, (p) => setProgress(p))
             if (!wanResults || wanResults.filter(Boolean).length === 0) throw new Error('Wan Edit returned empty')
             resultUrls = wanResults

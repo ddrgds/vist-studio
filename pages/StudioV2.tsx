@@ -375,7 +375,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       else if (eng?.provider === AIProvider.OpenAI) results = await generateWithOpenAI(params, eng.openaiModel, p => setHeroProgress(p), abortHeroRef.current.signal)
       else if (eng?.provider === AIProvider.Fal) results = await generateWithFal(params, eng.falModel, p => setHeroProgress(p), abortHeroRef.current.signal)
       else {
-        // Default: NB2 → Kontext Pro (identity) → Grok (fal.ai) fallback chain
+        // Default: NB2 → Wan Edit → Grok fallback chain
         try {
           results = await generateInfluencerImage(params, p => setHeroProgress(p), abortHeroRef.current.signal)
           if (!results || results.length === 0) throw new Error('NB2 returned empty')
@@ -499,19 +499,19 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       } catch (err: any) {
         if (err?.name === 'AbortError') return
         if (abortSessionRef.current?.signal.aborted) return // check before fallback
-        // Fallback: Kontext Pro (identity consistency) → Grok
+        // Fallback: Wan Edit (realistic identity preservation) → Grok
         try {
-          const { editImageWithFluxKontext } = await import('../services/falService')
+          const { editWithWan27Fal } = await import('../services/falService')
           const sessionInstruction = `Create a new photo of this exact person with: ${pose}. Scene: ${sceneContext}. Keep face and body identity identical. ${charStyleInfo.isRealistic ? 'Natural skin with visible pores.' : 'Style-consistent render.'}`
-          const kontextRes = await editImageWithFluxKontext(heroFile, sessionInstruction, (p) => setSessionProgress(Math.round((idx / photoCount) * 100 + p * (1 / photoCount))), undefined, abortSessionRef.current!.signal)
-          if (kontextRes.length > 0 && kontextRes[0]) {
-            setGridCells(prev => { const n = [...prev]; n[idx] = kontextRes[0]; return n })
+          const wanRes = await editWithWan27Fal(heroFile, sessionInstruction, identityRefs, (p) => setSessionProgress(Math.round((idx / photoCount) * 100 + p * (1 / photoCount))))
+          if (wanRes.length > 0 && wanRes[0]) {
+            setGridCells(prev => { const n = [...prev]; n[idx] = wanRes[0]; return n })
             setRevealedCells(prev => new Set([...prev, idx]))
             successCount++
-          } else { throw new Error('Kontext Pro returned empty') }
-        } catch (kontextErr: any) {
-          if ((kontextErr as any)?.name === 'AbortError') return
-          console.warn('Kontext Pro session failed, trying Grok:', kontextErr)
+          } else { throw new Error('Wan Edit returned empty') }
+        } catch (wanErr: any) {
+          if ((wanErr as any)?.name === 'AbortError') return
+          console.warn('Wan Edit session failed, trying Grok:', wanErr)
           try {
             const grokRes = await generatePhotoSessionWithGrok(heroFile, 1, {
               scenario: sceneContext, realistic: charStyleInfo.isRealistic, angles: [pose],
