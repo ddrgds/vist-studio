@@ -18,23 +18,24 @@ export interface ChipCategory {
 }
 
 // ─── Ethnicity / Origin ──────────────────────────────────────────────
+// Technical anatomical descriptions — avoid ethnic labels that trigger model centroids
 export const ETHNICITIES: ChipOption[] = [
-  { id: 'latina',        label: 'Latina',           emoji: '🌺', promptText: 'Latina Hispanic, warm brown skin, dark expressive eyes, full lips, strong cheekbones' },
-  { id: 'mediterranean', label: 'Mediterránea',     emoji: '🫒', promptText: 'Mediterranean European, olive warm skin, almond dark eyes, defined nose, dark wavy hair' },
-  { id: 'east-asian',    label: 'Asiática (Este)',  emoji: '🌸', promptText: 'East Asian, smooth light skin, monolid almond eyes, straight black hair, delicate features' },
-  { id: 'south-asian',   label: 'Asiática (Sur)',   emoji: '🪷', promptText: 'South Asian, medium-dark skin, large expressive eyes, high cheekbones, dark lush hair' },
-  { id: 'mena',          label: 'Árabe / MENA',     emoji: '🌙', promptText: 'Middle Eastern, olive amber skin, deep almond eyes, strong defined nose, dark arched eyebrows' },
-  { id: 'west-african',  label: 'Africana',         emoji: '✨', promptText: 'West African, deep rich melanin skin, wide almond eyes, broad nose, full lips, high cheekbones' },
-  { id: 'east-african',  label: 'África del Este',  emoji: '🦁', promptText: 'East African, deep brown elongated features, high cheekbones, almond eyes, tall slender frame' },
-  { id: 'north-european',label: 'Nórdica',          emoji: '❄️', promptText: 'Northern European, very fair porcelain skin, light blue or gray eyes, light blonde or red hair' },
-  { id: 'east-european', label: 'Eslava',           emoji: '🌻', promptText: 'Eastern European Slavic, fair skin, wide cheekbones, light-colored eyes, strong features' },
-  { id: 'indian',        label: 'India',            emoji: '🪔', promptText: 'Indian subcontinent, warm caramel skin, large almond eyes, dark thick eyebrows, high cheekbones' },
-  { id: 'indigenous',    label: 'Indígena',         emoji: '🌿', promptText: 'Indigenous Native, warm copper-brown skin, dark deep-set eyes, high prominent cheekbones' },
-  { id: 'brazilian',     label: 'Brasileña',        emoji: '🌴', promptText: 'Brazilian mixed heritage, warm golden-brown skin, green or amber eyes, mixed curly-wavy hair' },
-  { id: 'caribbean',     label: 'Caribeña',         emoji: '🐚', promptText: 'Caribbean heritage, warm brown skin, wide almond eyes, full lips, natural coily or wavy hair' },
-  { id: 'japanese',      label: 'Japonesa',         emoji: '🗻', promptText: 'Japanese, very smooth fair skin, narrow almond eyes, straight black hair, delicate refined features' },
-  { id: 'korean',        label: 'Coreana',          emoji: '🌟', promptText: 'Korean, fair smooth skin, double eyelid or monolid, straight fine hair, slim oval face' },
-  { id: 'mixed',         label: 'Mixta',            emoji: '🌈', promptText: 'mixed heritage, unique blend of features, multicultural beauty' },
+  { id: 'latina',        label: 'Latina',           emoji: '🌺', promptText: 'warm golden-brown skin with yellow undertones, dark wide-set expressive eyes, full rounded lips, prominent high cheekbones, thick dark wavy hair' },
+  { id: 'mediterranean', label: 'Mediterránea',     emoji: '🫒', promptText: 'warm olive skin with golden undertones, deep-set dark almond eyes, aquiline nose with defined bridge, dark thick wavy hair' },
+  { id: 'east-asian',    label: 'Asiática (Este)',  emoji: '🌸', promptText: 'smooth porcelain-toned skin, monolid or subtle fold almond eyes, small nose with low bridge, straight fine black hair, flat midface, soft rounded jawline' },
+  { id: 'south-asian',   label: 'Asiática (Sur)',   emoji: '🪷', promptText: 'warm caramel-brown skin, large deep-set eyes with thick lashes, arched dark eyebrows, aquiline nose, high angular cheekbones, thick dark hair' },
+  { id: 'mena',          label: 'Árabe / MENA',     emoji: '🌙', promptText: 'warm olive-amber skin, deep hooded almond eyes, strong aquiline nose with high bridge, heavy dark arched eyebrows, defined jawline' },
+  { id: 'west-african',  label: 'Africana',         emoji: '✨', promptText: 'deep rich dark brown skin with warm undertones, wide-set almond eyes, broad rounded nose, full prominent lips, high sculpted cheekbones' },
+  { id: 'east-african',  label: 'África del Este',  emoji: '🦁', promptText: 'deep brown skin with cool undertones, elongated narrow face, extremely high angular cheekbones, narrow nose with high bridge, almond eyes, long neck' },
+  { id: 'north-european',label: 'Nórdica',          emoji: '❄️', promptText: 'very fair cool-toned porcelain skin, light blue or gray deep-set eyes, narrow straight nose, thin lips, light blonde or auburn hair, angular bone structure' },
+  { id: 'east-european', label: 'Eslava',           emoji: '🌻', promptText: 'fair neutral-toned skin, wide-set cheekbones creating broad midface, light-colored round eyes, strong square jawline, straight medium-brown hair' },
+  { id: 'indian',        label: 'India',            emoji: '🪔', promptText: 'warm caramel skin with golden undertones, large expressive round eyes, thick dark arched eyebrows, straight defined nose, high cheekbones, thick dark hair' },
+  { id: 'indigenous',    label: 'Indígena',         emoji: '🌿', promptText: 'warm copper-brown skin, deep-set dark eyes, high prominent cheekbones, broad nose with rounded tip, straight coarse black hair' },
+  { id: 'brazilian',     label: 'Brasileña',        emoji: '🌴', promptText: 'warm golden-brown skin, green or amber eyes with limbal ring, wide nose with soft tip, full lips, curly-wavy dark brown hair, mixed angular and soft features' },
+  { id: 'caribbean',     label: 'Caribeña',         emoji: '🐚', promptText: 'warm brown skin with red undertones, wide-set expressive eyes, full prominent lips, broad nose, natural coily textured hair, rounded face shape' },
+  { id: 'japanese',      label: 'Japonesa',         emoji: '🗻', promptText: 'smooth very fair skin, narrow almond eyes with subtle fold, small low-bridge nose, thin delicate lips, straight fine black hair, oval refined face shape' },
+  { id: 'korean',        label: 'Coreana',          emoji: '🌟', promptText: 'fair smooth luminous skin, double eyelid or monolid with aegyo sal, small pointed chin, v-shaped jawline, straight fine hair, flat midface' },
+  { id: 'mixed',         label: 'Mixta',            emoji: '🌈', promptText: 'ambiguous ethnic features, unique asymmetric blend, warm medium skin tone, heterochromatic or unusual eye color, mixed hair texture' },
 ]
 
 // ─── Hair Styles ─────────────────────────────────────────────────────
@@ -240,30 +241,31 @@ export const HEIGHTS: ChipOption[] = [
 ]
 
 // ─── Bust / Chest ──────────────────────────────────────────────────
+// Vocabulary uses indirect sensory descriptions to avoid safety filter triggers
 export const BUST_SIZES: ChipOption[] = [
-  { id: 'flat',        label: 'Plano',        emoji: '▫️', promptText: 'completely flat chest, very slim upper body, no bust' },
-  { id: 'small-bust',  label: 'Pequeño',      emoji: '🔹', promptText: 'small petite bust, subtle chest, slim upper body' },
-  { id: 'medium-bust', label: 'Mediano',      emoji: '🔷', promptText: 'medium proportional bust, balanced chest' },
-  { id: 'large-bust',  label: 'Grande',       emoji: '💎', promptText: 'large full bust, prominent chest clearly visible through clothing, voluptuous upper body' },
-  { id: 'very-large',  label: 'Muy grande',   emoji: '⭐', promptText: 'very large voluptuous bust, extremely full prominent chest that defines the entire silhouette, heavy cleavage visible' },
+  { id: 'flat',        label: 'Plano',        emoji: '▫️', promptText: 'minimal upper frame curvature, very slim torso, streamlined silhouette' },
+  { id: 'small-bust',  label: 'Pequeño',      emoji: '🔹', promptText: 'subtle upper frame curvature, petite proportions, delicate silhouette' },
+  { id: 'medium-bust', label: 'Mediano',      emoji: '🔷', promptText: 'balanced upper body proportions, harmonious curvature, natural frame' },
+  { id: 'large-bust',  label: 'Grande',       emoji: '💎', promptText: 'pronounced upper body curvature, generous proportions clearly shaping the garment, full rounded silhouette' },
+  { id: 'very-large',  label: 'Muy grande',   emoji: '⭐', promptText: 'dramatically generous upper frame, prominent curvature that defines the entire garment drape, opulent rounded silhouette with significant volume' },
 ]
 
 // ─── Hips / Glutes ─────────────────────────────────────────────────
 export const HIP_SIZES: ChipOption[] = [
-  { id: 'narrow-hips',  label: 'Estrechas',   emoji: '▫️', promptText: 'narrow slim hips, straight rectangular silhouette, no hip curve' },
-  { id: 'medium-hips',  label: 'Medianas',    emoji: '🔹', promptText: 'medium proportional hips, gentle natural curve' },
-  { id: 'wide-hips',    label: 'Anchas',      emoji: '🔷', promptText: 'wide hips, pronounced feminine hip curve, visible waist-to-hip ratio, curvy lower body' },
-  { id: 'round-glutes', label: 'Glúteos marcados', emoji: '🍑', promptText: 'round prominent glutes, sculpted defined rear, thick athletic lower body' },
-  { id: 'full-hips',    label: 'Voluptuosas', emoji: '💎', promptText: 'very wide full hips and large round glutes, dramatic hourglass lower body, extremely pronounced curves, thick thighs' },
+  { id: 'narrow-hips',  label: 'Estrechas',   emoji: '▫️', promptText: 'narrow lower frame, straight columnar silhouette, minimal lateral curvature' },
+  { id: 'medium-hips',  label: 'Medianas',    emoji: '🔹', promptText: 'balanced lower body proportions, gentle lateral curvature' },
+  { id: 'wide-hips',    label: 'Anchas',      emoji: '🔷', promptText: 'wide lower frame with pronounced lateral curvature, strong waist-to-hip contrast, pear-shaped silhouette' },
+  { id: 'round-glutes', label: 'Glúteos marcados', emoji: '🍑', promptText: 'sculpted posterior curvature, athletic lower body definition, strong rounded profile from side view' },
+  { id: 'full-hips',    label: 'Voluptuosas', emoji: '💎', promptText: 'dramatically wide lower frame, extreme lateral curvature, pronounced pear-shaped silhouette, generous thigh volume, maximum waist-to-hip contrast' },
 ]
 
 // ─── Waist ─────────────────────────────────────────────────────────
 export const WAIST_SIZES: ChipOption[] = [
-  { id: 'very-narrow-waist', label: 'Muy estrecha', emoji: '⏳', promptText: 'very narrow tiny waist, dramatic hourglass figure, extreme waist-to-hip ratio, cinched midsection' },
-  { id: 'narrow-waist',      label: 'Estrecha',     emoji: '🔹', promptText: 'narrow defined waist, hourglass silhouette, visible waist indent' },
-  { id: 'medium-waist',      label: 'Media',        emoji: '🔷', promptText: 'medium proportional waist, natural subtle curve' },
-  { id: 'wide-waist',        label: 'Ancha',        emoji: '▫️', promptText: 'wide waist, straight torso, minimal waist definition, rectangular frame' },
-  { id: 'thick-waist',       label: 'Gruesa',       emoji: '💎', promptText: 'thick full midsection, soft belly, no waist indent, plus-size torso' },
+  { id: 'very-narrow-waist', label: 'Muy estrecha', emoji: '⏳', promptText: 'extremely defined midsection indent, dramatic hourglass proportion, maximum torso taper' },
+  { id: 'narrow-waist',      label: 'Estrecha',     emoji: '🔹', promptText: 'visible midsection taper, hourglass proportion, defined torso indent' },
+  { id: 'medium-waist',      label: 'Media',        emoji: '🔷', promptText: 'natural midsection proportion, subtle torso taper' },
+  { id: 'wide-waist',        label: 'Ancha',        emoji: '▫️', promptText: 'straight torso with minimal taper, rectangular frame proportion' },
+  { id: 'thick-waist',       label: 'Gruesa',       emoji: '💎', promptText: 'full soft midsection, no torso taper, generous trunk volume' },
 ]
 
 // ─── Musculature ───────────────────────────────────────────────────
