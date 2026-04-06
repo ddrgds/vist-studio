@@ -248,6 +248,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
   const [showScenarioInput, setShowScenarioInput] = useState(false)
   const [showOutfitInput, setShowOutfitInput] = useState(false)
   const [selectedEngine, setSelectedEngine] = useState('auto')
+  const [heroEngine, setHeroEngine] = useState<'wan' | 'nb2'>('wan')
   const [selectedResolution, setSelectedResolution] = useState('2k')
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<AspectRatio>(AspectRatio.Portrait)
   const [generatingHero, setGeneratingHero] = useState(false)
@@ -379,10 +380,10 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       else if (eng?.provider === AIProvider.OpenAI) results = await generateWithOpenAI(params, eng.openaiModel, p => setHeroProgress(p), abortHeroRef.current.signal)
       else if (eng?.provider === AIProvider.Fal) results = await generateWithFal(params, eng.falModel, p => setHeroProgress(p), abortHeroRef.current.signal)
       else {
-        // Default: Wan Edit for realistic, NB2 fal for stylized
         const charRefUrls = getCharacterReferenceUrls()
         const heroStyleInfo = detectCharStyle(params.characters[0]?.characteristics || '', selectedChar?.renderStyle)
-        if (!heroStyleInfo.isRealistic) {
+        // Non-realistic or user chose NB2 → NB2 fal. Otherwise Wan Edit.
+        if (!heroStyleInfo.isRealistic || heroEngine === 'nb2') {
           // Non-photorealistic: use NB2 fal (understands style directives, $0.08)
           results = await generateWithNB2Fal(params, p => setHeroProgress(p), abortHeroRef.current.signal)
         } else if (charRefUrls.length > 0) {
@@ -615,7 +616,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
   const handleVibeToggle = (id: string) => { setSelectedVibes(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n }) }
   const canvasSize = CANVAS_SIZES[selectedAspectRatio] ?? CANVAS_SIZES[AspectRatio.Portrait]
   const isCharRealistic = detectCharStyle(characteristics || selectedChar?.characteristics || '', selectedChar?.renderStyle).isRealistic
-  const heroCreditCost = isCharRealistic ? CREDIT_COSTS['grok-edit'] : CREDIT_COSTS[FalModel.NanoBanana2]
+  const heroCreditCost = (!isCharRealistic || heroEngine === 'nb2') ? CREDIT_COSTS[FalModel.NanoBanana2] : CREDIT_COSTS['grok-edit']
 
   // ─── Shared UI pieces ─────────────────────────────────
   const phaseToggle = (
@@ -888,15 +889,26 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
             {phase === 'hero' ? heroControlsContent() : sessionControlsContent()}
           </div>
 
-          {/* Resolution selector */}
-          <div style={{ padding: '8px 24px 0', display: 'flex', gap: 6, alignItems: 'center' }}>
-            <span style={{ fontSize: '0.65rem', color: '#999', fontFamily: "'JetBrains Mono', monospace", textTransform: 'uppercase', letterSpacing: '0.1em' }}>Resolución</span>
-            {(['1k', '2k'] as const).map(r => (
-              <button key={r} onClick={() => setSelectedResolution(r)}
-                style={{ padding: '4px 12px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 600, fontFamily: "'JetBrains Mono', monospace", cursor: 'pointer', border: `1px solid ${selectedResolution === r ? '#1A1A1A' : 'rgba(0,0,0,0.08)'}`, background: selectedResolution === r ? '#1A1A1A' : 'white', color: selectedResolution === r ? 'white' : '#999' }}>
-                {r.toUpperCase()}
-              </button>
-            ))}
+          {/* Engine toggle + Resolution selector */}
+          <div style={{ padding: '8px 24px 0', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              <span style={{ fontSize: '0.65rem', color: '#999', fontFamily: "'JetBrains Mono', monospace", textTransform: 'uppercase', letterSpacing: '0.1em' }}>Motor</span>
+              {([{ id: 'wan' as const, label: 'Wan' }, { id: 'nb2' as const, label: 'NB2' }]).map(e => (
+                <button key={e.id} onClick={() => setHeroEngine(e.id)}
+                  style={{ padding: '4px 10px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 600, fontFamily: "'JetBrains Mono', monospace", cursor: 'pointer', border: `1px solid ${heroEngine === e.id ? '#1A1A1A' : 'rgba(0,0,0,0.08)'}`, background: heroEngine === e.id ? '#1A1A1A' : 'white', color: heroEngine === e.id ? 'white' : '#999' }}>
+                  {e.label}
+                </button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              <span style={{ fontSize: '0.65rem', color: '#999', fontFamily: "'JetBrains Mono', monospace", textTransform: 'uppercase', letterSpacing: '0.1em' }}>Resolución</span>
+              {(['1k', '2k'] as const).map(r => (
+                <button key={r} onClick={() => setSelectedResolution(r)}
+                  style={{ padding: '4px 10px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 600, fontFamily: "'JetBrains Mono', monospace", cursor: 'pointer', border: `1px solid ${selectedResolution === r ? '#1A1A1A' : 'rgba(0,0,0,0.08)'}`, background: selectedResolution === r ? '#1A1A1A' : 'white', color: selectedResolution === r ? 'white' : '#999' }}>
+                  {r.toUpperCase()}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Footer CTA */}
