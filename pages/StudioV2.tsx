@@ -858,12 +858,12 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
           <div style={{ padding: '12px 24px 16px', borderTop: 'none' }}>
             {phase === 'hero' ? (
               <button onClick={handleHeroGenerate} disabled={generatingHero} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 500, cursor: generatingHero ? 'wait' : 'pointer', opacity: generatingHero ? 0.6 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-                {generatingHero ? <><div style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /> Generando... {Math.round(heroProgress)}%</> : <>⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.8rem', opacity: 0.7 }}>· {CREDIT_COSTS['grok-edit']}cr</span></>}
+                {generatingHero ? 'Generando...' : <>⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.8rem', opacity: 0.7 }}>· {CREDIT_COSTS['grok-edit']}cr</span></>}
               </button>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <button onClick={handleSessionGenerate} disabled={generatingSession} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 500, cursor: generatingSession ? 'wait' : 'pointer', opacity: generatingSession ? 0.6 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-                  {generatingSession ? <><div style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /> Revelando... {Math.round(sessionProgress)}%</> : <>📸 Disparar {photoCount} Fotos <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.8rem', opacity: 0.7 }}>· {photoCount * CREDIT_COSTS['grok-edit']}cr</span></>}
+                  {generatingSession ? 'Revelando fotos...' : <>📸 Disparar {photoCount} Fotos <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.8rem', opacity: 0.7 }}>· {photoCount * CREDIT_COSTS['grok-edit']}cr</span></>}
                 </button>
                 <button onClick={() => setPhase('hero')} style={{ background: 'none', border: 'none', fontSize: '0.75rem', color: 'var(--text-3)', cursor: 'pointer', textAlign: 'center' }}>← Volver al hero</button>
               </div>
@@ -915,8 +915,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
             )}
             {generatingHero && (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 32, height: 32, border: '3px solid rgba(0,0,0,0.1)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>Generando... {Math.round(heroProgress)}%</span>
+                <LumaSpin label="Generando hero..." />
               </div>
             )}
             {heroImage && (
@@ -947,7 +946,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
                 </div>
                 {/* CTA always visible */}
                 <button onClick={handleHeroGenerate} disabled={generatingHero} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 600, cursor: generatingHero ? 'wait' : 'pointer', opacity: generatingHero ? 0.6 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-                  {generatingHero ? <><div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /> Generando... {Math.round(heroProgress)}%</> : <>⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', opacity: 0.7 }}>· {CREDIT_COSTS['grok-edit']}cr</span></>}
+                  {generatingHero ? 'Generando...' : <>⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', opacity: 0.7 }}>· {CREDIT_COSTS['grok-edit']}cr</span></>}
                 </button>
               </div>
             )}
@@ -959,7 +958,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
                 </div>
                 <div style={{ padding: '10px 20px', paddingBottom: 12, borderTop: '1px solid var(--border)', background: 'white', flexShrink: 0 }}>
                   <button onClick={handleHeroGenerate} disabled={generatingHero} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 600, cursor: generatingHero ? 'wait' : 'pointer', opacity: generatingHero ? 0.6 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-                    {generatingHero ? <><div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /> Generando... {Math.round(heroProgress)}%</> : <>⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', opacity: 0.7 }}>· {CREDIT_COSTS['grok-edit']}cr</span></>}
+                    {generatingHero ? 'Generando...' : <>⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', opacity: 0.7 }}>· {CREDIT_COSTS['grok-edit']}cr</span></>}
                   </button>
                 </div>
               </>
