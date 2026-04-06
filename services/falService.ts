@@ -1467,18 +1467,41 @@ export const generateWithWan27Fal = async (
   const character = params.characters[0];
   if (onProgress) onProgress(10);
 
-  // Build CLEAN natural-language prompt for Wan.
-  // Wan produces best results with simple, direct descriptions — no camera jargon,
-  // no JSON specs, no "Vogue quality", no technical photography terms.
-  const subjectDesc = cleanDescriptionForFal(character?.characteristics || '');
+  // Build STRUCTURED prompt for Wan — body proportions FIRST (highest attention weight),
+  // then face, then outfit. Wan gives most weight to the beginning of the prompt.
+  const rawDesc = cleanDescriptionForFal(character?.characteristics || '');
 
+  // Split body keywords from face/general description
+  const bodyKeywords = ['bust', 'chest', 'waist', 'hips', 'glutes', 'thighs', 'hourglass', 'voluptuous', 'curvy', 'slim', 'petite', 'athletic', 'muscular', 'slender', 'thick', 'height', 'tall', 'short', 'legs', 'narrow', 'wide', 'full body', 'cinched'];
+  const descParts = rawDesc.split(',').map(s => s.trim()).filter(Boolean);
+  const bodyParts: string[] = [];
+  const faceParts: string[] = [];
+  for (const part of descParts) {
+    const lower = part.toLowerCase();
+    if (bodyKeywords.some(kw => lower.includes(kw))) bodyParts.push(part);
+    else faceParts.push(part);
+  }
+
+  // Build prompt: BODY FIRST → face → outfit → pose
   const parts: string[] = [];
   if (params.imageBoost) parts.push(params.imageBoost);
-  if (subjectDesc) parts.push(subjectDesc);
+
+  // Body proportions at the very start for maximum attention
+  if (bodyParts.length > 0) {
+    parts.push(`Full body portrait showing: ${bodyParts.join(', ')}`);
+  }
+
+  // Face description
+  if (faceParts.length > 0) parts.push(faceParts.join(', '));
+
+  // Outfit
   parts.push(`Wearing ${character?.outfitDescription || DEFAULT_OUTFIT}`);
+
+  // Pose
   if (character?.pose) parts.push(character.pose);
   if (character?.accessory) parts.push(`With ${character.accessory}`);
-  const prompt = parts.filter(Boolean).join(', ').trim() + '.';
+
+  const prompt = parts.filter(Boolean).join('. ').replace(/,\s*,/g, ',').replace(/\.\s*\./g, '.').trim() + '.';
 
   const negativePrompt = params.negativePrompt || '';
 
