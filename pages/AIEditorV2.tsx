@@ -4,23 +4,11 @@ import { useGalleryStore } from '../stores/galleryStore'
 import { useCharacterStore } from '../stores/characterStore'
 import { useProfile } from '../contexts/ProfileContext'
 import { useToast } from '../contexts/ToastContext'
-import { faceSwapWithGemini } from '../services/geminiService'
-// Lazy falService wrappers — resolve on first call, avoid circular chunk TDZ errors
-let _falMod: typeof import('../services/falService') | null = null;
-const falMod = async () => _falMod || (_falMod = await import('../services/falService'));
-const editImageWithFluxKontext = async (...args: Parameters<typeof import('../services/falService')['editImageWithFluxKontext']>) => (await falMod()).editImageWithFluxKontext(...args);
-const editImageWithSeedream5 = async (...args: Parameters<typeof import('../services/falService')['editImageWithSeedream5']>) => (await falMod()).editImageWithSeedream5(...args);
-const editImageWithFlux2Pro = async (...args: Parameters<typeof import('../services/falService')['editImageWithFlux2Pro']>) => (await falMod()).editImageWithFlux2Pro(...args);
-const editImageWithGrokFal = async (...args: Parameters<typeof import('../services/falService')['editImageWithGrokFal']>) => (await falMod()).editImageWithGrokFal(...args);
-const editImageWithQwen = async (...args: Parameters<typeof import('../services/falService')['editImageWithQwen']>) => (await falMod()).editImageWithQwen(...args);
-const editImageWithFireRed = async (...args: Parameters<typeof import('../services/falService')['editImageWithFireRed']>) => (await falMod()).editImageWithFireRed(...args);
-const inpaintWithOneReward = async (...args: Parameters<typeof import('../services/falService')['inpaintWithOneReward']>) => (await falMod()).inpaintWithOneReward(...args);
-const editImageWithSeedream5Lite = async (...args: Parameters<typeof import('../services/falService')['editImageWithSeedream5Lite']>) => (await falMod()).editImageWithSeedream5Lite(...args);
-const removeBackground = async (...args: Parameters<typeof import('../services/falService')['removeBackground']>) => (await falMod()).removeBackground(...args);
-const editWithWan27Fal = async (...args: Parameters<typeof import('../services/falService')['editWithWan27Fal']>) => (await falMod()).editWithWan27Fal(...args);
 import { editImageWithGPT } from '../services/openaiService'
-import { editWithSoulReference } from '../services/higgsfieldService'
-import { editWithPruna } from '../services/replicateService'
+
+// Cached lazy loader for falService — all falService calls go through this
+let _cachedFal: typeof import('../services/falService') | null = null;
+const loadFal = async () => _cachedFal || (_cachedFal = await import('../services/falService'));
 import { ENGINE_METADATA, FEATURE_ENGINES, AIProvider, AspectRatio, CREDIT_COSTS } from '../types'
 import { runEditWithFallback, generateCharacterSheet, enhanceSheetWithGrok, type SheetType } from '../services/toolEngines'
 import { SOUL_STYLES, SOUL_STYLE_CATEGORIES, type SoulStyleCategory } from '../data/soulStyles'
@@ -125,15 +113,14 @@ async function urlToFile(url: string, filename = 'character.png'): Promise<File>
   return new File([blob], filename, { type: blob.type || 'image/png' })
 }
 
-/** NB2 edit via fal.ai — drop-in replacement for editImageWithAI (Gemini direct) */
+/** All edit functions loaded lazily to avoid TDZ errors from circular chunks */
 async function editImageWithAI(
   opts: { baseImage: File; referenceImage?: File | null; instruction: string; imageSize?: string; aspectRatio?: string; model?: string },
   onProgress?: (p: number) => void,
   abortSignal?: AbortSignal,
 ): Promise<string[]> {
   const refs = opts.referenceImage ? [opts.referenceImage] : [];
-  const mod = await falMod();
-  return mod.editWithNB2Fal(opts.baseImage, opts.instruction, refs, onProgress, undefined, abortSignal);
+  return (await loadFal()).editWithNB2Fal(opts.baseImage, opts.instruction, refs, onProgress, undefined, abortSignal);
 }
 
 const routeEdit = async (
@@ -146,38 +133,40 @@ const routeEdit = async (
   bypassCompiler?: boolean,
 ): Promise<string[]> => {
   const eng = ENGINE_METADATA.find(e => e.key === engineKey)
+  const fal = await import('../services/falService');
   if (engineKey === 'fal:qwen-edit') {
-    return editImageWithQwen(file, instruction, onProgress, abortSignal)
+    return fal.editImageWithQwen(file, instruction, onProgress, abortSignal)
   }
   if (engineKey === 'fal:firered-edit') {
     const refs = referenceImage ? [referenceImage] : []
-    return editImageWithFireRed(file, instruction, refs, onProgress, abortSignal)
+    return fal.editImageWithFireRed(file, instruction, refs, onProgress, abortSignal)
   }
   if (engineKey === 'fal:onereward') {
     if (!referenceImage) {
       throw new Error('OneReward requires a mask image. Use the Inpaint tool modal to paint a mask.')
     }
-    return inpaintWithOneReward(file, referenceImage, instruction, onProgress, abortSignal)
+    return fal.inpaintWithOneReward(file, referenceImage, instruction, onProgress, abortSignal)
   }
   if (engineKey === 'fal:seedream5-edit') {
-    return editImageWithSeedream5Lite(file, instruction, onProgress, abortSignal)
+    return fal.editImageWithSeedream5Lite(file, instruction, onProgress, abortSignal)
   }
   if (engineKey === 'fal:kontext-multi' || eng?.falModel === 'fal-ai/flux-pro/kontext/multi') {
-    return editImageWithFluxKontext(file, instruction, onProgress, undefined, abortSignal)
+    return fal.editImageWithFluxKontext(file, instruction, onProgress, undefined, abortSignal)
   }
   if (engineKey.startsWith('fal:seedream')) {
     const refs = referenceImage ? [referenceImage] : []
-    return editImageWithSeedream5(file, instruction, refs, onProgress, undefined, abortSignal)
+    return fal.editImageWithSeedream5(file, instruction, refs, onProgress, undefined, abortSignal)
   }
   if (engineKey === 'fal:flux2pro') {
     const refs = referenceImage ? [referenceImage] : []
-    return editImageWithFlux2Pro(file, instruction, refs, onProgress, undefined, abortSignal)
+    return fal.editImageWithFlux2Pro(file, instruction, refs, onProgress, undefined, abortSignal)
   }
   if (engineKey === 'replicate:grok') {
     const refs = referenceImage ? [referenceImage] : []
-    return editImageWithGrokFal(file, instruction, onProgress, abortSignal, refs, bypassCompiler)
+    return fal.editImageWithGrokFal(file, instruction, onProgress, abortSignal, refs, bypassCompiler)
   }
   if (engineKey === 'replicate:pruna') {
+    const { editWithPruna } = await import('../services/replicateService');
     return editWithPruna(file, instruction, onProgress, abortSignal, referenceImage ?? null).then(r => [r])
   }
   if (eng?.provider === AIProvider.OpenAI) {
@@ -412,10 +401,10 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         } catch (nb2Err) {
           console.warn('NB2 freeai failed, trying Wan Edit:', nb2Err)
           try {
-            resultUrls = await editWithWan27Fal(inputFile!, instruction, charRefs, (p) => setProgress(p))
+            resultUrls = await (await loadFal()).editWithWan27Fal(inputFile!, instruction, charRefs, (p) => setProgress(p))
           } catch (sdErr) {
             console.warn('Seedream freeai failed, trying Grok:', sdErr)
-            resultUrls = await editImageWithGrokFal(inputFile!, instruction, (p) => setProgress(p), undefined, charRefs)
+            resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, instruction, (p) => setProgress(p), undefined, charRefs)
           }
         }
       } else if (activeTool === 'relight') {
@@ -465,10 +454,10 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           console.warn('NB2 scene failed, trying Wan Edit:', nb2Err)
           const allRefs = [...(sceneFile ? [sceneFile] : []), ...charRefs]
           try {
-            resultUrls = await editWithWan27Fal(inputFile!, flatSceneInstruction, allRefs, (p) => setProgress(p))
+            resultUrls = await (await loadFal()).editWithWan27Fal(inputFile!, flatSceneInstruction, allRefs, (p) => setProgress(p))
           } catch (sdErr) {
             console.warn('Seedream scene failed, trying Grok:', sdErr)
-            resultUrls = await editImageWithGrokFal(inputFile!, flatSceneInstruction, (p) => setProgress(p), undefined, allRefs)
+            resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, flatSceneInstruction, (p) => setProgress(p), undefined, allRefs)
           }
         }
       } else if (activeTool === 'style') {
@@ -481,7 +470,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
             if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
             resultUrls = results
           } catch {
-            resultUrls = await editWithWan27Fal(inputFile!, instruction, charRefs, (p) => setProgress(p))
+            resultUrls = await (await loadFal()).editWithWan27Fal(inputFile!, instruction, charRefs, (p) => setProgress(p))
           }
         } else {
           const result = await runEditWithFallback(inputImage!, instruction, 'nb2', 'style-transfer', outputOpts)
@@ -519,10 +508,10 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         } catch (nb2Err) {
           console.warn('NB2 face swap failed, trying Wan Edit:', nb2Err)
           try {
-            resultUrls = await editWithWan27Fal(inputFile!, faceInstruction, [faceSwapFile], (p) => setProgress(p))
+            resultUrls = await (await loadFal()).editWithWan27Fal(inputFile!, faceInstruction, [faceSwapFile], (p) => setProgress(p))
           } catch (sdErr) {
             console.warn('Seedream face swap failed, trying Grok:', sdErr)
-            resultUrls = await editImageWithGrokFal(inputFile!, faceInstruction, (p) => setProgress(p), undefined, [faceSwapFile], true)
+            resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, faceInstruction, (p) => setProgress(p), undefined, [faceSwapFile], true)
           }
         }
       } else if (activeTool === 'tryon' && (garmentFile || outfitChip)) {
@@ -543,10 +532,10 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           } catch (nb2Err) {
             console.warn('NB2 try-on failed, trying Wan Edit:', nb2Err)
             try {
-              resultUrls = await editWithWan27Fal(inputFile!, tryonFlatInstruction, [garmentFile], (p) => setProgress(p))
+              resultUrls = await (await loadFal()).editWithWan27Fal(inputFile!, tryonFlatInstruction, [garmentFile], (p) => setProgress(p))
             } catch (sdErr) {
               console.warn('Seedream try-on failed, trying Grok:', sdErr)
-              resultUrls = await editImageWithGrokFal(inputFile!, tryonFlatInstruction, (p) => setProgress(p), undefined, [garmentFile], true)
+              resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, tryonFlatInstruction, (p) => setProgress(p), undefined, [garmentFile], true)
             }
           }
         } else {
@@ -559,10 +548,10 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           } catch (nb2Err) {
             console.warn('NB2 prompt try-on failed, trying Wan Edit:', nb2Err)
             try {
-              resultUrls = await editWithWan27Fal(inputFile!, chipInstruction, [], (p) => setProgress(p))
+              resultUrls = await (await loadFal()).editWithWan27Fal(inputFile!, chipInstruction, [], (p) => setProgress(p))
             } catch (sdErr) {
               console.warn('Seedream prompt try-on failed, trying Grok:', sdErr)
-              resultUrls = await editImageWithGrokFal(inputFile!, chipInstruction, (p) => setProgress(p))
+              resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, chipInstruction, (p) => setProgress(p))
             }
           }
         }
@@ -571,7 +560,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         const expandedUrl = await expandWithBria(inputImage!, expandDirection as 'up' | 'down' | 'left' | 'right' | 'all', expandPixels, (p: number) => setProgress(p))
         resultUrls = [expandedUrl]
       } else if (activeTool === 'rembg') {
-        const bgRemovedUrl = await removeBackground(inputImage!, (p) => setProgress(p))
+        const bgRemovedUrl = await (await loadFal()).removeBackground(inputImage!, (p) => setProgress(p))
         resultUrls = [bgRemovedUrl]
       } else if (activeTool === 'reimagine') {
         const selectedStyles = SOUL_STYLES.filter(s => reimagineStyleIds.has(s.id))
@@ -609,7 +598,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
             resultUrls = wanResults
           } catch (wanErr) {
             console.warn('Wan Edit reimagine failed, trying Grok:', wanErr)
-            resultUrls = await editImageWithGrokFal(inputFile!, flatInstruction, (p) => setProgress(p), undefined, charRefs)
+            resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, flatInstruction, (p) => setProgress(p), undefined, charRefs)
           }
         }
       }
