@@ -1400,6 +1400,9 @@ export const generateWithFlux2ProFal = async (
 };
 
 // ─────────────────────────────────────────────
+/** Default outfit when user doesn't select one — prevents models from generating nude */
+const DEFAULT_OUTFIT = 'casual everyday clothing, simple fitted top and jeans';
+
 /**
  * Clean character description for fal.ai models (Wan, Grok, Turbo).
  * These models work best with SIMPLE, DIRECT descriptions — no JSON specs,
@@ -1471,7 +1474,7 @@ export const generateWithWan27Fal = async (
   const parts: string[] = [];
   if (params.imageBoost) parts.push(params.imageBoost);
   if (subjectDesc) parts.push(subjectDesc);
-  if (character?.outfitDescription) parts.push(`Wearing ${character.outfitDescription}`);
+  parts.push(`Wearing ${character?.outfitDescription || DEFAULT_OUTFIT}`);
   if (character?.pose) parts.push(character.pose);
   if (character?.accessory) parts.push(`With ${character.accessory}`);
   const prompt = parts.filter(Boolean).join(', ').trim() + '.';
@@ -1523,7 +1526,7 @@ export const generateWithGrokFal = async (
   const parts: string[] = [];
   if (params.imageBoost) parts.push(params.imageBoost);
   if (subjectDesc) parts.push(subjectDesc);
-  if (character?.outfitDescription) parts.push(`Wearing ${character.outfitDescription}`);
+  parts.push(`Wearing ${character?.outfitDescription || DEFAULT_OUTFIT}`);
   if (character?.pose) parts.push(character.pose);
   if (character?.accessory) parts.push(`With ${character.accessory}`);
   const prompt = parts.filter(Boolean).join(', ').trim() + '.';
