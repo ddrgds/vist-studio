@@ -27,7 +27,8 @@ const CHARACTER_ENGINES = [
   { id: 'gemini:nb2', label: 'Nano Banana 2', desc: 'Rápido, buena consistencia', badge: 'Recomendado' },
   { id: 'fal:turbo', label: 'Turbo', desc: '~0.3s, orgánico, natural', badge: 'Rápido' },
   { id: 'fal:grok-gen', label: 'Grok Imagine', desc: 'Estético, bold, sin filtros', badge: 'Popular' },
-  { id: 'fal:wan27pro-gen', label: 'Wan 2.7 Pro', desc: 'Piel ultra-realista', badge: 'Realista' },
+  { id: 'fal:wan27-gen', label: 'Wan 2.7', desc: 'Realista, más barato', badge: 'Valor' },
+  { id: 'fal:wan27pro-gen', label: 'Wan 2.7 Pro', desc: 'Ultra-realista, premium', badge: 'Realista' },
 ] as const;
 
 // ─── Dynamic setting inference from outfit ─────────────────────────

@@ -289,6 +289,7 @@ export enum FalModel {
   KontextMaxMulti = 'fal-ai/flux-pro/kontext/max/multi',  // FLUX.1 Kontext Max — maximum quality · 2026
   Flux2Pro = 'fal-ai/flux-2-pro/edit',                    // FLUX.2 Pro Edit — multi-ref image editor
   Flux2ProGen = 'fal-ai/flux-2-pro',                      // FLUX.2 Pro — text-to-image, JSON prompts, safety_tolerance
+  Wan27Gen = 'fal-ai/wan/v2.7/text-to-image',               // Wan 2.7 — text-to-image, cheaper
   Wan27ProGen = 'fal-ai/wan/v2.7/pro/text-to-image',       // Wan 2.7 Pro — text-to-image via fal.ai
   Wan27Edit = 'fal-ai/wan/v2.7/edit',                      // Wan 2.7 — image editing, natural language
   Wan27ProEdit = 'fal-ai/wan/v2.7/pro/edit',               // Wan 2.7 Pro — premium image editing
@@ -477,6 +478,7 @@ export const CREDIT_COSTS: Record<string, number> = {
   [FalModel.KontextMaxMulti]:  15,
   [FalModel.Flux2Pro]:         12,   // FAL variant (edit endpoint)
   [FalModel.Flux2ProGen]:      10,
+  [FalModel.Wan27Gen]:         6,
   [FalModel.Wan27ProGen]:      12,
   [FalModel.Wan27Edit]:        8,
   [FalModel.Wan27ProEdit]:     12,
@@ -782,10 +784,22 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     falModel: FalModel.GrokImagineGen,
   },
   {
+    key: 'fal:wan27-gen',
+    userFriendlyName: 'Wan 2.7',
+    description: 'Alibaba, realista, más barato',
+    bestFor: 'Photorealistic, good value',
+    tags: ['photorealism', 'value'],
+    requiresFaceRef: false,
+    estimatedTime: '~12s',
+    creditCost: CREDIT_COSTS[FalModel.Wan27Gen],
+    provider: AIProvider.Fal,
+    falModel: FalModel.Wan27Gen,
+  },
+  {
     key: 'fal:wan27pro-gen',
     userFriendlyName: 'Wan 2.7 Pro',
-    description: 'Alibaba via fal.ai, very realistic',
-    bestFor: 'Photorealistic character creation',
+    description: 'Alibaba, ultra-realista, premium',
+    bestFor: 'Maximum photorealism',
     tags: ['photorealism', 'quality'],
     requiresFaceRef: false,
     estimatedTime: '~15s',

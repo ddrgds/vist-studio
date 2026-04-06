@@ -1457,6 +1457,7 @@ export const generateWithWan27Fal = async (
   params: InfluencerParams,
   onProgress?: (percent: number) => void,
   abortSignal?: AbortSignal,
+  model: FalModel.Wan27Gen | FalModel.Wan27ProGen = FalModel.Wan27ProGen,
 ): Promise<string[]> => {
   if (abortSignal?.aborted) throw new Error('Cancelado');
   const character = params.characters[0];
@@ -1479,7 +1480,7 @@ export const generateWithWan27Fal = async (
 
   if (onProgress) onProgress(20);
 
-  const result = await fal.subscribe(FalModel.Wan27ProGen, {
+  const result = await fal.subscribe(model, {
     input: {
       prompt,
       negative_prompt: negativePrompt,
@@ -1627,8 +1628,9 @@ export const generateWithFal = async (
       return generateWithFlux2ProFal(params, onProgress, abortSignal);
     case FalModel.GrokImagineGen:
       return generateWithGrokFal(params, onProgress, abortSignal);
+    case FalModel.Wan27Gen:
     case FalModel.Wan27ProGen:
-      return generateWithWan27Fal(params, onProgress, abortSignal);
+      return generateWithWan27Fal(params, onProgress, abortSignal, model);
     case FalModel.KontextPro:
       return generateWithKontextPro(params, onProgress, abortSignal);
     case FalModel.ZImageTurbo:
