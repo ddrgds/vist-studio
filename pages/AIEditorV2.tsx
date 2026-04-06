@@ -587,8 +587,8 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         const skinFlat = isStylizedReimagine
           ? `Render in authentic ${styleNames} style with sharp details.`
           : 'Skin must look real — visible pores, natural texture, subtle imperfections. NO plastic/airbrushed skin.'
-        const flatInstruction = `Edit Figure 1: Transform into a ${styleNames} aesthetic photo. CHANGE: background to match ${direction} setting, outfit to fit the ${styleNames} style, pose and framing to be completely new. KEEP EXACTLY: the person's face, bone structure, eye color, skin tone, body proportions from Figure 1${charRefs.length > 0 ? ' and Figure 2 (identity reference)' : ''}. ${skinFlat} NO text, watermarks, logos, brand names.`
         const charRefs = await getCharRefFiles()
+        const flatInstruction = `Edit Figure 1: Transform into a ${styleNames} aesthetic photo. CHANGE: background to match ${direction} setting, outfit to fit the ${styleNames} style, pose and framing to be completely new. KEEP EXACTLY: the person's face, bone structure, eye color, skin tone, body proportions from Figure 1${charRefs.length > 0 ? ' and Figure 2 (identity reference)' : ''}. ${skinFlat} NO text, watermarks, logos, brand names.`
         try {
           const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction: jsonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
