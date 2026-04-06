@@ -558,11 +558,17 @@ export const CREDIT_COSTS: Record<string, number> = {
 
 // Resolution multipliers for Gemini models (base cost × multiplier)
 export const RESOLUTION_CREDIT_MULTIPLIER: Record<string, Record<string, number>> = {
-  [GeminiImageModel.Flash2]: { '1K': 1, '2K': 1.53, '4K': 2.26 },  // 19 → 29 → 43
-  [GeminiImageModel.Pro]:    { '2K': 1, '4K': 1.82 },               // 38 → 69
-  // NB2 fal.ai: $0.08 base, 1.5x for 2K, 2x for 4K, 0.75x for 0.5K
-  [FalModel.NanoBanana2]:     { '0.5K': 0.75, '1K': 1, '2K': 1.5, '4K': 2 },   // 10 → 13 → 19 → 25
-  [FalModel.NanoBanana2Edit]: { '0.5K': 0.75, '1K': 1, '2K': 1.5, '4K': 2 },   // 10 → 13 → 19 → 25
+  [GeminiImageModel.Flash2]: { '1K': 1, '2K': 1.53, '4K': 2.26 },
+  [GeminiImageModel.Pro]:    { '2K': 1, '4K': 1.82 },
+  // NB2 fal.ai: $0.08 base, real pricing tiers from fal.ai
+  [FalModel.NanoBanana2]:     { '1K': 1, '2K': 1.5, '4K': 2 },
+  [FalModel.NanoBanana2Edit]: { '1K': 1, '2K': 1.5 },              // editor max 2K
+  // Wan: fixed price but slight upcharge for higher res
+  [FalModel.Wan27Gen]:        { '1K': 1, '2K': 1.2 },
+  [FalModel.Wan27ProGen]:     { '1K': 1, '2K': 1.2, '4K': 1.5 },
+  [FalModel.Wan27Edit]:       { '1K': 1, '2K': 1.2 },
+  [FalModel.Wan27ProEdit]:    { '1K': 1, '2K': 1.2 },
+  // Grok/Turbo: fixed resolution, no multiplier needed
 };
 
 // ─────────────────────────────────────────────

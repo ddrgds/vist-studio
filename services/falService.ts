@@ -56,6 +56,21 @@ const toFalImageSize = (ratio: AspectRatio): any => {
   return map[ratio] ?? 'portrait_4_3';
 };
 
+/** Custom pixel sizes for Wan (supports { width, height } objects for 2K/4K) */
+const toWanImageSize = (ratio: AspectRatio, resolution: '1K' | '2K' | '4K' = '1K'): any => {
+  const base = resolution === '4K' ? 4096 : resolution === '2K' ? 2048 : 1024;
+  const sizes: Record<AspectRatio, { width: number; height: number }> = {
+    [AspectRatio.Square]:    { width: base, height: base },
+    [AspectRatio.Portrait]:  { width: Math.round(base * 0.75), height: base },
+    [AspectRatio.Landscape]: { width: base, height: Math.round(base * 0.75) },
+    [AspectRatio.Wide]:      { width: base, height: Math.round(base * 0.5625) },
+    [AspectRatio.Tall]:      { width: Math.round(base * 0.5625), height: base },
+  };
+  // For 1K, use named presets (more reliable)
+  if (resolution === '1K') return toFalImageSize(ratio);
+  return sizes[ratio] ?? { width: Math.round(base * 0.75), height: base };
+};
+
 /**
  * Redimensiona una imagen en el cliente antes de subirla para acelerar el proceso.
  */
@@ -1664,7 +1679,7 @@ export const generateWithWan27Fal = async (
     input: {
       prompt,
       negative_prompt: negativePrompt || 'average body, normal proportions, flat chest, boyish figure',
-      image_size: toFalImageSize(params.aspectRatio),
+      image_size: toWanImageSize(params.aspectRatio, (params.imageSize as '1K' | '2K' | '4K') || '2K'),
       enable_safety_checker: false,
       enable_output_safety_checker: false,
       guidance_scale: 6,
