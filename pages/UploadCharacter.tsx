@@ -24,14 +24,10 @@ import { generateCharacterSheet, enhanceSheetWithGrok, type SheetType } from '..
 
 // ─── Character creation engine presets (Soul 2.0 prominent) ──────────
 const CHARACTER_ENGINES = [
-  { id: 'gemini:nb2', label: 'Nano Banana 2', desc: 'Buena consistencia, sigue instrucciones', badge: 'Recomendado' },
+  { id: 'gemini:nb2', label: 'Nano Banana 2', desc: 'Rápido, buena consistencia', badge: 'Recomendado' },
   { id: 'fal:turbo', label: 'Turbo', desc: '~0.3s, orgánico, natural', badge: 'Rápido' },
   { id: 'fal:grok-gen', label: 'Grok Imagine', desc: 'Estético, bold, sin filtros', badge: 'Popular' },
-  { id: 'fal:wan27pro-gen', label: 'Wan 2.7 Pro', desc: 'Piel ultra-realista, Alibaba', badge: 'Realista' },
-  { id: 'fal:flux2pro-gen', label: 'FLUX.2 Pro', desc: 'JSON structurado, sigue instrucciones', badge: 'Pro' },
-  { id: 'turbo-grok', label: 'Turbo + Grok', desc: 'Turbo genera, Grok agrega textura real', badge: 'Nuevo' },
-  { id: 'flux-grok', label: 'FLUX + Grok', desc: 'FLUX genera, Grok agrega textura real', badge: 'Nuevo' },
-  { id: 'grok-enhance', label: 'NB2 + Grok', desc: 'NB2 genera, Grok mejora realismo', badge: 'Ultra' },
+  { id: 'fal:wan27pro-gen', label: 'Wan 2.7 Pro', desc: 'Piel ultra-realista', badge: 'Realista' },
 ] as const;
 
 // ─── Dynamic setting inference from outfit ─────────────────────────
@@ -75,44 +71,32 @@ function inferSetting(outfitDesc: string): string {
   return FALLBACK_SETTINGS[Math.floor(Math.random() * FALLBACK_SETTINGS.length)]
 }
 
-// ─── Render styles — modular prefix/suffix system ────────────────────
-// Phase 1 (Creator) = reference sheet. ALL styles use neutral background.
-// Scenario/environment is only for Phase 2 (Studio/Session).
+// ─── Render styles ───────────────────────────────────────────────────
+// Phase 1 (Creator) = reference sheet with neutral background.
 const CREATOR_BG = 'Character reference sheet, centered composition, solid light grey background, clean flat studio lighting, no background elements, no props'
 
 const renderStyles = [
-  { id:'photorealistic', label:'Fotorrealista', icon:'📷', desc:'Aspecto humano, foto real',
-    prefix: 'Ultra-realistic raw photograph of a person',
-    suffix: 'natural human imperfections, real skin texture with visible pores, unedited candid quality',
-    prompt:'Ultra-realistic raw photograph of a person, natural human imperfections, real skin texture with visible pores,',
+  { id:'photorealistic', label:'Fotorrealista', icon:'📷', desc:'Aspecto humano, fotografía de estudio',
+    prompt:'Ultra-photorealistic digital human, indistinguishable from photograph, shot on Phase One IQ4 150MP with Schneider 110mm f/2.8, natural skin with visible pores and subsurface blood flow, accurate eye moisture, individual hair strand rendering, physically-based material response,',
     scenario: CREATOR_BG,
     bg:'linear-gradient(135deg, #f0b86020, #d4956b10)' },
   { id:'anime', label:'Anime / Manga', icon:'🎨', desc:'Estilo de animación japonesa',
-    prefix: 'High quality anime key visual character design',
-    suffix: 'cel shaded, 2d vector art, flat anime colors, clean linework, NOT photorealistic',
-    prompt:'High quality anime key visual character design, cel-shaded, clean precise linework, luminous iris reflections, stylized proportions,',
-    scenario: CREATOR_BG + ', drawn in anime style',
+    prompt:'Premium anime character, Production I.G / studio Bones quality, clean precise linework with variable stroke weight, cel-shaded with sophisticated shadow gradients, luminous multi-layered iris reflections, stylized proportions, dynamic hair strand groups,',
+    scenario: CREATOR_BG + ', drawn in high-end anime style',
     bg:'linear-gradient(135deg, #e8749a15, #9a90c415)' },
   { id:'3d-render', label:'Render 3D', icon:'🖥️', desc:'CGI, estilo Pixar, personaje de juego',
-    prefix: '3D stylized character render',
-    suffix: 'Pixar/Unreal Engine style, octane render, smooth volumetric lighting, 3d model',
-    prompt:'3D stylized character render, high-poly sculpted mesh, subsurface scattering skin, strand-based hair,',
-    scenario: CREATOR_BG + ', 3D rendered with soft volumetric lighting',
+    prompt:'AAA game-quality 3D character render, Unreal Engine 5 quality, high-poly sculpted mesh, PBR material workflow on all surfaces, subsurface scattering skin shader with detail maps, strand-based groomed hair, HDRI environment lighting with ray-traced AO,',
+    scenario: CREATOR_BG + ', rendered in Octane/Unreal Engine 5',
     bg:'linear-gradient(135deg, #4858e015, #50d8a010)' },
   { id:'illustration', label:'Ilustración', icon:'✍️', desc:'Arte digital, concept art',
-    prefix: 'Digital concept art character illustration',
-    suffix: 'ArtStation style, expressive brush strokes, 2d digital painting',
-    prompt:'Digital concept art character illustration, painterly technique, expressive color blocking, strong silhouette,',
+    prompt:'High-end digital character illustration, concept art portfolio quality, painterly technique blending precise linework with expressive color blocking, sophisticated light study with warm/cool shifts, character design clarity with strong silhouette,',
     scenario: CREATOR_BG + ', art book presentation quality',
     bg:'linear-gradient(135deg, #f0b86015, #e8725c10)' },
   { id:'stylized', label:'Estilizado', icon:'✨', desc:'Semi-realista, Arcane / Spider-Verse',
-    prefix: 'Stylized character design, Arcane/Spider-Verse quality',
-    suffix: 'bold shape language, limited palette, cel-shaded with painterly details, NOT photorealistic',
-    prompt:'Distinctive stylized character, Arcane/Spider-Verse quality, strong graphic silhouette, bold shape language,',
-    scenario: CREATOR_BG + ', stylized cinematic lighting',
+    prompt:'Distinctive stylized character with exaggerated design language, Arcane/Spider-Verse quality, strong graphic silhouette with memorable proportions, bold shape language defining personality, limited palette with strategic accent pops,',
+    scenario: CREATOR_BG + ', cel-shaded with painterly details',
     bg:'linear-gradient(135deg, #4f46e515, #f0684815)' },
   { id:'pixel-art', label:'Pixel Art', icon:'🟨', desc:'Retro 8-bit / 16-bit',
-    prefix: 'Pixel art character sprite',
     suffix: '16-bit retro game quality, limited color palette, pixelated, NOT smooth, NOT photorealistic',
     prompt:'Pixel art character sprite, 64-128px base resolution, limited 32-color palette, intentional dithering, clear silhouette,',
     scenario: CREATOR_BG + ', pixelated throughout, retro game aesthetic',
@@ -341,38 +325,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   const engineMeta = selectedEngine !== 'auto' ? ENGINE_METADATA.find(e => e.key === selectedEngine) : null
   const costPerVariant = engineMeta?.creditCost ?? 2
 
-  const GROK_ENHANCE_PROMPT = 'IDENTITY LOCK: Do NOT change the face structure, bone structure, eye shape, nose, or any facial features. Only modify the SURFACE QUALITY. Add natural skin texture (pores, micro-imperfections, subtle unevenness), reduce any artificial smoothness or HDR look, make lighting feel like natural ambient light instead of studio. The person must be instantly recognizable as the exact same individual.'
-
-  /** Helper: take a generated image URL, pass it through Grok for texture enhancement */
-  const enhanceWithGrok = async (url: string): Promise<string> => {
-    const res = await fetch(url)
-    const blob = await res.blob()
-    const file = new File([blob], 'base-result.jpg', { type: blob.type || 'image/jpeg' })
-    const grokResult = await editImageWithGrokFal(file, GROK_ENHANCE_PROMPT)
-    return grokResult[0] || url
-  }
-
   const routeGeneration = async (params: InfluencerParams): Promise<string[]> => {
-    // Hybrid engines: generate with X, then enhance with Grok
-    if (selectedEngine === 'grok-enhance' || selectedEngine === 'turbo-grok' || selectedEngine === 'flux-grok') {
-      let baseResults: string[] = []
-
-      if (selectedEngine === 'grok-enhance') {
-        baseResults = await generateInfluencerImage(params, () => {})
-      } else if (selectedEngine === 'turbo-grok') {
-        baseResults = await generateWithFal(params, FalModel.ZImageTurbo)
-      } else if (selectedEngine === 'flux-grok') {
-        baseResults = await generateWithFal(params, FalModel.Flux2ProGen)
-      }
-
-      if (baseResults.length === 0) return []
-      const enhanced: string[] = []
-      for (const url of baseResults) {
-        try { enhanced.push(await enhanceWithGrok(url)) }
-        catch { enhanced.push(url) }
-      }
-      return enhanced
-    }
     if (!engineMeta || selectedEngine === 'auto') {
       // NB2 → FLUX.2 Pro (JSON, fal.ai) → Grok (fal.ai) fallback chain
       try {
@@ -461,7 +414,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
           accessory: selAccessories.map(id => ACCESSORIES.find(a => a.id === id)?.label || '').filter(Boolean).join(', '),
         }],
         scenario: style.scenario, // All styles now use CREATOR_BG (neutral reference sheet)
-        lighting: isSoul ? 'Natural ambient lighting' : (style.id === 'anime' ? 'Flat anime lighting, cel-shaded' : style.id === 'pixel-art' ? 'Flat pixel art lighting' : 'Natural ambient lighting'),
+        lighting: isSoul ? 'Natural soft studio lighting' : (style.id === 'anime' ? 'Flat anime lighting, cel-shaded' : style.id === 'pixel-art' ? 'Flat pixel art lighting' : 'Soft studio lighting'),
         imageSize: ImageSize.Size2K,
         aspectRatio: AspectRatio.Portrait,
         numberOfImages: 1,
