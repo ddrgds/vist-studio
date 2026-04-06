@@ -838,8 +838,19 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
             {phase === 'hero' ? heroControlsContent() : sessionControlsContent()}
           </div>
 
+          {/* Resolution selector */}
+          <div style={{ padding: '8px 24px 0', display: 'flex', gap: 6, alignItems: 'center' }}>
+            <span style={{ fontSize: '0.65rem', color: '#999', fontFamily: "'JetBrains Mono', monospace", textTransform: 'uppercase', letterSpacing: '0.1em' }}>Resolución</span>
+            {(['1k', '2k'] as const).map(r => (
+              <button key={r} onClick={() => setSelectedResolution(r)}
+                style={{ padding: '4px 12px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 600, fontFamily: "'JetBrains Mono', monospace", cursor: 'pointer', border: `1px solid ${selectedResolution === r ? '#1A1A1A' : 'rgba(0,0,0,0.08)'}`, background: selectedResolution === r ? '#1A1A1A' : 'white', color: selectedResolution === r ? 'white' : '#999' }}>
+                {r.toUpperCase()}
+              </button>
+            ))}
+          </div>
+
           {/* Footer CTA */}
-          <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)' }}>
+          <div style={{ padding: '12px 24px 16px', borderTop: 'none' }}>
             {phase === 'hero' ? (
               <button onClick={handleHeroGenerate} disabled={generatingHero} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 500, cursor: generatingHero ? 'wait' : 'pointer', opacity: generatingHero ? 0.6 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
                 {generatingHero ? <><div style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /> Generando... {Math.round(heroProgress)}%</> : <>⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.8rem', opacity: 0.7 }}>· {CREDIT_COSTS['grok-edit']}cr</span></>}
