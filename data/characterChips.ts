@@ -617,12 +617,14 @@ export function buildPromptFromChips(selections: Record<string, string[]>): stri
   const bodyType = getSelected(selections, 'bodyType')
   const height = getSelected(selections, 'height')
   const bust = getSelected(selections, 'bust')
+  const waist = getSelected(selections, 'waist')
   const hips = getSelected(selections, 'hips')
   const musculature = getSelected(selections, 'musculature')
   const legs = getSelected(selections, 'legs')
   if (bodyType) body.type = bodyType
   if (height) body.height = height
   if (bust) body.bust = bust
+  if (waist) body.waist = waist
   if (hips) body.hips = hips
   if (musculature) body.musculature = musculature
   if (legs) body.legs = legs
@@ -636,6 +638,10 @@ export function buildPromptFromChips(selections: Record<string, string[]>): stri
   if (hairColor) appearance.hair_color = hairColor
   if (skinTone) appearance.skin_tone = skinTone
   if (skinTexture) appearance.skin_texture = skinTexture
+  const skinDetails = getSelected(selections, 'skinDetails')
+  if (skinDetails) appearance.skin_details = skinDetails
+  const makeup = getSelected(selections, 'makeup')
+  if (makeup) appearance.makeup = makeup
 
   // Extras
   const personality = getSelected(selections, 'personality')
