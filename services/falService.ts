@@ -1454,6 +1454,50 @@ function cleanDescriptionForFal(characteristics: string): string {
     .trim();
 }
 
+// ─────────────────────────────────────────────
+// Nano Banana 2 Edit via fal.ai — safety_tolerance 6, up to 14 refs
+// Replaces direct Gemini API calls with more permissive fal.ai endpoint
+// ─────────────────────────────────────────────
+
+export const editWithNB2Fal = async (
+  baseImage: File,
+  instruction: string,
+  referenceImages: File[] = [],
+  onProgress?: (percent: number) => void,
+  options?: { resolution?: string; seed?: number },
+  abortSignal?: AbortSignal,
+): Promise<string[]> => {
+  if (abortSignal?.aborted) throw new Error('Cancelado');
+  if (onProgress) onProgress(10);
+
+  const allImages = [baseImage, ...referenceImages.slice(0, 13)]; // max 14 total
+  const imageUrls = await Promise.all(allImages.map(f => uploadToFalStorage(f)));
+  if (onProgress) onProgress(30);
+
+  const result = await fal.subscribe(FalModel.NanoBanana2Edit, {
+    input: {
+      prompt: instruction,
+      image_urls: imageUrls,
+      num_images: 1,
+      resolution: options?.resolution || '1K',
+      safety_tolerance: '6', // most permissive — respects body proportions
+      output_format: 'jpeg',
+      ...(options?.seed !== undefined && { seed: options.seed }),
+    },
+    onQueueUpdate: (update: any) => {
+      if (update.status === 'IN_PROGRESS' && onProgress) onProgress(Math.min(88, 35 + Math.random() * 50));
+    },
+  }) as any;
+
+  const r = unwrap(result);
+  const images = r?.images || [];
+  const urls = images.map((img: any) => img?.url).filter((u: string) => typeof u === 'string' && u.startsWith('http'));
+  if (urls.length === 0) throw new Error('NB2 Edit (fal) did not return any images.');
+  if (onProgress) onProgress(100);
+  return urls;
+};
+
+// ─────────────────────────────────────────────
 // Wan 2.7 Pro — text-to-image via fal.ai
 // ─────────────────────────────────────────────
 
