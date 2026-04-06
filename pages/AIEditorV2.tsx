@@ -115,15 +115,27 @@ async function urlToFile(url: string, filename = 'character.png'): Promise<File>
   return new File([blob], filename, { type: blob.type || 'image/png' })
 }
 
-/** Default edit function — Wan Edit first (realistic, no safety filters) */
+/** Default edit — Wan for photorealistic, NB2 fal for stylized (anime/3D/etc) */
 async function editImageWithAI(
-  opts: { baseImage: File; referenceImage?: File | null; instruction: string; imageSize?: string; aspectRatio?: string; model?: string },
+  opts: { baseImage: File; referenceImage?: File | null; instruction: string; imageSize?: string; aspectRatio?: string; model?: string; isStylized?: boolean },
   onProgress?: (p: number) => void,
   abortSignal?: AbortSignal,
 ): Promise<string[]> {
   const fal = await loadFal();
   const refs = opts.referenceImage ? [opts.referenceImage] : [];
-  // Wan Edit first (realistic, no content filters) → NB2 fal fallback
+
+  if (opts.isStylized) {
+    // Non-photorealistic: NB2 fal (understands style directives) → Wan fallback
+    try {
+      const nb2Results = await fal.editWithNB2Fal(opts.baseImage, opts.instruction, refs, onProgress, undefined, abortSignal);
+      if (nb2Results.length > 0) return nb2Results;
+      throw new Error('NB2 returned empty');
+    } catch {
+      return fal.editWithWan27Fal(opts.baseImage, opts.instruction, refs, onProgress);
+    }
+  }
+
+  // Photorealistic: Wan Edit (realistic, no filters) → NB2 fal fallback
   try {
     const wanResults = await fal.editWithWan27Fal(opts.baseImage, opts.instruction, refs, onProgress);
     if (wanResults.length > 0) return wanResults;
@@ -320,6 +332,8 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
 
   const pipelineHeroUrl = usePipelineStore(s => s.heroShotUrl)
   const pipelineCharId = usePipelineStore(s => s.characterId)
+  const currentChar = characters.find(c => c.id === pipelineCharId)
+  const isStylizedChar = currentChar?.renderStyle ? currentChar.renderStyle !== 'photorealistic' : false
   const pipelineSetEditedHero = usePipelineStore(s => s.setEditedHero)
   const pipelineSetCharacter = usePipelineStore(s => s.setCharacter)
 
@@ -406,7 +420,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         const charRefs = await getCharRefFiles()
         const instruction = freePrompt.trim()
         try {
-          const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
+          const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, isStylized: isStylizedChar }, (p) => setProgress(p))
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
@@ -458,7 +472,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           : `Change background/scene to: ${sceneDesc}. Keep person identical. Match lighting and color grading.`
         const charRefs = await getCharRefFiles()
         try {
-          const results = await editImageWithAI({ baseImage: inputFile, referenceImage: sceneFile ?? charRefs[0] ?? undefined, instruction: jsonSceneInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
+          const results = await editImageWithAI({ baseImage: inputFile, referenceImage: sceneFile ?? charRefs[0] ?? undefined, instruction: jsonSceneInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, isStylized: isStylizedChar }, (p) => setProgress(p))
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
@@ -472,7 +486,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         const charRefs = await getCharRefFiles()
         if (charRefs.length > 0) {
           try {
-            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0], instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
+            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0], instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, isStylized: isStylizedChar }, (p) => setProgress(p))
             if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
             resultUrls = results
           } catch {
@@ -528,7 +542,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           const tryonInstruction = `TRY-ON SPECIFICATION:\n${JSON.stringify(tryonSpec, null, 2)}`
           const tryonFlatInstruction = 'Replace ONLY the clothing. IMAGE 1 is the PERSON (keep everything). IMAGE 2 is the GARMENT ONLY (extract clothing, IGNORE the model wearing it). Same face, body, pose, background.'
           try {
-            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: garmentFile, instruction: tryonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
+            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: garmentFile, instruction: tryonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, isStylized: isStylizedChar }, (p) => setProgress(p))
             if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
             resultUrls = results
           } catch (nb2Err) {
@@ -539,7 +553,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           // Prompt-only try-on (outfit chip selected, no reference image)
           const chipInstruction = `OUTFIT CHANGE: Replace ONLY the clothing on this person. Dress them in: ${outfitChip}. Keep the EXACT same face, hair, skin tone, body shape, pose, and background. ONLY change the clothing.`
           try {
-            const results = await editImageWithAI({ baseImage: inputFile!, instruction: chipInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
+            const results = await editImageWithAI({ baseImage: inputFile!, instruction: chipInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, isStylized: isStylizedChar }, (p) => setProgress(p))
             if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
             resultUrls = results
           } catch (nb2Err) {
@@ -579,7 +593,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         const charRefs = await getCharRefFiles()
         const flatInstruction = `Edit Figure 1: Transform into a ${styleNames} aesthetic photo. CHANGE: background to match ${direction} setting, outfit to fit the ${styleNames} style, pose and framing to be completely new. KEEP EXACTLY: the person's face, bone structure, eye color, skin tone, body proportions from Figure 1${charRefs.length > 0 ? ' and Figure 2 (identity reference)' : ''}. ${skinFlat} NO text, watermarks, logos, brand names.`
         try {
-          const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction: jsonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
+          const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction: jsonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, isStylized: isStylizedChar }, (p) => setProgress(p))
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {

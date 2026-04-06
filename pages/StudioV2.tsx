@@ -16,7 +16,7 @@ import { runControlNet } from '../services/controlNetService'
 import { useProfile } from '../contexts/ProfileContext'
 import { useNavigationStore } from '../stores/navigationStore'
 import { useToast } from '../contexts/ToastContext'
-import { ImageSize, AspectRatio, ENGINE_METADATA, CREDIT_COSTS, AIProvider, ReplicateModel } from '../types'
+import { ImageSize, AspectRatio, ENGINE_METADATA, CREDIT_COSTS, AIProvider, ReplicateModel, FalModel } from '../types'
 import type { InfluencerParams } from '../types'
 import { POSE_OPTIONS, CAMERA_OPTIONS, LIGHTING_OPTIONS } from '../data/directorOptions'
 import type { ChipOption } from '../data/directorOptions'
@@ -348,7 +348,8 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
     if (!selectedChar && faceRefs.length === 0) { toast.error('Selecciona un personaje o sube fotos de referencia'); return }
     // Capture character ID at start to prevent race condition if user switches during generation
     const charIdAtStart = selectedChar?.id
-    const cost = CREDIT_COSTS['grok-edit']
+    const isRealisticHero = detectCharStyle(characteristics || selectedChar?.characteristics || '', selectedChar?.renderStyle).isRealistic
+    const cost = isRealisticHero ? CREDIT_COSTS['grok-edit'] : CREDIT_COSTS[FalModel.NanoBanana2] // 6cr realistic, 13cr stylized
     const ok = await decrementCredits(cost)
     if (!ok) { toast.error('Créditos insuficientes'); return }
     setGeneratingHero(true); setHeroProgress(0); abortHeroRef.current = new AbortController()
@@ -378,10 +379,14 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       else if (eng?.provider === AIProvider.OpenAI) results = await generateWithOpenAI(params, eng.openaiModel, p => setHeroProgress(p), abortHeroRef.current.signal)
       else if (eng?.provider === AIProvider.Fal) results = await generateWithFal(params, eng.falModel, p => setHeroProgress(p), abortHeroRef.current.signal)
       else {
-        // Default: Wan Edit (with char photo) → Grok t2i fallback
+        // Default: Wan Edit for realistic, NB2 fal for stylized
         const charRefUrls = getCharacterReferenceUrls()
-        if (charRefUrls.length > 0) {
-          // Has character photo — use Wan Edit to transform it into hero scene
+        const heroStyleInfo = detectCharStyle(params.characters[0]?.characteristics || '', selectedChar?.renderStyle)
+        if (!heroStyleInfo.isRealistic) {
+          // Non-photorealistic: use NB2 fal (understands style directives, $0.08)
+          results = await generateWithNB2Fal(params, p => setHeroProgress(p), abortHeroRef.current.signal)
+        } else if (charRefUrls.length > 0) {
+          // Photorealistic + has character photo — use Wan Edit
           try {
             const refRes = await fetch(charRefUrls[0])
             const refBlob = await refRes.blob()
@@ -610,6 +615,8 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
 
   const handleVibeToggle = (id: string) => { setSelectedVibes(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n }) }
   const canvasSize = CANVAS_SIZES[selectedAspectRatio] ?? CANVAS_SIZES[AspectRatio.Portrait]
+  const isCharRealistic = detectCharStyle(characteristics || selectedChar?.characteristics || '', selectedChar?.renderStyle).isRealistic
+  const heroCreditCost = isCharRealistic ? CREDIT_COSTS['grok-edit'] : CREDIT_COSTS[FalModel.NanoBanana2]
 
   // ─── Shared UI pieces ─────────────────────────────────
   const phaseToggle = (
@@ -897,7 +904,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
           <div style={{ padding: '12px 24px 16px', borderTop: 'none' }}>
             {phase === 'hero' ? (
               <button onClick={handleHeroGenerate} disabled={generatingHero} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 500, cursor: generatingHero ? 'wait' : 'pointer', opacity: generatingHero ? 0.6 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-                {generatingHero ? 'Generando...' : <>⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.8rem', opacity: 0.7 }}>· {CREDIT_COSTS['grok-edit']}cr</span></>}
+                {generatingHero ? 'Generando...' : <>⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.8rem', opacity: 0.7 }}>· {heroCreditCost}cr</span></>}
               </button>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -985,7 +992,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
                 </div>
                 {/* CTA always visible */}
                 <button onClick={handleHeroGenerate} disabled={generatingHero} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 600, cursor: generatingHero ? 'wait' : 'pointer', opacity: generatingHero ? 0.6 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-                  {generatingHero ? 'Generando...' : <>⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', opacity: 0.7 }}>· {CREDIT_COSTS['grok-edit']}cr</span></>}
+                  {generatingHero ? 'Generando...' : <>⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', opacity: 0.7 }}>· {heroCreditCost}cr</span></>}
                 </button>
               </div>
             )}
@@ -997,7 +1004,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
                 </div>
                 <div style={{ padding: '10px 20px', paddingBottom: 12, borderTop: '1px solid var(--border)', background: 'white', flexShrink: 0 }}>
                   <button onClick={handleHeroGenerate} disabled={generatingHero} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 600, cursor: generatingHero ? 'wait' : 'pointer', opacity: generatingHero ? 0.6 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-                    {generatingHero ? 'Generando...' : <>⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', opacity: 0.7 }}>· {CREDIT_COSTS['grok-edit']}cr</span></>}
+                    {generatingHero ? 'Generando...' : <>⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', opacity: 0.7 }}>· {heroCreditCost}cr</span></>}
                   </button>
                 </div>
               </>
