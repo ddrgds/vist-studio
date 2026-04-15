@@ -565,7 +565,7 @@ export const RESOLUTION_CREDIT_MULTIPLIER: Record<string, Record<string, number>
   // NB2 fal.ai: $0.08 base, real pricing tiers from fal.ai
   [FalModel.NanoBanana2]:     { '1K': 1, '2K': 1.5, '4K': 2 },
   [FalModel.NanoBanana2Edit]: { '1K': 1, '2K': 1.5 },              // editor max 2K
-  // Wan: always generates at 1K. For 2K+ use AuraSR upscale (+3cr flat surcharge)
+  // Wan via DashScope: native 2K, flat price — no resolution multiplier needed
   // Grok/Turbo: fixed resolution, no multiplier needed
 };
 
