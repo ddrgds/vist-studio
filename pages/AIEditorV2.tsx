@@ -125,11 +125,20 @@ async function editImageWithAI(
   const refs = opts.referenceImage ? [opts.referenceImage] : [];
   const engine = opts.forceEngine || 'auto';
 
-  // Wan via DashScope (direct API — 9 refs, native 2K)
+  // Wan via DashScope (direct API — 9 refs, native 2K, but has mandatory moderation)
   const wanEdit = async () => {
     const { editWithWanDirect } = await import('../services/dashscopeService');
     return editWithWanDirect(opts.baseImage, opts.instruction, refs, onProgress, {
       aspectRatio: opts.aspectRatio as any, resolution: (opts.imageSize === '2K' ? '2K' : '1K'),
+    }, abortSignal);
+  };
+
+  // Wan via fal.ai Pro Edit (max 4 refs, safety_checker disabled — absorbs DashScope moderation rejects)
+  const wanFalEdit = async () => {
+    return fal.editWithWan27Fal(opts.baseImage, opts.instruction, refs, onProgress, {
+      pro: true,
+      aspectRatio: opts.aspectRatio as any,
+      resolution: (opts.imageSize === '2K' ? '2K' : '1K'),
     }, abortSignal);
   };
 
@@ -138,22 +147,37 @@ async function editImageWithAI(
     return fal.editWithNB2Fal(opts.baseImage, opts.instruction, refs, onProgress, undefined, abortSignal);
   };
 
+  // Wan cascade: DashScope → Wan-fal (safety off). Absorbs DataInspectionFailed and other DashScope errors.
+  const tryWanChain = async (): Promise<string[]> => {
+    try {
+      const r = await wanEdit();
+      if (r.length > 0) return r;
+      throw new Error('Wan DashScope returned empty');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.warn('Wan DashScope failed, trying Wan fal.ai (safety off):', msg);
+      const r = await wanFalEdit();
+      if (r.length > 0) return r;
+      throw new Error('Wan fal.ai also returned empty');
+    }
+  };
+
   // Forced NB2
   if (engine === 'nb2') {
-    try { const r = await nb2Edit(); if (r.length > 0) return r; throw new Error('empty'); } catch { return wanEdit(); }
+    try { const r = await nb2Edit(); if (r.length > 0) return r; throw new Error('empty'); } catch { return tryWanChain(); }
   }
 
   // Forced Wan
   if (engine === 'wan') {
-    try { const r = await wanEdit(); if (r.length > 0) return r; throw new Error('empty'); } catch { return nb2Edit(); }
+    try { return await tryWanChain(); } catch { return nb2Edit(); }
   }
 
   // Auto: NB2 for stylized, Wan for photorealistic
   if (opts.isStylized) {
-    try { const r = await nb2Edit(); if (r.length > 0) return r; throw new Error('empty'); } catch { return wanEdit(); }
+    try { const r = await nb2Edit(); if (r.length > 0) return r; throw new Error('empty'); } catch { return tryWanChain(); }
   }
 
-  try { const r = await wanEdit(); if (r.length > 0) return r; throw new Error('empty'); } catch { return nb2Edit(); }
+  try { return await tryWanChain(); } catch { return nb2Edit(); }
 }
 
 const routeEdit = async (
