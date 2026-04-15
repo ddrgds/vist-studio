@@ -13,6 +13,7 @@ const PROVIDER_TO_PATH: Record<string, string> = {
   modelslab: '/modelslab-api',
   higgsfield: '/higgsfield-api',
   elevenlabs: '/elevenlabs-api',
+  dashscope: '/dashscope-api',
 };
 
 export function proxyUrl(provider: string, devFallback: string): string {

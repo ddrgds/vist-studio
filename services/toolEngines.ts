@@ -493,14 +493,14 @@ export async function generateCharacterSheet(
   // Face and expression sheets use NB2 (better at facial consistency grids)
   if (sheetType === 'body') {
     try {
-      const { editWithWan27Fal } = await import('./falService');
+      const { editWithWanDirect } = await import('./dashscopeService');
       const response = await fetch(approvedImageUrl);
       const blob = await response.blob();
       const file = new File([blob], 'input.jpeg', { type: blob.type });
-      const results = await editWithWan27Fal(file, prompt, [], undefined, { pro: false });
+      const results = await editWithWanDirect(file, prompt, []);
       if (results.length > 0 && results[0]) return results[0];
     } catch (err) {
-      console.warn('Wan Edit body sheet failed, falling back to NB2:', err);
+      console.warn('Wan DashScope body sheet failed, falling back to NB2:', err);
     }
   }
 

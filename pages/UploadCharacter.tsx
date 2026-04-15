@@ -28,8 +28,7 @@ const CHARACTER_ENGINES = [
   { id: 'fal:nb2', label: 'Nano Banana 2', desc: 'JSON structurado, safety 6', badge: 'Recomendado' },
   { id: 'fal:turbo', label: 'Turbo', desc: '~0.3s, orgánico, natural', badge: 'Rápido' },
   { id: 'fal:grok-gen', label: 'Grok Imagine', desc: 'Estético, bold, sin filtros', badge: 'Popular' },
-  { id: 'fal:wan27-gen', label: 'Wan 2.7', desc: 'Realista, más barato', badge: 'Valor' },
-  { id: 'fal:wan27pro-gen', label: 'Wan 2.7 Pro', desc: 'Ultra-realista, premium', badge: 'Realista' },
+  { id: 'dashscope:wan27', label: 'Wan 2.7', desc: 'Realista, 2K nativo', badge: 'Valor' },
 ] as const;
 
 // ─── Dynamic setting inference from outfit ─────────────────────────
@@ -333,15 +332,18 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
   const routeGeneration = async (params: InfluencerParams): Promise<string[]> => {
     if (!engineMeta || selectedEngine === 'auto') {
-      // NB2 fal.ai (safety 6) → Wan t2i → Grok fallback chain — all fal.ai
+      // NB2 fal.ai (safety 6) → Wan DashScope → Grok fallback chain
       try {
         return await generateWithFal(params, FalModel.NanoBanana2)
       } catch (nb2Err) {
-        console.warn('NB2 fal creator failed, trying Wan:', nb2Err)
+        console.warn('NB2 fal creator failed, trying Wan DashScope:', nb2Err)
         try {
-          return await generateWithFal(params, FalModel.Wan27Gen)
+          const { generateWithWanDirect } = await import('../services/dashscopeService')
+          const desc = params.characters[0]?.characteristics || ''
+          const prompt = [desc, params.scenario, params.characters[0]?.outfitDescription, params.characters[0]?.pose, params.lighting, params.camera].filter(Boolean).join('. ')
+          return await generateWithWanDirect(prompt, { aspectRatio: params.aspectRatio, resolution: (params.imageSize as any) === '2K' ? '2K' : '1K' })
         } catch (wanErr) {
-          console.warn('Wan creator failed, trying Grok:', wanErr)
+          console.warn('Wan DashScope creator failed, trying Grok:', wanErr)
           return generateWithFal(params, FalModel.GrokImagineGen)
         }
       }
@@ -354,6 +356,12 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     }
     if (engineMeta.provider === AIProvider.OpenAI) {
       return generateWithOpenAI(params, engineMeta.openaiModel, () => {})
+    }
+    if (engineMeta.provider === AIProvider.DashScope) {
+      const { generateWithWanDirect } = await import('../services/dashscopeService')
+      const desc = params.characters[0]?.characteristics || ''
+      const prompt = [desc, params.scenario, params.characters[0]?.outfitDescription, params.characters[0]?.pose, params.lighting, params.camera].filter(Boolean).join('. ')
+      return generateWithWanDirect(prompt, { aspectRatio: params.aspectRatio, resolution: (params.imageSize as any) === '2K' ? '2K' : '1K' })
     }
     if (engineMeta.provider === AIProvider.Fal) {
       return generateWithFal(params, engineMeta.falModel, () => {})

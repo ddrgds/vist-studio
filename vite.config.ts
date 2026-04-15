@@ -114,6 +114,20 @@ export default defineConfig(({ mode }) => {
             rewrite: (path) => path.replace(/^\/modelslab-api/, ''),
             secure: true,
           },
+          '/dashscope-api': {
+            target: 'https://dashscope-intl.aliyuncs.com/api/v1',
+            changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/dashscope-api/, ''),
+            secure: true,
+            configure: (proxy) => {
+              proxy.on('proxyReq', (proxyReq) => {
+                proxyReq.setHeader('Authorization', `Bearer ${env.DASHSCOPE_API_KEY || ''}`);
+                proxyReq.setHeader('X-DashScope-Async', 'enable');
+                proxyReq.setHeader('X-DashScope-OssResourceResolve', 'enable');
+                proxyReq.removeHeader('origin');
+              });
+            },
+          },
           '/elevenlabs-api': {
             target: 'https://api.elevenlabs.io',
             changeOrigin: true,

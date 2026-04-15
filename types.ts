@@ -269,6 +269,7 @@ export enum AIProvider {
   Ideogram = 'ideogram',
   ModelsLab = 'modelslab',
   Higgsfield = 'higgsfield',
+  DashScope = 'dashscope',
 }
 
 export const AI_PROVIDER_LABELS: Record<AIProvider, { name: string; icon: string; description: string }> = {
@@ -280,6 +281,7 @@ export const AI_PROVIDER_LABELS: Record<AIProvider, { name: string; icon: string
   [AIProvider.Ideogram]: { name: 'Ideogram', icon: '💡', description: 'Ideogram V3 — advanced typography and style' },
   [AIProvider.ModelsLab]: { name: 'ModelsLab', icon: '🔞', description: 'Uncensored NSFW — Lustify SDXL + 10K models' },
   [AIProvider.Higgsfield]: { name: 'Higgsfield', icon: '🌟', description: 'Soul 2.0 — fashion-grade, editorial realism' },
+  [AIProvider.DashScope]: { name: 'Wan 2.7', icon: '🎨', description: 'Alibaba Wan 2.7 — 9 refs, native 2K, photorealistic' },
 };
 
 // Available models per provider
@@ -563,11 +565,7 @@ export const RESOLUTION_CREDIT_MULTIPLIER: Record<string, Record<string, number>
   // NB2 fal.ai: $0.08 base, real pricing tiers from fal.ai
   [FalModel.NanoBanana2]:     { '1K': 1, '2K': 1.5, '4K': 2 },
   [FalModel.NanoBanana2Edit]: { '1K': 1, '2K': 1.5 },              // editor max 2K
-  // Wan: fixed price but slight upcharge for higher res
-  [FalModel.Wan27Gen]:        { '1K': 1, '2K': 1.2 },
-  [FalModel.Wan27ProGen]:     { '1K': 1, '2K': 1.2, '4K': 1.5 },
-  [FalModel.Wan27Edit]:       { '1K': 1, '2K': 1.2 },
-  [FalModel.Wan27ProEdit]:    { '1K': 1, '2K': 1.2 },
+  // Wan: always generates at 1K. For 2K+ use AuraSR upscale (+3cr flat surcharge)
   // Grok/Turbo: fixed resolution, no multiplier needed
 };
 
@@ -809,28 +807,15 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     falModel: FalModel.GrokImagineGen,
   },
   {
-    key: 'fal:wan27-gen',
+    key: 'dashscope:wan27',
     userFriendlyName: 'Wan 2.7',
-    description: 'Alibaba, realista, más barato',
+    description: 'Alibaba directo, 9 refs, 2K nativo',
     bestFor: 'Photorealistic, good value',
-    tags: ['photorealism', 'value'],
-    requiresFaceRef: false,
-    estimatedTime: '~12s',
-    creditCost: CREDIT_COSTS[FalModel.Wan27Gen],
-    provider: AIProvider.Fal,
-    falModel: FalModel.Wan27Gen,
-  },
-  {
-    key: 'fal:wan27pro-gen',
-    userFriendlyName: 'Wan 2.7 Pro',
-    description: 'Alibaba, ultra-realista, premium',
-    bestFor: 'Maximum photorealism',
-    tags: ['photorealism', 'quality'],
+    tags: ['photorealism', 'value'] as EngineTag[],
     requiresFaceRef: false,
     estimatedTime: '~15s',
-    creditCost: CREDIT_COSTS[FalModel.Wan27ProGen],
-    provider: AIProvider.Fal,
-    falModel: FalModel.Wan27ProGen,
+    creditCost: CREDIT_COSTS[FalModel.Wan27Gen],
+    provider: AIProvider.DashScope,
   },
   {
     key: 'replicate:grok',

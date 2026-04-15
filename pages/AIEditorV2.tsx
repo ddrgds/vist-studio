@@ -9,7 +9,7 @@ import { useToast } from '../contexts/ToastContext'
 // Cached lazy loader for falService — all falService calls go through this
 let _cachedFal: typeof import('../services/falService') | null = null;
 const loadFal = async () => _cachedFal || (_cachedFal = await import('../services/falService'));
-import { ENGINE_METADATA, FEATURE_ENGINES, AIProvider, AspectRatio, CREDIT_COSTS } from '../types'
+import { ENGINE_METADATA, FEATURE_ENGINES, AIProvider, AspectRatio, CREDIT_COSTS, RESOLUTION_CREDIT_MULTIPLIER, FalModel } from '../types'
 import type { SheetType } from '../services/toolEngines'
 import { SOUL_STYLES, SOUL_STYLE_CATEGORIES } from '../data/soulStyles'
 import type { SoulStyleCategory } from '../data/soulStyles'
@@ -115,34 +115,45 @@ async function urlToFile(url: string, filename = 'character.png'): Promise<File>
   return new File([blob], filename, { type: blob.type || 'image/png' })
 }
 
-/** Default edit — Wan for photorealistic, NB2 fal for stylized (anime/3D/etc) */
+/** Default edit — respects editEngine preference, falls back to the other */
 async function editImageWithAI(
-  opts: { baseImage: File; referenceImage?: File | null; instruction: string; imageSize?: string; aspectRatio?: string; model?: string; isStylized?: boolean },
+  opts: { baseImage: File; referenceImage?: File | null; instruction: string; imageSize?: string; aspectRatio?: string; model?: string; isStylized?: boolean; forceEngine?: 'auto' | 'nb2' | 'wan' },
   onProgress?: (p: number) => void,
   abortSignal?: AbortSignal,
 ): Promise<string[]> {
   const fal = await loadFal();
   const refs = opts.referenceImage ? [opts.referenceImage] : [];
+  const engine = opts.forceEngine || 'auto';
 
-  if (opts.isStylized) {
-    // Non-photorealistic: NB2 fal (understands style directives) → Wan fallback
-    try {
-      const nb2Results = await fal.editWithNB2Fal(opts.baseImage, opts.instruction, refs, onProgress, undefined, abortSignal);
-      if (nb2Results.length > 0) return nb2Results;
-      throw new Error('NB2 returned empty');
-    } catch {
-      return fal.editWithWan27Fal(opts.baseImage, opts.instruction, refs, onProgress);
-    }
-  }
+  // Wan via DashScope (direct API — 9 refs, native 2K)
+  const wanEdit = async () => {
+    const { editWithWanDirect } = await import('../services/dashscopeService');
+    return editWithWanDirect(opts.baseImage, opts.instruction, refs, onProgress, {
+      aspectRatio: opts.aspectRatio as any, resolution: (opts.imageSize === '2K' ? '2K' : '1K'),
+    }, abortSignal);
+  };
 
-  // Photorealistic: Wan Edit (realistic, no filters) → NB2 fal fallback
-  try {
-    const wanResults = await fal.editWithWan27Fal(opts.baseImage, opts.instruction, refs, onProgress);
-    if (wanResults.length > 0) return wanResults;
-    throw new Error('Wan returned empty');
-  } catch {
+  // NB2 via fal.ai
+  const nb2Edit = async () => {
     return fal.editWithNB2Fal(opts.baseImage, opts.instruction, refs, onProgress, undefined, abortSignal);
+  };
+
+  // Forced NB2
+  if (engine === 'nb2') {
+    try { const r = await nb2Edit(); if (r.length > 0) return r; throw new Error('empty'); } catch { return wanEdit(); }
   }
+
+  // Forced Wan
+  if (engine === 'wan') {
+    try { const r = await wanEdit(); if (r.length > 0) return r; throw new Error('empty'); } catch { return nb2Edit(); }
+  }
+
+  // Auto: NB2 for stylized, Wan for photorealistic
+  if (opts.isStylized) {
+    try { const r = await nb2Edit(); if (r.length > 0) return r; throw new Error('empty'); } catch { return wanEdit(); }
+  }
+
+  try { const r = await wanEdit(); if (r.length > 0) return r; throw new Error('empty'); } catch { return nb2Edit(); }
 }
 
 const routeEdit = async (
@@ -236,6 +247,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
   const [sceneSource, setSceneSource] = useState<'upload'|'gallery'|'prompt'>('upload')
   const sceneInputRef = useRef<HTMLInputElement>(null)
   const [selectedEngine, setSelectedEngine] = useState<string>('auto')
+  const [editEngine, setEditEngine] = useState<'auto' | 'nb2' | 'wan'>('auto') // NB2/Wan toggle for auto mode
   // selectedResolution removed — merged into editorResolution
   const [showEngineModal, setShowEngineModal] = useState(false)
   const engineButtonRef = useRef<HTMLButtonElement>(null)
@@ -277,18 +289,27 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
   const dragStartY = useRef(0)
 
   const { decrementCredits, restoreCredits } = useProfile()
+  const characters = useCharacterStore(s => s.characters)
+
+  // Needed before displayCost — determines NB2 vs Wan routing
+  const pipelineCharId = usePipelineStore(s => s.characterId)
+  const currentChar = characters.find(c => c.id === pipelineCharId)
+  const isStylizedChar = currentChar?.renderStyle ? currentChar.renderStyle !== 'photorealistic' : false
 
   const displayCost = useMemo(() => {
-    if (activeTool === 'reimagine') return 8
     const eng = selectedEngine !== 'auto' ? ENGINE_METADATA.find(e => e.key === selectedEngine) : null
     if (eng) return eng.creditCost
-    return activeTool === 'rotate360' ? 10 : 8
-  }, [selectedEngine, activeTool])
+    // Auto mode: cost depends on editEngine + resolution
+    // Wan via DashScope: native 2K, same price. NB2: resolution multiplier applies.
+    const useNB2 = editEngine === 'nb2' || (editEngine === 'auto' && isStylizedChar)
+    const base = useNB2 ? CREDIT_COSTS[FalModel.NanoBanana2Edit] : (activeTool === 'rotate360' ? 10 : 8)
+    const resMult = useNB2 ? (RESOLUTION_CREDIT_MULTIPLIER[FalModel.NanoBanana2Edit]?.[editorResolution.toUpperCase()] ?? 1) : 1
+    return Math.ceil(base * resMult)
+  }, [selectedEngine, activeTool, editEngine, editorResolution, isStylizedChar])
 
   const toast = useToast()
   const addItems = useGalleryStore(s => s.addItems)
   const galleryItems = useGalleryStore(s => s.items)
-  const characters = useCharacterStore(s => s.characters)
   const { pendingImage, pendingTarget, consume: consumeNav } = useNavigationStore()
 
   useEffect(() => {
@@ -331,9 +352,6 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
   }, [pendingTarget, pendingImage])
 
   const pipelineHeroUrl = usePipelineStore(s => s.heroShotUrl)
-  const pipelineCharId = usePipelineStore(s => s.characterId)
-  const currentChar = characters.find(c => c.id === pipelineCharId)
-  const isStylizedChar = currentChar?.renderStyle ? currentChar.renderStyle !== 'photorealistic' : false
   const pipelineSetEditedHero = usePipelineStore(s => s.setEditedHero)
   const pipelineSetCharacter = usePipelineStore(s => s.setCharacter)
 
@@ -385,8 +403,12 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
 
 
   // ── handleApply — identical logic ──────────────────────────────
+  const hasCharRefs = !!pipelineCharId && characters.some(c => c.id === pipelineCharId && (c.referencePhotoUrls?.length || c.modelImageUrls?.length))
+
   const handleApply = async () => {
-    if (!inputImage) { toast.error('Sube una imagen primero'); return }
+    const reimagineNoInput = activeTool === 'reimagine' && hasCharRefs
+
+    if (!inputImage && !reimagineNoInput) { toast.error('Sube una imagen primero'); return }
 
     if (['inpaint', 'enhance'].includes(activeTool)) { setActiveModal(activeTool); return }
     if (activeTool === 'faceswap' && !faceSwapFile) { toast.error('Sube una foto del rostro de origen primero'); return }
@@ -396,7 +418,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
     if (activeTool === 'composite') {
       if (!sceneImage && !scenePrompt.trim()) { toast.error('Sube una imagen de escena o describe la escena'); return }
     }
-    if (!inputFile && activeTool !== 'rembg') {
+    if (!inputFile && !reimagineNoInput && activeTool !== 'rembg') {
       if (isLoadingFile) { toast.info('Espera, cargando imagen...') } else { toast.error('Sube una imagen primero') }
       return
     }
@@ -405,8 +427,8 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
     setProgress(0)
 
     const eng = selectedEngine !== 'auto' ? ENGINE_METADATA.find(e => e.key === selectedEngine) : null
-    const baseCost = activeTool === 'rotate360' ? 10 : 8
-    const cost = eng ? eng.creditCost : baseCost
+    // Cost matches displayCost — considers editEngine + resolution
+    const cost = eng ? eng.creditCost : displayCost
     const ok = await decrementCredits(cost)
     if (!ok) { toast.error('Creditos insuficientes'); setProcessing(false); return }
 
@@ -420,17 +442,12 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         const charRefs = await getCharRefFiles()
         const instruction = freePrompt.trim()
         try {
-          const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, isStylized: isStylizedChar }, (p) => setProgress(p))
+          const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, isStylized: isStylizedChar, forceEngine: editEngine }, (p) => setProgress(p))
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
           console.warn('Wan/NB2 freeai failed, trying Grok:', nb2Err)
-          try {
-            resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, instruction, charRefs, (p) => setProgress(p))
-          } catch (sdErr) {
-            console.warn('Seedream freeai failed, trying Grok:', sdErr)
-            resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, instruction, (p) => setProgress(p), undefined, charRefs)
-          }
+          resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, instruction, (p) => setProgress(p), undefined, charRefs)
         }
       } else if (activeTool === 'relight') {
         const preset = relightPresets[selPreset]
@@ -472,7 +489,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           : `Change background/scene to: ${sceneDesc}. Keep person identical. Match lighting and color grading.`
         const charRefs = await getCharRefFiles()
         try {
-          const results = await editImageWithAI({ baseImage: inputFile, referenceImage: sceneFile ?? charRefs[0] ?? undefined, instruction: jsonSceneInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, isStylized: isStylizedChar }, (p) => setProgress(p))
+          const results = await editImageWithAI({ baseImage: inputFile, referenceImage: sceneFile ?? charRefs[0] ?? undefined, instruction: jsonSceneInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, isStylized: isStylizedChar, forceEngine: editEngine }, (p) => setProgress(p))
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
@@ -486,7 +503,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         const charRefs = await getCharRefFiles()
         if (charRefs.length > 0) {
           try {
-            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0], instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, isStylized: isStylizedChar }, (p) => setProgress(p))
+            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0], instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, isStylized: isStylizedChar, forceEngine: editEngine }, (p) => setProgress(p))
             if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
             resultUrls = results
           } catch {
@@ -542,7 +559,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           const tryonInstruction = `TRY-ON SPECIFICATION:\n${JSON.stringify(tryonSpec, null, 2)}`
           const tryonFlatInstruction = 'Replace ONLY the clothing. IMAGE 1 is the PERSON (keep everything). IMAGE 2 is the GARMENT ONLY (extract clothing, IGNORE the model wearing it). Same face, body, pose, background.'
           try {
-            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: garmentFile, instruction: tryonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, isStylized: isStylizedChar }, (p) => setProgress(p))
+            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: garmentFile, instruction: tryonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, isStylized: isStylizedChar, forceEngine: editEngine }, (p) => setProgress(p))
             if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
             resultUrls = results
           } catch (nb2Err) {
@@ -553,7 +570,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           // Prompt-only try-on (outfit chip selected, no reference image)
           const chipInstruction = `OUTFIT CHANGE: Replace ONLY the clothing on this person. Dress them in: ${outfitChip}. Keep the EXACT same face, hair, skin tone, body shape, pose, and background. ONLY change the clothing.`
           try {
-            const results = await editImageWithAI({ baseImage: inputFile!, instruction: chipInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, isStylized: isStylizedChar }, (p) => setProgress(p))
+            const results = await editImageWithAI({ baseImage: inputFile!, instruction: chipInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, isStylized: isStylizedChar, forceEngine: editEngine }, (p) => setProgress(p))
             if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
             resultUrls = results
           } catch (nb2Err) {
@@ -591,20 +608,24 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           ? `Render in authentic ${styleNames} style with sharp details.`
           : 'Skin must look real — visible pores, natural texture, subtle imperfections. NO plastic/airbrushed skin.'
         const charRefs = await getCharRefFiles()
-        const flatInstruction = `Edit Figure 1: Transform into a ${styleNames} aesthetic photo. CHANGE: background to match ${direction} setting, outfit to fit the ${styleNames} style, pose and framing to be completely new. KEEP EXACTLY: the person's face, bone structure, eye color, skin tone, body proportions from Figure 1${charRefs.length > 0 ? ' and Figure 2 (identity reference)' : ''}. ${skinFlat} NO text, watermarks, logos, brand names.`
+        // Reimagine uses character reference as base (identity source), not editor input
+        const reimagineBase = charRefs.length > 0 ? charRefs[0] : inputFile!
+        const reimagineIdentityRefs = charRefs.slice(1)
+        const flatInstruction = `Edit Figure 1: Transform into a ${styleNames} aesthetic photo. CHANGE: background to match ${direction} setting, outfit to fit the ${styleNames} style, pose and framing to be completely new. KEEP EXACTLY: the person's face, bone structure, eye color, skin tone, body proportions from Figure 1${reimagineIdentityRefs.length > 0 ? ' and Figure 2 (identity reference)' : ''}. ${skinFlat} NO text, watermarks, logos, brand names.`
         try {
-          const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction: jsonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, isStylized: isStylizedChar }, (p) => setProgress(p))
+          const results = await editImageWithAI({ baseImage: reimagineBase, referenceImage: reimagineIdentityRefs[0] ?? undefined, instruction: jsonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, isStylized: isStylizedChar, forceEngine: editEngine }, (p) => setProgress(p))
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
           console.warn('Wan/NB2 reimagine failed, trying Grok:', nb2Err)
-          resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, flatInstruction, (p) => setProgress(p), undefined, charRefs)
+          resultUrls = await (await loadFal()).editImageWithGrokFal(reimagineBase, flatInstruction, (p) => setProgress(p), undefined, reimagineIdentityRefs)
         }
       }
 
       const validUrls = resultUrls.filter(Boolean)
       if (validUrls.length > 0) {
         resultUrls = validUrls
+        // Wan via DashScope now supports native 2K — no AuraSR upscale needed
         setResultImage(resultUrls[0])
         setEditHistory(prev => [resultUrls[0], ...prev].slice(0, 20))
         pipelineSetEditedHero(resultUrls[0])
@@ -1335,63 +1356,74 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         <div className="flex-1 flex flex-col min-h-0 min-w-0 relative">
           <div ref={canvasContainerRef} className="flex-1 flex flex-col items-center justify-start lg:justify-center pt-2 lg:pt-6 px-2 lg:px-6 pb-3 overflow-y-auto relative">
             {!inputImage ? (
-              /* Empty state */
+              /* Empty state — desktop: minimal (sidebar has controls), mobile: full */
               <div className="max-w-[540px] w-full text-center px-4">
-                <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: '#F8F8F8', border: '2px dashed rgba(0,0,0,0.12)' }}>
-                  <span className="text-2xl" style={{ color: '#999' }}>{'\u2191'}</span>
-                </div>
-                <p className="text-[15px] font-semibold mb-1" style={{ color: '#111' }}>Sube una imagen para empezar a editar</p>
-                <p className="text-[12px] mb-6" style={{ color: '#999' }}>O selecciona desde tu galeria o personajes</p>
-
-                <div className="flex gap-2 justify-center mb-6">
-                  <button onClick={() => fileInputRef.current?.click()}
-                    className="px-6 py-3 rounded-2xl text-[13px] font-semibold transition-all hover:scale-[1.02]"
-                    style={{ background: '#1A1A1A', color: '#FFF' }}>
-                    Subir Imagen
-                  </button>
-                  <button onClick={() => { useNavigationStore.getState().openGalleryForSelection('editor'); onNav?.('gallery') }}
-                    className="px-6 py-3 rounded-2xl text-[13px] font-semibold transition-all hover:scale-[1.02]"
-                    style={{ background: '#F8F8F8', color: '#555', border: '1px solid rgba(0,0,0,0.06)' }}>
-                    Galeria
-                  </button>
+                {/* Desktop: clean drop zone — sidebar handles upload/character */}
+                <div className="hidden lg:block">
+                  <div onClick={() => fileInputRef.current?.click()} className="cursor-pointer py-16 rounded-2xl transition-all hover:bg-[#FAFAFA]" style={{ border: '2px dashed rgba(0,0,0,0.12)' }}>
+                    <span className="text-3xl block mb-3" style={{ color: '#CCC' }}>{'\u2191'}</span>
+                    <p className="text-[13px] font-medium" style={{ color: '#999' }}>Arrastra una imagen o haz click para subir</p>
+                    <p className="text-[11px] mt-1" style={{ color: '#CCC' }}>También puedes seleccionar desde el panel derecho</p>
+                  </div>
                 </div>
 
-                {/* Character selector (visible on all screens) */}
-                {characters.length > 0 && (
-                  <div className="text-left mb-4">
-                    <div style={sectionLabel}>Personajes</div>
-                    <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'thin' }}>
-                      {characters.map(ch => (
-                        <button key={ch.id}
-                          onClick={() => setEditorCharFilter(editorCharFilter === ch.id ? null : ch.id)}
-                          className="flex flex-col items-center gap-1 shrink-0 transition-all"
-                          style={{ opacity: editorCharFilter && editorCharFilter !== ch.id ? 0.4 : 1 }}>
-                          <div className="w-12 h-12 rounded-full overflow-hidden" style={{ border: editorCharFilter === ch.id ? '2px solid #1A1A1A' : '2px solid transparent' }}>
-                            {ch.thumbnail ? <img src={ch.thumbnail} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full rounded-full flex items-center justify-center text-[14px] font-semibold" style={{ background: '#E5E7EB', color: '#555' }}>{ch.name?.[0] || '?'}</div>}
-                          </div>
-                          <span className="text-[9px]" style={{ color: editorCharFilter === ch.id ? '#1A1A1A' : '#999' }}>{ch.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                    {editorCharFilter && (
-                      <div className="grid grid-cols-4 gap-1 mt-2 max-h-[120px] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
-                        {galleryItems.filter(i => i.characterId === editorCharFilter && i.url && !i.tags?.includes('sheet')).slice(0, 12).map(item => (
-                          <button key={item.id} onClick={async () => {
-                            setInputImage(item.url); setResultImage(null)
-                            if (editorCharFilter) pipelineSetCharacter(editorCharFilter)
-                            try { setInputFile(await urlToFile(item.url, 'gallery.png')) } catch { setInputFile(null) }
-                          }}
-                            className="aspect-square rounded-lg overflow-hidden transition-all hover:opacity-80"
-                            style={{ border: '1px solid rgba(0,0,0,0.06)' }}>
-                            <img src={item.url} className="w-full h-full object-cover" alt="" />
+                {/* Mobile: full controls (no sidebar) */}
+                <div className="lg:hidden">
+                  <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: '#F8F8F8', border: '2px dashed rgba(0,0,0,0.12)' }}>
+                    <span className="text-2xl" style={{ color: '#999' }}>{'\u2191'}</span>
+                  </div>
+                  <p className="text-[15px] font-semibold mb-1" style={{ color: '#111' }}>Sube una imagen para empezar a editar</p>
+                  <p className="text-[12px] mb-6" style={{ color: '#999' }}>O selecciona desde tu galeria o personajes</p>
+
+                  <div className="flex gap-2 justify-center mb-6">
+                    <button onClick={() => fileInputRef.current?.click()}
+                      className="px-6 py-3 rounded-2xl text-[13px] font-semibold transition-all hover:scale-[1.02]"
+                      style={{ background: '#1A1A1A', color: '#FFF' }}>
+                      Subir Imagen
+                    </button>
+                    <button onClick={() => { useNavigationStore.getState().openGalleryForSelection('editor'); onNav?.('gallery') }}
+                      className="px-6 py-3 rounded-2xl text-[13px] font-semibold transition-all hover:scale-[1.02]"
+                      style={{ background: '#F8F8F8', color: '#555', border: '1px solid rgba(0,0,0,0.06)' }}>
+                      Galeria
+                    </button>
+                  </div>
+
+                  {characters.length > 0 && (
+                    <div className="text-left mb-4">
+                      <div style={sectionLabel}>Personajes</div>
+                      <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'thin' }}>
+                        {characters.map(ch => (
+                          <button key={ch.id}
+                            onClick={() => setEditorCharFilter(editorCharFilter === ch.id ? null : ch.id)}
+                            className="flex flex-col items-center gap-1 shrink-0 transition-all"
+                            style={{ opacity: editorCharFilter && editorCharFilter !== ch.id ? 0.4 : 1 }}>
+                            <div className="w-12 h-12 rounded-full overflow-hidden" style={{ border: editorCharFilter === ch.id ? '2px solid #1A1A1A' : '2px solid transparent' }}>
+                              {ch.thumbnail ? <img src={ch.thumbnail} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full rounded-full flex items-center justify-center text-[14px] font-semibold" style={{ background: '#E5E7EB', color: '#555' }}>{ch.name?.[0] || '?'}</div>}
+                            </div>
+                            <span className="text-[9px]" style={{ color: editorCharFilter === ch.id ? '#1A1A1A' : '#999' }}>{ch.name}</span>
                           </button>
                         ))}
                       </div>
-                    )}
-                  </div>
-                )}
+                      {editorCharFilter && (
+                        <div className="grid grid-cols-4 gap-1 mt-2 max-h-[120px] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+                          {galleryItems.filter(i => i.characterId === editorCharFilter && i.url && !i.tags?.includes('sheet')).slice(0, 12).map(item => (
+                            <button key={item.id} onClick={async () => {
+                              setInputImage(item.url); setResultImage(null)
+                              if (editorCharFilter) pipelineSetCharacter(editorCharFilter)
+                              try { setInputFile(await urlToFile(item.url, 'gallery.png')) } catch { setInputFile(null) }
+                            }}
+                              className="aspect-square rounded-lg overflow-hidden transition-all hover:opacity-80"
+                              style={{ border: '1px solid rgba(0,0,0,0.06)' }}>
+                              <img src={item.url} className="w-full h-full object-cover" alt="" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
 
-                <div className="flex gap-2 flex-wrap justify-center">
+                <div className="flex gap-2 flex-wrap justify-center lg:mt-4">
                   {PRIMARY_TOOLS.map(t => (
                     <button key={t.id} onClick={() => setActiveTool(t.id)}
                       className="px-3 py-2 rounded-xl text-[11px] font-medium transition-all hover:scale-[1.02]"
@@ -1574,6 +1606,25 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                   </div>
                 )}
               </div>
+            ) : activeTool === 'reimagine' && hasCharRefs ? (
+              /* Reimagine with character — no image upload needed */
+              <div className="space-y-2">
+                <div style={sectionLabel}>Personaje</div>
+                <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'thin' }}>
+                  {characters.map(ch => (
+                    <button key={ch.id}
+                      onClick={() => { pipelineSetCharacter(ch.id); setEditorCharFilter(ch.id) }}
+                      className="flex flex-col items-center gap-1 shrink-0 transition-all"
+                      style={{ opacity: pipelineCharId && pipelineCharId !== ch.id ? 0.4 : 1 }}>
+                      <div className="w-10 h-10 rounded-full overflow-hidden" style={{ border: pipelineCharId === ch.id ? '2px solid #1A1A1A' : '2px solid transparent' }}>
+                        {(ch.thumbnail || ch.modelImageUrls?.[0]) && <img src={ch.thumbnail || ch.modelImageUrls?.[0]} className="w-full h-full object-cover" alt="" />}
+                      </div>
+                      <span className="text-[9px]" style={{ color: pipelineCharId === ch.id ? '#1A1A1A' : '#999' }}>{ch.name}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="text-[10px] text-center py-2" style={{ color: '#999' }}>Reimaginar usa las fotos de referencia del personaje</div>
+              </div>
             ) : (
               <div className="space-y-2">
                 <div style={sectionLabel}>Imagen de Entrada</div>
@@ -1647,9 +1698,20 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                 ))}
               </div>
             </div>
-            <button onClick={handleApply} disabled={processing || !inputImage}
+            {/* NB2 / Wan toggle */}
+            {selectedEngine === 'auto' && (
+              <div className="flex gap-1 mb-2">
+                {([['auto', 'Auto'], ['nb2', 'NB2'], ['wan', 'Wan']] as const).map(([id, label]) => (
+                  <button key={id} onClick={() => setEditEngine(id)} className="flex-1 text-[10px] font-mono font-semibold py-1.5 rounded-lg transition-all"
+                    style={{ background: editEngine === id ? '#1A1A1A' : 'white', color: editEngine === id ? '#FFF' : '#999', border: `1px solid ${editEngine === id ? '#1A1A1A' : 'rgba(0,0,0,0.08)'}` }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button onClick={handleApply} disabled={processing || (!inputImage && !(activeTool === 'reimagine' && hasCharRefs))}
               className="w-full py-2.5 rounded-xl text-[12px] font-semibold transition-all"
-              style={{ background: (!inputImage || processing) ? '#CCC' : '#1A1A1A', color: '#FFF', opacity: (!inputImage || processing) ? 0.6 : 1 }}>
+              style={{ background: (!inputImage && !(activeTool === 'reimagine' && hasCharRefs) || processing) ? '#CCC' : '#1A1A1A', color: '#FFF', opacity: (!inputImage && !(activeTool === 'reimagine' && hasCharRefs) || processing) ? 0.6 : 1 }}>
               {processing ? (activeTool === 'reimagine' ? 'Reimaginando...' : activeTool === 'tryon' ? 'Probando outfit...' : `Aplicando ${currentTool.label}...`) : `${currentTool.icon} Aplicar ${currentTool.label} (${displayCost}cr)`}
             </button>
           </div>
@@ -1716,10 +1778,14 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                 {(['1k', '2k'] as const).map(r => (
                   <button key={r} onClick={() => setEditorResolution(r)} style={pill(editorResolution === r)} className="pill-btn flex-1 text-center">{r.toUpperCase()}</button>
                 ))}
+                <div style={{ width: 1, background: 'rgba(0,0,0,0.08)' }} />
+                {(['auto', 'nb2', 'wan'] as const).map(id => (
+                  <button key={id} onClick={() => setEditEngine(id)} style={pill(editEngine === id)} className="pill-btn flex-1 text-center">{id === 'auto' ? 'Auto' : id.toUpperCase()}</button>
+                ))}
               </div>
-              <button onClick={() => { handleApply(); setSheetExpanded(false) }} disabled={processing || !inputImage}
+              <button onClick={() => { handleApply(); setSheetExpanded(false) }} disabled={processing || (!inputImage && !(activeTool === 'reimagine' && hasCharRefs))}
                 className="w-full py-3 rounded-2xl text-[13px] font-semibold transition-all"
-                style={{ background: (!inputImage || processing) ? '#CCC' : '#1A1A1A', color: '#FFF', opacity: (!inputImage || processing) ? 0.6 : 1 }}>
+                style={{ background: (!inputImage && !(activeTool === 'reimagine' && hasCharRefs) || processing) ? '#CCC' : '#1A1A1A', color: '#FFF', opacity: (!inputImage && !(activeTool === 'reimagine' && hasCharRefs) || processing) ? 0.6 : 1 }}>
                 {processing ? (activeTool === 'reimagine' ? 'Reimaginando...' : activeTool === 'tryon' ? 'Probando outfit...' : `Aplicando ${currentTool.label}...`) : `${currentTool.icon} Aplicar ${currentTool.label} (${displayCost}cr)`}
               </button>
             </div>
