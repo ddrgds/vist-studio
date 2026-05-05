@@ -200,7 +200,7 @@ const ChipSelector = ({
 // ─── Main component ─────────────────────────────────────────────────
 export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   // Mode
-  const [mode, setMode] = useState<'create' | 'import'>('create')
+  const [mode, setMode] = useState<'create' | 'import'>('import')
   const [step, setStep] = useState(0)
 
   // Step 0 — Base
@@ -239,6 +239,10 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   // Generation
   const [variants, setVariants] = useState<string[]>([])
   const [selectedVariant, setSelectedVariant] = useState<number | null>(null)
+  // Refinement-with-words state — lets user tweak the generated portrait without regenerating
+  const [refinePrompt, setRefinePrompt] = useState('')
+  const [refining, setRefining] = useState(false)
+  const [refineProgress, setRefineProgress] = useState(0)
   const [sheetResults, setSheetResults] = useState<{
     face: string | null; body: string | null; expressions: string | null;
     faceUltra: string | null; expressionsUltra: string | null;
@@ -507,6 +511,45 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     }
 
     setGenerating(false)
+  }
+
+  // ─── Refine with words — quick edit of selected variant ────────
+  const REFINE_CREDIT_COST = 10
+  const handleRefineVariant = async () => {
+    if (selectedVariant === null) return
+    const prompt = refinePrompt.trim()
+    if (!prompt) { toast.error('Escribe qué cambiar (ej: "ojos verdes", "cabello más corto")'); return }
+    const ok = await decrementCredits(REFINE_CREDIT_COST)
+    if (!ok) { toast.error('Créditos insuficientes'); return }
+    setRefining(true); setRefineProgress(0)
+    try {
+      const url = variants[selectedVariant]
+      const blob = await (await fetch(url)).blob()
+      const baseFile = new File([blob], 'variant.png', { type: blob.type || 'image/png' })
+      const { editImageWithGrokFal, editWithNB2Fal } = await import('../services/falService')
+      let resultUrls: string[] = []
+      try {
+        resultUrls = await editWithNB2Fal(baseFile, prompt, [], p => setRefineProgress(p))
+        if (!resultUrls.length) throw new Error('NB2 empty')
+      } catch {
+        resultUrls = await editImageWithGrokFal(baseFile, prompt, p => setRefineProgress(p))
+      }
+      if (resultUrls.length === 0) throw new Error('No se generó imagen')
+      // Replace the variant in place
+      setVariants(prev => prev.map((u, i) => i === selectedVariant ? resultUrls[0] : u))
+      setRefinePrompt('')
+      toast.success('Refinado aplicado')
+    } catch (err: any) {
+      restoreCredits(REFINE_CREDIT_COST)
+      const msg = String(err?.message || err)
+      if (/ValidationError|content_policy|no_media_generated/i.test(msg)) {
+        toast.error('Combinación rechazada por moderación. Créditos restaurados.')
+      } else {
+        toast.error('Error al refinar — créditos restaurados')
+      }
+    } finally {
+      setRefining(false); setRefineProgress(0)
+    }
   }
 
   // ─── Character Sheet Pipeline (progressive) ────────────────────
@@ -792,20 +835,31 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
         <p className="text-[11px] font-semibold uppercase tracking-wider mt-1" style={{ color: '#999' }}>Crea desde cero o importa imágenes de referencia</p>
       </div>
 
-      {/* Mode Toggle */}
+      {/* Mode Toggle — Import is recommended (faster + better identity) */}
       <div className="px-4 md:px-8 py-4">
         <div className="flex w-full md:w-auto md:inline-flex rounded-xl p-1" style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)' }}>
-          {(['create', 'import'] as const).map(m => (
+          {(['import', 'create'] as const).map(m => (
             <button key={m} onClick={() => { setMode(m); setCharacterSaved(false) }}
-              className="px-5 py-2 rounded-xl text-sm font-medium transition-all"
+              className="px-5 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2"
               style={{
                 background: mode === m ? '#1A1A1A' : 'transparent',
                 color: mode === m ? '#fff' : '#999',
                 boxShadow: mode === m ? '0 2px 8px rgba(0,0,0,.08)' : 'none',
               }}>
-              {m === 'create' ? '\u2295 Crear desde Cero' : '\u2191 Importar Imágenes'}
+              {m === 'import' ? '\u2191 Importar Imágenes' : '\u2295 Crear desde Cero'}
+              {m === 'import' && (
+                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded"
+                  style={{ background: mode === m ? 'rgba(255,255,255,0.2)' : '#FEF3C7', color: mode === m ? '#fff' : '#92400E' }}>
+                  RECOMENDADO
+                </span>
+              )}
             </button>
           ))}
+        </div>
+        <div className="text-[10px] mt-2" style={{ color: '#999' }}>
+          {mode === 'import'
+            ? '✨ Sube fotos del personaje real — la AI extrae rasgos automáticamente. Mejor identidad.'
+            : '🎨 Diseña desde cero con estilo, género, edad, atributos. Más control creativo.'}
         </div>
       </div>
 
@@ -955,10 +1009,10 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                 </button>
                 <div className="relative">
                   <button onClick={() => setShowEngineModal(v => !v)}
-                    className="w-8 h-8 rounded-xl flex items-center justify-center text-sm relative"
+                    className="h-8 px-2.5 rounded-xl flex items-center gap-1.5 text-[10px] font-medium relative"
                     style={{ background: 'white', border: '1px solid rgba(0,0,0,0.08)', color: '#555' }}
-                    title="Motor de Generación">
-                    🔧
+                    title="Cambiar motor de generación (avanzado). Auto elige el mejor según el caso.">
+                    ⚙️ Motor: <span style={{ fontFamily: "'JetBrains Mono', monospace", color: '#1A1A1A', fontWeight: 600 }}>{selectedEngine === 'auto' ? 'Auto' : selectedEngine.split(':').pop()?.toUpperCase()}</span>
                     {selectedEngine !== 'auto' && (
                       <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full" style={{ background: '#1A1A1A' }} />
                     )}
@@ -1021,15 +1075,28 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                     {renderStyles.map((rs, i) => (
                       <button key={rs.id}
                         onClick={() => { setSelRenderStyle(i); setSelSubstyle(null) }}
-                        className="p-4 rounded-xl text-left transition-all hover:scale-[1.02]"
+                        className="rounded-xl text-left transition-all hover:scale-[1.02] overflow-hidden"
                         style={{
-                          background: selRenderStyle === i ? '#F9FAFB' : 'white',
+                          background: 'white',
                           border: `1.5px solid ${selRenderStyle === i ? '#1A1A1A' : 'rgba(0,0,0,0.06)'}`,
-                          boxShadow: selRenderStyle === i ? '0 0 0 1px #1A1A1A' : 'none',
+                          boxShadow: selRenderStyle === i ? '0 0 0 1px #1A1A1A, 0 4px 16px rgba(0,0,0,0.06)' : 'none',
                         }}>
-                        <span className="text-xl block mb-1.5">{rs.icon}</span>
-                        <div className="text-[12px] font-semibold" style={{ color: selRenderStyle === i ? '#1A1A1A' : '#555' }}>{rs.label}</div>
-                        <div className="text-[9px] mt-0.5" style={{ color: '#999' }}>{rs.desc}</div>
+                        {/* Visual preview area — gradient backdrop with large emoji until real thumbnails added */}
+                        <div className="aspect-[4/3] flex items-center justify-center relative" style={{ background: rs.bg }}>
+                          <span className="text-4xl" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.08))' }}>{rs.icon}</span>
+                          {selRenderStyle === i && (
+                            <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
+                              style={{ background: '#1A1A1A', color: '#fff' }}>✓</span>
+                          )}
+                        </div>
+                        {/* Label area */}
+                        <div className="p-2.5">
+                          <div className="text-[12px] font-semibold leading-tight" style={{ color: selRenderStyle === i ? '#1A1A1A' : '#555' }}>{rs.label}</div>
+                          <div className="text-[9px] mt-0.5 leading-snug" style={{ color: '#999' }}>{rs.desc}</div>
+                          {rs.substyles && (
+                            <div className="text-[8px] mt-1 font-mono" style={{ color: '#1A1A1A', opacity: 0.5 }}>{rs.substyles.length} subestilos</div>
+                          )}
+                        </div>
                       </button>
                     ))}
                   </div>
@@ -1434,10 +1501,15 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                                 border: selectedVariant === i ? '2px solid #1A1A1A' : '1px solid rgba(0,0,0,0.06)',
                                 boxShadow: selectedVariant === i ? '0 0 0 1px #1A1A1A' : 'none',
                               }}>
-                              <img src={url} className="w-full h-full object-cover" alt={`Variant ${i + 1}`} />
-                              {selectedVariant === i && (
+                              <img src={url} className="w-full h-full object-cover" alt={`Variant ${i + 1}`} style={{ opacity: refining && selectedVariant === i ? 0.4 : 1, transition: 'opacity 0.3s' }} />
+                              {selectedVariant === i && !refining && (
                                 <div className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold"
                                   style={{ background: '#1A1A1A', color: '#fff' }}>{'\u2713'}</div>
+                              )}
+                              {refining && selectedVariant === i && (
+                                <div className="absolute inset-0 flex items-center justify-center text-[11px] font-mono" style={{ color: '#1A1A1A' }}>
+                                  Refinando... {Math.round(refineProgress)}%
+                                </div>
                               )}
                             </button>
                             {/* Zoom button */}
@@ -1449,6 +1521,40 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                             </button>
                           </div>
                         ))}
+                      </div>
+                    )}
+
+                    {/* Refine with words — when a variant is picked, allow text-based tweaks */}
+                    {selectedVariant !== null && variants.length > 0 && !characterSaved && (
+                      <div className="p-3 rounded-xl" style={{ background: '#FAFAFA', border: '1px solid rgba(0,0,0,0.06)' }}>
+                        <div className="text-[10px] font-mono uppercase tracking-wider mb-1.5" style={{ color: '#999' }}>
+                          ✨ Refinar con palabras <span className="text-[9px] font-normal normal-case">· {REFINE_CREDIT_COST}cr por refinamiento</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <input
+                            value={refinePrompt}
+                            onChange={e => setRefinePrompt(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter' && !refining && refinePrompt.trim()) handleRefineVariant() }}
+                            placeholder="ej: ojos verdes, más pecas, cabello más corto..."
+                            disabled={refining}
+                            className="flex-1 px-3 py-2 rounded-lg text-[12px] outline-none"
+                            style={{ background: 'white', border: '1px solid rgba(0,0,0,0.08)', color: '#111' }}
+                          />
+                          <button
+                            onClick={handleRefineVariant}
+                            disabled={refining || !refinePrompt.trim()}
+                            className="px-3 py-2 rounded-lg text-[11px] font-semibold transition-all"
+                            style={{
+                              background: (!refining && refinePrompt.trim()) ? '#1A1A1A' : '#CCC',
+                              color: '#fff',
+                              cursor: (refining || !refinePrompt.trim()) ? 'not-allowed' : 'pointer',
+                            }}>
+                            {refining ? '...' : '✨ Aplicar'}
+                          </button>
+                        </div>
+                        <div className="text-[9px] mt-1.5" style={{ color: '#999' }}>
+                          Edita la variante seleccionada sin regenerar todo. Mantiene el rostro y cambia solo lo que pidas.
+                        </div>
                       </div>
                     )}
 
