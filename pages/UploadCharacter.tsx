@@ -218,6 +218,10 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   const [activeTab, setActiveTab] = useState<'builder' | 'prompt'>('builder')
   // Step 2 internal sub-tabs to reduce scroll length
   const [appearanceTab, setAppearanceTab] = useState<'face' | 'hair' | 'skin' | 'body'>('face')
+  // Substyle section is collapsed by default — opt-in for users who want fine control.
+  // Auto-expands when user picks a substyle (e.g. via Quick Start template).
+  const [substyleExpanded, setSubstyleExpanded] = useState(false)
+  useEffect(() => { if (selSubstyle) setSubstyleExpanded(true) }, [selSubstyle])
   const [chipSelections, setChipSelections] = useState<Record<string, string[]>>({
     ethnicity: [], hairStyle: [], hairColor: [], skinTone: [], eyeColor: [],
     eyeShape: [], noseType: [], lipShape: [], faceShape: [], jawline: [], eyebrows: [],
@@ -479,14 +483,14 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
     try {
       // imageBoost feeds into NB2's `aesthetic_context.art_style` JSON field, Grok's
-      // "Style:" prefix, and other models' style anchor. We MUST include the substyle
-      // suffix here so the model treats it as STYLE INSTRUCTION (not as physical
-      // description). The substyle is the most specific, so it goes first.
+      // "Style:" prefix, and other models' style anchor. ALWAYS include the parent
+      // style prompt — NB2's default fallback is too generic for any non-default style.
+      // For photorealistic with no substyle, the rich photoreal prompt (Phase One,
+      // visible pores, subsurface scattering) is what makes the difference.
       const substyleObj = style.substyles?.find(s => s.id === selSubstyle)
-      const baseStyleBoost = style.id !== 'photorealistic' ? style.prompt : undefined
       const composedBoost = substyleObj
-        ? (baseStyleBoost ? `${substyleObj.suffix} ${baseStyleBoost}` : substyleObj.suffix)
-        : baseStyleBoost
+        ? `${substyleObj.suffix} ${style.prompt}`
+        : style.prompt
 
       const params: InfluencerParams = {
         characters: [{
@@ -1150,18 +1154,37 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                 {/* Substyles — appear when parent style is selected and has substyles */}
                 {renderStyles[selRenderStyle]?.substyles && (
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#555' }}>
-                        Subestilo <span className="text-[10px] font-normal normal-case" style={{ color: '#999' }}>· opcional</span>
-                      </label>
-                      {selSubstyle && (
-                        <button onClick={() => setSelSubstyle(null)}
-                          className="text-[10px] underline" style={{ color: '#777', background: 'none', border: 'none', cursor: 'pointer' }}>
-                          Quitar selección
-                        </button>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-3 lg:grid-cols-4 gap-2">
+                    {/* Collapsible header */}
+                    <button
+                      onClick={() => setSubstyleExpanded(v => !v)}
+                      className="w-full flex items-center justify-between py-2.5 px-3 rounded-xl transition-all hover:bg-[#FAFAFA]"
+                      style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)', cursor: 'pointer' }}>
+                      <div className="flex items-center gap-2 text-left">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#555' }}>
+                          Subestilo
+                        </span>
+                        <span className="text-[10px] font-normal normal-case" style={{ color: '#999' }}>
+                          · opcional · {renderStyles[selRenderStyle].substyles!.length} disponibles
+                        </span>
+                        {selSubstyle && (
+                          <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ml-1" style={{ background: '#1A1A1A', color: '#fff' }}>
+                            {renderStyles[selRenderStyle].substyles!.find(s => s.id === selSubstyle)?.label.toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {selSubstyle && (
+                          <span onClick={(e) => { e.stopPropagation(); setSelSubstyle(null) }}
+                            className="text-[10px] underline" style={{ color: '#777' }}>
+                            Quitar
+                          </span>
+                        )}
+                        <span style={{ fontSize: '0.6rem', transition: 'transform .2s', transform: substyleExpanded ? 'rotate(180deg)' : 'rotate(0deg)', color: '#999' }}>▼</span>
+                      </div>
+                    </button>
+
+                    {substyleExpanded && (
+                    <div className="grid grid-cols-3 lg:grid-cols-4 gap-2 mt-3">
                       {renderStyles[selRenderStyle].substyles!.map(sub => {
                         const active = selSubstyle === sub.id
                         return (
@@ -1203,7 +1226,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                         )
                       })}
                     </div>
-
+                    )}
                   </div>
                 )}
 
