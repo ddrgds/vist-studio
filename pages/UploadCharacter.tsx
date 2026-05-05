@@ -401,9 +401,41 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   const resMultiplier = selectedResolution === '4k' ? 2 : selectedResolution === '2k' ? 1.5 : 1
   const costPerVariant = Math.ceil(baseCost * resMultiplier)
 
+  // When a substyle is selected, fetch its thumbnail to use as a STYLE reference image.
+  // This significantly improves how NB2/Grok respect the chosen substyle (Ghibli looks
+  // more Ghibli, Cyberpunk looks more Cyberpunk, etc.) — text alone is not enough.
+  const getStyleRefFile = async (): Promise<File | null> => {
+    const styleId = selSubstyle || renderStyles[selRenderStyle].id
+    try {
+      const res = await fetch(`/style-previews/${styleId}.jpg`)
+      if (!res.ok) return null
+      const blob = await res.blob()
+      return new File([blob], `${styleId}-style-ref.jpg`, { type: 'image/jpeg' })
+    } catch { return null }
+  }
+
   const routeGeneration = async (params: InfluencerParams): Promise<string[]> => {
+    // Try style-reference editing first when substyle is selected — better stylistic fidelity
+    const styleRef = selSubstyle ? await getStyleRefFile() : null
+
     if (!engineMeta || selectedEngine === 'auto') {
-      // NB2 → Grok fallback chain
+      // If we have a style reference, use NB2 Edit endpoint with the thumbnail as ref.
+      // The prompt is structured to ask for STYLE TRANSFER (not identity copy).
+      if (styleRef) {
+        try {
+          const { editWithNB2Fal } = await import('../services/falService')
+          const character = params.characters[0]
+          const styleRefPrompt = `Use the reference image ONLY for visual style — rendering technique, color palette, aesthetic, brushwork. Do NOT copy the face, identity, or pose from it. Generate a NEW character described as: ${character?.characteristics || ''}. ${character?.outfitDescription ? `Wearing ${character.outfitDescription}.` : ''} ${params.scenario || ''}. Apply the artistic style of the reference faithfully.`
+          // We pass styleRef as the BASE image (it's the ref) — but the prompt says "create new character"
+          const results = await editWithNB2Fal(styleRef, styleRefPrompt, [], () => {})
+          if (results.length > 0) return results
+          throw new Error('NB2 edit returned empty')
+        } catch (refErr) {
+          console.warn('NB2 style-ref edit failed, falling back to t2i:', refErr)
+          // fall through to standard t2i
+        }
+      }
+      // Standard NB2 → Grok cascade (no style ref)
       try {
         return await generateWithFal(params, FalModel.NanoBanana2)
       } catch (nb2Err) {
