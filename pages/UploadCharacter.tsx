@@ -216,6 +216,8 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
   // Step 1 — Look
   const [activeTab, setActiveTab] = useState<'builder' | 'prompt'>('builder')
+  // Step 2 internal sub-tabs to reduce scroll length
+  const [appearanceTab, setAppearanceTab] = useState<'face' | 'hair' | 'skin' | 'body'>('face')
   const [chipSelections, setChipSelections] = useState<Record<string, string[]>>({
     ethnicity: [], hairStyle: [], hairColor: [], skinTone: [], eyeColor: [],
     eyeShape: [], noseType: [], lipShape: [], faceShape: [], jawline: [], eyebrows: [],
@@ -420,13 +422,14 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
     if (!engineMeta || selectedEngine === 'auto') {
       // If we have a style reference, use NB2 Edit endpoint with the thumbnail as ref.
-      // The prompt is structured to ask for STYLE TRANSFER (not identity copy).
+      // Style-transfer prompt: emphasize STYLE matching, only mild identity-shift instruction.
       if (styleRef) {
         try {
           const { editWithNB2Fal } = await import('../services/falService')
           const character = params.characters[0]
-          const styleRefPrompt = `Use the reference image ONLY for visual style — rendering technique, color palette, aesthetic, brushwork. Do NOT copy the face, identity, or pose from it. Generate a NEW character described as: ${character?.characteristics || ''}. ${character?.outfitDescription ? `Wearing ${character.outfitDescription}.` : ''} ${params.scenario || ''}. Apply the artistic style of the reference faithfully.`
-          // We pass styleRef as the BASE image (it's the ref) — but the prompt says "create new character"
+          // Strong style transfer prompt — match aesthetics tightly, only swap subject.
+          // Avoid hard "do NOT copy" language which makes the model ignore the ref entirely.
+          const styleRefPrompt = `Generate this character in the EXACT artistic style of the reference image — same rendering technique, line quality, color palette, shading, brushwork, lighting style, and overall aesthetic. The reference defines the LOOK. Create a different person matching: ${character?.characteristics || ''}. ${character?.outfitDescription ? `Wearing: ${character.outfitDescription}.` : ''} ${params.scenario || ''}. Match the reference's visual style faithfully — this is the most important requirement.`
           const results = await editWithNB2Fal(styleRef, styleRefPrompt, [], () => {})
           if (results.length > 0) return results
           throw new Error('NB2 edit returned empty')
@@ -1015,7 +1018,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               </div>
               <div className="flex gap-1 overflow-x-auto pb-1">
               {steps.map((s, i) => {
-                const stepHints = ['Estilo, género, edad, nombre', 'Etnia, cuerpo, rostro, cabello, makeup', 'Outfit, accesorios, personalidad']
+                const stepHints = ['Estilo, género, edad, nombre', 'Cuerpo, cabello, piel, rostro', 'Moda, personalidad, accesorios']
                 return (
                   <button key={s} onClick={() => setStep(i)}
                     title={stepHints[i]}
@@ -1283,64 +1286,138 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
                 <div className="p-6 space-y-5 rounded-xl" style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 12 }}>
                   {activeTab === 'builder' ? (
-                    /* ─── Builder Tab ─── */
+                    /* ─── Builder Tab — split into sub-tabs to reduce scroll ─── */
                     <>
-                      {/* ── Rasgos primarios (siempre visibles) ── */}
-                      <div>
-                        <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Origen / Etnia</label>
-                        <ChipSelector options={ETHNICITIES} selected={chipSelections.ethnicity}
-                          onSelect={ids => updateChip('ethnicity', ids)} />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Estilo de Cabello</label>
-                        <ChipSelector options={HAIR_STYLES} selected={chipSelections.hairStyle}
-                          onSelect={ids => updateChip('hairStyle', ids)} />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Color de Cabello</label>
-                        <ChipSelector options={HAIR_COLORS} selected={chipSelections.hairColor}
-                          onSelect={ids => updateChip('hairColor', ids)} />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Tono de Piel</label>
-                        <ChipSelector options={SKIN_TONES} selected={chipSelections.skinTone}
-                          onSelect={ids => updateChip('skinTone', ids)} />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Detalles de Piel <span className="text-[9px] font-normal normal-case tracking-normal" style={{ color: '#999' }}>(hasta 3)</span></label>
-                        <ChipSelector options={SKIN_DETAILS} selected={chipSelections.skinDetails}
-                          onSelect={ids => updateChip('skinDetails', ids)} maxSelect={3} />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Maquillaje</label>
-                        <ChipSelector options={MAKEUP_STYLES} selected={chipSelections.makeup}
-                          onSelect={ids => updateChip('makeup', ids)} />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Tipo de Cuerpo <span className="text-[9px] font-normal normal-case tracking-normal" style={{ color: '#999' }}>(hasta 3)</span></label>
-                        <ChipSelector options={BODY_TYPES} selected={chipSelections.bodyType}
-                          onSelect={ids => updateChip('bodyType', ids)} maxSelect={3} />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Altura</label>
-                        <ChipSelector options={HEIGHTS} selected={chipSelections.height}
-                          onSelect={ids => updateChip('height', ids)} />
+                      {/* Sub-tab selector */}
+                      <div className="flex gap-1 p-1 rounded-xl mb-4" style={{ background: '#F3F4F6', border: '1px solid rgba(0,0,0,0.04)' }}>
+                        {([
+                          { id:'face' as const, label:'Rostro', icon:'👤' },
+                          { id:'hair' as const, label:'Cabello', icon:'💇' },
+                          { id:'skin' as const, label:'Piel', icon:'🧴' },
+                          { id:'body' as const, label:'Cuerpo', icon:'🏋️' },
+                        ]).map(t => (
+                          <button key={t.id} onClick={() => setAppearanceTab(t.id)}
+                            className="flex-1 px-2 py-1.5 rounded-lg text-[11px] font-medium transition-all flex items-center justify-center gap-1"
+                            style={{
+                              background: appearanceTab === t.id ? '#1A1A1A' : 'transparent',
+                              color: appearanceTab === t.id ? '#fff' : '#777',
+                              boxShadow: appearanceTab === t.id ? '0 1px 4px rgba(0,0,0,.1)' : 'none',
+                            }}>
+                            <span>{t.icon}</span>
+                            <span>{t.label}</span>
+                          </button>
+                        ))}
                       </div>
 
-                      {/* ── Ajustes detallados (colapsado por defecto) ── */}
-                      <button
-                        onClick={() => setShowAdvanced(v => !v)}
-                        className="flex items-center gap-2 text-[11px] font-semibold w-full py-2.5 px-3 rounded-xl transition-all"
-                        style={{ background: showAdvanced ? '#F3F4F6' : 'white', border: '1px solid rgba(0,0,0,0.06)', color: '#555' }}>
-                        <span style={{ fontSize: '0.8rem' }}>⚙️</span>
-                        <span>Ajustes Detallados</span>
-                        <span style={{ marginLeft: 'auto', fontSize: '0.6rem', transition: 'transform .2s', transform: showAdvanced ? 'rotate(180deg)' : 'rotate(0deg)', color: '#999' }}>▼</span>
-                      </button>
+                      {/* Tab: Rostro (Etnia + Maquillaje + ojos/nariz/labios/cara/mandíbula/cejas) */}
+                      {appearanceTab === 'face' && (
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Origen / Etnia</label>
+                            <ChipSelector options={ETHNICITIES} selected={chipSelections.ethnicity}
+                              onSelect={ids => updateChip('ethnicity', ids)} />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Maquillaje</label>
+                            <ChipSelector options={MAKEUP_STYLES} selected={chipSelections.makeup}
+                              onSelect={ids => updateChip('makeup', ids)} />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Color de Ojos</label>
+                            <ChipSelector options={EYE_COLORS} selected={chipSelections.eyeColor}
+                              onSelect={ids => updateChip('eyeColor', ids)} />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Forma de Ojos</label>
+                            <ChipSelector options={EYE_SHAPES} selected={chipSelections.eyeShape}
+                              onSelect={ids => updateChip('eyeShape', ids)} />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Tipo de Nariz</label>
+                            <ChipSelector options={NOSE_TYPES} selected={chipSelections.noseType}
+                              onSelect={ids => updateChip('noseType', ids)} />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Forma de Labios</label>
+                            <ChipSelector options={LIP_SHAPES} selected={chipSelections.lipShape}
+                              onSelect={ids => updateChip('lipShape', ids)} />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Forma de Rostro</label>
+                            <ChipSelector options={FACE_SHAPES} selected={chipSelections.faceShape}
+                              onSelect={ids => updateChip('faceShape', ids)} />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Mandíbula</label>
+                            <ChipSelector options={JAWLINES} selected={chipSelections.jawline}
+                              onSelect={ids => updateChip('jawline', ids)} />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Cejas</label>
+                            <ChipSelector options={EYEBROWS} selected={chipSelections.eyebrows}
+                              onSelect={ids => updateChip('eyebrows', ids)} />
+                          </div>
+                        </div>
+                      )}
 
-                      {showAdvanced && (
-                        <div className="space-y-4 p-4 rounded-xl" style={{ background: '#F9FAFB', border: '1px solid rgba(0,0,0,0.04)' }}>
-                          {/* Proporciones */}
-                          <div className="grid grid-cols-2 gap-3">
+                      {/* Tab: Cabello (estilo + color + vello facial) */}
+                      {appearanceTab === 'hair' && (
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Estilo de Cabello</label>
+                            <ChipSelector options={HAIR_STYLES} selected={chipSelections.hairStyle}
+                              onSelect={ids => updateChip('hairStyle', ids)} />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Color de Cabello</label>
+                            <ChipSelector options={HAIR_COLORS} selected={chipSelections.hairColor}
+                              onSelect={ids => updateChip('hairColor', ids)} />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Vello Facial</label>
+                            <ChipSelector options={FACIAL_HAIR} selected={chipSelections.facialHair}
+                              onSelect={ids => updateChip('facialHair', ids)} />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Tab: Piel (tono + detalles + textura) */}
+                      {appearanceTab === 'skin' && (
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Tono de Piel</label>
+                            <ChipSelector options={SKIN_TONES} selected={chipSelections.skinTone}
+                              onSelect={ids => updateChip('skinTone', ids)} />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Detalles de Piel <span className="text-[9px] font-normal normal-case tracking-normal" style={{ color: '#999' }}>(hasta 3)</span></label>
+                            <ChipSelector options={SKIN_DETAILS} selected={chipSelections.skinDetails}
+                              onSelect={ids => updateChip('skinDetails', ids)} maxSelect={3} />
+                          </div>
+                          {!isPhotorealistic && (
+                            <div>
+                              <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Textura de Piel</label>
+                              <ChipSelector options={SKIN_TEXTURES} selected={chipSelections.skinTexture}
+                                onSelect={ids => updateChip('skinTexture', ids)} />
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Tab: Cuerpo (tipo + altura + busto/cintura/cadera + musculatura + piernas) */}
+                      {appearanceTab === 'body' && (
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Tipo de Cuerpo <span className="text-[9px] font-normal normal-case tracking-normal" style={{ color: '#999' }}>(hasta 3)</span></label>
+                            <ChipSelector options={BODY_TYPES} selected={chipSelections.bodyType}
+                              onSelect={ids => updateChip('bodyType', ids)} maxSelect={3} />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Altura</label>
+                            <ChipSelector options={HEIGHTS} selected={chipSelections.height}
+                              onSelect={ids => updateChip('height', ids)} />
+                          </div>
+                          <div className="grid grid-cols-3 gap-3">
                             <div>
                               <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Busto</label>
                               <ChipSelector options={BUST_SIZES} selected={chipSelections.bust}
@@ -1359,65 +1436,15 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Musculatura</label>
+                              <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Musculatura</label>
                               <ChipSelector options={MUSCULATURE} selected={chipSelections.musculature}
                                 onSelect={ids => updateChip('musculature', ids)} />
                             </div>
                             <div>
-                              <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Piernas</label>
+                              <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Piernas</label>
                               <ChipSelector options={LEG_PROPORTIONS} selected={chipSelections.legs}
                                 onSelect={ids => updateChip('legs', ids)} />
                             </div>
-                          </div>
-                          <div>
-                            <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Vello Facial</label>
-                            <ChipSelector options={FACIAL_HAIR} selected={chipSelections.facialHair}
-                              onSelect={ids => updateChip('facialHair', ids)} />
-                          </div>
-                          {/* Faciales */}
-                          <div className="pt-2" style={{ borderTop: '1px solid rgba(0,0,0,0.04)' }}>
-                          <div>
-                            <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Color de Ojos</label>
-                            <ChipSelector options={EYE_COLORS} selected={chipSelections.eyeColor}
-                              onSelect={ids => updateChip('eyeColor', ids)} />
-                          </div>
-                          <div className="mt-3">
-                            <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Forma de Ojos</label>
-                            <ChipSelector options={EYE_SHAPES} selected={chipSelections.eyeShape}
-                              onSelect={ids => updateChip('eyeShape', ids)} />
-                          </div>
-                          <div className="mt-3">
-                            <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Tipo de Nariz</label>
-                            <ChipSelector options={NOSE_TYPES} selected={chipSelections.noseType}
-                              onSelect={ids => updateChip('noseType', ids)} />
-                          </div>
-                          <div className="mt-3">
-                            <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Forma de Labios</label>
-                            <ChipSelector options={LIP_SHAPES} selected={chipSelections.lipShape}
-                              onSelect={ids => updateChip('lipShape', ids)} />
-                          </div>
-                          <div className="mt-3">
-                            <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Forma de Rostro</label>
-                            <ChipSelector options={FACE_SHAPES} selected={chipSelections.faceShape}
-                              onSelect={ids => updateChip('faceShape', ids)} />
-                          </div>
-                          <div className="mt-3">
-                            <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Mandíbula</label>
-                            <ChipSelector options={JAWLINES} selected={chipSelections.jawline}
-                              onSelect={ids => updateChip('jawline', ids)} />
-                          </div>
-                          <div className="mt-3">
-                            <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Cejas</label>
-                            <ChipSelector options={EYEBROWS} selected={chipSelections.eyebrows}
-                              onSelect={ids => updateChip('eyebrows', ids)} />
-                          </div>
-                          {!isPhotorealistic && (
-                            <div className="mt-3">
-                              <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Textura de Piel</label>
-                              <ChipSelector options={SKIN_TEXTURES} selected={chipSelections.skinTexture}
-                                onSelect={ids => updateChip('skinTexture', ids)} />
-                            </div>
-                          )}
                           </div>
                         </div>
                       )}
@@ -1925,32 +1952,28 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                   /* Show first variant as preview */
                   <img src={variants[0]} className="w-full h-full object-cover" alt={name} style={{ opacity: 0.6 }} />
                 ) : (
-                  /* Style teaser — show selected style/substyle thumbnail as preview */
+                  /* Style teaser — show selected style/substyle thumbnail as preview, no overlay */
                   <>
                     <img
                       src={styleThumb(selSubstyle || renderStyles[selRenderStyle].id)}
                       alt="Style preview"
                       className="absolute inset-0 w-full h-full object-cover"
-                      style={{ opacity: 0.35, filter: 'saturate(0.7)' }}
-                      onError={e => { e.currentTarget.style.display = 'none' }}
+                      style={{ opacity: 0.55, filter: 'saturate(0.8)' }}
+                      onError={e => {
+                        e.currentTarget.style.display = 'none'
+                        const fb = e.currentTarget.nextElementSibling as HTMLElement | null
+                        if (fb) fb.style.display = 'flex'
+                      }}
                     />
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <div className="relative">
-                        <div className="w-16 h-20 mx-auto rounded-[45%] transition-all"
-                          style={{ background: 'rgba(255,255,255,.6)', border: '1px solid rgba(0,0,0,.06)', backdropFilter: 'blur(8px)' }} />
-                      </div>
-                      <div className="mt-1 flex flex-col items-center">
-                        <div style={{ width: '10px', height: '6px', background: 'rgba(255,255,255,.5)', borderRadius: '0 0 4px 4px' }} />
-                        <div className="rounded-t-2xl" style={{ width: '60px', height: '8px', background: 'rgba(255,255,255,.5)' }} />
-                        <div style={{ width: '52px', height: '44px', background: 'rgba(255,255,255,.4)', borderRadius: '30%' }} />
-                        <div className="flex gap-1 -mt-0.5">
-                          <div style={{ width: '12px', height: '20px', background: 'rgba(255,255,255,.3)', borderRadius: '0 0 6px 6px' }} />
-                          <div style={{ width: '12px', height: '20px', background: 'rgba(255,255,255,.3)', borderRadius: '0 0 6px 6px' }} />
-                        </div>
-                      </div>
-                      <div className="text-[9px] font-mono mt-3 px-2 py-0.5 rounded" style={{ color: '#666', background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(4px)' }}>
-                        Vista del estilo seleccionado
-                      </div>
+                    {/* Fallback silhouette only if image fails to load (display: none by default) */}
+                    <div className="absolute inset-0 flex-col items-center justify-center" style={{ display: 'none' }}>
+                      <div className="w-16 h-20 mx-auto rounded-[45%]"
+                        style={{ background: 'rgba(0,0,0,.04)', border: '1px solid rgba(0,0,0,.06)' }} />
+                    </div>
+                    {/* Bottom badge — does not block the face */}
+                    <div className="absolute bottom-12 left-1/2 -translate-x-1/2 text-[9px] font-mono px-2 py-0.5 rounded whitespace-nowrap"
+                      style={{ color: '#fff', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
+                      Vista del estilo seleccionado
                     </div>
                   </>
                 )}
