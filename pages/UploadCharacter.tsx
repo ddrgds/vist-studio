@@ -874,7 +874,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
           <div className="flex-1">
             <input ref={fileInputRef} type="file" multiple accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleFileSelect} />
             {/* Drop Zone */}
-            <div className="p-8 text-center cursor-pointer transition-all mb-5 rounded-xl"
+            <div className="p-8 text-center cursor-pointer transition-all mb-3 rounded-xl"
               style={{ background: 'white', border: `1px dashed ${dragOver ? '#1A1A1A' : 'rgba(0,0,0,0.15)'}`, borderRadius: 12 }}
               onClick={() => fileInputRef.current?.click()}
               onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
@@ -882,11 +882,19 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               onDragLeave={() => setDragOver(false)}
               onDrop={handleFileDrop}>
               <div className="text-4xl mb-3" style={{ color: '#1A1A1A' }}>{'\u2191'}</div>
-              <div className="text-sm font-semibold mb-1" style={{ color: '#111' }}>Sube 1-5 fotos claras de un rostro</div>
-              <div className="text-[11px]" style={{ color: '#999' }}>JPG, PNG, WEBP · Resolución mín: 512×512px · Máx 10MB c/u</div>
+              <div className="text-sm font-semibold mb-1" style={{ color: '#111' }}>Arrastra fotos del rostro aquí</div>
+              <div className="text-[11px]" style={{ color: '#999' }}>JPG, PNG, WEBP · Mín: 512×512px · Máx 10MB c/u</div>
               <div className="text-[11px] mt-2 px-3 py-1.5 rounded-xl inline-block"
                 style={{ background: '#F3F4F6', color: '#1A1A1A' }}>
-                o haz clic para seleccionar archivos
+                o haz clic para seleccionar
+              </div>
+            </div>
+
+            {/* Tips for best results */}
+            <div className="mb-5 p-3 rounded-xl flex gap-3" style={{ background: '#FEF3C7', border: '1px solid #FDE68A' }}>
+              <span className="text-base shrink-0">💡</span>
+              <div className="text-[11px] leading-relaxed" style={{ color: '#92400E' }}>
+                <span className="font-semibold">Para mejor resultado:</span> sube <span className="font-semibold">3-5 fotos</span> con el rostro bien visible, distintas expresiones, buena luz. Evita lentes oscuros, sombras fuertes o filtros pesados. Una foto frontal + 2 ¾ ángulos + 1-2 perfil dan los mejores resultados.
               </div>
             </div>
 
@@ -921,9 +929,12 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Descripción (opcional)</label>
                 <textarea value={importBio} onChange={e => setImportBio(e.target.value)} rows={3}
-                  placeholder="Describe al personaje para mejor consistencia con AI..."
+                  placeholder="ej: 'mujer joven asiática, cabello largo negro, ojos almendrados, complexión atlética' — ayuda a la AI a mantener consistencia entre generaciones"
                   className="w-full px-3 py-2 rounded-xl text-xs border outline-none transition-colors resize-none"
                   style={{ background: '#F9FAFB', borderColor: 'rgba(0,0,0,0.06)', color: '#111' }} />
+                <div className="text-[10px] mt-1" style={{ color: '#999' }}>
+                  Si la dejas vacía, la AI extrae los rasgos automáticamente desde las fotos.
+                </div>
               </div>
               <button onClick={handleImport} disabled={generating}
                 className="w-full py-3 text-sm font-semibold rounded-xl transition-all"
@@ -971,25 +982,29 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                 <div className="h-full transition-all duration-300" style={{ width: `${((step + 1) / steps.length) * 100}%`, background: '#1A1A1A' }} />
               </div>
               <div className="flex gap-1 overflow-x-auto pb-1">
-              {steps.map((s, i) => (
-                <button key={s} onClick={() => setStep(i)}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-medium transition-all shrink-0"
-                  style={{
-                    background: step === i ? 'rgba(26,26,26,.06)' : 'transparent',
-                    color: step === i ? '#1A1A1A' : step > i ? '#555' : '#999',
-                    border: step === i ? '1px solid rgba(0,0,0,0.1)' : '1px solid transparent',
-                  }}>
-                  <span className="rounded-full flex items-center justify-center text-[9px] font-bold"
+              {steps.map((s, i) => {
+                const stepHints = ['Estilo, género, edad, nombre', 'Etnia, cuerpo, rostro, cabello, makeup', 'Outfit, accesorios, personalidad']
+                return (
+                  <button key={s} onClick={() => setStep(i)}
+                    title={stepHints[i]}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-medium transition-all shrink-0"
                     style={{
-                      background: step >= i ? '#1A1A1A' : '#E5E7EB',
-                      color: step >= i ? '#fff' : '#999',
-                      width: 18, height: 18,
+                      background: step === i ? 'rgba(26,26,26,.06)' : 'transparent',
+                      color: step === i ? '#1A1A1A' : step > i ? '#555' : '#999',
+                      border: step === i ? '1px solid rgba(0,0,0,0.1)' : '1px solid transparent',
                     }}>
-                    {step > i ? '\u2713' : i + 1}
-                  </span>
-                  {s}
-                </button>
-              ))}
+                    <span className="rounded-full flex items-center justify-center text-[9px] font-bold"
+                      style={{
+                        background: step >= i ? '#1A1A1A' : '#E5E7EB',
+                        color: step >= i ? '#fff' : '#999',
+                        width: 18, height: 18,
+                      }}>
+                      {step > i ? '\u2713' : i + 1}
+                    </span>
+                    {s}
+                  </button>
+                )
+              })}
 
               {/* Enhancer toggle + Engine wrench */}
               <div className="flex items-center gap-1.5 shrink-0 ml-auto">
@@ -1600,8 +1615,26 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                     {/* ─── Character Sheet Builder (progressive) ─── */}
                     {(generationPhase === 'picking' || generationPhase === 'sheet') && selectedVariant !== null && !characterSaved && (
                       <div className="space-y-3">
-                        <div className="text-[10px] font-mono uppercase tracking-wider" style={{ color: '#999' }}>
-                          Hoja de Personaje (opcional)
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="text-[11px] font-semibold" style={{ color: '#1A1A1A' }}>📑 Hoja de Personaje</div>
+                            <div className="text-[10px]" style={{ color: '#999' }}>Mejor consistencia en futuras generaciones</div>
+                          </div>
+                          {!sheetResults.face && !sheetResults.body && !sheetResults.expressions && (
+                            <button
+                              onClick={async () => {
+                                if (sheetGenerating) return
+                                await handleGenerateSheet('face')
+                                await handleGenerateSheet('body')
+                                await handleGenerateSheet('expressions')
+                              }}
+                              disabled={sheetGenerating !== null}
+                              className="px-3 py-1.5 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 transition-all"
+                              style={{ background: '#1A1A1A', color: '#fff', border: 'none', cursor: sheetGenerating ? 'wait' : 'pointer', opacity: sheetGenerating ? 0.6 : 1 }}>
+                              {sheetGenerating ? '⟳ Generando...' : `✨ Generar Todas`}
+                              <span style={{ fontFamily: "'JetBrains Mono', monospace", opacity: 0.7, fontSize: 10 }}>· {SHEET_CREDIT_COST * 3}cr</span>
+                            </button>
+                          )}
                         </div>
 
                         {/* Step 1: Face Angles */}
@@ -1860,24 +1893,34 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                   /* Show first variant as preview */
                   <img src={variants[0]} className="w-full h-full object-cover" alt={name} style={{ opacity: 0.6 }} />
                 ) : (
-                  /* Silhouette placeholder */
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <div className="relative">
-                      {/* Head */}
-                      <div className="w-16 h-20 mx-auto rounded-[45%] transition-all"
-                        style={{ background: 'rgba(0,0,0,.04)', border: '1px solid rgba(0,0,0,.06)' }} />
-                    </div>
-                    {/* Body silhouette */}
-                    <div className="mt-1 flex flex-col items-center">
-                      <div style={{ width: '10px', height: '6px', background: 'rgba(0,0,0,.03)', borderRadius: '0 0 4px 4px' }} />
-                      <div className="rounded-t-2xl" style={{ width: '60px', height: '8px', background: 'rgba(0,0,0,.03)' }} />
-                      <div style={{ width: '52px', height: '44px', background: 'rgba(0,0,0,.02)', borderRadius: '30%' }} />
-                      <div className="flex gap-1 -mt-0.5">
-                        <div style={{ width: '12px', height: '20px', background: 'rgba(0,0,0,.015)', borderRadius: '0 0 6px 6px' }} />
-                        <div style={{ width: '12px', height: '20px', background: 'rgba(0,0,0,.015)', borderRadius: '0 0 6px 6px' }} />
+                  /* Style teaser — show selected style/substyle thumbnail as preview */
+                  <>
+                    <img
+                      src={styleThumb(selSubstyle || renderStyles[selRenderStyle].id)}
+                      alt="Style preview"
+                      className="absolute inset-0 w-full h-full object-cover"
+                      style={{ opacity: 0.35, filter: 'saturate(0.7)' }}
+                      onError={e => { e.currentTarget.style.display = 'none' }}
+                    />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <div className="relative">
+                        <div className="w-16 h-20 mx-auto rounded-[45%] transition-all"
+                          style={{ background: 'rgba(255,255,255,.6)', border: '1px solid rgba(0,0,0,.06)', backdropFilter: 'blur(8px)' }} />
+                      </div>
+                      <div className="mt-1 flex flex-col items-center">
+                        <div style={{ width: '10px', height: '6px', background: 'rgba(255,255,255,.5)', borderRadius: '0 0 4px 4px' }} />
+                        <div className="rounded-t-2xl" style={{ width: '60px', height: '8px', background: 'rgba(255,255,255,.5)' }} />
+                        <div style={{ width: '52px', height: '44px', background: 'rgba(255,255,255,.4)', borderRadius: '30%' }} />
+                        <div className="flex gap-1 -mt-0.5">
+                          <div style={{ width: '12px', height: '20px', background: 'rgba(255,255,255,.3)', borderRadius: '0 0 6px 6px' }} />
+                          <div style={{ width: '12px', height: '20px', background: 'rgba(255,255,255,.3)', borderRadius: '0 0 6px 6px' }} />
+                        </div>
+                      </div>
+                      <div className="text-[9px] font-mono mt-3 px-2 py-0.5 rounded" style={{ color: '#666', background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(4px)' }}>
+                        Vista del estilo seleccionado
                       </div>
                     </div>
-                  </div>
+                  </>
                 )}
                 <div className="absolute bottom-0 left-0 right-0 p-3" style={{ background: 'linear-gradient(transparent, rgba(0,0,0,.7))' }}>
                   <div className="text-sm font-bold text-white">{name || 'Sin nombre'}</div>
