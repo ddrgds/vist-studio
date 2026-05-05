@@ -116,6 +116,14 @@ async function urlToFile(url: string, filename = 'character.png'): Promise<File>
 }
 
 /** Default edit — NB2 → Grok cascade. */
+/**
+ * Spanish trigger words that consistently cause NB2 (Gemini Imagen) to reject with
+ * `no_media_generated`, even at safety_tolerance: '6'. When detected, we route directly
+ * to Grok which has more permissive moderation for fashion/lifestyle vocabulary.
+ * This saves ~30 seconds per generation that would otherwise be wasted on a NB2 failure.
+ */
+const NB2_SENSITIVE_ES = /\b(lencer[ií]a|sensual|seductor\w*|provocativ\w*|pecho|busto|seno|escote|sost[eé]n|cama|s[áa]banas?|[íi]ntim\w*|reclinad\w*|acostad\w*|tumbad\w*|desnud\w*|bikini|ba[ñn]ador|swimsuit|trasero|culo|nalga|muslo|gl[úu]teo|cadera|cuerpo|piel|escotad\w*|ajustad\w*|ce[ñn]id\w*|transparent\w*|encaje|seda|sat[eé]n|boudoir)\b/i;
+
 async function editImageWithAI(
   opts: { baseImage: File; referenceImage?: File | null; instruction: string; imageSize?: string; aspectRatio?: string; model?: string },
   onProgress?: (p: number) => void,
@@ -124,12 +132,25 @@ async function editImageWithAI(
   const fal = await loadFal();
   const refs = opts.referenceImage ? [opts.referenceImage] : [];
 
-  // NB2 → Grok cascade. NB2 is the recommended engine; Grok absorbs identity edge cases and content
-  // that NB2 declines. Wan was removed from auto-routing because DashScope moderation rejects fashion
-  // vocabulary (pecho, lencería, sensual, etc.) and the fal.ai bypass proxies the same moderation layer.
-  const r = await fal.editWithNB2Fal(opts.baseImage, opts.instruction, refs, onProgress, undefined, abortSignal);
-  if (r.length > 0) return r;
-  return fal.editImageWithGrokFal(opts.baseImage, opts.instruction, onProgress, abortSignal, refs);
+  // Skip NB2 for prompts containing fashion/lifestyle vocabulary that NB2 consistently
+  // rejects (Gemini Imagen moderation, even at safety_tolerance: '6'). Going directly
+  // to Grok saves ~30s of wasted polling.
+  // For sensitive prompts we ALSO pass bypassCompiler=true so the prompt isn't rewritten
+  // through Gemini Flash Lite (which can re-introduce trigger words that fail Grok's
+  // content_policy_violation checker).
+  const isSensitive = NB2_SENSITIVE_ES.test(opts.instruction);
+  if (isSensitive) {
+    return fal.editImageWithGrokFal(opts.baseImage, opts.instruction, onProgress, abortSignal, refs, true /* bypassCompiler */);
+  }
+
+  // Standard cascade: NB2 → Grok fallback for everything else.
+  try {
+    const r = await fal.editWithNB2Fal(opts.baseImage, opts.instruction, refs, onProgress, undefined, abortSignal);
+    if (r.length > 0) return r;
+    throw new Error('NB2 returned empty');
+  } catch {
+    return fal.editImageWithGrokFal(opts.baseImage, opts.instruction, onProgress, abortSignal, refs);
+  }
 }
 
 const routeEdit = async (
@@ -412,13 +433,15 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
       if (activeTool === 'freeai' || activeTool === 'dazz') {
         const charRefs = await getCharRefFiles()
         const instruction = freePrompt.trim()
+        const isSensitive = NB2_SENSITIVE_ES.test(instruction)
         try {
           const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
           console.warn('Wan/NB2 freeai failed, trying Grok:', nb2Err)
-          resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, instruction, (p) => setProgress(p), undefined, charRefs)
+          // Pass bypassCompiler when sensitive — avoids re-introducing trigger words via promptCompiler.
+          resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, instruction, (p) => setProgress(p), undefined, charRefs, isSensitive)
         }
       } else if (activeTool === 'relight') {
         const preset = relightPresets[selPreset]
@@ -1365,7 +1388,11 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                       <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'thin' }}>
                         {characters.map(ch => (
                           <button key={ch.id}
-                            onClick={() => setEditorCharFilter(editorCharFilter === ch.id ? null : ch.id)}
+                            onClick={() => {
+                              const next = editorCharFilter === ch.id ? null : ch.id
+                              setEditorCharFilter(next)
+                              if (next) pipelineSetCharacter(next)
+                            }}
                             className="flex flex-col items-center gap-1 shrink-0 transition-all"
                             style={{ opacity: editorCharFilter && editorCharFilter !== ch.id ? 0.4 : 1 }}>
                             <div className="w-12 h-12 rounded-full overflow-hidden" style={{ border: editorCharFilter === ch.id ? '2px solid #1A1A1A' : '2px solid transparent' }}>
@@ -1565,7 +1592,11 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                   <div className="flex gap-1 shrink-0">
                     {characters.slice(0, 4).map(ch => (
                       <button key={ch.id}
-                        onClick={() => setEditorCharFilter(editorCharFilter === ch.id ? null : ch.id)}
+                        onClick={() => {
+                          const next = editorCharFilter === ch.id ? null : ch.id
+                          setEditorCharFilter(next)
+                          if (next) pipelineSetCharacter(next)
+                        }}
                         className="transition-all"
                         aria-label={ch.name}
                         style={{ opacity: editorCharFilter && editorCharFilter !== ch.id ? 0.35 : 1 }}>
@@ -1618,7 +1649,11 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                     <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'thin' }}>
                       {characters.map(ch => (
                         <button key={ch.id}
-                          onClick={() => setEditorCharFilter(editorCharFilter === ch.id ? null : ch.id)}
+                          onClick={() => {
+                            const next = editorCharFilter === ch.id ? null : ch.id
+                            setEditorCharFilter(next)
+                            if (next) pipelineSetCharacter(next)
+                          }}
                           className="flex flex-col items-center gap-1 shrink-0 transition-all"
                           style={{ opacity: editorCharFilter && editorCharFilter !== ch.id ? 0.4 : 1 }}>
                           <div className="w-10 h-10 rounded-full overflow-hidden" style={{ border: editorCharFilter === ch.id ? '2px solid #1A1A1A' : '2px solid transparent' }}>

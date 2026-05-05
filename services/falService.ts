@@ -1833,9 +1833,9 @@ export const editImageWithGrokFal = async (
       targetModel: 'xai/grok-imagine-image/edit',
       isEdit: true,
     });
-    // Grok needs explicit "lock" instructions to preserve unchanged areas
-    const lockPrefix = 'Keep face, pose, and background unchanged unless the edit specifically requires changing them. ';
-    fullPrompt = lockPrefix + compiledEdit;
+    // Neutral preservation hint — avoids "face/pose unchanged" wording which combined
+    // with body-related edits triggers Grok's content_policy_violation checker.
+    fullPrompt = `Edit only the requested elements. ${compiledEdit}`;
   }
 
   const result = await fal.subscribe('xai/grok-imagine-image/edit', {

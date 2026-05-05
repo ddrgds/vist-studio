@@ -474,15 +474,29 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
                   }}
                 >
                   {img.url ? (
-                    <img src={img.url} className="w-full h-full object-cover" alt="" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center p-4">
-                      <div className="text-center">
-                        <span className="text-2xl block mb-1 opacity-30">{charName[0]}</span>
-                        <span className="text-[9px] font-mono opacity-40" style={{ color:'#555' }}>{category}</span>
-                      </div>
+                    <img
+                      src={img.url}
+                      className="w-full h-full object-cover"
+                      alt=""
+                      onError={(e) => {
+                        // URL is dead (Supabase TTL expired or orphan path) — show fallback initials.
+                        const el = e.currentTarget
+                        el.style.display = 'none'
+                        const fallback = el.parentElement?.querySelector('[data-fallback]') as HTMLDivElement | null
+                        if (fallback) fallback.style.display = 'flex'
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    data-fallback
+                    className="w-full h-full flex-col items-center justify-center p-4"
+                    style={{ display: img.url ? 'none' : 'flex' }}
+                  >
+                    <div className="text-center">
+                      <span className="text-2xl block mb-1 opacity-30">{charName[0]}</span>
+                      <span className="text-[9px] font-mono opacity-40" style={{ color:'#555' }}>{category}</span>
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 {/* Workflow status badge */}
