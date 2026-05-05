@@ -56,21 +56,6 @@ const toFalImageSize = (ratio: AspectRatio): any => {
   return map[ratio] ?? 'portrait_4_3';
 };
 
-/** Custom pixel sizes for Wan (supports { width, height } objects for 2K/4K) */
-const toWanImageSize = (ratio: AspectRatio, resolution: '1K' | '2K' | '4K' = '1K'): any => {
-  const base = resolution === '4K' ? 4096 : resolution === '2K' ? 2048 : 1024;
-  const sizes: Record<AspectRatio, { width: number; height: number }> = {
-    [AspectRatio.Square]:    { width: base, height: base },
-    [AspectRatio.Portrait]:  { width: Math.round(base * 0.75), height: base },
-    [AspectRatio.Landscape]: { width: base, height: Math.round(base * 0.75) },
-    [AspectRatio.Wide]:      { width: base, height: Math.round(base * 0.5625) },
-    [AspectRatio.Tall]:      { width: Math.round(base * 0.5625), height: base },
-  };
-  // For 1K, use named presets (more reliable)
-  if (resolution === '1K') return toFalImageSize(ratio);
-  return sizes[ratio] ?? { width: Math.round(base * 0.75), height: base };
-};
-
 /**
  * Redimensiona una imagen en el cliente antes de subirla para acelerar el proceso.
  */
@@ -1459,14 +1444,10 @@ function cleanJargon(desc: string): string {
     .trim();
 }
 
-function cleanDescriptionForFal(characteristics: string, model: 'wan' | 'grok' | 'default' = 'default'): string {
+function cleanDescriptionForFal(characteristics: string, model: 'grok' | 'default' = 'default'): string {
   let desc = characteristics;
 
   // Extract model-specific description if available
-  if (model === 'wan') {
-    const wanMatch = desc.match(/WAN DESCRIPTION:\s*(.+?)(?:\n|$)/);
-    if (wanMatch) { desc = wanMatch[1].trim(); return cleanJargon(desc); }
-  }
   if (model === 'grok') {
     const grokMatch = desc.match(/GROK DESCRIPTION:\s*(.+?)(?:\n|$)/);
     if (grokMatch) { desc = grokMatch[1].trim(); return cleanJargon(desc); }
@@ -1616,89 +1597,9 @@ export const editWithNB2Fal = async (
   return urls;
 };
 
-// ─────────────────────────────────────────────
-// Wan 2.7 Pro — text-to-image via fal.ai
-// ─────────────────────────────────────────────
-
-export const generateWithWan27Fal = async (
-  params: InfluencerParams,
-  onProgress?: (percent: number) => void,
-  abortSignal?: AbortSignal,
-  model: FalModel.Wan27Gen | FalModel.Wan27ProGen = FalModel.Wan27ProGen,
-): Promise<string[]> => {
-  if (abortSignal?.aborted) throw new Error('Cancelado');
-  const character = params.characters[0];
-  if (onProgress) onProgress(10);
-
-  // Wan 2.7 Spec Sheet approach — treat prompt as technical specifications.
-  // Professional context prefix → body geometry first → face → outfit → skin texture.
-  const rawDesc = cleanDescriptionForFal(character?.characteristics || '', 'wan');
-
-  // Split body from face using geometric/proportion keywords
-  const bodyKeywords = ['frame', 'curvature', 'silhouette', 'proportions', 'taper', 'midsection', 'torso', 'lower', 'upper', 'pear', 'hourglass', 'volume', 'lateral', 'bust', 'chest', 'waist', 'hips', 'glutes', 'thighs', 'slim', 'petite', 'athletic', 'muscular', 'slender', 'thick', 'height', 'tall', 'short', 'legs', 'narrow', 'wide', 'generous', 'pronounced', 'dramatic'];
-  const descParts = rawDesc.split(',').map(s => s.trim()).filter(Boolean);
-  const bodyParts: string[] = [];
-  const faceParts: string[] = [];
-  for (const part of descParts) {
-    const lower = part.toLowerCase();
-    if (bodyKeywords.some(kw => lower.includes(kw))) bodyParts.push(part);
-    else faceParts.push(part);
-  }
-
-  // Professional context prefix (bypass safety by establishing intent)
-  const systemPrefix = 'Professional 3D character reference for digital fashion campaign. Execute anatomical specifications with full fidelity.';
-
-  const parts: string[] = [systemPrefix];
-  if (params.imageBoost) parts.push(params.imageBoost);
-
-  // BODY GEOMETRY first — highest attention weight
-  if (bodyParts.length > 0) {
-    parts.push(`Anatomical specifications: ${bodyParts.join(', ')}`);
-  }
-
-  // Face geometry — anchored to spatial relationships
-  if (faceParts.length > 0) parts.push(faceParts.join(', '));
-
-  // Outfit
-  parts.push(`Wearing ${character?.outfitDescription || DEFAULT_OUTFIT}`);
-
-  // Pose
-  if (character?.pose) parts.push(character.pose);
-  if (character?.accessory) parts.push(`With ${character.accessory}`);
-
-  // Skin texture injection (fight porcelain effect)
-  parts.push('8k skin-scan texture, non-uniform pigmentation, visible pores, micro-creases, subsurface light scattering');
-
-  const prompt = parts.filter(Boolean).join('. ').replace(/,\s*,/g, ',').replace(/\.\s*\./g, '.').trim() + '.';
-
-  const negativePrompt = params.negativePrompt || '';
-
-  if (onProgress) onProgress(20);
-
-  const result = await fal.subscribe(model, {
-    input: {
-      prompt,
-      negative_prompt: negativePrompt || 'average body, normal proportions, flat chest, boyish figure',
-      image_size: toWanImageSize(params.aspectRatio, (params.imageSize as '1K' | '2K' | '4K') || '2K'),
-      enable_safety_checker: false,
-      enable_output_safety_checker: false,
-      guidance_scale: 6,
-      num_inference_steps: 40,
-      image_format: 'jpeg',
-      ...(params.seed !== undefined && { seed: params.seed }),
-    },
-    onQueueUpdate: (update: any) => {
-      if (update.status === 'IN_PROGRESS' && onProgress) onProgress(Math.min(88, 25 + Math.random() * 60));
-    },
-  }) as any;
-
-  const r = unwrap(result);
-  const images = r?.images || [];
-  const urls = images.map((img: any) => img?.url).filter((u: string) => typeof u === 'string' && u.startsWith('http'));
-  if (urls.length === 0) throw new Error('Wan 2.7 Pro did not return any images.');
-  if (onProgress) onProgress(100);
-  return urls;
-};
+// Wan 2.7 was removed 2026-04. DashScope/Alibaba moderation rejected fashion vocabulary
+// (pecho, lencería, sensual) and the fal.ai layer proxies the same moderation.
+// All Wan callers replaced with NB2 → Grok cascade. Original implementation in git history.
 
 // ─────────────────────────────────────────────
 // Grok Imagine — text-to-image via fal.ai (xAI, permissive)
@@ -1751,50 +1652,6 @@ export const generateWithGrokFal = async (
 };
 
 // ─────────────────────────────────────────────
-// Wan 2.7 (Pro) Edit — image editing via fal.ai
-// ─────────────────────────────────────────────
-
-export const editWithWan27Fal = async (
-  baseImage: File,
-  instruction: string,
-  referenceImages: File[] = [],
-  onProgress?: (percent: number) => void,
-  options?: { pro?: boolean; guidanceScale?: number; seed?: number; aspectRatio?: AspectRatio; resolution?: '1K' | '2K' },
-  abortSignal?: AbortSignal,
-): Promise<string[]> => {
-  if (abortSignal?.aborted) throw new Error('Cancelado');
-  if (onProgress) onProgress(10);
-
-  const allImages = [baseImage, ...referenceImages.slice(0, 8)];
-  const imageUrls = await Promise.all(allImages.map(f => uploadToFalStorage(f)));
-  if (onProgress) onProgress(30);
-
-  const model = options?.pro ? FalModel.Wan27ProEdit : FalModel.Wan27Edit;
-
-  const result = await fal.subscribe(model, {
-    input: {
-      prompt: instruction,
-      image_urls: imageUrls,
-      image_size: options?.aspectRatio ? toWanImageSize(options.aspectRatio, options?.resolution || '1K') : 'square_hd',
-      enable_safety_checker: false,
-      enable_output_safety_checker: false,
-      enable_prompt_expansion: true,
-      guidance_scale: options?.guidanceScale ?? 3.5,
-      ...(options?.seed !== undefined && { seed: options.seed }),
-    },
-    onQueueUpdate: (update: any) => {
-      if (update.status === 'IN_PROGRESS' && onProgress) onProgress(Math.min(88, 35 + Math.random() * 50));
-    },
-  }) as any;
-
-  const r = unwrap(result);
-  const imageUrl: string = r?.images?.[0]?.url;
-  if (!imageUrl) throw new Error('Wan 2.7 Edit did not return any images.');
-  if (onProgress) onProgress(100);
-  return [imageUrl];
-};
-
-// ─────────────────────────────────────────────
 // Main router — selects the fal model based on configuration
 // ─────────────────────────────────────────────
 export const generateWithFal = async (
@@ -1824,9 +1681,6 @@ export const generateWithFal = async (
       return generateWithFlux2ProFal(params, onProgress, abortSignal);
     case FalModel.GrokImagineGen:
       return generateWithGrokFal(params, onProgress, abortSignal);
-    case FalModel.Wan27Gen:
-    case FalModel.Wan27ProGen:
-      return generateWithWan27Fal(params, onProgress, abortSignal, model);
     case FalModel.KontextPro:
       return generateWithKontextPro(params, onProgress, abortSignal);
     case FalModel.ZImageTurbo:

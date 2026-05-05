@@ -489,22 +489,7 @@ export async function generateCharacterSheet(
     prompt = `${prompt}\n\nCRITICAL — The subject's body MUST match these EXACT physical characteristics (do NOT deviate): ${physicalTraits}. These proportions are non-negotiable and must be clearly visible in every angle.`;
   }
 
-  // Body sheets use Wan Edit (realistic, preserves identity from image, no content filters)
-  // Face and expression sheets use NB2 (better at facial consistency grids)
-  if (sheetType === 'body') {
-    try {
-      const { editWithWanDirect } = await import('./dashscopeService');
-      const response = await fetch(approvedImageUrl);
-      const blob = await response.blob();
-      const file = new File([blob], 'input.jpeg', { type: blob.type });
-      const results = await editWithWanDirect(file, prompt, []);
-      if (results.length > 0 && results[0]) return results[0];
-    } catch (err) {
-      console.warn('Wan DashScope body sheet failed, falling back to NB2:', err);
-    }
-  }
-
-  // Use NB2 fal.ai (safety_tolerance 6) with Gemini direct as fallback
+  // All sheets (face, body, expressions) use NB2 fal.ai with Gemini direct as fallback.
   try {
     const { editWithNB2Fal } = await import('./falService');
     const response = await fetch(approvedImageUrl);

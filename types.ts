@@ -293,10 +293,6 @@ export enum FalModel {
   Flux2ProGen = 'fal-ai/flux-2-pro',                      // FLUX.2 Pro — text-to-image, JSON prompts, safety_tolerance
   NanoBanana2 = 'fal-ai/nano-banana-2',                      // NB2 t2i via fal.ai — safety_tolerance 6, thinking mode
   NanoBanana2Edit = 'fal-ai/nano-banana-2/edit',             // NB2 Edit via fal.ai — safety_tolerance 6, 14 refs
-  Wan27Gen = 'fal-ai/wan/v2.7/text-to-image',               // Wan 2.7 — text-to-image, cheaper
-  Wan27ProGen = 'fal-ai/wan/v2.7/pro/text-to-image',       // Wan 2.7 Pro — text-to-image via fal.ai
-  Wan27Edit = 'fal-ai/wan/v2.7/edit',                      // Wan 2.7 — image editing, natural language
-  Wan27ProEdit = 'fal-ai/wan/v2.7/pro/edit',               // Wan 2.7 Pro — premium image editing
   GrokImagineGen = 'xai/grok-imagine-image',               // Grok Imagine — text-to-image via fal.ai, permissive
   Seedream45 = 'fal-ai/bytedance/seedream/v4.5/text-to-image',   // ByteDance — photorealism 4K
   Seedream50 = 'fal-ai/bytedance/seedream/v5/lite/text-to-image', // ByteDance — web search + reasoning
@@ -343,8 +339,6 @@ export enum ReplicateModel {
   Flux2Pro = 'black-forest-labs/flux-2-pro',                 // FLUX 2 Pro — generation (Replicate variant)
   Flux2Klein4B = 'black-forest-labs/flux-2-klein-4b',        // FLUX 2 Klein 4B — fast, economical · 2026
   PrunaImageEdit = 'prunaai/p-image-edit',                   // Pruna P-Image-Edit — fallback edit engine · 2026
-  Wan27Image = 'wan-video/wan-2.7-image',                    // Wan 2.7 — text-to-image + editing, 9 refs, 2K · 2026
-  Wan27ImagePro = 'wan-video/wan-2.7-image-pro',             // Wan 2.7 Pro — 4K, thinking mode, 12 coherent outputs · 2026
 }
 
 export enum OpenAIModel {
@@ -484,10 +478,6 @@ export const CREDIT_COSTS: Record<string, number> = {
   [FalModel.Flux2ProGen]:      10,
   [FalModel.NanoBanana2]:      13,   // $0.08/img → 13cr for 35% margin
   [FalModel.NanoBanana2Edit]:  13,   // $0.08/img → 13cr for 35% margin
-  [FalModel.Wan27Gen]:         6,
-  [FalModel.Wan27ProGen]:      12,
-  [FalModel.Wan27Edit]:        8,
-  [FalModel.Wan27ProEdit]:     12,
   [FalModel.GrokImagineGen]:   8,
   [FalModel.Seedream45]:       8,
   [FalModel.Seedream50]:       8,
@@ -508,8 +498,6 @@ export const CREDIT_COSTS: Record<string, number> = {
   [ReplicateModel.PrunaImageEdit]:     9,
   [ReplicateModel.RecraftCrispUpscale]: 9,
   [ReplicateModel.BriaExpand]:         14,
-  [ReplicateModel.Wan27Image]:         8,
-  [ReplicateModel.Wan27ImagePro]:      12,
   // OpenAI
   [OpenAIModel.GptImage15]:   20,
   [OpenAIModel.GptImage1]:    15,
@@ -565,7 +553,6 @@ export const RESOLUTION_CREDIT_MULTIPLIER: Record<string, Record<string, number>
   // NB2 fal.ai: $0.08 base, real pricing tiers from fal.ai
   [FalModel.NanoBanana2]:     { '1K': 1, '2K': 1.5, '4K': 2 },
   [FalModel.NanoBanana2Edit]: { '1K': 1, '2K': 1.5 },              // editor max 2K
-  // Wan via DashScope: native 2K, flat price — no resolution multiplier needed
   // Grok/Turbo: fixed resolution, no multiplier needed
 };
 
@@ -805,17 +792,6 @@ export const ENGINE_METADATA: EngineMetadata[] = [
     creditCost: CREDIT_COSTS[FalModel.GrokImagineGen],
     provider: AIProvider.Fal,
     falModel: FalModel.GrokImagineGen,
-  },
-  {
-    key: 'dashscope:wan27',
-    userFriendlyName: 'Wan 2.7',
-    description: 'Alibaba directo, 9 refs, 2K nativo',
-    bestFor: 'Photorealistic, good value',
-    tags: ['photorealism', 'value'] as EngineTag[],
-    requiresFaceRef: false,
-    estimatedTime: '~15s',
-    creditCost: CREDIT_COSTS[FalModel.Wan27Gen],
-    provider: AIProvider.DashScope,
   },
   {
     key: 'replicate:grok',

@@ -115,69 +115,21 @@ async function urlToFile(url: string, filename = 'character.png'): Promise<File>
   return new File([blob], filename, { type: blob.type || 'image/png' })
 }
 
-/** Default edit — respects editEngine preference, falls back to the other */
+/** Default edit — NB2 → Grok cascade. */
 async function editImageWithAI(
-  opts: { baseImage: File; referenceImage?: File | null; instruction: string; imageSize?: string; aspectRatio?: string; model?: string; isStylized?: boolean; forceEngine?: 'auto' | 'nb2' | 'wan' },
+  opts: { baseImage: File; referenceImage?: File | null; instruction: string; imageSize?: string; aspectRatio?: string; model?: string },
   onProgress?: (p: number) => void,
   abortSignal?: AbortSignal,
 ): Promise<string[]> {
   const fal = await loadFal();
   const refs = opts.referenceImage ? [opts.referenceImage] : [];
-  const engine = opts.forceEngine || 'auto';
 
-  // Wan via DashScope (direct API — 9 refs, native 2K, but has mandatory moderation)
-  const wanEdit = async () => {
-    const { editWithWanDirect } = await import('../services/dashscopeService');
-    return editWithWanDirect(opts.baseImage, opts.instruction, refs, onProgress, {
-      aspectRatio: opts.aspectRatio as any, resolution: (opts.imageSize === '2K' ? '2K' : '1K'),
-    }, abortSignal);
-  };
-
-  // Wan via fal.ai Pro Edit (max 4 refs, safety_checker disabled — absorbs DashScope moderation rejects)
-  const wanFalEdit = async () => {
-    return fal.editWithWan27Fal(opts.baseImage, opts.instruction, refs, onProgress, {
-      pro: true,
-      aspectRatio: opts.aspectRatio as any,
-      resolution: (opts.imageSize === '2K' ? '2K' : '1K'),
-    }, abortSignal);
-  };
-
-  // NB2 via fal.ai
-  const nb2Edit = async () => {
-    return fal.editWithNB2Fal(opts.baseImage, opts.instruction, refs, onProgress, undefined, abortSignal);
-  };
-
-  // Wan cascade: DashScope → Wan-fal (safety off). Absorbs DataInspectionFailed and other DashScope errors.
-  const tryWanChain = async (): Promise<string[]> => {
-    try {
-      const r = await wanEdit();
-      if (r.length > 0) return r;
-      throw new Error('Wan DashScope returned empty');
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      console.warn('Wan DashScope failed, trying Wan fal.ai (safety off):', msg);
-      const r = await wanFalEdit();
-      if (r.length > 0) return r;
-      throw new Error('Wan fal.ai also returned empty');
-    }
-  };
-
-  // Forced NB2
-  if (engine === 'nb2') {
-    try { const r = await nb2Edit(); if (r.length > 0) return r; throw new Error('empty'); } catch { return tryWanChain(); }
-  }
-
-  // Forced Wan
-  if (engine === 'wan') {
-    try { return await tryWanChain(); } catch { return nb2Edit(); }
-  }
-
-  // Auto: NB2 for stylized, Wan for photorealistic
-  if (opts.isStylized) {
-    try { const r = await nb2Edit(); if (r.length > 0) return r; throw new Error('empty'); } catch { return tryWanChain(); }
-  }
-
-  try { return await tryWanChain(); } catch { return nb2Edit(); }
+  // NB2 → Grok cascade. NB2 is the recommended engine; Grok absorbs identity edge cases and content
+  // that NB2 declines. Wan was removed from auto-routing because DashScope moderation rejects fashion
+  // vocabulary (pecho, lencería, sensual, etc.) and the fal.ai bypass proxies the same moderation layer.
+  const r = await fal.editWithNB2Fal(opts.baseImage, opts.instruction, refs, onProgress, undefined, abortSignal);
+  if (r.length > 0) return r;
+  return fal.editImageWithGrokFal(opts.baseImage, opts.instruction, onProgress, abortSignal, refs);
 }
 
 const routeEdit = async (
@@ -271,7 +223,6 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
   const [sceneSource, setSceneSource] = useState<'upload'|'gallery'|'prompt'>('upload')
   const sceneInputRef = useRef<HTMLInputElement>(null)
   const [selectedEngine, setSelectedEngine] = useState<string>('auto')
-  const [editEngine, setEditEngine] = useState<'auto' | 'nb2' | 'wan'>('auto') // NB2/Wan toggle for auto mode
   // selectedResolution removed — merged into editorResolution
   const [showEngineModal, setShowEngineModal] = useState(false)
   const engineButtonRef = useRef<HTMLButtonElement>(null)
@@ -315,21 +266,17 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
   const { decrementCredits, restoreCredits } = useProfile()
   const characters = useCharacterStore(s => s.characters)
 
-  // Needed before displayCost — determines NB2 vs Wan routing
   const pipelineCharId = usePipelineStore(s => s.characterId)
   const currentChar = characters.find(c => c.id === pipelineCharId)
-  const isStylizedChar = currentChar?.renderStyle ? currentChar.renderStyle !== 'photorealistic' : false
 
   const displayCost = useMemo(() => {
     const eng = selectedEngine !== 'auto' ? ENGINE_METADATA.find(e => e.key === selectedEngine) : null
     if (eng) return eng.creditCost
-    // Auto mode: cost depends on editEngine + resolution
-    // Wan via DashScope: native 2K, same price. NB2: resolution multiplier applies.
-    const useNB2 = editEngine === 'nb2' || (editEngine === 'auto' && isStylizedChar)
-    const base = useNB2 ? CREDIT_COSTS[FalModel.NanoBanana2Edit] : (activeTool === 'rotate360' ? 10 : 8)
-    const resMult = useNB2 ? (RESOLUTION_CREDIT_MULTIPLIER[FalModel.NanoBanana2Edit]?.[editorResolution.toUpperCase()] ?? 1) : 1
+    // Auto mode: NB2 baseline + resolution multiplier
+    const base = CREDIT_COSTS[FalModel.NanoBanana2Edit]
+    const resMult = RESOLUTION_CREDIT_MULTIPLIER[FalModel.NanoBanana2Edit]?.[editorResolution.toUpperCase()] ?? 1
     return Math.ceil(base * resMult)
-  }, [selectedEngine, activeTool, editEngine, editorResolution, isStylizedChar])
+  }, [selectedEngine, editorResolution])
 
   const toast = useToast()
   const addItems = useGalleryStore(s => s.addItems)
@@ -451,7 +398,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
     setProgress(0)
 
     const eng = selectedEngine !== 'auto' ? ENGINE_METADATA.find(e => e.key === selectedEngine) : null
-    // Cost matches displayCost — considers editEngine + resolution
+    // Cost matches displayCost — considers resolution multiplier
     const cost = eng ? eng.creditCost : displayCost
     const ok = await decrementCredits(cost)
     if (!ok) { toast.error('Creditos insuficientes'); setProcessing(false); return }
@@ -466,7 +413,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         const charRefs = await getCharRefFiles()
         const instruction = freePrompt.trim()
         try {
-          const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, isStylized: isStylizedChar, forceEngine: editEngine }, (p) => setProgress(p))
+          const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
@@ -513,7 +460,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           : `Change background/scene to: ${sceneDesc}. Keep person identical. Match lighting and color grading.`
         const charRefs = await getCharRefFiles()
         try {
-          const results = await editImageWithAI({ baseImage: inputFile, referenceImage: sceneFile ?? charRefs[0] ?? undefined, instruction: jsonSceneInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, isStylized: isStylizedChar, forceEngine: editEngine }, (p) => setProgress(p))
+          const results = await editImageWithAI({ baseImage: inputFile, referenceImage: sceneFile ?? charRefs[0] ?? undefined, instruction: jsonSceneInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
@@ -527,7 +474,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         const charRefs = await getCharRefFiles()
         if (charRefs.length > 0) {
           try {
-            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0], instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, isStylized: isStylizedChar, forceEngine: editEngine }, (p) => setProgress(p))
+            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0], instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
             if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
             resultUrls = results
           } catch {
@@ -583,7 +530,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           const tryonInstruction = `TRY-ON SPECIFICATION:\n${JSON.stringify(tryonSpec, null, 2)}`
           const tryonFlatInstruction = 'Replace ONLY the clothing. IMAGE 1 is the PERSON (keep everything). IMAGE 2 is the GARMENT ONLY (extract clothing, IGNORE the model wearing it). Same face, body, pose, background.'
           try {
-            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: garmentFile, instruction: tryonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, isStylized: isStylizedChar, forceEngine: editEngine }, (p) => setProgress(p))
+            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: garmentFile, instruction: tryonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
             if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
             resultUrls = results
           } catch (nb2Err) {
@@ -594,7 +541,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           // Prompt-only try-on (outfit chip selected, no reference image)
           const chipInstruction = `OUTFIT CHANGE: Replace ONLY the clothing on this person. Dress them in: ${outfitChip}. Keep the EXACT same face, hair, skin tone, body shape, pose, and background. ONLY change the clothing.`
           try {
-            const results = await editImageWithAI({ baseImage: inputFile!, instruction: chipInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, isStylized: isStylizedChar, forceEngine: editEngine }, (p) => setProgress(p))
+            const results = await editImageWithAI({ baseImage: inputFile!, instruction: chipInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
             if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
             resultUrls = results
           } catch (nb2Err) {
@@ -637,7 +584,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         const reimagineIdentityRefs = charRefs.slice(1)
         const flatInstruction = `Edit Figure 1: Transform into a ${styleNames} aesthetic photo. CHANGE: background to match ${direction} setting, outfit to fit the ${styleNames} style, pose and framing to be completely new. KEEP EXACTLY: the person's face, bone structure, eye color, skin tone, body proportions from Figure 1${reimagineIdentityRefs.length > 0 ? ' and Figure 2 (identity reference)' : ''}. ${skinFlat} NO text, watermarks, logos, brand names.`
         try {
-          const results = await editImageWithAI({ baseImage: reimagineBase, referenceImage: reimagineIdentityRefs[0] ?? undefined, instruction: jsonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, isStylized: isStylizedChar, forceEngine: editEngine }, (p) => setProgress(p))
+          const results = await editImageWithAI({ baseImage: reimagineBase, referenceImage: reimagineIdentityRefs[0] ?? undefined, instruction: jsonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
@@ -1722,17 +1669,6 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                 ))}
               </div>
             </div>
-            {/* NB2 / Wan toggle */}
-            {selectedEngine === 'auto' && (
-              <div className="flex gap-1 mb-2">
-                {([['auto', 'Auto'], ['nb2', 'NB2'], ['wan', 'Wan']] as const).map(([id, label]) => (
-                  <button key={id} onClick={() => setEditEngine(id)} className="flex-1 text-[10px] font-mono font-semibold py-1.5 rounded-lg transition-all"
-                    style={{ background: editEngine === id ? '#1A1A1A' : 'white', color: editEngine === id ? '#FFF' : '#999', border: `1px solid ${editEngine === id ? '#1A1A1A' : 'rgba(0,0,0,0.08)'}` }}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-            )}
             <button onClick={handleApply} disabled={processing || (!inputImage && !(activeTool === 'reimagine' && hasCharRefs))}
               className="w-full py-2.5 rounded-xl text-[12px] font-semibold transition-all"
               style={{ background: (!inputImage && !(activeTool === 'reimagine' && hasCharRefs) || processing) ? '#CCC' : '#1A1A1A', color: '#FFF', opacity: (!inputImage && !(activeTool === 'reimagine' && hasCharRefs) || processing) ? 0.6 : 1 }}>
@@ -1801,10 +1737,6 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
               <div className="flex gap-1.5 mb-2">
                 {(['1k', '2k'] as const).map(r => (
                   <button key={r} onClick={() => setEditorResolution(r)} style={pill(editorResolution === r)} className="pill-btn flex-1 text-center">{r.toUpperCase()}</button>
-                ))}
-                <div style={{ width: 1, background: 'rgba(0,0,0,0.08)' }} />
-                {(['auto', 'nb2', 'wan'] as const).map(id => (
-                  <button key={id} onClick={() => setEditEngine(id)} style={pill(editEngine === id)} className="pill-btn flex-1 text-center">{id === 'auto' ? 'Auto' : id.toUpperCase()}</button>
                 ))}
               </div>
               <button onClick={() => { handleApply(); setSheetExpanded(false) }} disabled={processing || (!inputImage && !(activeTool === 'reimagine' && hasCharRefs))}

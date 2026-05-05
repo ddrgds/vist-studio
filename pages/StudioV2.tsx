@@ -4,7 +4,7 @@ import { useGalleryStore, type GalleryItem } from '../stores/galleryStore'
 import { usePipelineStore } from '../stores/pipelineStore'
 import { enhancePrompt } from '../services/geminiService'
 import { LumaSpin } from '../components/ui/luma-spin'
-import { generatePhotoSessionWithGrok, generateWithNB2Fal, editWithNB2Fal, generateWithWan27Fal, editWithWan27Fal as editWithWanFal } from '../services/falService'
+import { generatePhotoSessionWithGrok, generateWithNB2Fal, editWithNB2Fal } from '../services/falService'
 import { generateWithSoul } from '../services/higgsfieldService'
 import { generateWithReplicate } from '../services/replicateService'
 import { generateWithOpenAI } from '../services/openaiService'
@@ -250,7 +250,6 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
   const [showScenarioInput, setShowScenarioInput] = useState(false)
   const [showOutfitInput, setShowOutfitInput] = useState(false)
   const [selectedEngine, setSelectedEngine] = useState('auto')
-  const [heroEngine, setHeroEngine] = useState<'wan' | 'nb2'>('wan')
   const [selectedResolution, setSelectedResolution] = useState('2k')
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<AspectRatio>(AspectRatio.Portrait)
   const [generatingHero, setGeneratingHero] = useState(false)
@@ -371,11 +370,14 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
     if (!ok) { toast.error('Créditos insuficientes'); return }
     setGeneratingHero(true); setHeroProgress(0); abortHeroRef.current = new AbortController()
 
+    // Premium preprocessing flags — outer scope so the catch handler can reference them.
+    let poseCreditsDeducted2 = false
+    let outfitCreditsDeducted = false
+
     try {
       const charRefFiles = await fetchUrlsAsFiles(getCharacterReferenceUrls())
       const params = buildParams(charRefFiles)
       const eng = selectedEngine !== 'auto' ? ENGINE_METADATA.find(e => e.key === selectedEngine) : null
-      const rawScenario = params.scenario // raw for Wan conversational prompt
       const charStyleInfo = detectCharStyle(params.characters[0]?.characteristics || '', selectedChar?.renderStyle)
 
       // Only compile prompt for manually-selected engines (not auto)
@@ -386,8 +388,6 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       }
 
       // Premium preprocessing: ControlNet pose (+5cr) and/or garment extraction (+5cr)
-      let poseCreditsDeducted2 = false
-      let outfitCreditsDeducted = false
       let processedPoseFile: File | null = poseRef?.file ?? null
       let processedOutfitFile: File | null = outfitRef?.file ?? null
 
@@ -397,7 +397,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
           poseCreditsDeducted2 = true
           try {
             const u = await fal.storage.upload(poseRef.file)
-            const c = await runControlNet(u, rawScenario || params.scenario || '')
+            const c = await runControlNet(u, params.scenario || '')
             if (c) {
               const cRes = await fetch(c); const cBlob = await cRes.blob()
               processedPoseFile = new File([cBlob], 'pose-controlnet.jpg', { type: cBlob.type || 'image/jpeg' })
@@ -429,9 +429,8 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       else if (eng?.provider === AIProvider.Fal) results = await generateWithFal(params, eng.falModel, p => setHeroProgress(p), abortHeroRef.current.signal)
       else {
         const charRefUrls = getCharacterReferenceUrls()
-        const heroStyleInfo = detectCharStyle(params.characters[0]?.characteristics || '', selectedChar?.renderStyle)
-        // Non-realistic or user chose NB2 → NB2 fal. Otherwise Wan Edit.
-        if (!heroStyleInfo.isRealistic || heroEngine === 'nb2') {
+        // NB2 → Grok cascade. NB2 preserves identity via image refs (up to 14); Grok absorbs failures.
+        try {
           if (charRefUrls.length > 0) {
             // Has character photo → NB2 Edit (preserves identity via image refs)
             const refRes = await fetch(charRefUrls[0])
@@ -439,8 +438,9 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
             const nb2RefFile = new File([refBlob], 'char-ref.jpg', { type: refBlob.type || 'image/jpeg' })
             const nb2IdentityFiles = await fetchUrlsAsFiles(charRefUrls.slice(1, 4))
             const nb2AllRefs = [...nb2IdentityFiles]
-            if (outfitRef) nb2AllRefs.push(outfitRef.file)
+            if (processedOutfitFile) nb2AllRefs.push(processedOutfitFile)
             if (scenarioRef) nb2AllRefs.push(scenarioRef.file)
+            if (processedPoseFile) nb2AllRefs.push(processedPoseFile)
             const nb2Instruction = [
               params.scenario || 'professional photo shoot',
               params.characters[0]?.outfitDescription ? `Wearing: ${params.characters[0].outfitDescription}` : null,
@@ -450,73 +450,16 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
               'Keep the same person identity. No text or watermarks.',
             ].filter(Boolean).join('. ')
             results = await editWithNB2Fal(nb2RefFile, nb2Instruction, nb2AllRefs, p => setHeroProgress(p), { resolution: selectedResolution.toUpperCase() as '1K' | '2K' }, abortHeroRef.current.signal)
+            if (!results || results.length === 0) throw new Error('NB2 returned empty')
           } else {
             // No character photo → NB2 t2i from text description
             results = await generateWithNB2Fal(params, p => setHeroProgress(p), abortHeroRef.current.signal)
+            if (!results || results.length === 0) throw new Error('NB2 returned empty')
           }
-        } else if (charRefUrls.length > 0) {
-          // Photorealistic + has character photo — Wan via DashScope (9 refs, native 2K)
-          try {
-            const refRes = await fetch(charRefUrls[0])
-            const refBlob = await refRes.blob()
-            const refFile = new File([refBlob], 'char-ref.jpg', { type: refBlob.type || 'image/jpeg' })
-            // DashScope Wan: up to 9 images — all identity + outfit + scene + pose
-            const identityFiles = await fetchUrlsAsFiles(charRefUrls.slice(1, 5))
-            const allRefFiles: File[] = [...identityFiles]
-            if (processedOutfitFile) allRefFiles.push(processedOutfitFile)
-            if (scenarioRef) allRefFiles.push(scenarioRef.file)
-            if (processedPoseFile) allRefFiles.push(processedPoseFile)
-
-            // Official Wan prompt format: English + "Figure X" + "keeping XX unchanged"
-            const poseValue = customPose.trim() || POSE_OPTIONS.find(p => p.id === selectedPose)?.value || ''
-            const lightValue = customLighting.trim() || LIGHTING_OPTIONS.find(l => l.id === selectedLighting)?.value || 'soft natural light'
-            const cameraValue = customCamera.trim() || CAMERA_OPTIONS.find(c => c.id === selectedCamera)?.value || '85mm portrait lens'
-
-            let nextIdx = 2
-            const parts: string[] = ['The character from Figure 1']
-            if (identityFiles.length >= 1) { parts.push(`with face angles in Figure ${nextIdx}`); nextIdx++ }
-            if (identityFiles.length >= 2) { parts.push(`body proportions in Figure ${nextIdx}`); nextIdx++ }
-            if (identityFiles.length >= 3) { parts.push(`expressions in Figure ${nextIdx}`); nextIdx++ }
-            if (identityFiles.length >= 4) { parts.push(`additional reference in Figure ${nextIdx}`); nextIdx++ }
-
-            if (processedOutfitFile) {
-              parts.push(`wearing the outfit from Figure ${nextIdx}`)
-              nextIdx++
-            } else if (params.characters[0]?.outfitDescription) {
-              parts.push(`wearing ${params.characters[0].outfitDescription}`)
-            }
-
-            if (scenarioRef) {
-              parts.push(`in the scene from Figure ${nextIdx}`)
-              nextIdx++
-            } else if (rawScenario) {
-              parts.push(`in ${rawScenario}`)
-            }
-
-            if (processedPoseFile) {
-              parts.push(`in the pose shown in Figure ${nextIdx}`)
-              nextIdx++
-            } else if (poseValue) {
-              parts.push(poseValue)
-            }
-
-            parts.push(`${lightValue}, ${cameraValue}`)
-            parts.push('keeping the character\'s facial features, hairstyle and body proportions unchanged')
-
-            const heroInstruction = parts.join('. ') + '.'
-            const { editWithWanDirect } = await import('../services/dashscopeService')
-            results = await editWithWanDirect(refFile, heroInstruction, allRefFiles, p => setHeroProgress(p), { aspectRatio: selectedAspectRatio, resolution: selectedResolution === '2k' ? '2K' : '1K' }, abortHeroRef.current.signal)
-            if (!results || results.length === 0) throw new Error('Wan DashScope returned empty')
-          } catch (wanErr) {
-            console.warn('Wan DashScope hero failed, trying Grok:', wanErr)
-            if (poseCreditsDeducted2) restoreCredits(5)
-            if (outfitCreditsDeducted) restoreCredits(5)
-            const { generateWithGrokFal } = await import('../services/falService')
-            results = await generateWithGrokFal(params, p => setHeroProgress(p), abortHeroRef.current.signal)
-          }
-        } else {
-          // No character photo — use NB2 fal t2i (understands JSON prompts)
-          results = await generateWithNB2Fal(params, p => setHeroProgress(p), abortHeroRef.current.signal)
+        } catch (nb2Err) {
+          console.warn('NB2 hero failed, trying Grok:', nb2Err)
+          const { generateWithGrokFal } = await import('../services/falService')
+          results = await generateWithGrokFal(params, p => setHeroProgress(p), abortHeroRef.current.signal)
         }
       }
 
@@ -615,17 +558,15 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       expandedPoses.push(...poses)
     }
 
-    // Generate each photo individually: Wan DashScope → Grok fallback
+    // Generate each photo individually: NB2 → Grok fallback
     const generateShot = async (pose: string, idx: number) => {
       if (abortSessionRef.current?.signal.aborted) return
       try {
         const expandedPose = expandedPoses[idx] || pose
         const sessionInstruction = `image 1 is the hero photo — keep the SAME scene, background, lighting, and outfit. Create a variation with a different pose: ${expandedPose}. The person must look identical. NO text, watermarks, or overlays.`
         const allRefs = identityRefs.length > 0 ? identityRefs : []
-        // Wan via DashScope: native 2K, up to 9 refs
-        const { editWithWanDirect } = await import('../services/dashscopeService')
         const sesRes = sessionResolution === '2k' ? '2K' : '1K' as const
-        const results = await editWithWanDirect(heroFile, sessionInstruction, allRefs, undefined, { aspectRatio: sessionAspectRatio, resolution: sesRes })
+        const results = await editWithNB2Fal(heroFile, sessionInstruction, allRefs, undefined, { resolution: sesRes }, abortSessionRef.current?.signal)
 
         if (results.length > 0 && results[0]) {
           setGridCells(prev => { const n = [...prev]; n[idx] = results[0]; return n })
@@ -635,7 +576,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       } catch (err: any) {
         if (err?.name === 'AbortError') return
         if (abortSessionRef.current?.signal.aborted) return
-        console.warn('Wan DashScope session failed, trying Grok:', err)
+        console.warn('NB2 session failed, trying Grok:', err)
         try {
           const grokRes = await generatePhotoSessionWithGrok(heroFile, 1, {
             scenario: sceneContext, realistic: charStyleInfo.isRealistic, angles: [pose],
@@ -689,11 +630,9 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
 
   const handleVibeToggle = (id: string) => { setSelectedVibes(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n }) }
   const canvasSize = CANVAS_SIZES[selectedAspectRatio] ?? CANVAS_SIZES[AspectRatio.Portrait]
-  const isCharRealistic = detectCharStyle(characteristics || selectedChar?.characteristics || '', selectedChar?.renderStyle).isRealistic
-  // Hero cost: NB2 = base × resolution multiplier, Wan = flat (DashScope native 2K, same price)
-  const heroIsNB2 = !isCharRealistic || heroEngine === 'nb2'
-  const heroBaseCost = heroIsNB2 ? CREDIT_COSTS[FalModel.NanoBanana2] : CREDIT_COSTS['grok-edit']
-  const heroResMult = heroIsNB2 ? (RESOLUTION_CREDIT_MULTIPLIER[FalModel.NanoBanana2]?.[selectedResolution.toUpperCase()] ?? 1) : 1
+  // Hero cost: NB2 base × resolution multiplier
+  const heroBaseCost = CREDIT_COSTS[FalModel.NanoBanana2]
+  const heroResMult = RESOLUTION_CREDIT_MULTIPLIER[FalModel.NanoBanana2]?.[selectedResolution.toUpperCase()] ?? 1
   const heroCreditCost = Math.ceil(heroBaseCost * heroResMult)
 
   // ─── Shared UI pieces ─────────────────────────────────
@@ -988,20 +927,11 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
             {phase === 'hero' ? heroControlsContent() : sessionControlsContent()}
           </div>
 
-          {/* Engine toggle + Resolution selector — hero phase only */}
+          {/* Resolution selector — hero phase only */}
           {phase === 'hero' && <div style={{ padding: '8px 24px 0', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-              <span style={{ fontSize: '0.65rem', color: '#999', fontFamily: "'JetBrains Mono', monospace", textTransform: 'uppercase', letterSpacing: '0.1em' }}>Motor</span>
-              {([{ id: 'wan' as const, label: 'Wan' }, { id: 'nb2' as const, label: 'NB2' }]).map(e => (
-                <button key={e.id} onClick={() => { setHeroEngine(e.id); if (e.id === 'wan' && selectedResolution === '4k') setSelectedResolution('2k') }}
-                  style={{ padding: '4px 10px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 600, fontFamily: "'JetBrains Mono', monospace", cursor: 'pointer', border: `1px solid ${heroEngine === e.id ? '#1A1A1A' : 'rgba(0,0,0,0.08)'}`, background: heroEngine === e.id ? '#1A1A1A' : 'white', color: heroEngine === e.id ? 'white' : '#999' }}>
-                  {e.label}
-                </button>
-              ))}
-            </div>
-            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
               <span style={{ fontSize: '0.65rem', color: '#999', fontFamily: "'JetBrains Mono', monospace", textTransform: 'uppercase', letterSpacing: '0.1em' }}>Resolución</span>
-              {(heroIsNB2 ? ['1k', '2k', '4k'] as const : ['1k', '2k'] as const).map(r => (
+              {(['1k', '2k', '4k'] as const).map(r => (
                 <button key={r} onClick={() => setSelectedResolution(r)}
                   style={{ padding: '4px 10px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 600, fontFamily: "'JetBrains Mono', monospace", cursor: 'pointer', border: `1px solid ${selectedResolution === r ? '#1A1A1A' : 'rgba(0,0,0,0.08)'}`, background: selectedResolution === r ? '#1A1A1A' : 'white', color: selectedResolution === r ? 'white' : '#999' }}>
                   {r.toUpperCase()}
