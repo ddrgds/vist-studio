@@ -338,10 +338,12 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   // Build the full prompt for generation
   const buildFullPrompt = (): string => {
     const style = renderStyles[selRenderStyle]
-    const parts: string[] = [style.prompt]
-    // Substyle suffix specializes the look (Ghibli vs Shonen vs Cyberpunk anime, etc.)
+    // SUBSTYLE FIRST: front-load the most specific aesthetic so the model gives it the
+    // most attention weight. Then base style prompt, then character traits.
     const substyle = style.substyles?.find(s => s.id === selSubstyle)
+    const parts: string[] = []
     if (substyle) parts.push(substyle.suffix)
+    parts.push(style.prompt)
 
     // Gender + Age
     const genderChip = GENDERS.find(g => g.id === selGender)
@@ -403,42 +405,10 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   const resMultiplier = selectedResolution === '4k' ? 2 : selectedResolution === '2k' ? 1.5 : 1
   const costPerVariant = Math.ceil(baseCost * resMultiplier)
 
-  // When a substyle is selected, fetch its thumbnail to use as a STYLE reference image.
-  // This significantly improves how NB2/Grok respect the chosen substyle (Ghibli looks
-  // more Ghibli, Cyberpunk looks more Cyberpunk, etc.) — text alone is not enough.
-  const getStyleRefFile = async (): Promise<File | null> => {
-    const styleId = selSubstyle || renderStyles[selRenderStyle].id
-    try {
-      const res = await fetch(`/style-previews/${styleId}.jpg`)
-      if (!res.ok) return null
-      const blob = await res.blob()
-      return new File([blob], `${styleId}-style-ref.jpg`, { type: 'image/jpeg' })
-    } catch { return null }
-  }
-
   const routeGeneration = async (params: InfluencerParams): Promise<string[]> => {
-    // Try style-reference editing first when substyle is selected — better stylistic fidelity
-    const styleRef = selSubstyle ? await getStyleRefFile() : null
-
     if (!engineMeta || selectedEngine === 'auto') {
-      // If we have a style reference, use NB2 Edit endpoint with the thumbnail as ref.
-      // Style-transfer prompt: emphasize STYLE matching, only mild identity-shift instruction.
-      if (styleRef) {
-        try {
-          const { editWithNB2Fal } = await import('../services/falService')
-          const character = params.characters[0]
-          // Strong style transfer prompt — match aesthetics tightly, only swap subject.
-          // Avoid hard "do NOT copy" language which makes the model ignore the ref entirely.
-          const styleRefPrompt = `Generate this character in the EXACT artistic style of the reference image — same rendering technique, line quality, color palette, shading, brushwork, lighting style, and overall aesthetic. The reference defines the LOOK. Create a different person matching: ${character?.characteristics || ''}. ${character?.outfitDescription ? `Wearing: ${character.outfitDescription}.` : ''} ${params.scenario || ''}. Match the reference's visual style faithfully — this is the most important requirement.`
-          const results = await editWithNB2Fal(styleRef, styleRefPrompt, [], () => {})
-          if (results.length > 0) return results
-          throw new Error('NB2 edit returned empty')
-        } catch (refErr) {
-          console.warn('NB2 style-ref edit failed, falling back to t2i:', refErr)
-          // fall through to standard t2i
-        }
-      }
-      // Standard NB2 → Grok cascade (no style ref)
+      // Pure text-to-image NB2 → Grok cascade. Substyle suffix is already woven into
+      // the prompt via buildFullPrompt() / buildSoulPrompt() — no image reference needed.
       try {
         return await generateWithFal(params, FalModel.NanoBanana2)
       } catch (nb2Err) {
@@ -1224,6 +1194,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                         )
                       })}
                     </div>
+
                   </div>
                 )}
 
