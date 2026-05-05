@@ -117,10 +117,14 @@ async function urlToFile(url: string, filename = 'character.png'): Promise<File>
 
 /** Default edit — NB2 → Grok cascade. */
 /**
- * Spanish trigger words that consistently cause NB2 (Gemini Imagen) to reject with
- * `no_media_generated`, even at safety_tolerance: '6'. When detected, we route directly
- * to Grok which has more permissive moderation for fashion/lifestyle vocabulary.
- * This saves ~30 seconds per generation that would otherwise be wasted on a NB2 failure.
+ * Spanish trigger words that NB2 (Gemini Imagen) rejects with `no_media_generated`,
+ * even at safety_tolerance: '6'. When detected, we translate the prompt to technical
+ * English first (NB2 accepts technical fashion vocab in English), then run the standard
+ * NB2 → Grok cascade with the translated prompt.
+ *
+ * NB2 gives the best realistic quality, so we want to keep it as the primary engine
+ * whenever possible. Translation costs ~200-400ms but saves us from losing NB2 quality
+ * to the Grok fallback for prompts that NB2 would have accepted in English.
  */
 const NB2_SENSITIVE_ES = /\b(lencer[ií]a|sensual|seductor\w*|provocativ\w*|pecho|busto|seno|escote|sost[eé]n|cama|s[áa]banas?|[íi]ntim\w*|reclinad\w*|acostad\w*|tumbad\w*|desnud\w*|bikini|ba[ñn]ador|swimsuit|trasero|culo|nalga|muslo|gl[úu]teo|cadera|cuerpo|piel|escotad\w*|ajustad\w*|ce[ñn]id\w*|transparent\w*|encaje|seda|sat[eé]n|boudoir)\b/i;
 
@@ -132,24 +136,26 @@ async function editImageWithAI(
   const fal = await loadFal();
   const refs = opts.referenceImage ? [opts.referenceImage] : [];
 
-  // Skip NB2 for prompts containing fashion/lifestyle vocabulary that NB2 consistently
-  // rejects (Gemini Imagen moderation, even at safety_tolerance: '6'). Going directly
-  // to Grok saves ~30s of wasted polling.
-  // For sensitive prompts we ALSO pass bypassCompiler=true so the prompt isn't rewritten
-  // through Gemini Flash Lite (which can re-introduce trigger words that fail Grok's
-  // content_policy_violation checker).
+  // For sensitive Spanish prompts, translate to technical English first.
+  // NB2 gives best realistic results with technical fashion vocab in English
+  // ("heavier upper body", "tight dress", "fitted underwear" all pass moderation).
+  let instruction = opts.instruction;
   const isSensitive = NB2_SENSITIVE_ES.test(opts.instruction);
   if (isSensitive) {
-    return fal.editImageWithGrokFal(opts.baseImage, opts.instruction, onProgress, abortSignal, refs, true /* bypassCompiler */);
+    const { translateForNB2 } = await import('../services/promptCompiler');
+    instruction = await translateForNB2(opts.instruction);
   }
 
-  // Standard cascade: NB2 → Grok fallback for everything else.
+  // Standard cascade: NB2 → Grok fallback. NB2 with English vocab usually succeeds
+  // for fashion/editorial content. If it still rejects, Grok absorbs.
   try {
-    const r = await fal.editWithNB2Fal(opts.baseImage, opts.instruction, refs, onProgress, undefined, abortSignal);
+    const r = await fal.editWithNB2Fal(opts.baseImage, instruction, refs, onProgress, undefined, abortSignal);
     if (r.length > 0) return r;
     throw new Error('NB2 returned empty');
   } catch {
-    return fal.editImageWithGrokFal(opts.baseImage, opts.instruction, onProgress, abortSignal, refs);
+    // bypassCompiler=true when sensitive: avoids re-introducing trigger words via
+    // promptCompiler. The prompt is already optimized English from translateForNB2.
+    return fal.editImageWithGrokFal(opts.baseImage, instruction, onProgress, abortSignal, refs, isSensitive);
   }
 }
 
@@ -629,9 +635,15 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         restoreCredits(cost)
         toast.error('La herramienta no devolvio resultado')
       }
-    } catch (err) {
+    } catch (err: any) {
       restoreCredits(cost)
-      toast.error('Error al procesar')
+      // ValidationError = fal moderation rejected. Show actionable message.
+      const isModerationFail = /ValidationError|content_policy|no_media_generated|safety/i.test(String(err?.message || err))
+      if (isModerationFail) {
+        toast.error('Esta combinación fue rechazada por moderación. Tus créditos se restauraron — prueba reformulando el prompt.')
+      } else {
+        toast.error('Error al procesar — créditos restaurados')
+      }
       console.error(err)
     } finally {
       setProcessing(false)

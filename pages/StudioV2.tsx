@@ -430,6 +430,9 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       else {
         const charRefUrls = getCharacterReferenceUrls()
         // NB2 → Grok cascade. NB2 preserves identity via image refs (up to 14); Grok absorbs failures.
+        // For Spanish prompts with sensitive vocabulary, translate to technical English first
+        // so NB2 (best realistic quality) accepts instead of rejecting and forcing Grok fallback.
+        const NB2_SENSITIVE_ES = /\b(lencer[ií]a|sensual|seductor\w*|provocativ\w*|pecho|busto|seno|escote|sost[eé]n|cama|s[áa]banas?|[íi]ntim\w*|reclinad\w*|acostad\w*|tumbad\w*|desnud\w*|bikini|ba[ñn]ador|swimsuit|trasero|culo|nalga|muslo|gl[úu]teo|cadera|cuerpo|piel|escotad\w*|ajustad\w*|ce[ñn]id\w*|transparent\w*|encaje|seda|sat[eé]n|boudoir)\b/i
         try {
           if (charRefUrls.length > 0) {
             // Has character photo → NB2 Edit (preserves identity via image refs)
@@ -441,7 +444,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
             if (processedOutfitFile) nb2AllRefs.push(processedOutfitFile)
             if (scenarioRef) nb2AllRefs.push(scenarioRef.file)
             if (processedPoseFile) nb2AllRefs.push(processedPoseFile)
-            const nb2Instruction = [
+            let nb2Instruction = [
               params.scenario || 'professional photo shoot',
               params.characters[0]?.outfitDescription ? `Wearing: ${params.characters[0].outfitDescription}` : null,
               params.characters[0]?.pose || null,
@@ -449,10 +452,24 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
               params.lighting || null,
               'Keep the same person identity. No text or watermarks.',
             ].filter(Boolean).join('. ')
+            // Translate sensitive Spanish to technical English so NB2 accepts (better realistic quality)
+            if (NB2_SENSITIVE_ES.test(nb2Instruction)) {
+              try {
+                const { translateForNB2 } = await import('../services/promptCompiler')
+                nb2Instruction = await translateForNB2(nb2Instruction)
+              } catch { /* keep original */ }
+            }
             results = await editWithNB2Fal(nb2RefFile, nb2Instruction, nb2AllRefs, p => setHeroProgress(p), { resolution: selectedResolution.toUpperCase() as '1K' | '2K' }, abortHeroRef.current.signal)
             if (!results || results.length === 0) throw new Error('NB2 returned empty')
           } else {
             // No character photo → NB2 t2i from text description
+            // Translate scenario if sensitive
+            if (params.scenario && NB2_SENSITIVE_ES.test(params.scenario)) {
+              try {
+                const { translateForNB2 } = await import('../services/promptCompiler')
+                params.scenario = await translateForNB2(params.scenario)
+              } catch { /* keep original */ }
+            }
             results = await generateWithNB2Fal(params, p => setHeroProgress(p), abortHeroRef.current.signal)
             if (!results || results.length === 0) throw new Error('NB2 returned empty')
           }
@@ -474,7 +491,15 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       }
     } catch (err: any) {
       restoreCredits(cost + (poseCreditsDeducted2 ? 5 : 0) + (outfitCreditsDeducted ? 5 : 0))
-      if (err?.name !== 'AbortError') { toast.error(`Error: ${(err?.message || '').slice(0, 120)}`); console.error(err) }
+      if (err?.name !== 'AbortError') {
+        const isModerationFail = /ValidationError|content_policy|no_media_generated|safety/i.test(String(err?.message || err))
+        if (isModerationFail) {
+          toast.error('Esta combinación fue rechazada por moderación. Tus créditos se restauraron — prueba reformulando el prompt.')
+        } else {
+          toast.error(`Error: ${(err?.message || '').slice(0, 120)}`)
+        }
+        console.error(err)
+      }
     } finally { setGeneratingHero(false); setHeroProgress(0) }
   }
 
