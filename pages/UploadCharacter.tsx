@@ -75,32 +75,87 @@ function inferSetting(outfitDesc: string): string {
 // Phase 1 (Creator) = reference sheet with neutral background.
 const CREATOR_BG = 'Character reference sheet, centered composition, solid light grey background, clean flat studio lighting, no background elements, no props'
 
-const renderStyles = [
+// Substyle suffix is appended to the parent style's prompt to specialize the look.
+type Substyle = { id: string; label: string; icon: string; suffix: string; desc?: string }
+
+const renderStyles: Array<{
+  id: string; label: string; icon: string; desc: string;
+  prompt: string; scenario: string; bg: string;
+  suffix?: string;
+  substyles?: Substyle[];
+}> = [
   { id:'photorealistic', label:'Fotorrealista', icon:'📷', desc:'Aspecto humano, fotografía de estudio',
     prompt:'Ultra-photorealistic digital human, indistinguishable from photograph, shot on Phase One IQ4 150MP with Schneider 110mm f/2.8, natural skin with visible pores and subsurface blood flow, accurate eye moisture, individual hair strand rendering, physically-based material response,',
     scenario: CREATOR_BG,
-    bg:'linear-gradient(135deg, #f0b86020, #d4956b10)' },
+    bg:'linear-gradient(135deg, #f0b86020, #d4956b10)',
+    substyles: [
+      { id:'editorial', label:'Editorial', icon:'📰', desc:'Vogue, Harper\'s Bazaar', suffix:'Vogue magazine cover quality, editorial high-fashion lighting, clean studio backdrop, pristine retouching aesthetic.' },
+      { id:'cinematic', label:'Cinematic', icon:'🎬', desc:'Roger Deakins, anamorphic', suffix:'Cinematic film aesthetic, anamorphic lens flares, Roger Deakins lighting, color graded film LUT, subtle film grain.' },
+      { id:'ugc', label:'UGC / iPhone', icon:'📱', desc:'Selfie, golden hour', suffix:'Authentic iPhone selfie aesthetic, slight motion blur, golden hour warm light, candid feel, social media ready.' },
+      { id:'studio-beauty', label:'Studio Beauty', icon:'💄', desc:'Softbox, ringlight', suffix:'Beauty studio lighting with softbox and ringlight, flawless makeup, glossy highlights, editorial beauty photography.' },
+      { id:'documentary', label:'Documentary', icon:'📸', desc:'35mm, candid', suffix:'Documentary photojournalism, 35mm film, available natural light, unposed candid moment, real environment.' },
+      { id:'street', label:'Street', icon:'🏙️', desc:'Daido Moriyama, contrast', suffix:'Street photography, high contrast B&W or muted color, gritty urban environment, Daido Moriyama / Saul Leiter influence.' },
+    ] },
   { id:'anime', label:'Anime / Manga', icon:'🎨', desc:'Estilo de animación japonesa',
     prompt:'Premium anime character, Production I.G / studio Bones quality, clean precise linework with variable stroke weight, cel-shaded with sophisticated shadow gradients, luminous multi-layered iris reflections, stylized proportions, dynamic hair strand groups,',
     scenario: CREATOR_BG + ', drawn in high-end anime style',
-    bg:'linear-gradient(135deg, #e8749a15, #9a90c415)' },
+    bg:'linear-gradient(135deg, #e8749a15, #9a90c415)',
+    substyles: [
+      { id:'shonen', label:'Shonen Action', icon:'⚔️', desc:'Demon Slayer, JJK', suffix:'Shonen action anime, bold dynamic linework, dramatic shadows, Demon Slayer / Jujutsu Kaisen aesthetic, intense expressions.' },
+      { id:'shojo', label:'Shojo Romance', icon:'🌸', desc:'Sailor Moon, Fruits Basket', suffix:'Shojo manga aesthetic, soft pastel palette, sparkly eyes with floral motifs, Sailor Moon / Fruits Basket vibe.' },
+      { id:'ghibli', label:'Studio Ghibli', icon:'🍃', desc:'Mononoke, Chihiro', suffix:'Studio Ghibli watercolor aesthetic, hand-painted backgrounds, soft warm color palette, Mononoke / Spirited Away inspired.' },
+      { id:'seinen', label:'Seinen Realista', icon:'🗡️', desc:'Vagabond, Berserk', suffix:'Seinen manga realism, detailed crosshatching shading, mature aesthetic, Vagabond / Berserk influence, painterly ink.' },
+      { id:'cyberpunk-anime', label:'Cyberpunk Anime', icon:'🌆', desc:'Akira, GitS, Edgerunners', suffix:'Cyberpunk anime aesthetic, neon city lights, Akira / Ghost in the Shell / Edgerunners influence, holographic accents.' },
+      { id:'manga-bw', label:'Manga B&N', icon:'📖', desc:'Sin color, ink panel', suffix:'Black and white manga panel, screentone shading, clean ink lineart, no color, comic book aesthetic.' },
+      { id:'gacha', label:'Genshin / Gacha', icon:'⭐', desc:'Cel-shaded vibrante', suffix:'Genshin Impact / Honkai Star Rail aesthetic, vibrant cel-shading, jewel-tone palette, gacha character design.' },
+      { id:'trigger', label:'Studio Trigger', icon:'⚡', desc:'Kill la Kill, Promare', suffix:'Studio Trigger aesthetic, bold flat colors, dynamic pose, Kill la Kill / Promare visual language, exaggerated expressions.' },
+    ] },
   { id:'3d-render', label:'Render 3D', icon:'🖥️', desc:'CGI, estilo Pixar, personaje de juego',
     prompt:'AAA game-quality 3D character render, Unreal Engine 5 quality, high-poly sculpted mesh, PBR material workflow on all surfaces, subsurface scattering skin shader with detail maps, strand-based groomed hair, HDRI environment lighting with ray-traced AO,',
     scenario: CREATOR_BG + ', rendered in Octane/Unreal Engine 5',
-    bg:'linear-gradient(135deg, #4858e015, #50d8a010)' },
+    bg:'linear-gradient(135deg, #4858e015, #50d8a010)',
+    substyles: [
+      { id:'pixar', label:'Pixar / Disney', icon:'🎈', desc:'Toy Story, Encanto', suffix:'Pixar / Disney 3D animation aesthetic, soft warm lighting, expressive features, Encanto / Toy Story / Soul style.' },
+      { id:'spiderverse', label:'Spider-Verse', icon:'🕸️', desc:'Comic + 3D híbrido', suffix:'Spider-Verse aesthetic, comic halftone shading layered over 3D, chromatic aberration, bold ink outlines, Mitchells / Spider-Verse hybrid look.' },
+      { id:'arcane', label:'Arcane / Mitchells', icon:'🎨', desc:'Painterly + 3D', suffix:'Arcane Netflix aesthetic, painted texture overlays on 3D mesh, painterly brushstroke detail, Mitchells vs Machines influence.' },
+      { id:'unreal', label:'Unreal Engine 5', icon:'🎮', desc:'AAA realista', suffix:'Unreal Engine 5 Nanite render, photorealistic AAA game character, MetaHuman quality, realistic skin shader.' },
+      { id:'blender-stylized', label:'Blender Stylized', icon:'🟧', desc:'Low-poly aesthetic', suffix:'Blender stylized 3D, light low-poly aesthetic, soft toon shader, hand-crafted indie game character feel.' },
+      { id:'octane-hyper', label:'Octane Hyper', icon:'💎', desc:'CGI ultra-realista', suffix:'Octane render hyperrealistic CGI, glossy hyper-detailed skin, ray-traced reflections, advertising commercial quality.' },
+    ] },
   { id:'illustration', label:'Ilustración', icon:'✍️', desc:'Arte digital, concept art',
     prompt:'High-end digital character illustration, concept art portfolio quality, painterly technique blending precise linework with expressive color blocking, sophisticated light study with warm/cool shifts, character design clarity with strong silhouette,',
     scenario: CREATOR_BG + ', art book presentation quality',
-    bg:'linear-gradient(135deg, #f0b86015, #e8725c10)' },
+    bg:'linear-gradient(135deg, #f0b86015, #e8725c10)',
+    substyles: [
+      { id:'watercolor', label:'Acuarela', icon:'🎨', desc:'Soft edges, painterly', suffix:'Watercolor illustration aesthetic, soft bleeding edges, paper texture, traditional watercolor wash technique.' },
+      { id:'ink', label:'Tinta / Inktober', icon:'🖋️', desc:'B&N, hatching', suffix:'Ink illustration, black and white, intricate crosshatching, brush ink linework, Inktober challenge aesthetic.' },
+      { id:'concept-art', label:'Concept Art', icon:'🏰', desc:'Painterly, ArtStation', suffix:'AAA concept art quality, painterly brushwork, ArtStation portfolio aesthetic, character design sheet style.' },
+      { id:'childrens-book', label:'Cuento Infantil', icon:'📚', desc:'Soft, friendly', suffix:'Children\'s picture book illustration, soft friendly aesthetic, warm palette, hand-painted children\'s book style.' },
+      { id:'editorial-illust', label:'Editorial Illustr.', icon:'📰', desc:'NYT, New Yorker', suffix:'Editorial illustration, NYT / New Yorker aesthetic, simplified shapes, conceptual minimalist style, limited palette.' },
+      { id:'comic', label:'Comic / Cómic', icon:'💥', desc:'Bold ink + flat color', suffix:'Comic book illustration, bold ink outlines, flat saturated colors, halftone dot shading, Marvel / DC aesthetic.' },
+    ] },
   { id:'stylized', label:'Estilizado', icon:'✨', desc:'Semi-realista, Arcane / Spider-Verse',
     prompt:'Distinctive stylized character with exaggerated design language, Arcane/Spider-Verse quality, strong graphic silhouette with memorable proportions, bold shape language defining personality, limited palette with strategic accent pops,',
     scenario: CREATOR_BG + ', cel-shaded with painterly details',
-    bg:'linear-gradient(135deg, #4f46e515, #f0684815)' },
+    bg:'linear-gradient(135deg, #4f46e515, #f0684815)',
+    substyles: [
+      { id:'spiderverse-styl', label:'Spider-Verse', icon:'🕷️', desc:'Halftone + chromatic', suffix:'Spider-Verse stylization, comic halftone overlay, chromatic aberration, bold ink linework, comic-style speed lines.' },
+      { id:'arcane-styl', label:'Arcane', icon:'🔮', desc:'Painterly + 3D híbrido', suffix:'Arcane Netflix stylization, painterly textures over 3D base, hand-painted brushstroke detail.' },
+      { id:'klaus', label:'Klaus / Mitchells', icon:'❄️', desc:'Hand-painted feel', suffix:'Klaus / Mitchells aesthetic, hand-painted feel with 3D depth, warm ambient lighting, illustrative texture.' },
+      { id:'edgerunners', label:'Edgerunners', icon:'⚡', desc:'Neon + cel-shade', suffix:'Cyberpunk Edgerunners stylization, neon glow accents, cel-shaded with bold outlines, vibrant chromatic palette.' },
+      { id:'soft-anime', label:'Soft Anime', icon:'☁️', desc:'Cel-shaded suave', suffix:'Soft anime cel-shading, bright pastel palette, gentle gradient lighting, Genshin / lighter cel-shade aesthetic.' },
+    ] },
   { id:'pixel-art', label:'Pixel Art', icon:'🟨', desc:'Retro 8-bit / 16-bit',
     suffix: '16-bit retro game quality, limited color palette, pixelated, NOT smooth, NOT photorealistic',
     prompt:'Pixel art character sprite, 64-128px base resolution, limited 32-color palette, intentional dithering, clear silhouette,',
     scenario: CREATOR_BG + ', pixelated throughout, retro game aesthetic',
-    bg:'linear-gradient(135deg, #50d8a015, #4858e010)' },
+    bg:'linear-gradient(135deg, #50d8a015, #4858e010)',
+    substyles: [
+      { id:'8bit', label:'8-bit NES', icon:'🎮', desc:'NES era, paleta limitada', suffix:'8-bit NES era pixel art, ultra limited 16-color palette, chunky pixels, retro 1980s arcade aesthetic.' },
+      { id:'16bit', label:'16-bit SNES', icon:'🕹️', desc:'FFVI, Chrono Trigger', suffix:'16-bit SNES era pixel art, Chrono Trigger / Final Fantasy VI quality, expressive sprites, rich palette.' },
+      { id:'modern-pixel', label:'Modern Pixel', icon:'🌾', desc:'Stardew, Celeste', suffix:'Modern pixel art aesthetic, Stardew Valley / Celeste quality, expressive limited palette, smooth animation feel.' },
+      { id:'hd-2d', label:'HD-2D', icon:'⭐', desc:'Octopath Traveler', suffix:'HD-2D aesthetic, Octopath Traveler style, pixel art characters with 3D environments and dramatic lighting.' },
+    ] },
 ]
 
 // ─── Chip Selector component ────────────────────────────────────────
@@ -150,6 +205,8 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
   // Step 0 — Base
   const [selRenderStyle, setSelRenderStyle] = useState(0)
+  // Substyle id (e.g. 'editorial', 'shonen', 'spiderverse'). null = use parent style only.
+  const [selSubstyle, setSelSubstyle] = useState<string | null>(null)
   const [name, setName] = useState('')
   const [selGender, setSelGender] = useState<string | null>(null)
   const [selAge, setSelAge] = useState<string | null>(null)
@@ -245,6 +302,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     setSelGender(null)
     setSelAge(null)
     setSelRenderStyle(0)
+    setSelSubstyle(null)
     setChipSelections({
       ethnicity: [], hairStyle: [], hairColor: [], skinTone: [], eyeColor: [],
       eyeShape: [], noseType: [], lipShape: [], faceShape: [], jawline: [], eyebrows: [],
@@ -272,6 +330,9 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   const buildFullPrompt = (): string => {
     const style = renderStyles[selRenderStyle]
     const parts: string[] = [style.prompt]
+    // Substyle suffix specializes the look (Ghibli vs Shonen vs Cyberpunk anime, etc.)
+    const substyle = style.substyles?.find(s => s.id === selSubstyle)
+    if (substyle) parts.push(substyle.suffix)
 
     // Gender + Age
     const genderChip = GENDERS.find(g => g.id === selGender)
@@ -309,6 +370,10 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   // Soul 2.0-friendly prompt — no camera/lens jargon, just natural character description
   const buildSoulPrompt = (): string => {
     const parts: string[] = []
+    // Substyle suffix specializes the rendering aesthetic
+    const style = renderStyles[selRenderStyle]
+    const substyle = style?.substyles?.find(s => s.id === selSubstyle)
+    if (substyle) parts.push(substyle.suffix)
     const genderChip = GENDERS.find(g => g.id === selGender)
     const ageChip = AGE_RANGES.find(a => a.id === selAge)
     if (genderChip) parts.push(genderChip.promptText)
@@ -671,6 +736,52 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     ? [!name.trim() && 'Nombre', !selGender && 'Género', !selAge && 'Edad'].filter(Boolean)
     : []
 
+  // Highlight required-but-empty fields when user tries to advance
+  const [showValidation, setShowValidation] = useState(false)
+  // Auto-clear validation when fields change
+  useEffect(() => {
+    if (showValidation && missingFields.length === 0) setShowValidation(false)
+  }, [name, selGender, selAge, showValidation, missingFields.length])
+
+  // Auto-save draft to localStorage (only when actively editing)
+  useEffect(() => {
+    if (!name.trim() && !selGender && !selAge) return // nothing to save
+    const draft = { name, selRenderStyle, selSubstyle, selGender, selAge, step, ts: Date.now() }
+    try { localStorage.setItem('vist-character-draft', JSON.stringify(draft)) } catch { /* quota */ }
+  }, [name, selRenderStyle, selSubstyle, selGender, selAge, step])
+  // Show "restore draft" banner if there's a recent draft and user hasn't started
+  const [draftBanner, setDraftBanner] = useState<{ name: string; ts: number } | null>(null)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('vist-character-draft')
+      if (!raw) return
+      const draft = JSON.parse(raw)
+      const ageMin = (Date.now() - draft.ts) / 60000
+      if (draft.name && ageMin < 60 * 24 * 7 && !name.trim()) {
+        setDraftBanner({ name: draft.name, ts: draft.ts })
+      }
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  const restoreDraft = () => {
+    try {
+      const raw = localStorage.getItem('vist-character-draft')
+      if (!raw) return
+      const d = JSON.parse(raw)
+      if (d.name) setName(d.name)
+      if (typeof d.selRenderStyle === 'number') setSelRenderStyle(d.selRenderStyle)
+      if (d.selSubstyle) setSelSubstyle(d.selSubstyle)
+      if (d.selGender) setSelGender(d.selGender)
+      if (d.selAge) setSelAge(d.selAge)
+      if (typeof d.step === 'number') setStep(d.step)
+      setDraftBanner(null)
+    } catch { /* ignore */ }
+  }
+  const discardDraft = () => {
+    try { localStorage.removeItem('vist-character-draft') } catch { /* ignore */ }
+    setDraftBanner(null)
+  }
+
   // ─── Render ───────────────────────────────────────────────────────
   return (
     <div className="min-h-screen" style={{ background: '#F3F4F6' }}>
@@ -793,8 +904,16 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
            ═══════════════════════════════════════════════════════════ */
         <div className={`px-4 md:px-8 pb-20 md:pb-8 ${variants.length > 0 || generating ? 'flex flex-col md:flex-row gap-6' : 'max-w-3xl lg:max-w-5xl mx-auto lg:flex lg:gap-6'}`}>
           <div className="flex-1">
-            {/* Steps Navigation */}
-            <div className="flex gap-1 mb-6 overflow-x-auto pb-1">
+            {/* Steps Navigation — progress bar with steps */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2 px-1">
+                <span className="text-[10px] font-mono uppercase tracking-wider" style={{ color: '#999' }}>Paso {step + 1} de {steps.length}</span>
+                <span className="text-[10px] font-mono" style={{ color: '#1A1A1A', fontWeight: 600 }}>{Math.round(((step + 1) / steps.length) * 100)}%</span>
+              </div>
+              <div className="h-1 rounded-full mb-3 overflow-hidden" style={{ background: '#E5E7EB' }}>
+                <div className="h-full transition-all duration-300" style={{ width: `${((step + 1) / steps.length) * 100}%`, background: '#1A1A1A' }} />
+              </div>
+              <div className="flex gap-1 overflow-x-auto pb-1">
               {steps.map((s, i) => (
                 <button key={s} onClick={() => setStep(i)}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-medium transition-all shrink-0"
@@ -846,7 +965,52 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                   </button>
                 </div>
               </div>
+              </div>
             </div>
+
+            {/* ─── Draft restore banner ──────────────────────────── */}
+            {draftBanner && step === 0 && !name.trim() && (
+              <div className="p-3 mb-4 rounded-xl flex items-center gap-3" style={{ background: '#FEF3C7', border: '1px solid #FDE68A' }}>
+                <span className="text-base">📝</span>
+                <div className="flex-1">
+                  <div className="text-[12px] font-semibold" style={{ color: '#92400E' }}>Tienes un personaje en progreso</div>
+                  <div className="text-[10px]" style={{ color: '#92400E', opacity: 0.7 }}>"{draftBanner.name}" — guardado hace {Math.round((Date.now() - draftBanner.ts) / 60000)}min</div>
+                </div>
+                <button onClick={restoreDraft} className="px-3 py-1.5 rounded-lg text-[11px] font-semibold" style={{ background: '#1A1A1A', color: '#fff', border: 'none', cursor: 'pointer' }}>Continuar</button>
+                <button onClick={discardDraft} className="px-3 py-1.5 rounded-lg text-[11px]" style={{ background: 'transparent', color: '#92400E', border: '1px solid rgba(146,64,14,0.3)', cursor: 'pointer' }}>Descartar</button>
+              </div>
+            )}
+
+            {/* ─── Quick Start templates — only at step 0 with no name yet ─── */}
+            {step === 0 && !name.trim() && (
+              <div className="p-5 mb-4 rounded-xl" style={{ background: 'linear-gradient(135deg, #FAFAFA, #F3F4F6)', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 12 }}>
+                <div className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: '#555' }}>
+                  ⚡ Empieza con una plantilla <span className="text-[10px] font-normal normal-case" style={{ color: '#999' }}>· o crea desde cero</span>
+                </div>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                  {[
+                    { id:'influencer-fashion', label:'Influencer Fashion', icon:'👗', desc:'Mujer joven editorial', renderIdx:0, substyle:'editorial', gender:'female', age:'20s' },
+                    { id:'streamer-gamer', label:'Streamer', icon:'🎮', desc:'3D Pixar casual', renderIdx:2, substyle:'pixar', gender:'female', age:'20s' },
+                    { id:'anime-oc', label:'Anime OC', icon:'🌸', desc:'Personaje anime', renderIdx:1, substyle:'shojo', gender:'female', age:'20s' },
+                    { id:'brand-mascot', label:'Mascota Marca', icon:'✨', desc:'Estilizado memorable', renderIdx:4, substyle:'soft-anime', gender:'female', age:'20s' },
+                  ].map(t => (
+                    <button key={t.id}
+                      onClick={() => {
+                        setSelRenderStyle(t.renderIdx)
+                        setSelSubstyle(t.substyle)
+                        setSelGender(t.gender)
+                        setSelAge(t.age)
+                      }}
+                      className="p-3 rounded-xl text-left transition-all hover:scale-[1.02] hover:bg-white"
+                      style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)' }}>
+                      <span className="text-lg block mb-1">{t.icon}</span>
+                      <div className="text-[11px] font-semibold" style={{ color: '#1A1A1A' }}>{t.label}</div>
+                      <div className="text-[9px] mt-0.5" style={{ color: '#999' }}>{t.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* ─── Step 0: Base ───────────────────────────────────── */}
             {step === 0 && (
@@ -855,7 +1019,8 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                   <label className="text-[11px] font-semibold uppercase tracking-wider block mb-3" style={{ color: '#555' }}>Estilo de Render</label>
                   <div className="grid grid-cols-3 gap-3">
                     {renderStyles.map((rs, i) => (
-                      <button key={rs.id} onClick={() => setSelRenderStyle(i)}
+                      <button key={rs.id}
+                        onClick={() => { setSelRenderStyle(i); setSelSubstyle(null) }}
                         className="p-4 rounded-xl text-left transition-all hover:scale-[1.02]"
                         style={{
                           background: selRenderStyle === i ? '#F9FAFB' : 'white',
@@ -870,21 +1035,75 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                   </div>
                 </div>
 
-                <div>
+                {/* Substyles — appear when parent style is selected and has substyles */}
+                {renderStyles[selRenderStyle]?.substyles && (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#555' }}>
+                        Subestilo <span className="text-[10px] font-normal normal-case" style={{ color: '#999' }}>· opcional</span>
+                      </label>
+                      {selSubstyle && (
+                        <button onClick={() => setSelSubstyle(null)}
+                          className="text-[10px] underline" style={{ color: '#777', background: 'none', border: 'none', cursor: 'pointer' }}>
+                          Quitar selección
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {renderStyles[selRenderStyle].substyles!.map(sub => {
+                        const active = selSubstyle === sub.id
+                        return (
+                          <button key={sub.id}
+                            onClick={() => setSelSubstyle(active ? null : sub.id)}
+                            title={sub.desc}
+                            className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all hover:scale-[1.02] flex items-center gap-1.5"
+                            style={{
+                              background: active ? '#1A1A1A' : '#F9FAFB',
+                              color: active ? '#fff' : '#555',
+                              border: `1px solid ${active ? '#1A1A1A' : 'rgba(0,0,0,0.06)'}`,
+                            }}>
+                            <span>{sub.icon}</span>
+                            <span>{sub.label}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div data-required-empty={showValidation && !name.trim() ? 'true' : undefined}>
                   <label className="text-[11px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: '#555' }}>Nombre <span style={{ color: '#1A1A1A' }}>*</span></label>
                   <input value={name} onChange={e => setName(e.target.value)} placeholder="Ej.: Luna Vex"
                     className="w-full px-4 py-3 rounded-xl text-sm border outline-none focus:border-[rgba(0,0,0,.2)] transition-colors"
-                    style={{ background: '#F9FAFB', borderColor: 'rgba(0,0,0,0.06)', color: '#111' }} />
+                    style={{
+                      background: '#F9FAFB',
+                      borderColor: showValidation && !name.trim() ? '#DC2626' : 'rgba(0,0,0,0.06)',
+                      color: '#111',
+                      boxShadow: showValidation && !name.trim() ? '0 0 0 3px rgba(220,38,38,0.08)' : 'none',
+                    }} />
+                  {showValidation && !name.trim() && (
+                    <div className="text-[10px] mt-1" style={{ color: '#DC2626' }}>El nombre es obligatorio</div>
+                  )}
                 </div>
 
-                <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Género <span style={{ color: '#1A1A1A' }}>*</span></label>
+                <div data-required-empty={showValidation && !selGender ? 'true' : undefined}
+                  style={{ padding: showValidation && !selGender ? '8px' : 0, margin: showValidation && !selGender ? '-8px' : 0,
+                           borderRadius: 8,
+                           background: showValidation && !selGender ? 'rgba(220,38,38,0.04)' : 'transparent',
+                           border: showValidation && !selGender ? '1px solid rgba(220,38,38,0.3)' : '1px solid transparent',
+                           transition: 'all 0.15s' }}>
+                  <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: showValidation && !selGender ? '#DC2626' : '#555' }}>Género <span style={{ color: '#1A1A1A' }}>*</span></label>
                   <ChipSelector options={GENDERS} selected={selGender ? [selGender] : []}
                     onSelect={ids => setSelGender(ids[0] || null)} />
                 </div>
 
-                <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: '#555' }}>Edad <span style={{ color: '#1A1A1A' }}>*</span></label>
+                <div data-required-empty={showValidation && !selAge ? 'true' : undefined}
+                  style={{ padding: showValidation && !selAge ? '8px' : 0, margin: showValidation && !selAge ? '-8px' : 0,
+                           borderRadius: 8,
+                           background: showValidation && !selAge ? 'rgba(220,38,38,0.04)' : 'transparent',
+                           border: showValidation && !selAge ? '1px solid rgba(220,38,38,0.3)' : '1px solid transparent',
+                           transition: 'all 0.15s' }}>
+                  <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: showValidation && !selAge ? '#DC2626' : '#555' }}>Edad <span style={{ color: '#1A1A1A' }}>*</span></label>
                   <ChipSelector options={AGE_RANGES} selected={selAge ? [selAge] : []}
                     onSelect={ids => setSelAge(ids[0] || null)} />
                 </div>
@@ -1430,10 +1649,20 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                       Completa {missingFields.join(', ')} para continuar
                     </span>
                   )}
-                  <button onClick={() => setStep(step + 1)}
-                    className="px-6 py-2.5 rounded-xl text-[13px] font-semibold"
-                    style={{ background: '#1A1A1A', color: 'white', opacity: !canAdvance(step) ? 0.4 : 1, cursor: !canAdvance(step) ? 'not-allowed' : 'pointer' }}
-                    disabled={!canAdvance(step)}>
+                  <button onClick={() => {
+                      if (!canAdvance(step)) {
+                        setShowValidation(true)
+                        // scroll to first missing field for UX clarity
+                        setTimeout(() => {
+                          const firstMissing = document.querySelector('[data-required-empty="true"]') as HTMLElement | null
+                          firstMissing?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                        }, 50)
+                        return
+                      }
+                      setStep(step + 1)
+                    }}
+                    className="px-6 py-2.5 rounded-xl text-[13px] font-semibold transition-all"
+                    style={{ background: '#1A1A1A', color: 'white', opacity: !canAdvance(step) ? 0.7 : 1, cursor: 'pointer' }}>
                     Siguiente →
                   </button>
                 </div>
@@ -1453,12 +1682,20 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
           {/* ─── Right: Preview Panel — only shown when variants exist ── */}
           <div className={`w-full md:w-[320px] shrink-0 ${variants.length > 0 || generating ? '' : 'hidden lg:block'}`}>
             <div className="p-5 sticky top-8 rounded-xl" style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 12 }}>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
                 <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#555' }}>Vista Previa</div>
-                <span className="text-[8px] font-mono font-bold px-2 py-0.5 rounded-lg"
-                  style={{ background: '#F3F4F6', color: '#1A1A1A' }}>
-                  {renderStyles[selRenderStyle]?.label.toUpperCase()}
-                </span>
+                <div className="flex items-center gap-1 flex-wrap">
+                  <span className="text-[8px] font-mono font-bold px-2 py-0.5 rounded-lg"
+                    style={{ background: '#F3F4F6', color: '#1A1A1A' }}>
+                    {renderStyles[selRenderStyle]?.label.toUpperCase()}
+                  </span>
+                  {selSubstyle && renderStyles[selRenderStyle]?.substyles?.find(s => s.id === selSubstyle) && (
+                    <span className="text-[8px] font-mono font-bold px-2 py-0.5 rounded-lg"
+                      style={{ background: '#1A1A1A', color: '#fff' }}>
+                      {renderStyles[selRenderStyle]?.substyles?.find(s => s.id === selSubstyle)?.label.toUpperCase()}
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="aspect-[3/4] rounded-xl overflow-hidden relative"
