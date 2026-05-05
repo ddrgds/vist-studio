@@ -174,7 +174,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     // Best-effort DB restore (fire-and-forget)
     if (user) {
       import('../services/supabaseService').then(async ({ supabase }) => {
-        const { error } = await supabase.rpc('restore_credits', { p_user_id: user.id, p_amount: cost });
+        const { error } = await supabase.rpc('add_credits', { p_user_id: user.id, p_amount: cost, p_reason: 'refund' });
         if (error) console.warn('restoreCredits DB failed', error);
       });
     }

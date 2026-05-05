@@ -288,16 +288,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onClose, inten
                 )}
               </button>
 
-              {/* Bypass for Development Testing */}
-              {import.meta.env.DEV && (
-                <button
-                  type="button"
-                  onClick={(e) => { e.preventDefault(); onAuthenticated?.(); onClose?.(); }}
-                  className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-500 font-medium text-xs rounded-lg transition-colors border border-gray-200 mt-2"
-                >
-                  [DEV] Skip Login
-                </button>
-              )}
             </form>
           </>
         )}

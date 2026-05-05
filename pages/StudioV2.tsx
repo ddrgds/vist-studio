@@ -288,6 +288,21 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
   // Restore hero from pipeline store on mount (persists across page changes)
   useEffect(() => { if (pipelineHeroUrl && !heroImage) setHeroImage(pipelineHeroUrl) }, [])
 
+  // Track all object URLs created in this session so we can revoke them on unmount.
+  // Prevents memory leaks from outfitRef / scenarioRef / poseRef / faceRefs previews.
+  const trackedURLs = useRef<Set<string>>(new Set())
+  const makeObjectURL = (f: File): string => {
+    const url = URL.createObjectURL(f)
+    trackedURLs.current.add(url)
+    return url
+  }
+  useEffect(() => {
+    return () => {
+      trackedURLs.current.forEach(url => URL.revokeObjectURL(url))
+      trackedURLs.current.clear()
+    }
+  }, [])
+
   // Consume pending image from gallery selection mode
   const { pendingImage: navPendingImage, pendingTarget: navPendingTarget, consume: consumeNav } = useNavigationStore()
   useEffect(() => {
@@ -744,7 +759,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
             <label style={{ width: 56, height: 56, borderRadius: 10, background: '#F3F4F6', border: '1px solid var(--border)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0, gap: 2, transition: 'all 0.15s' }}>
               <span style={{ fontSize: 16, color: 'var(--text-2)' }}>+</span>
               <span style={{ fontSize: 8, color: 'var(--text-3)', fontWeight: 500 }}>Referencia</span>
-              <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) setOutfitRef({ file: f, preview: URL.createObjectURL(f) }); if (e.target) e.target.value = '' }} />
+              <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) setOutfitRef({ file: f, preview: makeObjectURL(f) }); if (e.target) e.target.value = '' }} />
             </label>
           )}
         </div>
@@ -781,7 +796,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
               ) : (
                 <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, background: '#F3F4F6', border: '1px solid var(--border)', cursor: 'pointer', fontSize: '0.7rem', color: 'var(--text-2)' }}>
                   + Añadir referencia visual
-                  <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) setScenarioRef({ file: f, preview: URL.createObjectURL(f) }); if (e.target) e.target.value = '' }} />
+                  <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) setScenarioRef({ file: f, preview: makeObjectURL(f) }); if (e.target) e.target.value = '' }} />
                 </label>
               )}
             </div>
@@ -791,7 +806,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
             <span style={labelStyle}>Pose</span>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{POSE_OPTIONS.map(o => <Chip key={o.id} label={o.label} icon={o.icon} active={selectedPose === o.id} onClick={() => setSelectedPose(selectedPose === o.id ? '' : o.id)} />)}</div>
             <div style={{ marginTop: 8 }}>
-              <RefSlot label="Referencia de pose" iconLabel="🧍 Pose" ref_={poseRef} onUpload={f => setPoseRef({ file: f, preview: URL.createObjectURL(f) })} onRemove={() => { setPoseRef(null); setPosePrecise(false) }} badge="" />
+              <RefSlot label="Referencia de pose" iconLabel="🧍 Pose" ref_={poseRef} onUpload={f => setPoseRef({ file: f, preview: makeObjectURL(f) })} onRemove={() => { setPoseRef(null); setPosePrecise(false) }} badge="" />
               {poseRef && (
                 <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.7rem', color: 'var(--text-2)', cursor: 'pointer', marginTop: 6 }}>
                   <input type="checkbox" checked={posePrecise} onChange={e => setPosePrecise(e.target.checked)} />
@@ -949,7 +964,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
     <>
       <FlashOverlay active={flashActive} />
       <input ref={uploadInputRef} type="file" accept="image/*" className="hidden" onChange={handleUploadSource} />
-      <input ref={faceInputRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f && faceRefs.length < 3) setFaceRefs(prev => [...prev, { file: f, preview: URL.createObjectURL(f) }]); e.target.value = '' }} />
+      <input ref={faceInputRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f && faceRefs.length < 3) setFaceRefs(prev => [...prev, { file: f, preview: makeObjectURL(f) }]); e.target.value = '' }} />
 
       {/* ═══════ DESKTOP ═══════ */}
       <div className="hidden lg:flex h-full" style={{ background: 'var(--bg-0)' }}>

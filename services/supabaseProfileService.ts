@@ -101,7 +101,7 @@ export const decrementCreditsInDb = async (
   userId: string,
   amount: number,
 ): Promise<number> => {
-  const { data, error } = await supabase.rpc('decrement_credits', {
+  const { data, error } = await supabase.rpc('deduct_credits', {
     p_user_id: userId,
     p_amount: amount,
   });
@@ -114,9 +114,10 @@ export const restoreCreditsInDb = async (
   userId: string,
   amount: number,
 ): Promise<void> => {
-  const { error } = await supabase.rpc('restore_credits', {
+  const { error } = await supabase.rpc('add_credits', {
     p_user_id: userId,
     p_amount: amount,
+    p_reason: 'refund',
   });
   if (error) {
     // Fallback: read current balance then add amount (RPC may not exist yet)

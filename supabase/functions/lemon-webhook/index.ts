@@ -108,18 +108,29 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   );
 
-  // ── BUG #4 — Idempotency check ──────────────────────────────────────────
+  // ── Idempotency: claim event FIRST, then process ──────────────────────────
+  // Race-safe pattern: INSERT with unique constraint. If the row already exists,
+  // another worker is/has already processing it — bail. This eliminates the
+  // window where two retries both pass a SELECT-existence check and double-credit.
   const eventId = `${event_name}:${event.data.id}`;
-  const { data: existing } = await supabase
+  const { error: claimErr } = await supabase
     .from('webhook_events')
-    .select('event_id')
-    .eq('event_id', eventId)
-    .maybeSingle();
+    .insert({ event_id: eventId });
 
-  if (existing) {
-    // Already processed — return 200 without re-processing
-    return new Response('ok (duplicate)', { status: 200 });
+  if (claimErr) {
+    // Postgres unique_violation = duplicate event (already processed)
+    if (claimErr.code === '23505') {
+      return new Response('ok (duplicate)', { status: 200 });
+    }
+    // Other errors — let Lemon retry
+    console.error('lemon-webhook: idempotency claim failed', claimErr);
+    return new Response('error: idempotency registration failed', { status: 500 });
   }
+
+  // Helper: roll back claim if downstream processing fails so Lemon's retry succeeds.
+  const releaseClaim = async () => {
+    await supabase.from('webhook_events').delete().eq('event_id', eventId);
+  };
 
   // ── BUG #5 — Missing user_id ────────────────────────────────────────────
   if (!userId) {
@@ -148,6 +159,7 @@ Deno.serve(async (req) => {
 
       if (error) {
         console.error('lemon-webhook: add_credits failed for credit pack', error);
+        await releaseClaim();
         return new Response('error: credit pack failed', { status: 500 });
       }
     } else {
@@ -168,6 +180,7 @@ Deno.serve(async (req) => {
       // BUG #3 — Return 500 on DB error so Lemon Squeezy retries
       if (error) {
         console.error('lemon-webhook: DB update failed for order/subscription_created', error);
+        await releaseClaim();
         return new Response('error: db update failed', { status: 500 });
       }
     }
@@ -210,6 +223,7 @@ Deno.serve(async (req) => {
 
     if (updateError) {
       console.error('lemon-webhook: DB update failed for subscription_updated', updateError);
+      await releaseClaim();
       return new Response('error: db update failed', { status: 500 });
     }
   }
@@ -224,6 +238,7 @@ Deno.serve(async (req) => {
 
     if (error) {
       console.error('lemon-webhook: DB update failed for subscription_cancelled', error);
+      await releaseClaim();
       return new Response('error: db update failed', { status: 500 });
     }
   }
@@ -240,12 +255,11 @@ Deno.serve(async (req) => {
 
     if (error) {
       console.error('lemon-webhook: DB update failed for subscription_expired', error);
+      await releaseClaim();
       return new Response('error: db update failed', { status: 500 });
     }
   }
 
-  // ── BUG #4 — Record event for idempotency ───────────────────────────────
-  await supabase.from('webhook_events').insert({ event_id: eventId });
-
+  // Claim was inserted at the top of the handler — no need to register again.
   return new Response('ok', { status: 200 });
 });
