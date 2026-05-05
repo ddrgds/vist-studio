@@ -335,15 +335,14 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   const steps = ['Base', 'Apariencia', 'Estilo y Personalidad']
   const isPhotorealistic = renderStyles[selRenderStyle]?.id === 'photorealistic'
 
-  // Build the full prompt for generation
+  // Build the full prompt for generation.
+  // NOTE: substyle suffix is NOT included here — it goes into params.imageBoost,
+  // which feeds NB2's `aesthetic_context.art_style` JSON field (semantically correct
+  // for style instructions). Including it here would duplicate it as a "physical trait"
+  // in the structured prompt.
   const buildFullPrompt = (): string => {
     const style = renderStyles[selRenderStyle]
-    // SUBSTYLE FIRST: front-load the most specific aesthetic so the model gives it the
-    // most attention weight. Then base style prompt, then character traits.
-    const substyle = style.substyles?.find(s => s.id === selSubstyle)
-    const parts: string[] = []
-    if (substyle) parts.push(substyle.suffix)
-    parts.push(style.prompt)
+    const parts: string[] = [style.prompt]
 
     // Gender + Age
     const genderChip = GENDERS.find(g => g.id === selGender)
@@ -479,6 +478,16 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     }
 
     try {
+      // imageBoost feeds into NB2's `aesthetic_context.art_style` JSON field, Grok's
+      // "Style:" prefix, and other models' style anchor. We MUST include the substyle
+      // suffix here so the model treats it as STYLE INSTRUCTION (not as physical
+      // description). The substyle is the most specific, so it goes first.
+      const substyleObj = style.substyles?.find(s => s.id === selSubstyle)
+      const baseStyleBoost = style.id !== 'photorealistic' ? style.prompt : undefined
+      const composedBoost = substyleObj
+        ? (baseStyleBoost ? `${substyleObj.suffix} ${baseStyleBoost}` : substyleObj.suffix)
+        : baseStyleBoost
+
       const params: InfluencerParams = {
         characters: [{
           id: crypto.randomUUID(),
@@ -493,7 +502,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
         aspectRatio: AspectRatio.Portrait,
         numberOfImages: 1,
         realistic: style.id === 'photorealistic',
-        imageBoost: style.id !== 'photorealistic' ? style.prompt : undefined,
+        imageBoost: composedBoost,
         negativePrompt: [
           style.id === 'photorealistic' ? 'plastic skin, airbrushed skin, wax figure, CGI render, overly smooth face, doll-like, mannequin' : '',
           'brand names, branded products, Coca-Cola, corporate logos, product placement, holding random objects, holding drinks, holding food, holding phone',
