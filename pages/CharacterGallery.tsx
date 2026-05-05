@@ -217,17 +217,32 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                   )}
                 </div>
                 <div className="flex-1 p-4">
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-2">
                     <div>
                       <h3 className="text-sm font-bold" style={{ color:'var(--joi-text-1)' }}>{c.name}</h3>
                       <span className="text-[10px] font-mono" style={{ color:'var(--accent)' }}>{c.handle}</span>
                     </div>
-                    <span className="text-[9px] font-mono px-2 py-0.5 rounded-md"
-                      style={{
-                        background: 'rgba(99,102,241,.06)',
-                        color: 'var(--joi-text-3)',
-                        border: '1px solid rgba(255,255,255,.06)',
-                      }}>{c.photos} fotos</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] font-mono px-2 py-0.5 rounded-md"
+                        style={{
+                          background: 'rgba(99,102,241,.06)',
+                          color: 'var(--joi-text-3)',
+                          border: '1px solid rgba(255,255,255,.06)',
+                        }}>{c.photos} fotos</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (window.confirm(`¿Eliminar "${c.name}"? Esta acción no se puede deshacer.`)) {
+                            removeCharacter(c.id)
+                            if (selectedChar === i) setSelectedChar(null)
+                          }
+                        }}
+                        title="Eliminar personaje"
+                        className="w-6 h-6 rounded-md flex items-center justify-center transition-all hover:scale-110"
+                        style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--joi-text-3)', border: 'none', fontSize: '11px', cursor: 'pointer' }}>
+                        🗑
+                      </button>
+                    </div>
                   </div>
                   <p className="text-[10px] mt-1.5" style={{ color:'var(--joi-text-3)' }}>{c.style}</p>
                   {selectedChar === null && (

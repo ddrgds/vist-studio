@@ -735,36 +735,34 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
         )}
       </div>
 
-      {/* Simple mode: only scenario text. Advanced mode: full accordion */}
-      {isSimpleMode ? (
-        <div>
-          <span style={labelStyle}>Escenario</span>
-          <textarea value={scenario} onChange={e => setScenario(e.target.value)} rows={2} placeholder="Describe el escenario..." style={inputStyle} />
-        </div>
-      ) : (
+      {/* Scenario — always visible in both Simple and Advanced modes */}
+      <div>
+        <span style={labelStyle}>Escenario</span>
+        <textarea value={scenario} onChange={e => setScenario(e.target.value)} rows={2} placeholder="Describe el escenario..." style={inputStyle} />
+        {!isSimpleMode && (
+          <div style={{ marginTop: 8 }}>
+            {scenarioRef ? (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <div style={{ position: 'relative', width: 44, height: 44, borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
+                  <img src={scenarioRef.preview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <button onClick={() => setScenarioRef(null)} style={{ position: 'absolute', top: -2, right: -2, width: 16, height: 16, borderRadius: '50%', background: 'var(--accent)', color: 'white', border: 'none', fontSize: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                </div>
+                <span style={{ fontSize: '0.65rem', color: 'var(--text-3)' }}>Referencia de escenario</span>
+              </div>
+            ) : (
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, background: '#F3F4F6', border: '1px solid var(--border)', cursor: 'pointer', fontSize: '0.7rem', color: 'var(--text-2)' }}>
+                + Añadir referencia visual
+                <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) setScenarioRef({ file: f, preview: makeObjectURL(f) }); if (e.target) e.target.value = '' }} />
+              </label>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Advanced mode: pose, camera, lighting, object as collapsible advanced section */}
+      {!isSimpleMode && (
       <AccordionSection title="Configuración Avanzada" icon="⚙️" isOpen={showAdvancedConfig} onToggle={() => setShowAdvancedConfig(p => !p)}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Scenario */}
-          <div>
-            <span style={labelStyle}>Escenario</span>
-            <textarea value={scenario} onChange={e => setScenario(e.target.value)} rows={2} placeholder="Describe el escenario..." style={inputStyle} />
-            <div style={{ marginTop: 8 }}>
-              {scenarioRef ? (
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <div style={{ position: 'relative', width: 44, height: 44, borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
-                    <img src={scenarioRef.preview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <button onClick={() => setScenarioRef(null)} style={{ position: 'absolute', top: -2, right: -2, width: 16, height: 16, borderRadius: '50%', background: 'var(--accent)', color: 'white', border: 'none', fontSize: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
-                  </div>
-                  <span style={{ fontSize: '0.65rem', color: 'var(--text-3)' }}>Referencia de escenario</span>
-                </div>
-              ) : (
-                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, background: '#F3F4F6', border: '1px solid var(--border)', cursor: 'pointer', fontSize: '0.7rem', color: 'var(--text-2)' }}>
-                  + Añadir referencia visual
-                  <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) setScenarioRef({ file: f, preview: makeObjectURL(f) }); if (e.target) e.target.value = '' }} />
-                </label>
-              )}
-            </div>
-          </div>
           {/* Pose */}
           <div>
             <span style={labelStyle}>Pose</span>
@@ -888,12 +886,22 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
           </>
         )}
       </div>
-      <div style={{ display: 'flex', gap: 12, marginTop: 20, fontSize: '0.75rem' }}>
-        {Object.values(AspectRatio).map(ar => (
-          <span key={ar} onClick={() => setSelectedAspectRatio(ar)} style={{ cursor: 'pointer', color: selectedAspectRatio === ar ? 'var(--text-1)' : 'var(--text-3)', fontWeight: selectedAspectRatio === ar ? 600 : 400, transition: 'all 0.15s' }}>
-            {ar === AspectRatio.Portrait ? 'Publicación' : ar === AspectRatio.Square ? 'Cuadrado' : ar === AspectRatio.Landscape ? 'Portada' : ar === AspectRatio.Wide ? 'Banner' : 'Historia / Reel'}
-          </span>
-        ))}
+      <div style={{ display: 'flex', gap: 6, marginTop: 16, flexWrap: 'wrap' }}>
+        {Object.values(AspectRatio).map(ar => {
+          const label = ar === AspectRatio.Portrait ? 'Publicación' : ar === AspectRatio.Square ? 'Cuadrado' : ar === AspectRatio.Landscape ? 'Portada' : ar === AspectRatio.Wide ? 'Banner' : 'Historia / Reel'
+          const active = selectedAspectRatio === ar
+          return (
+            <button key={ar} onClick={() => setSelectedAspectRatio(ar)} style={{
+              padding: '6px 12px', borderRadius: 8, fontSize: '0.7rem', fontWeight: active ? 600 : 500,
+              cursor: 'pointer', transition: 'all 0.15s',
+              background: active ? '#1A1A1A' : 'transparent',
+              color: active ? '#fff' : 'var(--text-3)',
+              border: `1px solid ${active ? '#1A1A1A' : 'rgba(0,0,0,0.08)'}`,
+            }}>
+              {label}
+            </button>
+          )
+        })}
       </div>
     </>
   )
@@ -941,8 +949,8 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
             {phaseToggle}
             {phase === 'hero' && (
               <div style={{ display: 'flex', background: 'var(--bg-0)', borderRadius: 10, padding: 3, border: '1px solid var(--border)' }}>
-                <button className="pill-btn" onClick={() => setIsSimpleMode(true)} style={{ flex: 1, padding: '6px 12px', borderRadius: 7, fontSize: '0.78rem', fontWeight: 500, cursor: 'pointer', border: 'none', background: isSimpleMode ? 'var(--accent)' : 'transparent', color: isSimpleMode ? 'white' : 'var(--text-3)', transition: 'all 0.2s' }}>Simple</button>
-                <button className="pill-btn" onClick={() => setIsSimpleMode(false)} style={{ flex: 1, padding: '6px 12px', borderRadius: 7, fontSize: '0.78rem', fontWeight: 500, cursor: 'pointer', border: 'none', background: !isSimpleMode ? 'var(--accent)' : 'transparent', color: !isSimpleMode ? 'white' : 'var(--text-3)', transition: 'all 0.2s' }}>Avanzado</button>
+                <button title="Solo escenario y ropa" className="pill-btn" onClick={() => setIsSimpleMode(true)} style={{ flex: 1, padding: '6px 12px', borderRadius: 7, fontSize: '0.78rem', fontWeight: 500, cursor: 'pointer', border: 'none', background: isSimpleMode ? 'var(--accent)' : 'transparent', color: isSimpleMode ? 'white' : 'var(--text-3)', transition: 'all 0.2s' }}>Simple</button>
+                <button title="Pose, cámara, iluminación, objetos y referencias" className="pill-btn" onClick={() => setIsSimpleMode(false)} style={{ flex: 1, padding: '6px 12px', borderRadius: 7, fontSize: '0.78rem', fontWeight: 500, cursor: 'pointer', border: 'none', background: !isSimpleMode ? 'var(--accent)' : 'transparent', color: !isSimpleMode ? 'white' : 'var(--text-3)', transition: 'all 0.2s' }}>Avanzado</button>
               </div>
             )}
           </div>
@@ -968,9 +976,20 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
           {/* Footer CTA */}
           <div style={{ padding: '12px 24px 16px', borderTop: 'none' }}>
             {phase === 'hero' ? (
-              <button onClick={handleHeroGenerate} disabled={generatingHero} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 500, cursor: generatingHero ? 'wait' : 'pointer', opacity: generatingHero ? 0.6 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-                {generatingHero ? 'Generando...' : <>⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.8rem', opacity: 0.7 }}>· {heroCreditCost}cr</span></>}
-              </button>
+              generatingHero ? (
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button disabled style={{ flex: 1, background: '#CCC', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 500, opacity: 0.7, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+                    Generando...
+                  </button>
+                  <button onClick={() => abortHeroRef.current?.abort()} style={{ padding: '14px 20px', background: 'transparent', color: '#1A1A1A', border: '1px solid rgba(0,0,0,0.15)', borderRadius: 12, fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer' }}>
+                    Cancelar
+                  </button>
+                </div>
+              ) : (
+                <button onClick={handleHeroGenerate} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+                  ⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.8rem', opacity: 0.7 }}>· {heroCreditCost}cr</span>
+                </button>
+              )
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <button onClick={handleSessionGenerate} disabled={generatingSession} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 500, cursor: generatingSession ? 'wait' : 'pointer', opacity: generatingSession ? 0.6 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
@@ -1055,10 +1074,17 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
                   </span>
                   <button onClick={() => setMobileSheetExpanded(true)} style={{ fontSize: '0.7rem', color: '#999', background: 'none', border: 'none', cursor: 'pointer' }}>Opciones ↑</button>
                 </div>
-                {/* CTA always visible */}
-                <button onClick={handleHeroGenerate} disabled={generatingHero} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 600, cursor: generatingHero ? 'wait' : 'pointer', opacity: generatingHero ? 0.6 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-                  {generatingHero ? 'Generando...' : <>⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', opacity: 0.7 }}>· {heroCreditCost}cr</span></>}
-                </button>
+                {/* CTA always visible — Cancel during generation */}
+                {generatingHero ? (
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button disabled style={{ flex: 1, background: '#CCC', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 600, opacity: 0.7 }}>Generando...</button>
+                    <button onClick={() => abortHeroRef.current?.abort()} style={{ padding: '14px 20px', background: 'transparent', color: '#1A1A1A', border: '1px solid rgba(0,0,0,0.15)', borderRadius: 12, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>Cancelar</button>
+                  </div>
+                ) : (
+                  <button onClick={handleHeroGenerate} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+                    ⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', opacity: 0.7 }}>· {heroCreditCost}cr</span>
+                  </button>
+                )}
               </div>
             )}
             {/* Expanded: full controls + sticky CTA */}
@@ -1068,9 +1094,16 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
                   {heroControlsContent(true)}
                 </div>
                 <div style={{ padding: '10px 20px', paddingBottom: 12, borderTop: '1px solid var(--border)', background: 'white', flexShrink: 0 }}>
-                  <button onClick={handleHeroGenerate} disabled={generatingHero} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 600, cursor: generatingHero ? 'wait' : 'pointer', opacity: generatingHero ? 0.6 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-                    {generatingHero ? 'Generando...' : <>⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', opacity: 0.7 }}>· {heroCreditCost}cr</span></>}
-                  </button>
+                  {generatingHero ? (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button disabled style={{ flex: 1, background: '#CCC', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 600, opacity: 0.7 }}>Generando...</button>
+                      <button onClick={() => abortHeroRef.current?.abort()} style={{ padding: '14px 20px', background: 'transparent', color: '#1A1A1A', border: '1px solid rgba(0,0,0,0.15)', borderRadius: 12, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>Cancelar</button>
+                    </div>
+                  ) : (
+                    <button onClick={handleHeroGenerate} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+                      ⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', opacity: 0.7 }}>· {heroCreditCost}cr</span>
+                    </button>
+                  )}
                 </div>
               </>
             )}

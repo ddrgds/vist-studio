@@ -142,8 +142,10 @@ async function editImageWithAI(
   let instruction = opts.instruction;
   const isSensitive = NB2_SENSITIVE_ES.test(opts.instruction);
   if (isSensitive) {
+    if (onProgress) onProgress(5); // signal "preparing prompt"
     const { translateForNB2 } = await import('../services/promptCompiler');
     instruction = await translateForNB2(opts.instruction);
+    if (onProgress) onProgress(15); // translation done, starting NB2
   }
 
   // Standard cascade: NB2 → Grok fallback. NB2 with English vocab usually succeeds
@@ -260,6 +262,8 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
   const [resultImage, setResultImage] = useState<string | null>(null)
   const [processing, setProcessing] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [showAllSuggestions, setShowAllSuggestions] = useState(false)
+  const abortRef = useRef<AbortController | null>(null)
   const [activeModal, setActiveModal] = useState<string | null>(null)
   const [editHistory, setEditHistory] = useState<string[]>([])
   const [canvasZoom, setCanvasZoom] = useState(1)
@@ -353,6 +357,26 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
   const pipelineSetEditedHero = usePipelineStore(s => s.setEditedHero)
   const pipelineSetCharacter = usePipelineStore(s => s.setCharacter)
 
+  // Select a character chip: hydrate pipeline + autoload first photo as input
+  // (so non-reimagine tools work immediately without needing extra clicks).
+  const selectCharacterChip = (charId: string) => {
+    const next = editorCharFilter === charId ? null : charId
+    setEditorCharFilter(next)
+    if (!next) return
+    pipelineSetCharacter(next)
+    // Autoload first photo as input only when nothing is loaded yet
+    if (!inputImage && !inputFile) {
+      const ch = characters.find(c => c.id === next)
+      const firstPhoto = ch?.thumbnail || ch?.modelImageUrls?.[0] || ch?.referencePhotoUrls?.[0]
+      if (firstPhoto) {
+        setInputImage(firstPhoto)
+        urlToFile(firstPhoto, `${ch?.name || 'char'}-input.png`)
+          .then(file => setInputFile(file))
+          .catch(() => setInputFile(null))
+      }
+    }
+  }
+
   const detectAndSetCharacter = (imageUrl: string) => {
     const item = galleryItems.find(i => i.url === imageUrl && i.characterId)
     if (item?.characterId) pipelineSetCharacter(item.characterId)
@@ -423,6 +447,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
 
     setProcessing(true)
     setProgress(0)
+    abortRef.current = new AbortController()
 
     const eng = selectedEngine !== 'auto' ? ENGINE_METADATA.find(e => e.key === selectedEngine) : null
     // Cost matches displayCost — considers resolution multiplier
@@ -637,17 +662,30 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
       }
     } catch (err: any) {
       restoreCredits(cost)
-      // ValidationError = fal moderation rejected. Show actionable message.
-      const isModerationFail = /ValidationError|content_policy|no_media_generated|safety/i.test(String(err?.message || err))
-      if (isModerationFail) {
-        toast.error('Esta combinación fue rechazada por moderación. Tus créditos se restauraron — prueba reformulando el prompt.')
+      // User cancelled — silent, créditos already restored
+      const isAborted = err?.name === 'AbortError' || /cancelado|cancelled|aborted/i.test(String(err?.message || ''))
+      if (isAborted) {
+        toast.info('Generación cancelada — créditos restaurados')
       } else {
-        toast.error('Error al procesar — créditos restaurados')
+        // ValidationError = fal moderation rejected. Show actionable message.
+        const isModerationFail = /ValidationError|content_policy|no_media_generated|safety/i.test(String(err?.message || err))
+        if (isModerationFail) {
+          toast.error('Esta combinación fue rechazada por moderación. Tus créditos se restauraron — prueba reformulando el prompt.')
+        } else {
+          toast.error('Error al procesar — créditos restaurados')
+        }
+        console.error(err)
       }
-      console.error(err)
     } finally {
       setProcessing(false)
       setProgress(0)
+      abortRef.current = null
+    }
+  }
+
+  const handleCancel = () => {
+    if (abortRef.current) {
+      abortRef.current.abort()
     }
   }
 
@@ -710,19 +748,31 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           />
         </div>
         <div className="flex gap-1.5 flex-wrap">
-          {['Hacerla cinematica','Fondo con blur suave','Iluminacion golden hour','Cambiar a blanco y negro','Agregar grano de pelicula','Mejorar detalles'].map(q => (
+          {(showAllSuggestions
+            ? ['Hacerla cinematica','Fondo con blur suave','Iluminacion golden hour','Cambiar a blanco y negro','Agregar grano de pelicula','Mejorar detalles']
+            : ['Hacerla cinematica','Fondo con blur suave','Iluminacion golden hour']
+          ).map(q => (
             <button key={q} onClick={() => setFreePrompt(q)} className="pill-btn" style={pill(freePrompt === q)}>{q}</button>
           ))}
+          <button onClick={() => setShowAllSuggestions(p => !p)} className="pill-btn"
+            style={{ ...pill(false), color: '#777', fontSize: '10px' }}>
+            {showAllSuggestions ? '− Menos' : '+ Más'}
+          </button>
         </div>
       </>}
 
       {/* Reimagine — optimized density */}
       {activeTool === 'reimagine' && <>
-        <div>
+        <div className="relative">
           <input value={reimagineSearch} onChange={e => setReimagineSearch(e.target.value)}
-            placeholder="Buscar estilo..."
-            className="w-full px-3 py-2 rounded-xl text-[12px] outline-none"
-            style={{ background: '#F8F8F8', border: '1px solid rgba(0,0,0,0.06)', color: '#111' }} />
+            placeholder="🔍  Buscar entre 532 estilos..."
+            className="w-full px-3 py-2.5 rounded-xl text-[13px] outline-none transition-all"
+            style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.1)', color: '#111' }} />
+          {reimagineSearch && (
+            <button onClick={() => setReimagineSearch('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
+              style={{ background: 'rgba(0,0,0,0.05)', color: '#777', border: 'none', cursor: 'pointer' }}>✕</button>
+          )}
         </div>
         {/* Categories — horizontal scroll carousel */}
         {!reimagineSearch.trim() && (
@@ -1299,7 +1349,6 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
       <div className="hidden lg:flex items-center h-12 px-5 gap-3 shrink-0" style={{ ...cardStyle, borderRadius: 0, borderBottom: '1px solid rgba(0,0,0,0.06)', boxShadow: 'none' }}>
         <span className="text-lg">{currentTool.icon}</span>
         <span className="text-[13px] font-semibold" style={{ color: '#111' }}>{currentTool.label}</span>
-        <span className="text-[11px]" style={{ color: '#999' }}>{currentTool.desc}</span>
         <div className="flex-1" />
         {inputImage && <span className="text-[10px]" style={{ color: '#999' }}>Clic en imagen para ver en grande</span>}
       </div>
@@ -1400,11 +1449,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                       <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'thin' }}>
                         {characters.map(ch => (
                           <button key={ch.id}
-                            onClick={() => {
-                              const next = editorCharFilter === ch.id ? null : ch.id
-                              setEditorCharFilter(next)
-                              if (next) pipelineSetCharacter(next)
-                            }}
+                            onClick={() => selectCharacterChip(ch.id)}
                             className="flex flex-col items-center gap-1 shrink-0 transition-all"
                             style={{ opacity: editorCharFilter && editorCharFilter !== ch.id ? 0.4 : 1 }}>
                             <div className="w-12 h-12 rounded-full overflow-hidden" style={{ border: editorCharFilter === ch.id ? '2px solid #1A1A1A' : '2px solid transparent' }}>
@@ -1433,7 +1478,8 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                   )}
                 </div>
 
-                <div className="flex gap-2 flex-wrap justify-center lg:mt-4">
+                {/* Horizontal toolbar — mobile only (desktop uses vertical sidebar) */}
+                <div className="flex lg:hidden gap-2 flex-wrap justify-center">
                   {PRIMARY_TOOLS.map(t => (
                     <button key={t.id} onClick={() => setActiveTool(t.id)}
                       className="px-3 py-2 rounded-xl text-[11px] font-medium transition-all hover:scale-[1.02]"
@@ -1448,7 +1494,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                   </button>
                 </div>
                 {showAllTools && (
-                  <div className="flex gap-2 flex-wrap justify-center mt-2">
+                  <div className="flex lg:hidden gap-2 flex-wrap justify-center mt-2">
                     {SECONDARY_TOOLS.map(t => (
                       <button key={t.id} onClick={() => setActiveTool(t.id)}
                         className="px-3 py-2 rounded-xl text-[11px] font-medium transition-all hover:scale-[1.02]"
@@ -1514,7 +1560,15 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                       style={{ opacity: processing ? 0.4 : 1, transition: 'opacity 0.3s' }} />
                     {processing && (
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <LumaSpin label={activeTool === 'reimagine' ? 'Reimaginando...' : activeTool === 'tryon' ? 'Probando outfit...' : activeTool === 'faceswap' ? 'Cambiando rostro...' : activeTool === 'relight' ? 'Reiluminando...' : activeTool === 'rembg' ? 'Quitando fondo...' : 'Procesando...'} />
+                        <LumaSpin label={
+                          progress > 0 && progress < 15 ? 'Optimizando prompt...' :
+                          activeTool === 'reimagine' ? 'Reimaginando...' :
+                          activeTool === 'tryon' ? 'Probando outfit...' :
+                          activeTool === 'faceswap' ? 'Cambiando rostro...' :
+                          activeTool === 'relight' ? 'Reiluminando...' :
+                          activeTool === 'rembg' ? 'Quitando fondo...' :
+                          'Procesando...'
+                        } />
                       </div>
                     )}
                   </div>
@@ -1604,11 +1658,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                   <div className="flex gap-1 shrink-0">
                     {characters.slice(0, 4).map(ch => (
                       <button key={ch.id}
-                        onClick={() => {
-                          const next = editorCharFilter === ch.id ? null : ch.id
-                          setEditorCharFilter(next)
-                          if (next) pipelineSetCharacter(next)
-                        }}
+                        onClick={() => selectCharacterChip(ch.id)}
                         className="transition-all"
                         aria-label={ch.name}
                         style={{ opacity: editorCharFilter && editorCharFilter !== ch.id ? 0.35 : 1 }}>
@@ -1661,11 +1711,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                     <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'thin' }}>
                       {characters.map(ch => (
                         <button key={ch.id}
-                          onClick={() => {
-                            const next = editorCharFilter === ch.id ? null : ch.id
-                            setEditorCharFilter(next)
-                            if (next) pipelineSetCharacter(next)
-                          }}
+                          onClick={() => selectCharacterChip(ch.id)}
                           className="flex flex-col items-center gap-1 shrink-0 transition-all"
                           style={{ opacity: editorCharFilter && editorCharFilter !== ch.id ? 0.4 : 1 }}>
                           <div className="w-10 h-10 rounded-full overflow-hidden" style={{ border: editorCharFilter === ch.id ? '2px solid #1A1A1A' : '2px solid transparent' }}>
@@ -1716,11 +1762,24 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                 ))}
               </div>
             </div>
-            <button onClick={handleApply} disabled={processing || (!inputImage && !(activeTool === 'reimagine' && hasCharRefs))}
-              className="w-full py-2.5 rounded-xl text-[12px] font-semibold transition-all"
-              style={{ background: (!inputImage && !(activeTool === 'reimagine' && hasCharRefs) || processing) ? '#CCC' : '#1A1A1A', color: '#FFF', opacity: (!inputImage && !(activeTool === 'reimagine' && hasCharRefs) || processing) ? 0.6 : 1 }}>
-              {processing ? (activeTool === 'reimagine' ? 'Reimaginando...' : activeTool === 'tryon' ? 'Probando outfit...' : `Aplicando ${currentTool.label}...`) : `${currentTool.icon} Aplicar ${currentTool.label} (${displayCost}cr)`}
-            </button>
+            {processing ? (
+              <div className="flex gap-2">
+                <button disabled className="flex-1 py-2.5 rounded-xl text-[12px] font-semibold transition-all"
+                  style={{ background: '#CCC', color: '#FFF', opacity: 0.7 }}>
+                  {activeTool === 'reimagine' ? 'Reimaginando...' : activeTool === 'tryon' ? 'Probando outfit...' : `Aplicando ${currentTool.label}...`}
+                </button>
+                <button onClick={handleCancel} className="px-4 py-2.5 rounded-xl text-[12px] font-semibold transition-all hover:opacity-80"
+                  style={{ background: 'transparent', color: '#1A1A1A', border: '1px solid rgba(0,0,0,0.15)' }}>
+                  Cancelar
+                </button>
+              </div>
+            ) : (
+              <button onClick={handleApply} disabled={(!inputImage && !(activeTool === 'reimagine' && hasCharRefs))}
+                className="w-full py-2.5 rounded-xl text-[12px] font-semibold transition-all"
+                style={{ background: (!inputImage && !(activeTool === 'reimagine' && hasCharRefs)) ? '#CCC' : '#1A1A1A', color: '#FFF', opacity: (!inputImage && !(activeTool === 'reimagine' && hasCharRefs)) ? 0.6 : 1 }}>
+                {`${currentTool.icon} Aplicar ${currentTool.label} (${displayCost}cr)`}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -1786,11 +1845,24 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                   <button key={r} onClick={() => setEditorResolution(r)} style={pill(editorResolution === r)} className="pill-btn flex-1 text-center">{r.toUpperCase()}</button>
                 ))}
               </div>
-              <button onClick={() => { handleApply(); setSheetExpanded(false) }} disabled={processing || (!inputImage && !(activeTool === 'reimagine' && hasCharRefs))}
-                className="w-full py-3 rounded-2xl text-[13px] font-semibold transition-all"
-                style={{ background: (!inputImage && !(activeTool === 'reimagine' && hasCharRefs) || processing) ? '#CCC' : '#1A1A1A', color: '#FFF', opacity: (!inputImage && !(activeTool === 'reimagine' && hasCharRefs) || processing) ? 0.6 : 1 }}>
-                {processing ? (activeTool === 'reimagine' ? 'Reimaginando...' : activeTool === 'tryon' ? 'Probando outfit...' : `Aplicando ${currentTool.label}...`) : `${currentTool.icon} Aplicar ${currentTool.label} (${displayCost}cr)`}
-              </button>
+              {processing ? (
+                <div className="flex gap-2">
+                  <button disabled className="flex-1 py-3 rounded-2xl text-[13px] font-semibold transition-all"
+                    style={{ background: '#CCC', color: '#FFF', opacity: 0.7 }}>
+                    {activeTool === 'reimagine' ? 'Reimaginando...' : activeTool === 'tryon' ? 'Probando outfit...' : `Aplicando ${currentTool.label}...`}
+                  </button>
+                  <button onClick={handleCancel} className="px-5 py-3 rounded-2xl text-[13px] font-semibold transition-all"
+                    style={{ background: 'transparent', color: '#1A1A1A', border: '1px solid rgba(0,0,0,0.15)' }}>
+                    Cancelar
+                  </button>
+                </div>
+              ) : (
+                <button onClick={() => { handleApply(); setSheetExpanded(false) }} disabled={(!inputImage && !(activeTool === 'reimagine' && hasCharRefs))}
+                  className="w-full py-3 rounded-2xl text-[13px] font-semibold transition-all"
+                  style={{ background: (!inputImage && !(activeTool === 'reimagine' && hasCharRefs)) ? '#CCC' : '#1A1A1A', color: '#FFF', opacity: (!inputImage && !(activeTool === 'reimagine' && hasCharRefs)) ? 0.6 : 1 }}>
+                  {`${currentTool.icon} Aplicar ${currentTool.label} (${displayCost}cr)`}
+                </button>
+              )}
             </div>
           </>
         )}

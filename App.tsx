@@ -236,7 +236,7 @@ function CreditBadge({ onNav }: { onNav: (p: Page) => void }) {
   return (
     <button
       onClick={() => onNav('pricing')}
-      className="fixed top-3 right-3 lg:hidden z-[55] flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all"
+      className="fixed top-3 right-3 z-[55] flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all hover:scale-105"
       style={{
         background: isLow ? 'rgba(248,113,113,0.12)' : 'rgba(255,255,255,0.9)',
         backdropFilter: 'blur(12px)',

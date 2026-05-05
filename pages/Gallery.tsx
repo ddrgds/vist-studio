@@ -75,6 +75,7 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
   const [viewMode, setViewMode] = useState<'grid'|'masonry'>('grid')
   const [selected, setSelected] = useState<string[]>([])
   const [sortBy, setSortBy] = useState('Recientes')
+  const [searchQuery, setSearchQuery] = useState('')
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [lbZoom, setLbZoom] = useState(1)
   const [lbPan, setLbPan] = useState({ x: 0, y: 0 })
@@ -104,9 +105,26 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
     return [...BASE_FILTERS, ...extra]
   }, [items])
 
+  // Per-filter counts for badges (excludes sheets but ignores status/search to remain stable)
+  const counts = useMemo(() => {
+    const base = items.filter(i => !i.tags?.includes('sheet'))
+    const out: Record<string, number> = { Todas: base.length }
+    for (const f of filters) {
+      if (f === 'Todas') continue
+      out[f] = base.filter(i => getItemCategory(i) === f).length
+    }
+    return out
+  }, [items, filters])
+
+  const searchLower = searchQuery.trim().toLowerCase()
   const filtered = (activeFilter === 'Todas' ? items : items.filter(i => getItemCategory(i) === activeFilter))
     .filter(item => !item.tags?.includes('sheet'))
     .filter(item => !statusFilter || item.workflowStatus === statusFilter)
+    .filter(item => !searchLower ||
+      item.prompt?.toLowerCase().includes(searchLower) ||
+      item.model?.toLowerCase().includes(searchLower) ||
+      item.tags?.some(t => t.toLowerCase().includes(searchLower)) ||
+      characters.find(c => c.id === item.characterId)?.name?.toLowerCase().includes(searchLower))
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
@@ -373,17 +391,41 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
 
       {/* Gallery tab content */}
       {galleryTab === 'gallery' && <>
-      {/* Filter chips */}
+      {/* Search input */}
+      <div className="px-4 lg:px-8 pt-3">
+        <div className="relative">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="🔍  Buscar por prompt, personaje, modelo, tag..."
+            className="w-full px-3 py-2 rounded-lg text-[12px] outline-none transition-all"
+            style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', color: '#333' }}
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
+              style={{ background: 'rgba(0,0,0,0.05)', color: '#777', border: 'none', cursor: 'pointer' }}>✕</button>
+          )}
+        </div>
+      </div>
+      {/* Filter chips with counts */}
       <div className="px-4 lg:px-8 py-3 flex gap-1.5 overflow-x-auto flex-nowrap">
-        {filters.map(f => (
-          <button key={f} onClick={()=>setActiveFilter(f)}
-            className="pill-btn px-3.5 py-1.5 rounded-lg text-[11px] font-medium shrink-0 transition-all"
-            style={{
-              background: activeFilter===f ? '#1A1A1A' : '#fff',
-              border: `1px solid ${activeFilter===f ? '#1A1A1A' : 'rgba(0,0,0,0.06)'}`,
-              color: activeFilter===f ? '#fff' : '#555',
-            }}>{f}</button>
-        ))}
+        {filters.map(f => {
+          const count = counts[f] ?? 0
+          return (
+            <button key={f} onClick={()=>setActiveFilter(f)}
+              className="pill-btn px-3.5 py-1.5 rounded-lg text-[11px] font-medium shrink-0 transition-all"
+              style={{
+                background: activeFilter===f ? '#1A1A1A' : '#fff',
+                border: `1px solid ${activeFilter===f ? '#1A1A1A' : 'rgba(0,0,0,0.06)'}`,
+                color: activeFilter===f ? '#fff' : '#555',
+                opacity: count === 0 && f !== 'Todas' ? 0.5 : 1,
+              }}>
+              {f} {count > 0 && <span style={{ opacity: 0.7, marginLeft: 4 }}>({count})</span>}
+            </button>
+          )
+        })}
       </div>
 
       {/* Status filter pills */}

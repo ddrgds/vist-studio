@@ -1426,8 +1426,8 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               {step < 2 ? (
                 <div className="flex items-center gap-3">
                   {missingFields.length > 0 && (
-                    <span className="text-[10px] hidden lg:inline" style={{ color: '#999' }}>
-                      Falta: {missingFields.join(', ')}
+                    <span className="text-[10px] hidden lg:inline" style={{ color: '#C2410C' }}>
+                      Completa {missingFields.join(', ')} para continuar
                     </span>
                   )}
                   <button onClick={() => setStep(step + 1)}

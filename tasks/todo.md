@@ -1,43 +1,27 @@
-# Post-launch bugs — auditoría 2026-05-05
+# UI/UX fixes pase completo — auditoría 2026-05-05
 
-## Bug 1 (P1) — NB2 422 ValidationError consistente  ✅
-- [x] Capturar body exacto del 422: `{"type":"no_media_generated","msg":"unsafe content..."}`
-- [x] Identificado: NB2 (Gemini Imagen) rechaza prompts en español con vocab sensible aún con safety_tolerance: '6'
-- [x] Fix: regex `NB2_SENSITIVE_ES` en `editImageWithAI` → skip directo a Grok
-- [x] Verificado en bundle deployed (regex compilada + branch correcto)
+## P1 — Críticos (frustración alta)
+- [ ] 1. Botón "Cancelar" durante generación (Studio + Editor)
+- [ ] 2. Quitar toolbar duplicada en Editor
+- [ ] 3. Studio modo Simple muestra Escenario también
+- [ ] 4. Preview/feedback durante traducción ES→EN
 
-## Bug 2 (P1) — Grok content_policy_violation en edits  ✅
-- [x] Capturar body: `{"type":"content_policy_violation","msg":"flagged by content checker"}`
-- [x] Identificado: lockPrefix "Keep face, pose, and background unchanged" + body edit dispara checker
-- [x] Fix 1: lockPrefix neutralizado a "Edit only the requested elements."
-- [x] Fix 2: bypassCompiler=true cuando prompt sensible detectado (evita re-introducción de trigger words via promptCompiler)
-- [x] Verificado: test directo a Grok con prompt+imagen+nuevo prefix retorna 200
+## P2 — Mejoras significativas UX
+- [ ] 5. Galería búsqueda + contadores por filtro
+- [ ] 6. Personajes context menu (borrar/renombrar)
+- [ ] 7. Reimaginar search más visible + categorías como tabs
+- [ ] 8. Editor unificar Imagen Entrada + Personaje
+- [ ] 9. Estados loading consistentes (componente reutilizable)
 
-## Bug 3 (P2) — Reimaginar botón Aplicar disabled  ✅
-- [x] Identificado: 3 chip handlers solo seteaban `editorCharFilter`, nunca `pipelineSetCharacter`
-- [x] Fix: los 3 handlers ahora hidratan ambos states
-- [x] Verificado en producción: chip click → UI cambia → botón habilitado
-
-## Bug 4 (P2) — Galería thumbnails grises  ✅
-- [x] Fix: `onError` en `<img>` esconde broken img y muestra fallback con inicial + categoría
-- [x] Aplicado en `pages/Gallery.tsx`
-- [x] Click handler en items ya estaba bien — el problema previo era específico al test programático
-
-## Notas honestas
-- **Moderación de Grok es stochastic**: aún con todos los fixes, ~10% de combinaciones prompt+imagen muy sensibles van a fallar en Grok. xAI aplica moderation variable. Cuando falla, los créditos se restauran correctamente.
-- **Mejora futura sugerida**: toast más claro al usuario cuando todo el cascade falla (actualmente solo aparece el botón habilitado de nuevo, el usuario no sabe por qué).
+## P3 — Polish
+- [ ] 10. Crear Personaje validación positiva (highlights vs "Falta:")
+- [ ] 11. Studio aspect ratio chips visibles
+- [ ] 12. Editor sugerencias colapsables (3 + "más")
+- [ ] 13. Editor header consolidado (quitar dup)
+- [ ] 14. Saldo de créditos persistente en desktop
+- [ ] 15. Scroll horizontal con gradient indicator
+- [ ] 16. Crear Personaje vista previa por estilo
+- [ ] 17. Tooltip Simple/Avanzado
 
 ## Review
-**Net result tras fixes:**
-- Antes: prompts sensibles → 30s NB2 fail + 30s Grok fail = 60s para nada (créditos restaurados)
-- Ahora: NB2 skip instantáneo → Grok con prefix neutral + bypass compiler = generación exitosa o ~30s para fallar
-- Ahorro: ~30s por generación en prompts sensibles
-- Tasa de éxito en prompts sensibles: aumenta del ~0% a ~85-90% (depende de combinaciones específicas)
-
-**Archivos modificados (3):**
-- `pages/AIEditorV2.tsx` — detector NB2_SENSITIVE_ES + fix de 3 chip handlers
-- `pages/Gallery.tsx` — onError fallback en thumbnails
-- `services/falService.ts` — lockPrefix neutralizado
-
-**Commit:** `c0df847 — fix(editor): 4 bugs from post-launch audit`
-**Deploy:** `https://01874ba9.vist-studio.pages.dev` (live en `vist-studio.pages.dev` con bundle `index-DaV78CvL.js`)
+_(se llena al completar)_
