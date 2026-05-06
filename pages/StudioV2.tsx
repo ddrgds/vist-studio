@@ -25,6 +25,10 @@ import { PHOTO_SESSION_PRESETS, mixShots, FACE_LOCK_PROMPT, OUTFIT_PRESERVE_PROM
 
 // ─── Constants ────────────────────────────────────────────
 const IMAGE_BOOST_KEYWORDS = 'masterpiece, best quality, highly detailed, sharp focus, 8k uhd'
+// Unified Studio pricing: flat 10cr base for hero, session photo, and variants.
+// Resolution multiplier still applies (1K=1.0, 2K=1.5, 4K=2.0) so 4K outputs
+// don't kill margin. Decided 2026-05-06 to simplify pricing perception.
+const STUDIO_PHOTO_BASE_COST = 10
 
 // Universal Quick Styles — visible to all users in any contentMode
 const QUICK_STYLE_PRESETS = [
@@ -583,8 +587,9 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
   // Generate session — individual photos, one call per shot
   const handleSessionGenerate = async () => {
     if (!heroImage) return
-    // Wan via DashScope: native 2K, no upscale surcharge
-    const costPerShot = CREDIT_COSTS['grok-edit']
+    // Unified Studio pricing: 10cr × resolution multiplier per shot
+    const sesResMult = RESOLUTION_CREDIT_MULTIPLIER[FalModel.NanoBanana2]?.[sessionResolution.toUpperCase()] ?? 1
+    const costPerShot = Math.ceil(STUDIO_PHOTO_BASE_COST * sesResMult)
     const totalCost = photoCount * costPerShot
     const ok = await decrementCredits(totalCost)
     if (!ok) { toast.error(`Créditos insuficientes (${totalCost}cr necesarios)`); return }
@@ -703,7 +708,8 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
     const unselectedIdxs = Array.from({ length: photoCount }, (_, i) => i).filter(i => !selectedCells.has(i))
     if (unselectedIdxs.length === 0) { toast.error('No hay fotos no seleccionadas para regenerar'); return }
 
-    const costPerShot = CREDIT_COSTS['grok-edit']
+    const sesResMult = RESOLUTION_CREDIT_MULTIPLIER[FalModel.NanoBanana2]?.[sessionResolution.toUpperCase()] ?? 1
+    const costPerShot = Math.ceil(STUDIO_PHOTO_BASE_COST * sesResMult)
     const cost = unselectedIdxs.length * costPerShot
     const ok = await decrementCredits(cost)
     if (!ok) { toast.error(`Créditos insuficientes (${cost}cr necesarios)`); return }
@@ -930,16 +936,20 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
     }
   }
 
-  const heroBaseCost = CREDIT_COSTS[FalModel.NanoBanana2]
+  // Unified pricing: flat 10cr × resolution multiplier (uses NB2 multiplier as ref).
   const heroResMult = RESOLUTION_CREDIT_MULTIPLIER[FalModel.NanoBanana2]?.[selectedResolution.toUpperCase()] ?? 1
-  const heroBaseAtRes = Math.ceil(heroBaseCost * heroResMult)
+  const heroBaseAtRes = Math.ceil(STUDIO_PHOTO_BASE_COST * heroResMult)
+  // Session uses its own resolution (1k/2k only) but same flat base
+  const sessionResMult = RESOLUTION_CREDIT_MULTIPLIER[FalModel.NanoBanana2]?.[sessionResolution.toUpperCase()] ?? 1
+  const sessionShotCost = Math.ceil(STUDIO_PHOTO_BASE_COST * sessionResMult)
+  const sessionTotalCost = photoCount * sessionShotCost
   // Addons that get deducted at generation time
   const outfitExtractCost = (outfitRef && outfitExtract) ? 5 : 0
   const posePreciseCost = (poseRef && posePrecise) ? 5 : 0
   const heroCreditCost = heroBaseAtRes + outfitExtractCost + posePreciseCost
   // Breakdown rows for expandable tooltip
   const heroCostBreakdown: { label: string; cost: number }[] = [
-    { label: `Base · NB2 ${selectedResolution.toUpperCase()}`, cost: heroBaseAtRes },
+    { label: `Base · ${selectedResolution.toUpperCase()}`, cost: heroBaseAtRes },
     ...(outfitExtractCost > 0 ? [{ label: 'Extraer prenda (GPT Mini)', cost: outfitExtractCost }] : []),
     ...(posePreciseCost > 0 ? [{ label: 'Pose precisa (ControlNet)', cost: posePreciseCost }] : []),
   ]
@@ -1455,7 +1465,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
                   </div>
                 ) : (
                   <button onClick={handleSessionGenerate} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-                    📸 Disparar {photoCount} fotos <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.8rem', opacity: 0.7 }}>· {photoCount * CREDIT_COSTS['grok-edit']}cr</span>
+                    📸 Disparar {photoCount} fotos <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.8rem', opacity: 0.7 }}>· {sessionTotalCost}cr</span>
                   </button>
                 )}
                 <button onClick={() => setPhase('hero')} style={{ background: 'none', border: 'none', fontSize: '0.75rem', color: 'var(--text-3)', cursor: 'pointer', textAlign: 'center' }}>← Volver al hero</button>
@@ -1615,7 +1625,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
                   </div>
                 </div>
                 {!generatingSession ? (
-                  <button onClick={handleSessionGenerate} style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '14px 32px', borderRadius: 28, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', boxShadow: '0 8px 32px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', gap: 8 }}>📸 Disparar {photoCount} fotos <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', opacity: 0.7 }}>· {photoCount * CREDIT_COSTS['grok-edit']}cr</span></button>
+                  <button onClick={handleSessionGenerate} style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '14px 32px', borderRadius: 28, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', boxShadow: '0 8px 32px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', gap: 8 }}>📸 Disparar {photoCount} fotos <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', opacity: 0.7 }}>· {sessionTotalCost}cr</span></button>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
                     <LumaSpin label={`Revelando · ${sessionProgress}%`} />
