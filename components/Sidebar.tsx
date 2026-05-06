@@ -15,14 +15,15 @@ const navSections: { title?: string; items: { id: Page; label: string; Icon: Luc
     items: [
       { id: 'create', label: 'Crear Personaje', Icon: Sparkles, sub: 'Diseña tu modelo AI' },
       { id: 'studio', label: 'Studio', Icon: Clapperboard, sub: 'Genera fotos y reels' },
+      { id: 'editor', label: 'Editor IA', Icon: Wand2, sub: 'Reimagina · Try-On · Piel · más' },
       { id: 'gallery', label: 'Galería', Icon: Images, sub: 'Tu contenido' },
     ],
   },
 ]
-// Note: 'video', 'editor', 'characters' routes still exist but accessed contextually
-// (editor from photo card, characters from create page tab, video as tab in studio)
-// Unused imports kept for backward compat in case we re-expose later
-void Wand2; void Film; void Users;
+// Note: 'video', 'characters' routes still exist but accessed contextually
+// (characters from create page tab, video as tab in studio).
+// Editor returned to sidebar 2026-05-06 — too important to hide.
+void Film; void Users;
 
 interface Props {
   page: Page
@@ -32,7 +33,7 @@ interface Props {
 }
 
 const PIPELINE_NUMBERS: Record<string, string> = {
-  create: '①', studio: '②', gallery: '③',
+  create: '①', studio: '②', editor: '③', gallery: '④',
 }
 
 export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {

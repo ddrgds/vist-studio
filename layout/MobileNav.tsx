@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { LayoutGrid, Sparkles, Wand2, MoreHorizontal, CreditCard, Settings } from 'lucide-react'
+import { LayoutGrid, Sparkles, Wand2, PenTool, MoreHorizontal, CreditCard, Settings } from 'lucide-react'
 import type { Page } from '../App'
 
 const TABS: { id: Page; icon: React.ElementType; label: string }[] = [
   { id: 'create',   icon: Wand2,      label: 'Crear' },
   { id: 'studio',   icon: Sparkles,   label: 'Studio' },
+  { id: 'editor',   icon: PenTool,    label: 'Editor' },
   { id: 'gallery',  icon: LayoutGrid, label: 'Galería' },
 ]
 
