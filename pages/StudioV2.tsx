@@ -634,39 +634,49 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       expandedPoses.push(...poses)
     }
 
-    // Generate each photo individually: NB2 → Grok fallback
+    // Generate each photo individually: NB2 → Grok fallback. Safety check
+    // each output before showing it — block if cross-mode threshold.
+    const safetyMode = profile?.contentMode === 'creator' ? 'creator' : 'standard'
     const generateShot = async (pose: string, idx: number) => {
       if (abortSessionRef.current?.signal.aborted) return
+      let resultUrl: string | null = null
       try {
         const expandedPose = expandedPoses[idx] || pose
         const sessionInstruction = `image 1 is the hero photo — keep the SAME scene, background, lighting, and outfit. Create a variation with a different pose: ${expandedPose}. The person must look identical. NO text, watermarks, or overlays.`
         const allRefs = identityRefs.length > 0 ? identityRefs : []
         const sesRes = sessionResolution === '2k' ? '2K' : '1K' as const
         const results = await editWithNB2Fal(heroFile, sessionInstruction, allRefs, undefined, { resolution: sesRes }, abortSessionRef.current?.signal)
-
-        if (results.length > 0 && results[0]) {
-          setGridCells(prev => { const n = [...prev]; n[idx] = results[0]; return n })
-          setRevealedCells(prev => new Set([...prev, idx]))
-          successCount++
-        } else { failCount++ }
+        if (results.length > 0 && results[0]) resultUrl = results[0]
+        else throw new Error('NB2 empty')
       } catch (err: any) {
-        if (err?.name === 'AbortError') return
-        if (abortSessionRef.current?.signal.aborted) return
+        if (err?.name === 'AbortError' || abortSessionRef.current?.signal.aborted) return
         console.warn('NB2 session failed, trying Grok:', err)
         try {
           const grokRes = await generatePhotoSessionWithGrok(heroFile, 1, {
             scenario: sceneContext, realistic: charStyleInfo.isRealistic, angles: [pose],
           }, undefined, abortSessionRef.current!.signal)
-          if (grokRes.length > 0 && grokRes[0].url) {
-            setGridCells(prev => { const n = [...prev]; n[idx] = grokRes[0].url; return n })
-            setRevealedCells(prev => new Set([...prev, idx]))
-            successCount++
-          } else { failCount++ }
+          if (grokRes.length > 0 && grokRes[0].url) resultUrl = grokRes[0].url
         } catch (grokErr: any) {
           if ((grokErr as any)?.name === 'AbortError') return
-          failCount++
         }
       }
+
+      if (!resultUrl) { failCount++; setSessionProgress(Math.round(((successCount + failCount) / photoCount) * 100)); return }
+
+      // Safety check — fail-open on classifier error
+      try {
+        const { checkImageSafety } = await import('../services/safetyService')
+        const safety = await checkImageSafety(resultUrl, safetyMode)
+        if (!safety.allowed && !safety.error) {
+          failCount++
+          setSessionProgress(Math.round(((successCount + failCount) / photoCount) * 100))
+          return
+        }
+      } catch { /* fail open */ }
+
+      setGridCells(prev => { const n = [...prev]; n[idx] = resultUrl!; return n })
+      setRevealedCells(prev => new Set([...prev, idx]))
+      successCount++
       setSessionProgress(Math.round(((successCount + failCount) / photoCount) * 100))
     }
 
@@ -684,6 +694,78 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
     triggerFlash(); setGeneratingSession(false); setSessionProgress(0)
     if (successCount > 0) toast.success(`${successCount} foto${successCount > 1 ? 's' : ''} generada${successCount > 1 ? 's' : ''}${failCount > 0 ? ` (${failCount} fallaron)` : ''}`)
     else toast.error('No se generaron fotos')
+  }
+
+  // Regenerate ONLY the unselected slots — preserves user's picks, retries failures.
+  // Cost = (photoCount - selectedCount) × per-shot rate. Saves credits vs full regenerate.
+  const handleRegenerateUnselected = async () => {
+    if (!heroImage || generatingSession) return
+    const unselectedIdxs = Array.from({ length: photoCount }, (_, i) => i).filter(i => !selectedCells.has(i))
+    if (unselectedIdxs.length === 0) { toast.error('No hay fotos no seleccionadas para regenerar'); return }
+
+    const costPerShot = CREDIT_COSTS['grok-edit']
+    const cost = unselectedIdxs.length * costPerShot
+    const ok = await decrementCredits(cost)
+    if (!ok) { toast.error(`Créditos insuficientes (${cost}cr necesarios)`); return }
+
+    setGeneratingSession(true); setSessionProgress(0)
+    abortSessionRef.current = new AbortController()
+    // Clear only unselected cells (keep selected intact)
+    setGridCells(prev => prev.map((url, i) => unselectedIdxs.includes(i) ? '' : url))
+    setRevealedCells(prev => { const n = new Set(prev); unselectedIdxs.forEach(i => n.delete(i)); return n })
+
+    const sceneContext = scenario || 'professional photo shoot'
+    const charStyleInfo = detectCharStyle(characteristics || selectedChar?.characteristics || '', selectedChar?.renderStyle)
+
+    let heroFile: File
+    try {
+      const r = await fetch(heroImage); const b = await r.blob()
+      heroFile = new File([b], 'hero.jpg', { type: b.type || 'image/jpeg' })
+    } catch { restoreCredits(cost); toast.error('Error cargando imagen base'); setGeneratingSession(false); return }
+
+    const identityRefs = await fetchUrlsAsFiles(getCharacterReferenceUrls())
+    const safetyMode = profile?.contentMode === 'creator' ? 'creator' : 'standard'
+
+    let success = 0, failed = 0
+    const total = unselectedIdxs.length
+    const regenOne = async (idx: number) => {
+      if (abortSessionRef.current?.signal.aborted) return
+      const pose = cellVibeMap[idx] || 'standing'
+      const sessionInstruction = `image 1 is the hero photo — keep the SAME scene, background, lighting, and outfit. Create a variation with a different pose: ${pose}. The person must look identical. NO text or watermarks.`
+      let resultUrl: string | null = null
+      try {
+        const sesRes = sessionResolution === '2k' ? '2K' : '1K' as const
+        const results = await editWithNB2Fal(heroFile, sessionInstruction, identityRefs, undefined, { resolution: sesRes }, abortSessionRef.current?.signal)
+        if (results[0]) resultUrl = results[0]
+      } catch (err: any) {
+        if (err?.name === 'AbortError' || abortSessionRef.current?.signal.aborted) return
+        try {
+          const grokRes = await generatePhotoSessionWithGrok(heroFile, 1, { scenario: sceneContext, realistic: charStyleInfo.isRealistic, angles: [pose] }, undefined, abortSessionRef.current!.signal)
+          if (grokRes[0]?.url) resultUrl = grokRes[0].url
+        } catch { /* fail */ }
+      }
+      if (!resultUrl) { failed++; setSessionProgress(Math.round(((success + failed) / total) * 100)); return }
+      try {
+        const { checkImageSafety } = await import('../services/safetyService')
+        const safety = await checkImageSafety(resultUrl, safetyMode)
+        if (!safety.allowed && !safety.error) { failed++; setSessionProgress(Math.round(((success + failed) / total) * 100)); return }
+      } catch { /* fail open */ }
+      setGridCells(prev => { const n = [...prev]; n[idx] = resultUrl!; return n })
+      setRevealedCells(prev => new Set([...prev, idx]))
+      success++
+      setSessionProgress(Math.round(((success + failed) / total) * 100))
+    }
+
+    // Run with concurrency 3
+    for (let i = 0; i < unselectedIdxs.length; i += 3) {
+      const batch = unselectedIdxs.slice(i, i + 3)
+      await Promise.all(batch.map(idx => regenOne(idx)))
+      if (abortSessionRef.current?.signal.aborted) break
+    }
+    if (failed > 0) restoreCredits(failed * costPerShot)
+    triggerFlash(); setGeneratingSession(false); setSessionProgress(0)
+    if (success > 0) toast.success(`${success} foto${success > 1 ? 's regeneradas' : ' regenerada'}${failed > 0 ? ` (${failed} fallaron)` : ''}`)
+    else toast.error('No se regeneraron fotos')
   }
 
   // Save selected photos to gallery — use selectedCharId (stable) instead of selectedChar (derived, can change)
@@ -1052,13 +1134,22 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
 
   const sessionControlsContent = () => (
     <>
-      {/* Hero thumbnail */}
+      {/* Hero thumbnail — click to preview, "← Cambiar" to go back to hero phase */}
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', padding: 12, background: 'var(--bg-0)', borderRadius: 12, border: '1px solid var(--border)' }}>
-        {heroImage && <img src={heroImage} style={{ width: 48, height: 64, borderRadius: 6, objectFit: 'cover' }} />}
-        <div>
+        {heroImage && (
+          <img src={heroImage}
+            onClick={() => setGalleryFullscreen(heroImage)}
+            title="Click para ver en grande"
+            style={{ width: 48, height: 64, borderRadius: 6, objectFit: 'cover', cursor: 'pointer' }} />
+        )}
+        <div style={{ flex: 1, minWidth: 0 }}>
           <span style={{ ...labelStyle, marginBottom: 2 }}>Imagen base</span>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-2)' }}>{scenario ? scenario.slice(0, 40) + '...' : 'Hero shot'}</span>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{scenario ? scenario.slice(0, 36) + (scenario.length > 36 ? '…' : '') : 'Foto principal'}</div>
         </div>
+        <button onClick={() => setPhase('hero')} title="Volver a generar otra foto principal"
+          style={{ background: 'transparent', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8, padding: '5px 10px', fontSize: '0.7rem', color: 'var(--text-2)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          ← Cambiar
+        </button>
       </div>
 
       {/* Vibes */}
@@ -1074,13 +1165,16 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
         </div>
       </div>
 
-      {/* Photo count */}
+      {/* Photo count — snaps to grid-supported values 4/6/9/12 */}
       <div>
         <span style={labelStyle}>Fotos</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button onClick={() => setPhotoCount(p => Math.max(4, p - 3) as any)} style={{ background: 'none', border: 'none', fontSize: '1rem', cursor: 'pointer', color: 'var(--text-3)' }}>◀</button>
-          <span style={{ fontSize: '1.3rem', fontWeight: 700 }}>{photoCount}</span>
-          <button onClick={() => setPhotoCount(p => Math.min(12, p + 3) as any)} style={{ background: 'none', border: 'none', fontSize: '1rem', cursor: 'pointer', color: 'var(--text-3)' }}>▶</button>
+        <div style={{ display: 'flex', gap: 4 }}>
+          {[4, 6, 9, 12].map(n => (
+            <button key={n} onClick={() => setPhotoCount(n as any)}
+              style={{ flex: 1, padding: '8px 0', borderRadius: 10, fontSize: '0.85rem', fontWeight: 600, fontFamily: "'JetBrains Mono', monospace", cursor: 'pointer', border: `1px solid ${photoCount === n ? '#1A1A1A' : 'rgba(0,0,0,0.08)'}`, background: photoCount === n ? '#1A1A1A' : 'white', color: photoCount === n ? 'white' : '#999' }}>
+              {n}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -1349,9 +1443,21 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
               )
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <button onClick={handleSessionGenerate} disabled={generatingSession} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 500, cursor: generatingSession ? 'wait' : 'pointer', opacity: generatingSession ? 0.6 : 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-                  {generatingSession ? 'Revelando fotos...' : <>📸 Disparar {photoCount} Fotos <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.8rem', opacity: 0.7 }}>· {photoCount * CREDIT_COSTS['grok-edit']}cr</span></>}
-                </button>
+                {generatingSession ? (
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button disabled style={{ flex: 1, background: '#CCC', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 500, opacity: 0.7, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+                      Revelando · {sessionProgress}%
+                    </button>
+                    <button onClick={() => abortSessionRef.current?.abort()} title="Cancelar sesión y restaurar créditos no usados"
+                      style={{ padding: '14px 18px', background: 'transparent', color: '#1A1A1A', border: '1px solid rgba(0,0,0,0.15)', borderRadius: 12, fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer' }}>
+                      Cancelar
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={handleSessionGenerate} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+                    📸 Disparar {photoCount} fotos <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.8rem', opacity: 0.7 }}>· {photoCount * CREDIT_COSTS['grok-edit']}cr</span>
+                  </button>
+                )}
                 <button onClick={() => setPhase('hero')} style={{ background: 'none', border: 'none', fontSize: '0.75rem', color: 'var(--text-3)', cursor: 'pointer', textAlign: 'center' }}>← Volver al hero</button>
               </div>
             )}
@@ -1365,11 +1471,19 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
               {sessionGridContent()}
               {/* Bottom bar */}
               {gridCells.length > 0 && (
-                <div style={{ position: 'sticky', bottom: 20, width: '100%', maxWidth: 600, background: 'white', borderRadius: 16, padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 12px 48px rgba(0,0,0,0.08)', border: '1px solid var(--border)', zIndex: 20, marginTop: 16 }}>
+                <div style={{ position: 'sticky', bottom: 20, width: '100%', maxWidth: 640, background: 'white', borderRadius: 16, padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 12px 48px rgba(0,0,0,0.08)', border: '1px solid var(--border)', zIndex: 20, marginTop: 16, gap: 12, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-2)' }}>{selectedCells.size} de {gridCells.filter(Boolean).length} seleccionadas</span>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={handleSessionGenerate} disabled={generatingSession} style={{ background: 'white', border: '1px solid var(--border)', padding: '10px 16px', borderRadius: 10, cursor: generatingSession ? 'not-allowed' : 'pointer', fontSize: '0.8rem', color: 'var(--text-2)', opacity: generatingSession ? 0.5 : 1 }}>↻ Regenerar</button>
-                    <button onClick={handleSaveSelected} disabled={selectedCells.size === 0} style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '10px 20px', borderRadius: 10, cursor: selectedCells.size === 0 ? 'not-allowed' : 'pointer', fontSize: '0.85rem', fontWeight: 500, opacity: selectedCells.size === 0 ? 0.5 : 1 }}>💾 Guardar {selectedCells.size > 0 ? selectedCells.size : ''} en Galería</button>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {selectedCells.size > 0 && selectedCells.size < gridCells.filter(Boolean).length && (
+                      <button onClick={handleRegenerateUnselected} disabled={generatingSession}
+                        title="Regenera solo las fotos que NO seleccionaste — ahorras créditos guardando las buenas"
+                        style={{ background: 'white', border: '1px solid var(--border)', padding: '10px 14px', borderRadius: 10, cursor: generatingSession ? 'not-allowed' : 'pointer', fontSize: '0.78rem', color: 'var(--text-2)', opacity: generatingSession ? 0.5 : 1 }}>
+                        ↻ Solo no seleccionadas
+                      </button>
+                    )}
+                    <button onClick={handleSessionGenerate} disabled={generatingSession} title="Regenera toda la sesión desde cero"
+                      style={{ background: 'white', border: '1px solid var(--border)', padding: '10px 14px', borderRadius: 10, cursor: generatingSession ? 'not-allowed' : 'pointer', fontSize: '0.78rem', color: 'var(--text-2)', opacity: generatingSession ? 0.5 : 1 }}>↻ Todas</button>
+                    <button onClick={handleSaveSelected} disabled={selectedCells.size === 0} style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '10px 20px', borderRadius: 10, cursor: selectedCells.size === 0 ? 'not-allowed' : 'pointer', fontSize: '0.85rem', fontWeight: 500, opacity: selectedCells.size === 0 ? 0.5 : 1 }}>💾 Guardar {selectedCells.size > 0 ? selectedCells.size : ''}</button>
                   </div>
                 </div>
               )}
@@ -1473,8 +1587,8 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
         <div className="flex lg:hidden flex-col" style={{ height: '100dvh', background: 'var(--bg-0)' }}>
           {/* Header */}
           <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'white', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-            <button onClick={() => setPhase('hero')} style={{ background: 'none', border: 'none', fontSize: '0.85rem', cursor: 'pointer', color: 'var(--text-2)' }}>← Hero</button>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Sesión de Fotos</span>
+            <button onClick={() => setPhase('hero')} style={{ background: 'none', border: 'none', fontSize: '0.85rem', cursor: 'pointer', color: 'var(--text-2)' }}>← Foto principal</button>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Sesión múltiple</span>
             <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.7rem', color: 'var(--text-3)' }}>{selectedCells.size}/{gridCells.filter(Boolean).length} ✓</span>
           </div>
 
@@ -1488,17 +1602,28 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
                     <button key={p.id} className="pill-btn" onClick={() => handleVibeToggle(p.id)} style={{ padding: '4px 10px', borderRadius: 16, fontSize: '0.7rem', cursor: 'pointer', border: `1px solid ${selectedVibes.has(p.id) ? 'var(--accent)' : 'var(--border)'}`, background: selectedVibes.has(p.id) ? 'var(--accent)' : 'white', color: selectedVibes.has(p.id) ? 'white' : 'var(--text-2)' }}>{p.icon} {p.label}</button>
                   ))}
                 </div>
-                {/* Photo count stepper */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                {/* Photo count — snaps to 4/6/9/12 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
                   <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fotos</span>
-                  <button onClick={() => setPhotoCount(p => Math.max(4, p - 3) as any)} style={{ width: 32, height: 32, borderRadius: 8, background: 'white', border: '1px solid var(--border)', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--text-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-                  <span style={{ fontSize: '1.2rem', fontWeight: 700, minWidth: 24, textAlign: 'center' }}>{photoCount}</span>
-                  <button onClick={() => setPhotoCount(p => Math.min(12, p + 3) as any)} style={{ width: 32, height: 32, borderRadius: 8, background: 'white', border: '1px solid var(--border)', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--text-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {[4, 6, 9, 12].map(n => (
+                      <button key={n} onClick={() => setPhotoCount(n as any)}
+                        style={{ width: 36, height: 36, borderRadius: 10, fontSize: '0.85rem', fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", cursor: 'pointer', border: `1px solid ${photoCount === n ? '#1A1A1A' : 'rgba(0,0,0,0.08)'}`, background: photoCount === n ? '#1A1A1A' : 'white', color: photoCount === n ? 'white' : '#999' }}>
+                        {n}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 {!generatingSession ? (
-                  <button onClick={handleSessionGenerate} style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '14px 32px', borderRadius: 28, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', boxShadow: '0 8px 32px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', gap: 8 }}>📸 Disparar {photoCount} Fotos <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', opacity: 0.7 }}>· {photoCount * CREDIT_COSTS['grok-edit']}cr</span></button>
+                  <button onClick={handleSessionGenerate} style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '14px 32px', borderRadius: 28, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', boxShadow: '0 8px 32px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', gap: 8 }}>📸 Disparar {photoCount} fotos <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', opacity: 0.7 }}>· {photoCount * CREDIT_COSTS['grok-edit']}cr</span></button>
                 ) : (
-                  <LumaSpin label="Revelando fotos..." />
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                    <LumaSpin label={`Revelando · ${sessionProgress}%`} />
+                    <button onClick={() => abortSessionRef.current?.abort()}
+                      style={{ background: 'transparent', color: '#1A1A1A', border: '1px solid rgba(0,0,0,0.15)', padding: '8px 20px', borderRadius: 16, fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer' }}>
+                      Cancelar
+                    </button>
+                  </div>
                 )}
               </div>
             ) : (
