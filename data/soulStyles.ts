@@ -674,7 +674,36 @@ export const SOUL_STYLES: SoulStyle[] = [
   { id: 'soc-fb-profile', name: 'Facebook Profile', category: 'social', icon: '👤', hint: 'clean profile photo, friendly smile, neutral background, well-lit, universally appropriate, approachable' },
   { id: 'soc-tinder-pic', name: 'Dating App Bio', category: 'social', icon: '💘', hint: 'attractive but natural photo for dating app, good lighting, genuine smile, interesting background, not try-hard' },
   { id: 'soc-x-header', name: 'X / Twitter Header', category: 'social', icon: '𝕏', hint: 'wide landscape crop for Twitter/X header, dramatic composition, left-aligned face, clean right side for text, professional' },
+
+  // ── LATAM Cultural (Modo Standard) ──
+  // Identity-driven regional aesthetics. See data/latamPresets.ts for the canonical list.
+  { id: 'latam-paisa', name: 'Paisa Chic', category: 'aesthetic', icon: '🌹', featured: true, hint: 'modern Medellín paisa style, polished feminine elegance, fitted contemporary fashion, warm honey tones, urban Colombian backdrop, golden afternoon light, confident expression' },
+  { id: 'latam-costena', name: 'Costeña Caribe', category: 'aesthetic', icon: '🌴', featured: true, hint: 'Caribbean coastal vibe, breezy linen and cotton, sun-kissed glow, beach-side or palm tree backdrop, vibrant tropical colors, salty hair and sea breeze, joyful relaxed energy' },
+  { id: 'latam-paulista', name: 'Paulista Editorial', category: 'aesthetic', icon: '🇧🇷', featured: true, hint: 'São Paulo metropolitan style, sleek tailored fashion, neutral palette with statement accessory, modernist architecture backdrop, sophisticated cosmopolitan energy, editorial Brazilian aesthetic' },
+  { id: 'latam-chilanga', name: 'Chilanga Mood', category: 'aesthetic', icon: '🌵', featured: true, hint: 'Mexico City contemporary style, mix of streetwear and refined detail, warm earthy palette with bold accent, Roma/Condesa cafe or rooftop backdrop, golden hour CDMX light, effortless cool' },
+  { id: 'latam-limena', name: 'Limeña Moderna', category: 'aesthetic', icon: '🪶', featured: true, hint: 'modern Lima Pacific coast style, soft beige and ivory palette with andean accent detail, refined understated elegance, Miraflores ocean cliff or Barranco art district backdrop, diffused coastal light' },
+
+  // ── LATAM Sensual (Modo Creator only — gated by content_mode) ──
+  // Hard line: lingerie/beach/boudoir editorial. NO topless, NO explicit.
+  // Server-side /safety-check rejects outputs above 0.70 NSFW score.
+  { id: 'latam-lenceria-editorial', name: 'Lencería Editorial', category: 'spicy', icon: '🌹', featured: true, hint: 'editorial lingerie photoshoot in the style of high-end fashion magazines, tasteful boudoir aesthetic, soft golden window light, satin and lace fabrics, elegant feminine pose, magazine cover quality, sophisticated and refined' },
+  { id: 'latam-beach-brazilian', name: 'Beach Brazilian', category: 'spicy', icon: '🏖️', featured: true, hint: 'Brazilian beach editorial, sun-kissed skin, tropical bikini fashion, vibrant ocean backdrop, golden afternoon light, confident playful pose, Ipanema or Copacabana vibe, glossy magazine aesthetic' },
+  { id: 'latam-boudoir', name: 'Boudoir LATAM', category: 'spicy', icon: '🕯️', featured: true, hint: 'intimate boudoir photography, soft warm bedroom light through sheer curtains, silk robe and elegant lingerie, romantic and feminine, painterly shadows, vintage editorial mood, refined sensual aesthetic' },
+  { id: 'latam-mirror-selfie', name: 'Mirror Selfie Sensual', category: 'spicy', icon: '📱', featured: true, hint: 'mirror selfie aesthetic with phone visible, casual sensual pose in bathroom or bedroom, lingerie or activewear, natural soft light, authentic Instagram-style framing, confident expression, modern Latin influencer vibe' },
+  { id: 'latam-transparencia', name: 'Transparencia Editorial', category: 'spicy', icon: '🥂', featured: true, hint: 'high fashion editorial with sheer fabric and tasteful transparency, designer dress with sophisticated layering, dramatic studio lighting, elegant pose, runway-quality styling, sensual but refined editorial aesthetic' },
 ];
+
+/**
+ * IDs of presets that are gated to Modo Creator (Spicy / sensual).
+ * UI components should hide these unless profile.contentMode === 'creator'.
+ */
+export const CREATOR_MODE_GATED_IDS = new Set([
+  'latam-lenceria-editorial',
+  'latam-beach-brazilian',
+  'latam-boudoir',
+  'latam-mirror-selfie',
+  'latam-transparencia',
+]);
 
 /**
  * Curated subset (~40 styles) for default display.

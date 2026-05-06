@@ -16,13 +16,15 @@ import { supabase } from '../services/supabaseService';
 interface ProfileContextValue {
   profile: UserProfile | null;
   isLoading: boolean;
-  updateProfile: (updates: Partial<Pick<UserProfile, 'displayName' | 'bio'>>) => Promise<void>;
+  updateProfile: (updates: Partial<Pick<UserProfile, 'displayName' | 'bio' | 'contentMode' | 'contentModeConfirmedAt'>>) => Promise<void>;
   uploadAvatar: (file: File) => Promise<void>;
   refreshProfile: () => Promise<void>;
   /** Deduct `cost` credits. Returns false if insufficient credits. */
   decrementCredits: (cost: number) => Promise<boolean>;
   /** Restore credits after a failed generation. */
   restoreCredits: (cost: number) => void;
+  /** Toggle content mode. Switching to 'creator' requires explicit +18 confirmation. */
+  setContentMode: (mode: 'standard' | 'creator') => Promise<void>;
 }
 
 // ─────────────────────────────────────────────
@@ -78,6 +80,8 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
           creditsRemaining: 150,
           subscriptionRenewsAt: null,
           lemonSqueezySubscriptionId: null,
+          contentMode: 'standard',
+          contentModeConfirmedAt: null,
           createdAt: new Date().toISOString(),
         };
         setProfile(defaultProfile);
@@ -105,11 +109,20 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // ─── Update scalar fields ───────────────────────────────────────────────
   const updateProfile = useCallback(async (
-    updates: Partial<Pick<UserProfile, 'displayName' | 'bio'>>
+    updates: Partial<Pick<UserProfile, 'displayName' | 'bio' | 'contentMode' | 'contentModeConfirmedAt'>>
   ) => {
     if (!user) return;
     setProfile(prev => prev ? { ...prev, ...updates } : null);
     await saveProfile(user.id, updates);
+  }, [user]);
+
+  // ─── Set content mode (Modo Standard / Creator) ────────────────────────
+  // Switching to 'creator' records confirmation timestamp for compliance.
+  const setContentMode = useCallback(async (mode: 'standard' | 'creator') => {
+    if (!user) return;
+    const confirmedAt = mode === 'creator' ? new Date().toISOString() : null;
+    setProfile(prev => prev ? { ...prev, contentMode: mode, contentModeConfirmedAt: confirmedAt } : null);
+    await saveProfile(user.id, { contentMode: mode, contentModeConfirmedAt: confirmedAt });
   }, [user]);
 
   // ─── Upload avatar ──────────────────────────────────────────────────────
@@ -184,7 +197,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     <ProfileContext.Provider value={{
       profile, isLoading,
       updateProfile, uploadAvatar, refreshProfile,
-      decrementCredits, restoreCredits,
+      decrementCredits, restoreCredits, setContentMode,
     }}>
       {children}
     </ProfileContext.Provider>

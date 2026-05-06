@@ -48,81 +48,100 @@ const V = {
 // Plan data
 // ─────────────────────────────────────────────
 
+// NOTE: Plan IDs (starter/pro/studio/brand) are kept for backend compatibility
+// with the SubscriptionPlan enum in DB and existing Lemon Squeezy webhooks.
+// Display name + price changed to match the wedge "AI operator LATAM".
+//
+// ⚠️ Lemon Squeezy variant IDs below still point to OLD prices ($9.99/$29.99/$99.99).
+// Need to create NEW variants in Lemon Squeezy for $19/$79/$199 and update V.* below.
+// Until then, checkout will charge old prices — disabled paid CTAs in production
+// until variant IDs are refreshed.
 const PLANS: Plan[] = [
   {
-    id: 'starter', name: 'Starter', monthlyPrice: 0, annualPrice: 0,
-    description: 'Explora el estudio, sin compromiso.',
-    cta: 'Comenzar', ctaStyle: 'ghost',
-    credits: '150 créditos / mes',
+    id: 'starter', name: 'Free · Explora', monthlyPrice: 0, annualPrice: 0,
+    description: 'Crea tu primera modelo y prueba el flujo completo, sin tarjeta.',
+    cta: 'Empezar gratis', ctaStyle: 'ghost',
+    credits: '50 cr al registro + 25 cr/semana',
     monthlyVariantId: '', annualVariantId: '',
     limits: [
-      { label: 'Créditos / mes',      value: '150' },
-      { label: 'Personajes',          value: '3' },
-      { label: 'Resolución máx.',     value: '1K' },
+      { label: 'Créditos',         value: '~150 / mes' },
+      { label: 'Modelos',          value: '1' },
+      { label: 'Modo Creator',     value: '✗' },
     ],
     features: [
-      { label: '150 créditos mensuales' },
-      { label: '3 personajes' },
-      { label: 'Hasta 1K de resolución' },
-      { label: 'Motores básicos (Imagen 4 Fast, NB2)' },
+      { label: '50 créditos al registrarte' },
+      { label: '+25 créditos cada lunes' },
+      { label: '1 modelo virtual' },
+      { label: 'Modo Standard solo (editorial)' },
+      { label: 'Watermark @VIST en outputs' },
+      { label: 'Discord de la comunidad' },
     ],
   },
   {
-    id: 'pro', name: 'Pro', monthlyPrice: 9.99, annualPrice: 7.99,
-    description: 'Para creadores serios que quieren acceso completo a todos los motores.',
-    badge: 'Más Popular',
-    cta: 'Ir a Pro', ctaStyle: 'coral',
-    credits: '1,000 créditos / mes',
+    id: 'pro', name: 'Side Project', monthlyPrice: 19, annualPrice: 15,
+    description: 'Si te lo tomas en serio. Tu primer modelo activo en redes con consistencia.',
+    badge: 'Recomendado',
+    cta: 'Suscribirme', ctaStyle: 'coral',
+    credits: '800 créditos / mes',
     monthlyVariantId: V.proMonthly,
     annualVariantId:  V.proAnnual,
     limits: [
-      { label: 'Créditos / mes',      value: '1,000' },
-      { label: 'Personajes',          value: '10' },
-      { label: 'Resolución máx.',     value: '2K' },
+      { label: 'Créditos / mes',   value: '800' },
+      { label: 'Modelos',          value: '1' },
+      { label: 'Modo Creator',     value: '✓' },
+      { label: 'Resolución máx.',  value: '2K' },
     ],
     features: [
-      { label: '1,000 créditos mensuales' },
-      { label: '10 personajes' },
-      { label: 'Hasta 2K de resolución' },
-      { label: 'Todos los motores + video' },
+      { label: '800 créditos mensuales (~120 fotos)' },
+      { label: '1 modelo virtual' },
+      { label: 'Modo Standard + Modo Creator (+18)' },
+      { label: 'Sin watermark · 2K resolution' },
+      { label: 'Presets LATAM culturales + sensuales' },
+      { label: 'Discord prioritario' },
     ],
   },
   {
-    id: 'studio', name: 'Studio', monthlyPrice: 29.99, annualPrice: 24.99,
-    description: 'Personajes ilimitados, máxima calidad, entrenamiento LoRA.',
-    cta: 'Ir a Studio', ctaStyle: 'white',
+    id: 'studio', name: 'Negocio', monthlyPrice: 79, annualPrice: 65,
+    description: 'Para operadores serios. Múltiples modelos, reels HD, voz LATAM.',
+    cta: 'Suscribirme', ctaStyle: 'white',
     credits: '4,000 créditos / mes',
     monthlyVariantId: V.studioMonthly,
     annualVariantId:  V.studioAnnual,
     limits: [
-      { label: 'Créditos / mes',      value: '4,000' },
-      { label: 'Personajes',          value: 'Ilimitados' },
-      { label: 'Resolución máx.',     value: '4K' },
+      { label: 'Créditos / mes',   value: '4,000' },
+      { label: 'Modelos',          value: '3' },
+      { label: 'Reels HD',         value: '✓' },
+      { label: 'Resolución máx.',  value: '4K' },
     ],
     features: [
-      { label: '4,000 créditos mensuales' },
-      { label: 'Personajes ilimitados' },
-      { label: 'Hasta 4K de resolución' },
-      { label: 'Todos los motores + entrenamiento LoRA' },
+      { label: '4,000 créditos mensuales (~615 fotos · 46 reels)' },
+      { label: '3 modelos virtuales' },
+      { label: 'Reels HD (Kling Pro)' },
+      { label: 'Voces ElevenLabs LATAM (paisa, paulista, mexicana)' },
+      { label: 'Playbook completo de monetización' },
+      { label: 'Cola prioritaria' },
     ],
   },
   {
-    id: 'brand', name: 'Brand', monthlyPrice: 99.99, annualPrice: 84.99,
-    description: 'Escala tu marca virtual con acceso prioritario.',
-    cta: 'Ir a Brand', ctaStyle: 'gold',
-    credits: '15,000 créditos / mes',
+    id: 'brand', name: 'Pro · Agency', monthlyPrice: 199, annualPrice: 165,
+    description: 'Si manejas un portfolio de modelos. Multi-personaje, affiliate, soporte 1:1.',
+    cta: 'Suscribirme', ctaStyle: 'gold',
+    credits: '12,000 créditos / mes',
     monthlyVariantId: V.brandMonthly,
     annualVariantId:  V.brandAnnual,
     limits: [
-      { label: 'Créditos / mes',      value: '15,000' },
-      { label: 'Personajes',          value: 'Ilimitados' },
-      { label: 'Resolución máx.',     value: '4K' },
+      { label: 'Créditos / mes',   value: '12,000' },
+      { label: 'Modelos',          value: '10' },
+      { label: 'Affiliate',        value: '✓' },
+      { label: 'Resolución máx.',  value: '4K' },
     ],
     features: [
-      { label: '15,000 créditos mensuales' },
-      { label: 'Todo ilimitado' },
-      { label: 'Resolución 4K' },
-      { label: 'Cola prioritaria' },
+      { label: '12,000 créditos mensuales (~1,850 fotos · 140 reels)' },
+      { label: '10 modelos virtuales' },
+      { label: 'Multi-personaje switcher' },
+      { label: '1:1 setup call con el equipo' },
+      { label: 'Affiliate dashboard (30% comisión)' },
+      { label: 'Acceso anticipado a nuevas features' },
     ],
   },
 ];
@@ -134,13 +153,14 @@ const CREDIT_PACKS = [
 ];
 
 const FAQ_ITEMS = [
-  { q: '¿Qué es un crédito?', a: 'Un crédito = un paso de generación. Los modelos rápidos como Gemini Flash cuestan 2 créditos; los modelos premium como GPT Image 1.5 cuestan 20. Los clips de video cuestan 80–100 créditos cada uno.' },
-  { q: '¿Los créditos expiran?', a: 'Los créditos del plan mensual se reinician en tu fecha de cobro y no se acumulan. Los paquetes de créditos nunca expiran — úsalos a tu ritmo.' },
-  { q: '¿Puedo combinar paquetes con mi plan?', a: '¡Sí! Los paquetes de créditos se suman a los créditos de tu plan mensual. Se consumen después de que se agoten tus créditos mensuales.' },
-  { q: '¿Puedo cambiar de plan en cualquier momento?', a: 'Sí — mejora o baja de plan cuando quieras. Las mejoras aplican de inmediato; las bajas se aplican en el siguiente ciclo de cobro.' },
-  { q: '¿Qué es la facturación anual?', a: 'La facturación anual fija una tarifa con descuento (≈2 meses gratis) y se cobra como un solo pago al inicio de cada año.' },
-  { q: '¿Qué motores de IA están incluidos?', a: 'Todos los planes incluyen Gemini, FLUX, GPT Image, Grok Imagine e Ideogram. El motor NSFW (ModelsLab) es exclusivo de Studio y Brand.' },
-  { q: '¿Hay prueba gratuita?', a: 'Pro y Studio incluyen 7 días de prueba gratis. No se necesita tarjeta de crédito para empezar con Starter.' },
+  { q: '¿Qué incluye el plan gratis?', a: '50 créditos al registrarte (suficientes para crear tu primera modelo + ~10 fotos), más 25 créditos automáticos cada lunes. 1 modelo. Modo Standard. Watermark "@VIST" en los outputs. Acceso al Discord. Sin tarjeta de crédito.' },
+  { q: '¿Cuántas fotos puedo generar?', a: 'Una foto cuesta entre 6-13 créditos según calidad. Free ≈ 11 fotos/mes. Side Project ≈ 120 fotos/mes. Negocio ≈ 615 fotos/mes. Pro Agency ≈ 1,850 fotos/mes.' },
+  { q: '¿Y los reels?', a: 'Reels son más caros (~86-143 créditos). Free no incluye reels HD. Side Project ≈ 9 reels/mes. Negocio ≈ 46 reels HD/mes. Pro Agency ≈ 140 reels HD/mes.' },
+  { q: '¿Qué es Modo Creator?', a: 'Toggle opt-in (+18) que desbloquea presets sensuales editoriales: lencería, beach Brazilian, boudoir LATAM, mirror selfie. Línea dura: NO topless, NO desnudo, NO contenido explícito. Sistema de safety automático rechaza outputs que crucen la línea.' },
+  { q: '¿Cómo monetizo mi modelo?', a: 'IG/TikTok orgánico (engagement → marcas), OnlyFans/Fansly para teaser content (no explícito), tu propia tienda. El playbook (incluido en Negocio y Pro) te guía mes a mes con metas claras.' },
+  { q: '¿Es legal?', a: 'Sí. Modelos virtuales generados por IA son contenido legítimo cuando se etiquetan como tales. Nuestros ToS exigen disclosure "@AI" en perfiles públicos. NO permitimos: deepfakes de personas reales, menores, contenido explícito.' },
+  { q: '¿Pago en mi moneda local?', a: 'Pronto. Lemon Squeezy soporta USD globalmente. Estamos integrando Mercado Pago para MXN/COP/ARS/PEN/BRL/CLP con métodos locales (PIX, OXXO, transferencia).' },
+  { q: '¿Puedo cambiar de plan?', a: 'Sí — mejora o baja de plan cuando quieras. Las mejoras aplican de inmediato; las bajas se aplican en el siguiente ciclo de cobro. Cancela en cualquier momento.' },
 ];
 
 // ─────────────────────────────────────────────

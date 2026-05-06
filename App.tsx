@@ -28,6 +28,7 @@ const PricingPage = lazy(() => import('./components/PricingPage'));
 const ProfilePage = lazy(() => import('./components/ProfilePage'));
 const ExportModal = lazy(() => import('./features/export/ExportModal'));
 const VideoStudio = lazy(() => import('./pages/VideoStudio'));
+const OnboardingWizard = lazy(() => import('./components/OnboardingWizard').then(m => ({ default: m.OnboardingWizard })));
 
 export type Page = 'create' | 'studio' | 'editor' | 'gallery' | 'characters' | 'pricing' | 'profile' | 'video';
 
@@ -100,6 +101,19 @@ function AppLayout() {
 function AuthenticatedApp() {
   const [page, setPage] = useState<Page>('studio');
   const [collapsed, setCollapsed] = useState(false);
+
+  // Onboarding wizard for first-time users
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  useEffect(() => {
+    try {
+      const completed = localStorage.getItem('vist_onboarding_completed') === 'true';
+      if (!completed) {
+        // Defer 600ms to avoid flashing during initial auth/profile load
+        const t = setTimeout(() => setShowOnboarding(true), 600);
+        return () => clearTimeout(t);
+      }
+    } catch { /* ignore */ }
+  }, []);
 
   // Theme initialization — reads saved preference on mount
   useEffect(() => {
@@ -218,6 +232,17 @@ function AuthenticatedApp() {
             </Suspense>
           </div>
         </div>
+      )}
+
+      {/* Onboarding wizard — first-time users */}
+      {showOnboarding && (
+        <Suspense fallback={null}>
+          <OnboardingWizard
+            open={showOnboarding}
+            onClose={() => setShowOnboarding(false)}
+            onLaunch={() => { setShowOnboarding(false); handleNav('create'); }}
+          />
+        </Suspense>
       )}
     </div>
   );

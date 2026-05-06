@@ -6,28 +6,23 @@ import { useCharacterStore } from '../stores/characterStore'
 import { useGalleryStore } from '../stores/galleryStore'
 import {
   Sparkles, Clapperboard, Images, Users,
-  CreditCard, PanelLeftClose, PanelLeftOpen, Wand2, Film,
+  CreditCard, PanelLeftClose, PanelLeftOpen, Wand2, Film, MessageCircle,
 } from 'lucide-react'
 import { type LucideIcon } from 'lucide-react'
 
 const navSections: { title?: string; items: { id: Page; label: string; Icon: LucideIcon; sub: string }[] }[] = [
   {
-    title: 'CREAR',
     items: [
-      { id: 'create', label: 'Crear Personaje', Icon: Sparkles, sub: 'Diseña un personaje AI' },
-      { id: 'studio', label: 'Studio', Icon: Clapperboard, sub: 'Crear y sesión de fotos' },
-      { id: 'video', label: 'Video y Reels', Icon: Film, sub: 'Movimiento · Lip sync' },
-      { id: 'editor', label: 'Editor AI', Icon: Wand2, sub: 'Edita cualquier foto' },
-    ],
-  },
-  {
-    title: 'GESTIONAR',
-    items: [
-      { id: 'gallery', label: 'Galería', Icon: Images, sub: 'Todo el contenido' },
-      { id: 'characters', label: 'Personajes', Icon: Users, sub: 'Tus personajes' },
+      { id: 'create', label: 'Crear Personaje', Icon: Sparkles, sub: 'Diseña tu modelo AI' },
+      { id: 'studio', label: 'Studio', Icon: Clapperboard, sub: 'Genera fotos y reels' },
+      { id: 'gallery', label: 'Galería', Icon: Images, sub: 'Tu contenido' },
     ],
   },
 ]
+// Note: 'video', 'editor', 'characters' routes still exist but accessed contextually
+// (editor from photo card, characters from create page tab, video as tab in studio)
+// Unused imports kept for backward compat in case we re-expose later
+void Wand2; void Film; void Users;
 
 interface Props {
   page: Page
@@ -37,7 +32,7 @@ interface Props {
 }
 
 const PIPELINE_NUMBERS: Record<string, string> = {
-  create: '①', studio: '②',
+  create: '①', studio: '②', gallery: '③',
 }
 
 export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
@@ -186,6 +181,22 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
 
       {/* Bottom */}
       <div className="px-3 py-2" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+        {/* Discord (community) — replace href when server is live */}
+        <a
+          href="https://discord.gg/vist-studio"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Comunidad Discord"
+          className="flex items-center gap-2 px-3 py-2 rounded-xl w-full transition-all mb-1"
+          style={{ color: '#555555', background: 'transparent', textDecoration: 'none' }}
+          onMouseEnter={e => (e.currentTarget.style.background = '#F3F4F6')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+        >
+          <MessageCircle size={14} className="shrink-0" />
+          {!collapsed && (
+            <span className="text-xs flex-1 truncate">Comunidad Discord</span>
+          )}
+        </a>
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}

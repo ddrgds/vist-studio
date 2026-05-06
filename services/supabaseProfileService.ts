@@ -6,6 +6,8 @@ import { SubscriptionPlan, SubscriptionStatus } from '../types';
 // Types
 // ─────────────────────────────────────────────
 
+export type ContentMode = 'standard' | 'creator';
+
 export interface UserProfile {
   id: string;
   displayName: string;
@@ -17,6 +19,9 @@ export interface UserProfile {
   creditsRemaining: number;
   subscriptionRenewsAt: string | null;
   lemonSqueezySubscriptionId: string | null;
+  // Content mode (Modo Creator opt-in for sensual editorial / lingerie / boudoir presets)
+  contentMode: ContentMode;
+  contentModeConfirmedAt: string | null;
   // Meta
   createdAt: string;
 }
@@ -48,15 +53,17 @@ export const loadProfile = async (userId: string): Promise<UserProfile | null> =
 
 export const saveProfile = async (
   userId: string,
-  updates: Partial<Pick<UserProfile, 'displayName' | 'bio'>>,
+  updates: Partial<Pick<UserProfile, 'displayName' | 'bio' | 'contentMode' | 'contentModeConfirmedAt'>>,
 ): Promise<void> => {
-  const { error } = await supabase.from('profiles').upsert({
+  const row: Record<string, unknown> = {
     id: userId,
-    display_name: updates.displayName,
-    bio: updates.bio,
     updated_at: new Date().toISOString(),
-  });
-
+  };
+  if (updates.displayName !== undefined) row.display_name = updates.displayName;
+  if (updates.bio !== undefined) row.bio = updates.bio;
+  if (updates.contentMode !== undefined) row.content_mode = updates.contentMode;
+  if (updates.contentModeConfirmedAt !== undefined) row.content_mode_confirmed_at = updates.contentModeConfirmedAt;
+  const { error } = await supabase.from('profiles').upsert(row);
   if (error) throw new Error(`saveProfile failed: ${error.message}`);
 };
 
@@ -150,5 +157,7 @@ const rowToProfile = (row: Record<string, unknown>): UserProfile => ({
   creditsRemaining:   (row.credits_remaining as number) ?? 100,
   subscriptionRenewsAt:       row.subscription_renews_at as string | null,
   lemonSqueezySubscriptionId: row.lemon_squeezy_subscription_id as string | null,
+  contentMode: ((row.content_mode as string) ?? 'standard') as ContentMode,
+  contentModeConfirmedAt: row.content_mode_confirmed_at as string | null,
   createdAt: (row.created_at as string) ?? new Date().toISOString(),
 });

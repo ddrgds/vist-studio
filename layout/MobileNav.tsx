@@ -1,17 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { LayoutGrid, Sparkles, PenTool, Wand2, MoreHorizontal, Users, Play, CreditCard, Settings } from 'lucide-react'
+import { LayoutGrid, Sparkles, Wand2, MoreHorizontal, CreditCard, Settings } from 'lucide-react'
 import type { Page } from '../App'
 
 const TABS: { id: Page; icon: React.ElementType; label: string }[] = [
-  { id: 'gallery',  icon: LayoutGrid, label: 'Galeria' },
-  { id: 'studio',   icon: Sparkles,   label: 'Studio' },
-  { id: 'editor',   icon: PenTool,    label: 'Editor' },
   { id: 'create',   icon: Wand2,      label: 'Crear' },
+  { id: 'studio',   icon: Sparkles,   label: 'Studio' },
+  { id: 'gallery',  icon: LayoutGrid, label: 'Galería' },
 ]
 
 const MORE_ITEMS: { id: Page; icon: React.ElementType; label: string }[] = [
-  { id: 'characters', icon: Users,      label: 'Personas' },
-  { id: 'video',      icon: Play,       label: 'Video' },
   { id: 'pricing',    icon: CreditCard, label: 'Precios' },
   { id: 'profile',    icon: Settings,   label: 'Perfil' },
 ]

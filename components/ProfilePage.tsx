@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Camera, LogOut, Check, User, Zap, Star, Building2, Pencil, ExternalLink, Infinity } from 'lucide-react';
+import ContentModeToggle from './ContentModeToggle';
 import { useProfile } from '../contexts/ProfileContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useGalleryStore } from '../stores/galleryStore';
@@ -376,6 +377,9 @@ const ProfilePage: React.FC = () => {
             )}
           </button>
         </div>
+
+        {/* ── Content Mode Toggle ── */}
+        <ContentModeToggle />
 
         {/* ── Account / Danger zone ── */}
         <div

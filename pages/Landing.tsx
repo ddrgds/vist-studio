@@ -72,7 +72,7 @@ export default function Landing({ onAuth }: LandingProps) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '36px' }}>
           <nav className="hidden md:flex" style={{ gap: '36px' }}>
-            {[{ label: 'Funciones', href: '#features' }, { label: 'Cómo Funciona', href: '#how-it-works' }, { label: 'Galería', href: '#showcase' }].map(l => (
+            {[{ label: 'Caso real', href: '#case-study' }, { label: 'Cómo funciona', href: '#how-it-works' }, { label: 'Precios', href: '#pricing-teaser' }].map(l => (
               <a key={l.label} href={l.href} style={{
                 fontSize: '14px', fontWeight: 500, color: C.text3,
                 textDecoration: 'none', transition: 'color 150ms',
@@ -106,35 +106,59 @@ export default function Landing({ onAuth }: LandingProps) {
       <HeroCarousel
         title={
           <>
-            CREA CONTENIDO QUE<br />
-            <span style={{ color: '#111111' }}>DETENGA EL SCROLL</span>
+            CONSTRUYE TU PRIMER<br />
+            <span style={{ color: '#111111' }}>MODELO VIRTUAL DE IA</span>
           </>
         }
-        subtitle="VIST Studio: La plataforma definitiva de contenido con IA para influencers virtuales. Genera posts, reels y stories hiperrealistas en segundos."
-        images={phoneImages.map((src, i) => ({ src, alt: `Influencer virtual ${i + 1}` }))}
+        subtitle="Sin cámara, sin equipo, sin experiencia técnica. La herramienta + el playbook + la comunidad para crear tu negocio AI influencer en español."
+        images={phoneImages.map((src, i) => ({ src, alt: `Modelo virtual ${i + 1}` }))}
         onCtaClick={onAuth}
-        ctaLabel="Empieza a Crear"
+        ctaLabel="Empezar gratis"
         style={{ minHeight: 'auto', paddingTop: '100px', paddingBottom: '40px' }}
       />
+
+      {/* ── Case Study Strip (founder proof) ─────────────── */}
+      <section style={{ padding: '0 clamp(16px, 5vw, 80px) clamp(20px, 4vw, 40px)', maxWidth: '1100px', margin: '0 auto' }}>
+        <Reveal>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 'clamp(12px, 2vw, 20px)',
+            padding: '14px 20px', borderRadius: '999px',
+            background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.06)',
+            justifyContent: 'center', flexWrap: 'wrap' as const,
+          }}>
+            <span style={{
+              fontFamily: "'JetBrains Mono', monospace", fontSize: '11px',
+              color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase' as const,
+            }}>Caso real del fundador</span>
+            <span style={{ color: C.text2, fontSize: '14px' }}>
+              <strong style={{ color: C.text1 }}>1,700+ seguidores</strong> en una cuenta de IG construida 100% con VIST.
+            </span>
+            <a href="#case-study" style={{
+              fontSize: '13px', color: C.pink, fontWeight: 600,
+              textDecoration: 'none',
+            }}>Ver el caso →</a>
+          </div>
+        </Reveal>
+      </section>
 
       {/* ── Features ──────────────────────────────────────── */}
       <section id="features" style={{ padding: 'clamp(40px, 8vw, 100px) clamp(16px, 5vw, 80px)', maxWidth: '1200px', margin: '0 auto' }}>
         <Reveal>
           <div style={{ textAlign: 'center', marginBottom: '48px' }}>
             <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: '12px' }}>
-              ¿Por qué VIST Studio?
+              Tres cosas, no veintisiete
             </h2>
             <p style={{ color: C.n400, fontSize: '18px', maxWidth: '600px', margin: '0 auto' }}>
-              Desbloquea el poder de la creación de contenido con IA, diseñada específicamente para influencers virtuales.
+              No es una caja de herramientas. Es el stack completo para arrancar tu negocio de modelo virtual.
             </p>
           </div>
         </Reveal>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
           {[
-            { icon: '💡', title: 'Creatividad Sin Límites', desc: 'Genera conceptos, estéticas e ideas de campaña ilimitadas que encajan perfecto con la personalidad única de tu influencer virtual.' },
-            { icon: '📸', title: 'Generación Hiperrealista', desc: 'Nuestros modelos de IA de última generación crean fotos y videos cortos hiperrealistas, imposibles de distinguir de la realidad.' },
-            { icon: '🚀', title: 'Publicación Directa', desc: 'Programa, escribe captions y publica directo a Instagram, TikTok y X con un solo clic desde nuestro panel integrado.' },
+            { icon: '🧬', title: 'Crea tu modelo desde cero', desc: 'Diseña su rostro, cuerpo, estilo y vibe LATAM en minutos. Genera fotos consistentes con la misma identidad cada vez. Editorial, lifestyle, sensual editorial.' },
+            { icon: '📖', title: 'El playbook incluido', desc: 'Cómo configurar IG/TikTok, qué postear las primeras 4 semanas, cómo crecer hasta el primer ingreso. Paso a paso, en español.' },
+            { icon: '👥', title: 'Comunidad de operadores', desc: 'Discord activo de gente construyendo lo mismo. Ves casos reales, preguntas, te validas. Esto no se hace solo.' },
           ].map((f, i) => (
             <Reveal key={f.title} delay={i * 0.1}>
               <div style={{
@@ -191,18 +215,18 @@ export default function Landing({ onAuth }: LandingProps) {
               letterSpacing: '-0.02em', lineHeight: 1.1, marginBottom: '20px',
             }}>
               Ella no es real.<br />
-              <span style={{ color: C.pink }}>Su engagement sí lo es.</span>
+              <span style={{ color: C.pink }}>El negocio sí lo es.</span>
             </h2>
             <p style={{ color: C.n400, fontSize: '17px', lineHeight: 1.7, marginBottom: '32px', maxWidth: '440px' }}>
-              Crea personajes con IA que publican como influencers reales. Misma estética, mismo engagement — cero costos de producción.
+              Tu modelo virtual postea, crece audiencia, y monetiza en IG, TikTok u OF. Sin tu cara, sin equipo, sin alquilar locación. Cero costos de producción, control total del personaje.
             </p>
           </Reveal>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {[
-              { icon: '📸', stat: '50K+', label: 'Fotos generadas por creadores' },
-              { icon: '🎬', stat: '4K+', label: 'Videos y reels producidos' },
-              { icon: '⚡', stat: '<15s', label: 'Tiempo promedio de generación' },
+              { icon: '⚡', stat: '5 min', label: 'Para crear tu primera modelo' },
+              { icon: '🎯', stat: '100%', label: 'Consistencia de rostro entre fotos' },
+              { icon: '🌎', stat: 'LATAM', label: 'Estilos culturales nativos: paisa, costeña, paulista, chilanga, limeña' },
             ].map((item, i) => (
               <Reveal key={item.label} delay={0.15 + i * 0.08}>
                 <div style={{
@@ -328,20 +352,88 @@ export default function Landing({ onAuth }: LandingProps) {
         </Reveal>
       </section>
 
+      {/* ── Case Study ────────────────────────────────────── */}
+      <section id="case-study" style={{ padding: 'clamp(40px, 8vw, 100px) clamp(16px, 5vw, 80px)', maxWidth: '1100px', margin: '0 auto' }}>
+        <Reveal>
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+            <span style={{
+              display: 'inline-block', padding: '6px 14px', borderRadius: '999px',
+              background: 'rgba(0,0,0,0.06)', fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase' as const,
+              color: C.text2, marginBottom: '16px',
+            }}>Caso de estudio · Fundador</span>
+            <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: '16px' }}>
+              Yo construí mi modelo IA. Lo documenté.
+            </h2>
+            <p style={{ color: C.n400, fontSize: '17px', maxWidth: '640px', margin: '0 auto', lineHeight: 1.6 }}>
+              No es teoría. Tengo una cuenta de IG con <strong style={{ color: C.text1 }}>1,700+ seguidores reales</strong> construida 100% con esta misma herramienta. Te muestro el proceso completo.
+            </p>
+          </div>
+        </Reveal>
+
+        <Reveal delay={0.15}>
+          <div style={{
+            position: 'relative',
+            aspectRatio: '16/9',
+            borderRadius: '20px',
+            overflow: 'hidden',
+            background: '#111',
+            boxShadow: '0 30px 80px rgba(0,0,0,0.15)',
+            border: '1px solid rgba(0,0,0,0.08)',
+            cursor: 'pointer',
+          }} onClick={onAuth}>
+            {/* Video poster — replace with actual case study cover */}
+            <img src="/landing/10.png" alt="Case study video preview"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.65 }} />
+            <div style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.5))',
+            }}>
+              <div style={{
+                width: '80px', height: '80px', borderRadius: '50%',
+                background: 'rgba(255,255,255,0.95)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+              }}>
+                <div style={{
+                  width: 0, height: 0,
+                  borderLeft: '24px solid #111',
+                  borderTop: '14px solid transparent',
+                  borderBottom: '14px solid transparent',
+                  marginLeft: '6px',
+                }} />
+              </div>
+            </div>
+            <div style={{
+              position: 'absolute', bottom: '20px', left: '20px', right: '20px',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
+              flexWrap: 'wrap' as const, gap: '12px',
+            }}>
+              <div>
+                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', fontFamily: "'JetBrains Mono', monospace", marginBottom: '4px' }}>VIST CASE STUDY · 5 MIN</div>
+                <div style={{ fontSize: '20px', color: '#fff', fontWeight: 700 }}>De cero a 1,700+ seguidores: cómo lo hice</div>
+              </div>
+              <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', fontFamily: "'JetBrains Mono', monospace" }}>VIDEO PRÓXIMAMENTE</span>
+            </div>
+          </div>
+        </Reveal>
+      </section>
+
       {/* ── How it Works ──────────────────────────────────── */}
       <section id="how-it-works" style={{ padding: 'clamp(40px, 8vw, 80px) clamp(16px, 5vw, 80px)', maxWidth: '800px', margin: '0 auto' }}>
         <Reveal>
           <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-            <h2 style={{ fontSize: 'clamp(1.8rem, 3.5vw, 2.5rem)', fontWeight: 700, marginBottom: '8px' }}>Cómo Funciona</h2>
-            <p style={{ color: C.n400, fontSize: '16px' }}>Tres pasos simples para contenido viral.</p>
+            <h2 style={{ fontSize: 'clamp(1.8rem, 3.5vw, 2.5rem)', fontWeight: 700, marginBottom: '8px' }}>De cero a tu primer post</h2>
+            <p style={{ color: C.n400, fontSize: '16px' }}>Tres pasos. Cero código. Cero cámara.</p>
           </div>
         </Reveal>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
           {[
-            { num: '1', title: 'Crear', desc: "Define el estilo, ubicación y prompt de tu influencer. Sube imágenes de referencia o usa nuestras estéticas prediseñadas.", icon: '✏️' },
-            { num: '2', title: 'Generar', desc: 'Deja que nuestra IA avanzada haga su magia. Revisa múltiples variaciones, escala y ajusta los detalles hasta que quede perfecto.', icon: '✨' },
-            { num: '3', title: 'Publicar', desc: 'Genera captions atractivos automáticamente y programa tu contenido directo a tus redes sociales conectadas.', icon: '📤' },
+            { num: '1', title: 'Define tu modelo', desc: "Nombre, vibe, estilo, look. Elige presets LATAM (paisa, costeña, paulista) o construye desde cero. La IA genera la primera sesión de fotos consistente.", icon: '🧬' },
+            { num: '2', title: 'Genera contenido', desc: 'Sesiones de fotos, reels, try-on, lifestyle. Misma identidad cada vez. Modo Standard editorial o Modo Creator con presets sensuales (opt-in +18).', icon: '📸' },
+            { num: '3', title: 'Lanza y monetiza', desc: 'El playbook te guía: cómo configurar IG/TikTok/OF, qué postear las primeras 4 semanas, cómo crecer. Comunidad Discord para consultas.', icon: '🚀' },
           ].map((s, i) => (
             <Reveal key={s.num} delay={i * 0.1}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '24px' }}>
@@ -418,6 +510,94 @@ export default function Landing({ onAuth }: LandingProps) {
         </div>
       </section>
 
+      {/* ── Pricing Teaser ────────────────────────────────── */}
+      <section id="pricing-teaser" style={{ padding: 'clamp(40px, 8vw, 80px) clamp(16px, 5vw, 80px)', maxWidth: '1100px', margin: '0 auto' }}>
+        <Reveal>
+          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+            <h2 style={{ fontSize: 'clamp(1.8rem, 3.5vw, 2.5rem)', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: '12px' }}>
+              Empieza gratis. Escala cuando funcione.
+            </h2>
+            <p style={{ color: C.n400, fontSize: '16px', maxWidth: '560px', margin: '0 auto' }}>
+              Free para validar. Side Project si te lo tomas en serio. Negocio cuando empieces a vender.
+            </p>
+          </div>
+        </Reveal>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+          {[
+            { tier: 'Free', price: '$0', sub: 'para siempre', desc: '50 cr al registro · 25 cr/sem · 1 modelo · Modo Standard · Discord', cta: 'Empezar gratis', highlight: false },
+            { tier: 'Side Project', price: '$19', sub: 'al mes', desc: '800 cr/mes · 1 modelo · Standard + Creator · sin watermark · 2K · presets LATAM', cta: 'Suscribirme', highlight: true },
+            { tier: 'Negocio', price: '$79', sub: 'al mes', desc: '4,000 cr/mes · 3 modelos · Reels HD · voces LATAM · playbook completo · priority queue', cta: 'Suscribirme', highlight: false },
+            { tier: 'Pro', price: '$199', sub: 'al mes', desc: '12,000 cr/mes · 10 modelos · multi-personaje · 1:1 setup · affiliate dashboard', cta: 'Suscribirme', highlight: false },
+          ].map((p, i) => (
+            <Reveal key={p.tier} delay={i * 0.08}>
+              <div style={{
+                padding: '24px', borderRadius: '16px',
+                background: p.highlight ? '#111111' : '#FFFFFF',
+                color: p.highlight ? '#FFFFFF' : C.text1,
+                border: `1px solid ${p.highlight ? '#111' : 'rgba(0,0,0,0.08)'}`,
+                position: 'relative',
+                boxShadow: p.highlight ? '0 12px 40px rgba(0,0,0,0.15)' : 'none',
+                display: 'flex', flexDirection: 'column', gap: '12px',
+                minHeight: '240px',
+              }}>
+                {p.highlight && (
+                  <span style={{
+                    position: 'absolute', top: '-10px', left: '50%', transform: 'translateX(-50%)',
+                    background: '#FFFFFF', color: '#111111',
+                    padding: '4px 12px', borderRadius: '999px',
+                    fontSize: '10px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase' as const,
+                    border: '1px solid rgba(0,0,0,0.12)',
+                  }}>Recomendado</span>
+                )}
+                <div>
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase' as const, opacity: 0.6 }}>{p.tier}</div>
+                  <div style={{ fontSize: '32px', fontWeight: 900, letterSpacing: '-0.02em', marginTop: '4px' }}>
+                    {p.price}<span style={{ fontSize: '13px', fontWeight: 400, opacity: 0.6, marginLeft: '6px' }}>{p.sub}</span>
+                  </div>
+                </div>
+                <p style={{ fontSize: '13px', lineHeight: 1.5, opacity: 0.85, flex: 1 }}>{p.desc}</p>
+                <button onClick={onAuth} style={{
+                  background: p.highlight ? '#FFFFFF' : '#111111', color: p.highlight ? '#111' : '#FFF',
+                  border: 'none', borderRadius: '999px', padding: '10px 20px',
+                  fontSize: '13px', fontWeight: 700, cursor: 'pointer',
+                }}>{p.cta}</button>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: '24px' }}>
+          <p style={{ fontSize: '12px', color: C.text3 }}>
+            Pagos en USD vía Lemon Squeezy · Mercado Pago próximamente para LATAM (PIX, OXXO, tarjeta local)
+          </p>
+        </div>
+      </section>
+
+      {/* ── FAQ Legal mini ────────────────────────────────── */}
+      <section style={{ padding: 'clamp(20px, 4vw, 40px) clamp(16px, 5vw, 80px)', maxWidth: '900px', margin: '0 auto' }}>
+        <Reveal>
+          <div style={{
+            padding: 'clamp(24px, 4vw, 36px)', borderRadius: '20px',
+            background: '#FAFAFA', border: '1px solid rgba(0,0,0,0.06)',
+          }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
+              {[
+                { q: '¿Es legal?', a: 'Sí. Modelos virtuales generados por IA son contenido legítimo cuando se etiquetan como tales. Nuestros términos exigen disclosure "@AI" en perfiles públicos. Lo que NO permitimos: deepfakes de personas reales, menores de edad, contenido explícito.' },
+                { q: '¿Qué nivel de contenido permite?', a: 'Modo Standard: editorial limpio. Modo Creator (opt-in +18): editorial sensual, lencería, beach, boudoir. Línea dura: nada de topless, desnudo o explícito. Sistema de safety check automático.' },
+                { q: '¿Cómo monetizo?', a: 'IG/TikTok con engagement orgánico, OnlyFans/Fansly para teaser content (no explicit), marcas (sponsored), tu propia tienda. El playbook te guía mes a mes.' },
+                { q: '¿Compite con creators reales?', a: 'No. Es una alternativa para quien no quiere o no puede poner su cara. Mercado distinto, ético si se etiqueta como IA.' },
+              ].map(item => (
+                <div key={item.q}>
+                  <h4 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '6px', color: C.text1 }}>{item.q}</h4>
+                  <p style={{ fontSize: '13px', color: C.text2, lineHeight: 1.55 }}>{item.a}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Reveal>
+      </section>
+
       {/* ── Final CTA ─────────────────────────────────────── */}
       <section style={{ padding: 'clamp(60px, 10vw, 120px) clamp(16px, 5vw, 80px)', textAlign: 'center', position: 'relative' }}>
         <div style={{
@@ -426,11 +606,11 @@ export default function Landing({ onAuth }: LandingProps) {
           background: 'rgba(0,0,0,0.02)', filter: 'blur(120px)', pointerEvents: 'none',
         }} />
         <Reveal>
-          <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', fontWeight: 900, marginBottom: '20px', position: 'relative', zIndex: 1 }}>
-            ¿Lista para construir tu imperio?
+          <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', fontWeight: 900, marginBottom: '20px', position: 'relative', zIndex: 1, lineHeight: 1.05 }}>
+            ¿Listo para construir<br />tu primera modelo?
           </h2>
           <p style={{ fontSize: '20px', color: C.n400, marginBottom: '40px', maxWidth: '640px', margin: '0 auto 40px', position: 'relative', zIndex: 1 }}>
-            Únete a miles de creadores construyendo la próxima generación de influencers en redes sociales con VIST Studio.
+            50 créditos gratis al registro. Sin tarjeta. Sin compromiso. Suficiente para crear tu primera modelo y ver si esto es para ti.
           </p>
           <div style={{ position: 'relative', zIndex: 1, display: 'inline-block' }}>
             <button onClick={onAuth} style={{
@@ -442,7 +622,7 @@ export default function Landing({ onAuth }: LandingProps) {
               onMouseEnter={e => { e.currentTarget.style.background = '#333333'; e.currentTarget.style.transform = 'scale(1.05)'; }}
               onMouseLeave={e => { e.currentTarget.style.background = '#111111'; e.currentTarget.style.transform = 'scale(1)'; }}
             >
-              Comenzar Gratis
+              Empezar gratis →
             </button>
           </div>
         </Reveal>
@@ -450,10 +630,21 @@ export default function Landing({ onAuth }: LandingProps) {
 
       {/* ── Footer ────────────────────────────────────────── */}
       <footer style={{
-        borderTop: '1px solid rgba(0,0,0,0.08)', padding: '40px 0', marginTop: '40px',
-        textAlign: 'center', color: C.n400, fontSize: '14px',
+        borderTop: '1px solid rgba(0,0,0,0.08)', padding: '40px clamp(16px, 5vw, 80px)', marginTop: '40px',
+        color: C.n400, fontSize: '13px',
       }}>
-        © 2026 VIST Studio. Todos los derechos reservados.
+        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexWrap: 'wrap' as const, gap: '20px', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>© 2026 VIST Studio · Hecho en LATAM 🌎</div>
+          <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' as const }}>
+            <a href="#" style={{ color: C.text2, textDecoration: 'none' }}>Términos</a>
+            <a href="#" style={{ color: C.text2, textDecoration: 'none' }}>Privacidad</a>
+            <a href="#" style={{ color: C.text2, textDecoration: 'none' }}>Discord</a>
+            <a href="mailto:hola@vist.studio" style={{ color: C.text2, textDecoration: 'none' }}>Contacto</a>
+          </div>
+        </div>
+        <div style={{ maxWidth: '1200px', margin: '16px auto 0', fontSize: '11px', color: C.text3, textAlign: 'center' }}>
+          Todos los modelos en VIST son generados por IA. No representan personas reales.
+        </div>
       </footer>
     </div>
   );

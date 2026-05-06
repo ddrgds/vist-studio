@@ -261,6 +261,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   const [generating, setGenerating] = useState(false)
   const [characterSaved, setCharacterSaved] = useState(false)
   const [zoomedImage, setZoomedImage] = useState<string | null>(null)
+  const [showFullPrompt, setShowFullPrompt] = useState(false)
 
   // Engine
   const [selectedEngine, setSelectedEngine] = useState<string>('auto')
@@ -1919,100 +1920,170 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
             </div>
           </div>
 
-          {/* ─── Right: Preview Panel — only shown when variants exist ── */}
-          <div className={`w-full md:w-[320px] shrink-0 ${variants.length > 0 || generating ? '' : 'hidden lg:block'}`}>
+          {/* ─── Right: Summary / Preview Panel ─── */}
+          <div className="w-full md:w-[320px] shrink-0">
             <div className="p-5 sticky top-8 rounded-xl" style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 12 }}>
-              <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
-                <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#555' }}>Vista Previa</div>
-                <div className="flex items-center gap-1 flex-wrap">
-                  <span className="text-[8px] font-mono font-bold px-2 py-0.5 rounded-lg"
-                    style={{ background: '#F3F4F6', color: '#1A1A1A' }}>
-                    {renderStyles[selRenderStyle]?.label.toUpperCase()}
-                  </span>
-                  {selSubstyle && renderStyles[selRenderStyle]?.substyles?.find(s => s.id === selSubstyle) && (
-                    <span className="text-[8px] font-mono font-bold px-2 py-0.5 rounded-lg"
-                      style={{ background: '#1A1A1A', color: '#fff' }}>
-                      {renderStyles[selRenderStyle]?.substyles?.find(s => s.id === selSubstyle)?.label.toUpperCase()}
-                    </span>
+              {(variants.length > 0 || generating) ? (
+                /* ───── Image preview (during/after generation) ───── */
+                <>
+                  <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+                    <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#555' }}>Vista Previa</div>
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <span className="text-[8px] font-mono font-bold px-2 py-0.5 rounded-lg"
+                        style={{ background: '#F3F4F6', color: '#1A1A1A' }}>
+                        {renderStyles[selRenderStyle]?.label.toUpperCase()}
+                      </span>
+                      {selSubstyle && renderStyles[selRenderStyle]?.substyles?.find(s => s.id === selSubstyle) && (
+                        <span className="text-[8px] font-mono font-bold px-2 py-0.5 rounded-lg"
+                          style={{ background: '#1A1A1A', color: '#fff' }}>
+                          {renderStyles[selRenderStyle]?.substyles?.find(s => s.id === selSubstyle)?.label.toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="aspect-[3/4] rounded-xl overflow-hidden relative"
+                    style={{ background: '#F9FAFB', border: '1px solid rgba(0,0,0,0.06)' }}>
+                    {generating ? (
+                      <div className="absolute inset-0 flex items-center justify-center" style={{ background: '#F9FAFB' }}>
+                        <LumaSpin label="Creando personaje..." />
+                      </div>
+                    ) : selectedVariant !== null && variants[selectedVariant] ? (
+                      <img src={variants[selectedVariant]} className="w-full h-full object-cover" alt={name} />
+                    ) : (
+                      <img src={variants[0]} className="w-full h-full object-cover" alt={name} style={{ opacity: 0.6 }} />
+                    )}
+                    <div className="absolute bottom-0 left-0 right-0 p-3" style={{ background: 'linear-gradient(transparent, rgba(0,0,0,.7))' }}>
+                      <div className="text-sm font-bold text-white">{name || 'Sin nombre'}</div>
+                      <div className="text-[9px] font-mono" style={{ color: 'rgba(255,255,255,.7)' }}>
+                        {[
+                          GENDERS.find(g => g.id === selGender)?.label,
+                          AGE_RANGES.find(a => a.id === selAge)?.label,
+                        ].filter(Boolean).join(' · ') || 'Configura en el Paso 1'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {generating && (
+                    <div className="mt-3 text-center">
+                      <div className="text-[11px] font-medium" style={{ color: '#1A1A1A' }}>
+                        {'\u21BB'} Generando{generationPhase === 'sheet' ? ' hoja de personaje' : ' variantes'}...
+                      </div>
+                      <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: '#E5E7EB' }}>
+                        <div className="h-full rounded-full shimmer" style={{ width: '60%', background: '#1A1A1A' }} />
+                      </div>
+                    </div>
                   )}
-                </div>
-              </div>
+                </>
+              ) : (
+                /* ───── Resumen Pre-Generación (idle) ───── */
+                (() => {
+                  const styleObj = renderStyles[selRenderStyle]
+                  const substyleObj = styleObj?.substyles?.find(s => s.id === selSubstyle)
+                  const genderLabel = GENDERS.find(g => g.id === selGender)?.label
+                  const ageLabel = AGE_RANGES.find(a => a.id === selAge)?.label
+                  const fashionChips = selFashion.map(id => FASHION_STYLES.find(c => c.id === id)?.label).filter(Boolean) as string[]
+                  const personalityChips = selPersonality.map(id => PERSONALITY_TRAITS.find(c => c.id === id)?.label).filter(Boolean) as string[]
+                  const accessoryChips = selAccessories.map(id => ACCESSORIES.find(a => a.id === id)?.label).filter(Boolean) as string[]
+                  const appearanceChips = Object.values(chipSelections).flat().slice(0, 6)
+                  const totalSelections = fashionChips.length + personalityChips.length + accessoryChips.length + Object.values(chipSelections).flat().length
+                  const totalCost = costPerVariant * 3
+                  const fullPromptText = buildFullPrompt()
+                  const isReady = !!(name && selGender && selAge)
 
-              <div className="aspect-[3/4] rounded-xl overflow-hidden relative"
-                style={{
-                  background: '#F9FAFB',
-                  border: '1px solid rgba(0,0,0,0.06)',
-                }}>
-                {generating ? (
-                  /* Generating — show spinner */
-                  <div className="absolute inset-0 flex items-center justify-center" style={{ background: '#F9FAFB' }}>
-                    <LumaSpin label="Creando personaje..." />
-                  </div>
-                ) : selectedVariant !== null && variants[selectedVariant] ? (
-                  /* Show selected variant */
-                  <img src={variants[selectedVariant]} className="w-full h-full object-cover" alt={name} />
-                ) : variants.length > 0 ? (
-                  /* Show first variant as preview */
-                  <img src={variants[0]} className="w-full h-full object-cover" alt={name} style={{ opacity: 0.6 }} />
-                ) : (
-                  /* Style teaser — show selected style/substyle thumbnail as preview, no overlay */
-                  <>
-                    <img
-                      src={styleThumb(selSubstyle || renderStyles[selRenderStyle].id)}
-                      alt="Style preview"
-                      className="absolute inset-0 w-full h-full object-cover"
-                      style={{ opacity: 0.55, filter: 'saturate(0.8)' }}
-                      onError={e => {
-                        e.currentTarget.style.display = 'none'
-                        const fb = e.currentTarget.nextElementSibling as HTMLElement | null
-                        if (fb) fb.style.display = 'flex'
-                      }}
-                    />
-                    {/* Fallback silhouette only if image fails to load (display: none by default) */}
-                    <div className="absolute inset-0 flex-col items-center justify-center" style={{ display: 'none' }}>
-                      <div className="w-16 h-20 mx-auto rounded-[45%]"
-                        style={{ background: 'rgba(0,0,0,.04)', border: '1px solid rgba(0,0,0,.06)' }} />
-                    </div>
-                    {/* Bottom badge — does not block the face */}
-                    <div className="absolute bottom-12 left-1/2 -translate-x-1/2 text-[9px] font-mono px-2 py-0.5 rounded whitespace-nowrap"
-                      style={{ color: '#fff', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
-                      Vista del estilo seleccionado
-                    </div>
-                  </>
-                )}
-                <div className="absolute bottom-0 left-0 right-0 p-3" style={{ background: 'linear-gradient(transparent, rgba(0,0,0,.7))' }}>
-                  <div className="text-sm font-bold text-white">{name || 'Sin nombre'}</div>
-                  <div className="text-[9px] font-mono" style={{ color: 'rgba(255,255,255,.7)' }}>
-                    {[
-                      GENDERS.find(g => g.id === selGender)?.label,
-                      AGE_RANGES.find(a => a.id === selAge)?.label,
-                    ].filter(Boolean).join(' · ') || 'Configura en el Paso 1'}
-                  </div>
-                </div>
-              </div>
+                  return (
+                    <>
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#555' }}>Resumen</div>
+                        <span className="text-[9px] font-mono" style={{ color: isReady ? '#10b981' : '#999' }}>
+                          {isReady ? '✓ Listo' : 'Completa Paso 1'}
+                        </span>
+                      </div>
 
-              {/* Chip summary below preview */}
-              <div className="mt-3 flex flex-wrap gap-1 justify-center">
-                {selPersonality.map(id => {
-                  const chip = PERSONALITY_TRAITS.find(c => c.id === id)
-                  return chip ? <span key={id} className="badge" style={{ background: '#F3F4F6', color: '#1A1A1A' }}>{chip.label}</span> : null
-                })}
-                {selFashion.map(id => {
-                  const chip = FASHION_STYLES.find(c => c.id === id)
-                  return chip ? <span key={id} className="badge" style={{ background: '#F3F4F6', color: '#555' }}>{chip.label}</span> : null
-                })}
-              </div>
+                      {/* Style + Substyle row */}
+                      <div className="flex items-center gap-3 mb-4 pb-4" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+                        <img
+                          src={styleThumb(selSubstyle || styleObj.id)}
+                          alt=""
+                          className="w-12 h-12 rounded-lg object-cover shrink-0"
+                          style={{ border: '1px solid rgba(0,0,0,0.08)' }}
+                          onError={e => { e.currentTarget.style.visibility = 'hidden' }}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[10px] font-mono uppercase tracking-wider" style={{ color: '#999' }}>Estilo</div>
+                          <div className="text-[13px] font-semibold truncate" style={{ color: '#1A1A1A' }}>
+                            {styleObj?.label}
+                          </div>
+                          {substyleObj && (
+                            <div className="text-[11px] truncate" style={{ color: '#555' }}>{substyleObj.label}</div>
+                          )}
+                        </div>
+                      </div>
 
-              {/* Generation loading indicator */}
-              {generating && (
-                <div className="mt-3 text-center">
-                  <div className="text-[11px] font-medium" style={{ color: '#1A1A1A' }}>
-                    {'\u21BB'} Generando{generationPhase === 'sheet' ? ' hoja de personaje' : ' variantes'}...
-                  </div>
-                  <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: '#E5E7EB' }}>
-                    <div className="h-full rounded-full shimmer" style={{ width: '60%', background: '#1A1A1A' }} />
-                  </div>
-                </div>
+                      {/* Identity row */}
+                      <div className="mb-4 pb-4" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+                        <div className="text-[10px] font-mono uppercase tracking-wider mb-1.5" style={{ color: '#999' }}>Identidad</div>
+                        <div className="text-[13px] font-semibold" style={{ color: '#1A1A1A' }}>
+                          {name || <span style={{ color: '#bbb', fontWeight: 400 }}>Sin nombre</span>}
+                        </div>
+                        <div className="text-[11px]" style={{ color: '#555' }}>
+                          {[genderLabel, ageLabel].filter(Boolean).join(' · ') || <span style={{ color: '#bbb' }}>Género y edad pendientes</span>}
+                        </div>
+                      </div>
+
+                      {/* Selections summary */}
+                      <div className="mb-4 pb-4" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="text-[10px] font-mono uppercase tracking-wider" style={{ color: '#999' }}>Selecciones</div>
+                          <div className="text-[10px] font-mono" style={{ color: '#555' }}>{totalSelections}</div>
+                        </div>
+                        {totalSelections > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {[...appearanceChips, ...fashionChips.slice(0, 3), ...personalityChips.slice(0, 2), ...accessoryChips.slice(0, 2)].slice(0, 7).map((label, i) => (
+                              <span key={i} className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: '#F3F4F6', color: '#1A1A1A' }}>
+                                {label}
+                              </span>
+                            ))}
+                            {totalSelections > 7 && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: '#1A1A1A', color: 'white' }}>
+                                +{totalSelections - 7}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-[11px]" style={{ color: '#bbb' }}>Sin chips seleccionados (opcional)</div>
+                        )}
+                      </div>
+
+                      {/* Cost */}
+                      <div className="mb-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="text-[10px] font-mono uppercase tracking-wider" style={{ color: '#999' }}>Costo total</div>
+                            <div className="text-[10px]" style={{ color: '#555' }}>3 variantes × {costPerVariant}cr</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-[18px] font-bold font-mono" style={{ color: '#1A1A1A' }}>{totalCost}cr</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Expandable full prompt */}
+                      <button
+                        onClick={() => setShowFullPrompt(v => !v)}
+                        className="w-full text-left text-[10px] font-mono px-2 py-1.5 rounded transition-colors"
+                        style={{ background: showFullPrompt ? '#F3F4F6' : 'transparent', color: '#555' }}>
+                        {showFullPrompt ? '▼' : '▶'} Ver prompt completo
+                      </button>
+                      {showFullPrompt && (
+                        <div className="mt-2 p-2.5 rounded text-[10px] font-mono leading-relaxed max-h-48 overflow-y-auto"
+                          style={{ background: '#FAFAFA', border: '1px solid rgba(0,0,0,0.06)', color: '#333' }}>
+                          {fullPromptText || <span style={{ color: '#bbb' }}>Aún no hay nada que generar</span>}
+                        </div>
+                      )}
+                    </>
+                  )
+                })()
               )}
             </div>
           </div>
