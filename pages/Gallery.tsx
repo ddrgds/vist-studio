@@ -286,9 +286,24 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
       <div className="px-4 lg:px-8 pt-8 pb-2 flex flex-wrap items-end justify-between gap-2">
         <div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#111', fontFamily: "'Instrument Serif', serif" }}>
-            Galería <span style={{ color: '#111', fontWeight: 400 }}>de Creaciones</span>
+            Tu <span style={{ color: '#111', fontWeight: 400 }}>contenido publicable</span>
           </h1>
-          <p className="mt-1" style={{ color: '#999', fontSize: '0.8rem' }}>Todas tus imágenes editadas con AI en un solo lugar</p>
+          <p className="mt-1" style={{ color: '#999', fontSize: '0.8rem' }}>
+            {(() => {
+              const total = items.length
+              const ready = items.filter(i => i.workflowStatus === 'aprobado').length
+              const published = items.filter(i => i.workflowStatus === 'publicado').length
+              const drafts = items.filter(i => !i.workflowStatus || i.workflowStatus === 'borrador').length
+              return total === 0
+                ? 'Tus fotos editadas y aprobadas para postear aparecen aquí'
+                : <>
+                    <span style={{ color: '#111', fontWeight: 600 }}>{total}</span> fotos
+                    {ready > 0 && <> · <span style={{ color: '#059669', fontWeight: 600 }}>{ready} listas</span></>}
+                    {published > 0 && <> · <span style={{ color: '#2563EB', fontWeight: 600 }}>{published} publicadas</span></>}
+                    {drafts > 0 && <> · {drafts} borrador</>}
+                  </>
+            })()}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {/* Gallery / Storyboard tab toggle */}

@@ -508,6 +508,24 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
       }
 
       if (results.length > 0) {
+        // Server-side safety check — rejects topless/explicit content even when
+        // the engine generated it, enforcing the Modo Creator hard line.
+        // Fail-open: if classifier is down, we allow the image.
+        try {
+          const { checkImageSafety } = await import('../services/safetyService')
+          const mode = profile?.contentMode === 'creator' ? 'creator' : 'standard'
+          const safety = await checkImageSafety(results[0], mode)
+          if (!safety.allowed && !safety.error) {
+            restoreCredits(cost + (poseCreditsDeducted2 ? 5 : 0) + (outfitCreditsDeducted ? 5 : 0))
+            const reason = safety.label === 'topless' ? 'topless'
+              : safety.label === 'explicit' ? 'contenido explícito'
+              : 'contenido sensual no permitido en Modo Standard'
+            toast.error(`Imagen bloqueada: ${reason}. Tus créditos se restauraron.`)
+            setGeneratingHero(false); setHeroProgress(0)
+            return
+          }
+        } catch { /* fail open — don't punish users for classifier outage */ }
+
         triggerFlash(); setHeroImage(results[0]); pipelineSetHeroShot(results[0])
         useGalleryStore.getState().addItems(results.map(url => ({ id: crypto.randomUUID(), url, prompt: scenario || 'Studio hero shot', model: eng?.userFriendlyName || 'gemini-nb2', timestamp: Date.now(), type: 'create' as const, characterId: charIdAtStart, tags: ['studio', 'hero-shot'], source: 'director' as const })))
         if (charIdAtStart) useCharacterStore.getState().incrementUsage(charIdAtStart)
