@@ -282,6 +282,12 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
   const [generatingHero, setGeneratingHero] = useState(false)
   const [heroProgress, setHeroProgress] = useState(0)
   const [heroImage, setHeroImage] = useState<string | null>(null)
+  // Hero variants — when user clicks "3 variantes más", we keep the original and add 3 alternates.
+  // Click on any tile makes it the active heroImage.
+  const [heroVariants, setHeroVariants] = useState<string[]>([])
+  const [generatingVariants, setGeneratingVariants] = useState(false)
+  const [variantProgress, setVariantProgress] = useState(0)
+  const abortVariantsRef = useRef<AbortController | null>(null)
   const [flashActive, setFlashActive] = useState(false)
   const abortHeroRef = useRef<AbortController | null>(null)
   const flashRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -701,9 +707,160 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
   const handleVibeToggle = (id: string) => { setSelectedVibes(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n }) }
   const canvasSize = CANVAS_SIZES[selectedAspectRatio] ?? CANVAS_SIZES[AspectRatio.Portrait]
   // Hero cost: NB2 base × resolution multiplier
+  // Generate 3 more variants of the current hero using the same scenario/outfit/refs.
+  // Skips paid addons (outfit extract, pose precise) — those were already applied
+  // to the original. Uses NB2 → Grok cascade per variant. Each variant is independent.
+  const handleGenerateVariants = async () => {
+    if (!heroImage || generatingVariants) return
+    const variantCount = 3
+    const variantUnitCost = heroBaseAtRes
+    const totalCost = variantUnitCost * variantCount
+    const ok = await decrementCredits(totalCost)
+    if (!ok) { toast.error('Créditos insuficientes'); return }
+
+    setGeneratingVariants(true)
+    setVariantProgress(0)
+    abortVariantsRef.current = new AbortController()
+
+    const charRefUrls = getCharacterReferenceUrls()
+    let charRefFile: File | undefined
+    let charIdentityFiles: File[] = []
+    if (charRefUrls.length > 0) {
+      try {
+        const res = await fetch(charRefUrls[0])
+        const blob = await res.blob()
+        charRefFile = new File([blob], 'char-ref.jpg', { type: blob.type || 'image/jpeg' })
+        charIdentityFiles = await fetchUrlsAsFiles(charRefUrls.slice(1, 4))
+      } catch { /* ignore — fall through to t2i */ }
+    }
+
+    const baseInstruction = [
+      scenario || 'professional photo shoot',
+      outfitDescription ? `Wearing: ${outfitDescription}` : null,
+      'Keep the same person identity. Vary the pose and angle slightly. No text or watermarks.',
+    ].filter(Boolean).join('. ')
+
+    const params: any = {
+      characters: [{
+        id: selectedChar?.id || 'temp',
+        characteristics: selectedChar?.characteristics || '',
+        outfitDescription, pose: '', accessory: '',
+        modelImages: [], outfitImages: [], poseImage: undefined,
+      }],
+      scenario, numberOfImages: 1,
+      aspectRatio: selectedAspectRatio,
+    }
+
+    let completed = 0
+    const generateOne = async (): Promise<string | null> => {
+      try {
+        if (charRefFile) {
+          const r = await editWithNB2Fal(charRefFile, baseInstruction, charIdentityFiles, undefined, { resolution: selectedResolution.toUpperCase() as '1K' | '2K' }, abortVariantsRef.current?.signal)
+          if (r?.[0]) return r[0]
+          throw new Error('NB2 empty')
+        } else {
+          const r = await generateWithNB2Fal(params, undefined, abortVariantsRef.current?.signal)
+          if (r?.[0]) return r[0]
+          throw new Error('NB2 empty')
+        }
+      } catch (err: any) {
+        if (err?.name === 'AbortError' || abortVariantsRef.current?.signal.aborted) return null
+        try {
+          const { generateWithGrokFal } = await import('../services/falService')
+          const r = await generateWithGrokFal(params, undefined, abortVariantsRef.current?.signal)
+          return r?.[0] || null
+        } catch { return null }
+      } finally {
+        completed++
+        setVariantProgress(Math.round((completed / variantCount) * 100))
+      }
+    }
+
+    const results = await Promise.all(Array.from({ length: variantCount }, () => generateOne()))
+    const successful = results.filter((r): r is string => !!r)
+    const failed = variantCount - successful.length
+
+    if (failed > 0) restoreCredits(failed * variantUnitCost)
+    if (successful.length > 0) {
+      // Optional safety check on each variant — fail-open
+      try {
+        const { checkImagesBatch } = await import('../services/safetyService')
+        const mode = profile?.contentMode === 'creator' ? 'creator' : 'standard'
+        const safety = await checkImagesBatch(successful, mode)
+        const safe = successful.filter((_, i) => safety[i].allowed || safety[i].error)
+        const blocked = successful.length - safe.length
+        if (blocked > 0) {
+          restoreCredits(blocked * variantUnitCost)
+          toast.error(`${blocked} variante${blocked > 1 ? 's bloqueadas' : ' bloqueada'} por moderación. Créditos restaurados.`)
+        }
+        setHeroVariants(safe)
+        // Add safe variants to gallery as 'create' alternates
+        useGalleryStore.getState().addItems(safe.map(url => ({
+          id: crypto.randomUUID(), url, prompt: `${scenario || 'Hero'} (variante)`,
+          model: 'gemini-nb2', timestamp: Date.now(), type: 'create' as const,
+          characterId: selectedCharId ?? undefined, tags: ['studio', 'hero-variant'], source: 'director' as const,
+        })))
+      } catch {
+        setHeroVariants(successful)
+      }
+      toast.success(`${successful.length} variante${successful.length > 1 ? 's' : ''} generada${successful.length > 1 ? 's' : ''}`)
+    } else {
+      toast.error('No se generaron variantes')
+    }
+
+    setGeneratingVariants(false)
+    setVariantProgress(0)
+  }
+
+  // Save current hero as a new character — prompts for name, copies image as
+  // primary reference. Useful when an external upload or generated hero is
+  // good enough to become a recurring persona.
+  const handleSaveHeroAsCharacter = async () => {
+    if (!heroImage) { toast.error('No hay foto para guardar'); return }
+    const name = window.prompt('Nombre del nuevo personaje:', '')?.trim()
+    if (!name) return
+    try {
+      // Fetch the hero image as blob to satisfy modelImageBlobs requirement
+      const res = await fetch(heroImage)
+      const blob = await res.blob()
+      const newChar = {
+        id: crypto.randomUUID(),
+        name,
+        thumbnail: heroImage,
+        modelImageBlobs: [blob],
+        outfitBlob: null,
+        outfitDescription: outfitDescription || '',
+        characteristics: scenario || '',
+        accessory: '',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        usageCount: 0,
+        referencePhotoUrls: [heroImage],
+        modelImageUrls: [heroImage],
+        renderStyle: 'photorealistic' as const,
+      }
+      useCharacterStore.getState().addCharacter(newChar)
+      setSelectedCharId(newChar.id)
+      toast.success(`Personaje "${name}" creado`)
+    } catch (err) {
+      console.error('Save as character failed:', err)
+      toast.error('No se pudo guardar el personaje')
+    }
+  }
+
   const heroBaseCost = CREDIT_COSTS[FalModel.NanoBanana2]
   const heroResMult = RESOLUTION_CREDIT_MULTIPLIER[FalModel.NanoBanana2]?.[selectedResolution.toUpperCase()] ?? 1
-  const heroCreditCost = Math.ceil(heroBaseCost * heroResMult)
+  const heroBaseAtRes = Math.ceil(heroBaseCost * heroResMult)
+  // Addons that get deducted at generation time
+  const outfitExtractCost = (outfitRef && outfitExtract) ? 5 : 0
+  const posePreciseCost = (poseRef && posePrecise) ? 5 : 0
+  const heroCreditCost = heroBaseAtRes + outfitExtractCost + posePreciseCost
+  // Breakdown rows for expandable tooltip
+  const heroCostBreakdown: { label: string; cost: number }[] = [
+    { label: `Base · NB2 ${selectedResolution.toUpperCase()}`, cost: heroBaseAtRes },
+    ...(outfitExtractCost > 0 ? [{ label: 'Extraer prenda (GPT Mini)', cost: outfitExtractCost }] : []),
+    ...(posePreciseCost > 0 ? [{ label: 'Pose precisa (ControlNet)', cost: posePreciseCost }] : []),
+  ]
   // Dynamic CTA label — uses character name when selected, falls back to generic
   const heroCtaLabel = selectedChar?.name
     ? `Generar foto de ${selectedChar.name}`
@@ -991,14 +1148,53 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
         {heroImage && (
           <>
             <img src={heroImage} onClick={() => setGalleryFullscreen(heroImage)} style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }} title="Clic para ampliar" />
-            <div style={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px)', borderRadius: 20, padding: 6, display: 'flex', gap: 6, border: '1px solid rgba(0,0,0,0.04)' }}>
-              <button onClick={() => onEditImage?.(heroImage)} style={{ padding: '8px 16px', borderRadius: 14, fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer', border: 'none', background: 'transparent', color: 'var(--text-1)' }}>✏️ Editar</button>
-              <button onClick={handleSessionTransition} style={{ padding: '8px 16px', borderRadius: 14, fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer', border: 'none', background: 'var(--accent)', color: 'white' }}>📸 Sesión</button>
+            <div style={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(12px)', borderRadius: 20, padding: 6, display: 'flex', gap: 4, border: '1px solid rgba(0,0,0,0.04)', flexWrap: 'wrap', maxWidth: 'calc(100vw - 40px)' }}>
+              <button onClick={() => onEditImage?.(heroImage)} title="Edita esta foto en el AI Editor" style={{ padding: '8px 14px', borderRadius: 14, fontSize: '0.78rem', fontWeight: 500, cursor: 'pointer', border: 'none', background: 'transparent', color: 'var(--text-1)' }}>✏️ Editar</button>
+              <button onClick={handleSaveHeroAsCharacter} title="Guarda esta foto como nuevo personaje (la usarás como base para futuras sesiones)" style={{ padding: '8px 14px', borderRadius: 14, fontSize: '0.78rem', fontWeight: 500, cursor: 'pointer', border: 'none', background: 'transparent', color: 'var(--text-1)' }}>💾 Guardar</button>
+              <button onClick={handleGenerateVariants} disabled={generatingVariants} title="Genera 3 variantes más con la misma escena para comparar y elegir" style={{ padding: '8px 14px', borderRadius: 14, fontSize: '0.78rem', fontWeight: 500, cursor: generatingVariants ? 'wait' : 'pointer', border: 'none', background: 'transparent', color: 'var(--text-1)', opacity: generatingVariants ? 0.5 : 1 }}>
+                {generatingVariants ? `⟳ ${variantProgress}%` : `✨ 3 variantes · ${heroBaseAtRes * 3}cr`}
+              </button>
+              <button onClick={handleSessionTransition} title="Genera 4-12 fotos más con esta misma persona y escena" style={{ padding: '8px 14px', borderRadius: 14, fontSize: '0.78rem', fontWeight: 500, cursor: 'pointer', border: 'none', background: 'var(--accent)', color: 'white' }}>📸 Sesión</button>
             </div>
           </>
         )}
       </div>
       {/* Aspect ratio chips moved to left panel above CTA — closer to decision point */}
+
+      {/* Hero variants grid — appears when user clicks "3 variantes más" */}
+      {heroImage && (heroVariants.length > 0 || generatingVariants) && (
+        <div style={{ marginTop: 16, width: '100%', maxWidth: 480 }}>
+          <div style={{ fontSize: '0.7rem', color: '#999', fontFamily: "'JetBrains Mono', monospace", textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8, textAlign: 'center' }}>
+            {generatingVariants ? `Generando variantes · ${variantProgress}%` : 'Variantes — click para hacer hero'}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+            {(generatingVariants && heroVariants.length === 0
+              ? Array.from({ length: 3 }).map(() => null)
+              : heroVariants
+            ).map((src, i) => (
+              <div key={i}
+                onClick={() => { if (src) { setHeroImage(src); pipelineSetHeroShot(src); setHeroVariants(prev => prev.filter(u => u !== src).concat(heroImage ? [heroImage] : [])) } }}
+                style={{ aspectRatio: '3/4', borderRadius: 10, overflow: 'hidden', background: '#F3F4F6', cursor: src ? 'pointer' : 'default', border: '1px solid rgba(0,0,0,0.06)', position: 'relative' }}>
+                {src ? (
+                  <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.2s' }}
+                    onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.02)')}
+                    onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')} />
+                ) : (
+                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <LumaSpin label="" />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          {heroVariants.length > 0 && !generatingVariants && (
+            <button onClick={() => setHeroVariants([])}
+              style={{ marginTop: 8, width: '100%', background: 'none', border: 'none', fontSize: '0.7rem', color: 'var(--text-3)', cursor: 'pointer', textAlign: 'center', padding: '4px 0' }}>
+              Cerrar variantes
+            </button>
+          )}
+        </div>
+      )}
     </>
   )
 
@@ -1042,9 +1238,15 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
 
           {/* Header */}
           <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {/* Studio label + Modo Creator badge */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontFamily: "'Instrument Serif', serif", fontSize: '1.1rem', color: '#1A1A1A' }}>Studio</span>
+            {/* Studio label + engine info + Modo Creator badge */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontFamily: "'Instrument Serif', serif", fontSize: '1.1rem', color: '#1A1A1A' }}>Studio</span>
+                <span title={`Motor: NB2 (Nano Banana 2 vía fal.ai) — máxima calidad fotorealista.${'\n'}Si NB2 rechaza el prompt o falla, fallback automático a Grok Imagine.${'\n'}Tú no eliges motor — siempre intentamos lo mejor primero.`}
+                  style={{ cursor: 'help', display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: '0.55rem', padding: '2px 7px', borderRadius: 999, background: '#F3F4F6', color: '#666', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.04em', border: '1px solid rgba(0,0,0,0.04)' }}>
+                  NB2 → Grok ⓘ
+                </span>
+              </div>
               {profile?.contentMode === 'creator' && (
                 <span title="Modo Creator activo — presets sensuales habilitados (+18)"
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.6rem', padding: '3px 8px', borderRadius: 999, background: '#1A1A1A', color: '#fff', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.05em' }}>
@@ -1104,6 +1306,29 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
               })}
             </div>
           </div>}
+
+          {/* Cost breakdown — only show if there are addons making total > base */}
+          {phase === 'hero' && !generatingHero && heroCostBreakdown.length > 1 && (
+            <div style={{ padding: '6px 24px 0' }}>
+              <details style={{ fontSize: '0.65rem' }}>
+                <summary style={{ cursor: 'pointer', color: '#999', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.04em', listStyle: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>▸ Desglose · {heroCreditCost}cr</span>
+                </summary>
+                <div style={{ marginTop: 6, padding: '8px 10px', background: '#FAFAFA', borderRadius: 8, border: '1px solid rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  {heroCostBreakdown.map((row, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', color: '#555' }}>
+                      <span>{row.label}</span>
+                      <span style={{ fontFamily: "'JetBrains Mono', monospace", color: '#1A1A1A' }}>{row.cost}cr</span>
+                    </div>
+                  ))}
+                  <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', marginTop: 4, paddingTop: 4, display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
+                    <span style={{ color: '#1A1A1A' }}>Total</span>
+                    <span style={{ fontFamily: "'JetBrains Mono', monospace", color: '#1A1A1A' }}>{heroCreditCost}cr</span>
+                  </div>
+                </div>
+              </details>
+            </div>
+          )}
 
           {/* Footer CTA */}
           <div style={{ padding: '12px 24px 16px', borderTop: 'none' }}>
