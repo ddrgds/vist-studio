@@ -704,12 +704,16 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
   const heroBaseCost = CREDIT_COSTS[FalModel.NanoBanana2]
   const heroResMult = RESOLUTION_CREDIT_MULTIPLIER[FalModel.NanoBanana2]?.[selectedResolution.toUpperCase()] ?? 1
   const heroCreditCost = Math.ceil(heroBaseCost * heroResMult)
+  // Dynamic CTA label — uses character name when selected, falls back to generic
+  const heroCtaLabel = selectedChar?.name
+    ? `Generar foto de ${selectedChar.name}`
+    : 'Generar foto'
 
   // ─── Shared UI pieces ─────────────────────────────────
   const phaseToggle = (
     <div style={{ display: 'flex', background: 'var(--bg-0)', borderRadius: 14, padding: 4, border: '1px solid var(--border)' }}>
-      <button className="pill-btn" onClick={() => setPhase('hero')} style={{ flex: 1, padding: '10px 16px', borderRadius: 10, fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer', textAlign: 'center', border: 'none', background: phase === 'hero' ? 'var(--accent)' : 'transparent', color: phase === 'hero' ? 'white' : 'var(--text-3)', transition: 'all 0.2s' }}>⚡ Crear Hero</button>
-      <button className="pill-btn" onClick={() => { if (heroImage) handleSessionTransition(); else toast.error('Genera un hero primero') }} style={{ flex: 1, padding: '10px 16px', borderRadius: 10, fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer', textAlign: 'center', border: 'none', background: phase === 'session' ? 'var(--accent)' : 'transparent', color: phase === 'session' ? 'white' : 'var(--text-3)', transition: 'all 0.2s' }}>📸 Sesión de Fotos</button>
+      <button className="pill-btn" onClick={() => setPhase('hero')} style={{ flex: 1, padding: '10px 16px', borderRadius: 10, fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer', textAlign: 'center', border: 'none', background: phase === 'hero' ? 'var(--accent)' : 'transparent', color: phase === 'hero' ? 'white' : 'var(--text-3)', transition: 'all 0.2s' }}>⚡ Foto principal</button>
+      <button className="pill-btn" onClick={() => { if (heroImage) handleSessionTransition(); else toast.error('Genera la foto principal primero') }} style={{ flex: 1, padding: '10px 16px', borderRadius: 10, fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer', textAlign: 'center', border: 'none', background: phase === 'session' ? 'var(--accent)' : 'transparent', color: phase === 'session' ? 'white' : 'var(--text-3)', transition: 'all 0.2s' }}>📸 Sesión múltiple</button>
     </div>
   )
 
@@ -718,12 +722,19 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
 
   const heroControlsContent = (compact = false) => (
     <>
-      {/* Source tabs */}
-      <div style={{ display: 'flex', gap: 6 }}>
-        {[{ key: 'crear' as const, label: '✨ Crear' }, { key: 'subir' as const, label: '📷 Subir' }, { key: 'galeria' as const, label: '🖼 Galería' }].map(t => (
-          <button key={t.key} className="pill-btn" onClick={() => { setSourceTab(t.key); if (t.key === 'subir') uploadInputRef.current?.click(); if (t.key === 'galeria') { useNavigationStore.getState().openGalleryForSelection('studio'); onNav?.('gallery') } }}
-            style={{ padding: compact ? '5px 10px' : '7px 14px', borderRadius: 20, fontSize: compact ? '0.75rem' : '0.78rem', cursor: 'pointer', border: `1px solid ${sourceTab === t.key ? 'var(--accent)' : 'var(--border)'}`, background: sourceTab === t.key ? 'var(--accent)' : 'white', color: sourceTab === t.key ? 'white' : 'var(--text-2)', transition: 'all 0.15s' }}>{t.label}</button>
-        ))}
+      {/* Source tabs — clearer copy: how is the photo entering Studio? */}
+      <div>
+        <span style={labelStyle}>Punto de partida</span>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {[
+            { key: 'crear' as const, label: '✨ Desde prompt', desc: 'Genera nueva' },
+            { key: 'subir' as const, label: '📷 Foto externa', desc: 'Sube imagen' },
+            { key: 'galeria' as const, label: '🖼 Tu galería', desc: 'Reutiliza' },
+          ].map(t => (
+            <button key={t.key} className="pill-btn" title={t.desc} onClick={() => { setSourceTab(t.key); if (t.key === 'subir') uploadInputRef.current?.click(); if (t.key === 'galeria') { useNavigationStore.getState().openGalleryForSelection('studio'); onNav?.('gallery') } }}
+              style={{ padding: compact ? '5px 10px' : '7px 14px', borderRadius: 20, fontSize: compact ? '0.75rem' : '0.78rem', cursor: 'pointer', border: `1px solid ${sourceTab === t.key ? 'var(--accent)' : 'var(--border)'}`, background: sourceTab === t.key ? 'var(--accent)' : 'white', color: sourceTab === t.key ? 'white' : 'var(--text-2)', transition: 'all 0.15s' }}>{t.label}</button>
+          ))}
+        </div>
       </div>
 
       {/* Character row — improved active state */}
@@ -740,7 +751,13 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
               </div>
             )
           })}
-          {characters.length === 0 && <span style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>Sin personajes</span>}
+          {characters.length === 0 && (
+            <button onClick={() => onNav?.('create')}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 12, background: '#F3F4F6', border: '1px dashed rgba(0,0,0,0.15)', cursor: 'pointer', fontSize: '0.75rem', color: '#1A1A1A', fontWeight: 500, whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: '1.1rem' }}>+</span>
+              <span>Crea tu primer personaje</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -936,9 +953,34 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
     <>
       <div style={{ width: canvasSize.w, height: canvasSize.h, maxWidth: '90vw', borderRadius: 16, position: 'relative', overflow: 'hidden', boxShadow: heroImage ? '0 8px 32px rgba(0,0,0,0.04)' : 'none', background: heroImage ? undefined : 'var(--bg-0)', border: heroImage ? 'none' : '1px dashed #ccc', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', transition: 'all 0.5s ease' }}>
         {!heroImage && !generatingHero && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, color: 'var(--text-3)' }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
-            <span style={{ fontFamily: "'Instrument Serif', serif", fontSize: '1.2rem', color: '#999', fontStyle: 'italic' }}>Tu lienzo en blanco</span>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: '32px 24px', maxWidth: 320 }}>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="1.3"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: "'Instrument Serif', serif", fontSize: '1.35rem', color: '#1A1A1A', marginBottom: 4 }}>
+                {selectedCharId ? `Lista para ${characters.find(c => c.id === selectedCharId)?.name || 'tu modelo'}` : 'Crea tu primera foto'}
+              </div>
+              <div style={{ fontSize: '0.78rem', color: '#999', lineHeight: 1.5 }}>
+                {selectedCharId
+                  ? 'Elige un estilo o describe el escenario, y dispara.'
+                  : characters.length === 0
+                    ? 'Empieza creando tu personaje. Cada foto que generes mantendrá su misma identidad.'
+                    : 'Selecciona un personaje arriba para empezar.'}
+              </div>
+            </div>
+            {characters.length === 0 && (
+              <button onClick={() => onNav?.('create')}
+                style={{ marginTop: 4, padding: '9px 18px', borderRadius: 999, background: '#1A1A1A', color: '#fff', border: 'none', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>
+                ✨ Crear mi primer personaje
+              </button>
+            )}
+            {/* Mini steps — only show if no character yet */}
+            {characters.length > 0 && !selectedCharId && (
+              <ol style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.7rem', color: '#999', lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <li>1. Elige protagonista</li>
+                <li>2. Vibe LATAM o Estilo Rápido</li>
+                <li>3. Click "Generar"</li>
+              </ol>
+            )}
           </div>
         )}
         {generatingHero && (
@@ -956,23 +998,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
           </>
         )}
       </div>
-      <div style={{ display: 'flex', gap: 6, marginTop: 16, flexWrap: 'wrap' }}>
-        {Object.values(AspectRatio).map(ar => {
-          const label = ar === AspectRatio.Portrait ? 'Publicación' : ar === AspectRatio.Square ? 'Cuadrado' : ar === AspectRatio.Landscape ? 'Portada' : ar === AspectRatio.Wide ? 'Banner' : 'Historia / Reel'
-          const active = selectedAspectRatio === ar
-          return (
-            <button key={ar} onClick={() => setSelectedAspectRatio(ar)} style={{
-              padding: '6px 12px', borderRadius: 8, fontSize: '0.7rem', fontWeight: active ? 600 : 500,
-              cursor: 'pointer', transition: 'all 0.15s',
-              background: active ? '#1A1A1A' : 'transparent',
-              color: active ? '#fff' : 'var(--text-3)',
-              border: `1px solid ${active ? '#1A1A1A' : 'rgba(0,0,0,0.08)'}`,
-            }}>
-              {label}
-            </button>
-          )
-        })}
-      </div>
+      {/* Aspect ratio chips moved to left panel above CTA — closer to decision point */}
     </>
   )
 
@@ -1016,6 +1042,16 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
 
           {/* Header */}
           <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Studio label + Modo Creator badge */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontFamily: "'Instrument Serif', serif", fontSize: '1.1rem', color: '#1A1A1A' }}>Studio</span>
+              {profile?.contentMode === 'creator' && (
+                <span title="Modo Creator activo — presets sensuales habilitados (+18)"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.6rem', padding: '3px 8px', borderRadius: 999, background: '#1A1A1A', color: '#fff', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.05em' }}>
+                  ✦ CREATOR · +18
+                </span>
+              )}
+            </div>
             {phaseToggle}
             {phase === 'hero' && (
               <div style={{ display: 'flex', background: 'var(--bg-0)', borderRadius: 10, padding: 3, border: '1px solid var(--border)' }}>
@@ -1030,16 +1066,42 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
             {phase === 'hero' ? heroControlsContent() : sessionControlsContent()}
           </div>
 
-          {/* Resolution selector — hero phase only */}
-          {phase === 'hero' && <div style={{ padding: '8px 24px 0', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-              <span style={{ fontSize: '0.65rem', color: '#999', fontFamily: "'JetBrains Mono', monospace", textTransform: 'uppercase', letterSpacing: '0.1em' }}>Resolución</span>
-              {(['1k', '2k', '4k'] as const).map(r => (
-                <button key={r} onClick={() => setSelectedResolution(r)}
-                  style={{ padding: '4px 10px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 600, fontFamily: "'JetBrains Mono', monospace", cursor: 'pointer', border: `1px solid ${selectedResolution === r ? '#1A1A1A' : 'rgba(0,0,0,0.08)'}`, background: selectedResolution === r ? '#1A1A1A' : 'white', color: selectedResolution === r ? 'white' : '#999' }}>
-                  {r.toUpperCase()}
-                </button>
-              ))}
+          {/* Format + Resolution — hero phase only, both grouped right above CTA */}
+          {phase === 'hero' && <div style={{ padding: '8px 24px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {/* Aspect ratio chips */}
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.65rem', color: '#999', fontFamily: "'JetBrains Mono', monospace", textTransform: 'uppercase', letterSpacing: '0.1em', minWidth: 70 }}>Formato</span>
+              {Object.values(AspectRatio).map(ar => {
+                const meta = ar === AspectRatio.Portrait ? { label: '3:4', use: 'Post IG' }
+                  : ar === AspectRatio.Square ? { label: '1:1', use: 'Square' }
+                  : ar === AspectRatio.Landscape ? { label: '4:3', use: 'Web' }
+                  : ar === AspectRatio.Wide ? { label: '16:9', use: 'Banner' }
+                  : { label: '9:16', use: 'Reel/Story' }
+                const active = selectedAspectRatio === ar
+                return (
+                  <button key={ar} onClick={() => setSelectedAspectRatio(ar)}
+                    title={meta.use}
+                    style={{ padding: '4px 8px', borderRadius: 8, fontSize: '0.65rem', fontWeight: 600, fontFamily: "'JetBrains Mono', monospace", cursor: 'pointer', border: `1px solid ${active ? '#1A1A1A' : 'rgba(0,0,0,0.08)'}`, background: active ? '#1A1A1A' : 'white', color: active ? 'white' : '#999' }}>
+                    {meta.label}
+                  </button>
+                )
+              })}
+            </div>
+            {/* Resolution chips */}
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.65rem', color: '#999', fontFamily: "'JetBrains Mono', monospace", textTransform: 'uppercase', letterSpacing: '0.1em', minWidth: 70 }}>Resolución</span>
+              {(['1k', '2k', '4k'] as const).map(r => {
+                const mult = RESOLUTION_CREDIT_MULTIPLIER[FalModel.NanoBanana2]?.[r.toUpperCase()] ?? 1
+                const extra = mult > 1 ? `+${Math.round((mult - 1) * 100)}%` : ''
+                return (
+                  <button key={r} onClick={() => setSelectedResolution(r)}
+                    title={extra ? `Costo ${extra} sobre 1K` : 'Resolución estándar'}
+                    style={{ padding: '4px 10px', borderRadius: 8, fontSize: '0.65rem', fontWeight: 600, fontFamily: "'JetBrains Mono', monospace", cursor: 'pointer', border: `1px solid ${selectedResolution === r ? '#1A1A1A' : 'rgba(0,0,0,0.08)'}`, background: selectedResolution === r ? '#1A1A1A' : 'white', color: selectedResolution === r ? 'white' : '#999' }}>
+                    {r.toUpperCase()}
+                    {extra && <span style={{ marginLeft: 4, opacity: 0.7, fontSize: '0.55rem' }}>{extra}</span>}
+                  </button>
+                )
+              })}
             </div>
           </div>}
 
@@ -1057,7 +1119,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
                 </div>
               ) : (
                 <button onClick={handleHeroGenerate} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-                  ⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.8rem', opacity: 0.7 }}>· {heroCreditCost}cr</span>
+                  ⚡ {heroCtaLabel} <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.8rem', opacity: 0.7 }}>· {heroCreditCost}cr</span>
                 </button>
               )
             ) : (
@@ -1152,7 +1214,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
                   </div>
                 ) : (
                   <button onClick={handleHeroGenerate} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-                    ⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', opacity: 0.7 }}>· {heroCreditCost}cr</span>
+                    ⚡ {heroCtaLabel} <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', opacity: 0.7 }}>· {heroCreditCost}cr</span>
                   </button>
                 )}
               </div>
@@ -1171,7 +1233,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
                     </div>
                   ) : (
                     <button onClick={handleHeroGenerate} style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', padding: 14, borderRadius: 12, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-                      ⚡ Generar Imagen <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', opacity: 0.7 }}>· {heroCreditCost}cr</span>
+                      ⚡ {heroCtaLabel} <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem', opacity: 0.7 }}>· {heroCreditCost}cr</span>
                     </button>
                   )}
                 </div>
