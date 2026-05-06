@@ -26,6 +26,7 @@ import { PHOTO_SESSION_PRESETS, mixShots, FACE_LOCK_PROMPT, OUTFIT_PRESERVE_PROM
 // ─── Constants ────────────────────────────────────────────
 const IMAGE_BOOST_KEYWORDS = 'masterpiece, best quality, highly detailed, sharp focus, 8k uhd'
 
+// Universal Quick Styles — visible to all users in any contentMode
 const QUICK_STYLE_PRESETS = [
   { id: 'selfie', emoji: '🤳', label: 'Selfie', desc: 'Close-up natural', scenario: 'selfie style photo, natural casual lighting, close-up portrait, authentic candid feel', camera: 'portrait', lighting: 'natural', pose: 'standing' },
   { id: 'ugc', emoji: '📦', label: 'UGC', desc: 'Auténtico casual', scenario: 'UGC content creator style, casual home setting, natural daylight, authentic unfiltered look, no heavy makeup, relatable lifestyle', camera: 'portrait', lighting: 'natural', pose: 'leaning' },
@@ -34,12 +35,38 @@ const QUICK_STYLE_PRESETS = [
   { id: 'night-out', emoji: '🌆', label: 'Night Out', desc: 'Ciudad de noche', scenario: 'night out in the city, vibrant nightlife atmosphere, city lights bokeh background, going out vibe', camera: 'portrait', lighting: 'neon', pose: 'leaning' },
 ]
 
+// LATAM Cultural Quick Styles — visible to all users (the wedge differentiator)
+const LATAM_QUICK_STYLES = [
+  { id: 'paisa', emoji: '🌹', label: 'Paisa', desc: 'Medellín chic', scenario: 'modern Medellín paisa style, polished feminine elegance, fitted contemporary fashion, warm honey tones, urban Colombian backdrop, golden afternoon light', camera: 'portrait', lighting: 'golden', pose: 'standing' },
+  { id: 'costena', emoji: '🌴', label: 'Costeña', desc: 'Caribe vibes', scenario: 'Caribbean coastal vibe, breezy linen and cotton, sun-kissed glow, beach-side or palm tree backdrop, vibrant tropical colors, salty hair and sea breeze', camera: 'wide', lighting: 'natural', pose: 'walking' },
+  { id: 'paulista', emoji: '🇧🇷', label: 'Paulista', desc: 'São Paulo editorial', scenario: 'São Paulo metropolitan style, sleek tailored fashion, neutral palette with statement accessory, modernist architecture backdrop, sophisticated cosmopolitan energy', camera: 'portrait', lighting: 'studio', pose: 'standing' },
+  { id: 'chilanga', emoji: '🌵', label: 'Chilanga', desc: 'CDMX cool', scenario: 'Mexico City contemporary style, mix of streetwear and refined detail, warm earthy palette with bold accent, Roma/Condesa cafe or rooftop backdrop, golden hour CDMX light', camera: 'wide', lighting: 'golden', pose: 'leaning' },
+  { id: 'limena', emoji: '🪶', label: 'Limeña', desc: 'Lima moderna', scenario: 'modern Lima Pacific coast style, soft beige and ivory palette with andean accent detail, refined understated elegance, Miraflores ocean cliff backdrop, diffused coastal light', camera: 'portrait', lighting: 'natural', pose: 'standing' },
+]
+
+// Sensual Quick Styles — visible only when profile.contentMode === 'creator' (+18 opt-in)
+const CREATOR_QUICK_STYLES = [
+  { id: 'lenceria', emoji: '🌹', label: 'Lencería', desc: 'Editorial sensual', scenario: 'editorial lingerie photoshoot in the style of high-end fashion magazines, tasteful boudoir aesthetic, soft golden window light, satin and lace fabrics, elegant feminine pose, sophisticated and refined', camera: 'portrait', lighting: 'natural', pose: 'standing' },
+  { id: 'beach-br', emoji: '🏖️', label: 'Beach BR', desc: 'Brazilian beach', scenario: 'Brazilian beach editorial, sun-kissed skin, tropical bikini fashion, vibrant ocean backdrop, golden afternoon light, confident playful pose, Ipanema vibe', camera: 'wide', lighting: 'golden', pose: 'walking' },
+  { id: 'boudoir', emoji: '🕯️', label: 'Boudoir', desc: 'Íntimo cálido', scenario: 'intimate boudoir photography, soft warm bedroom light through sheer curtains, silk robe and elegant lingerie, romantic and feminine, painterly shadows, vintage editorial mood', camera: 'portrait', lighting: 'natural', pose: 'leaning' },
+]
+
 const QUICK_STYLE_TO_VIBES: Record<string, string[]> = {
   'selfie': ['selfies', 'lifestyle'],
   'ugc': ['selfies', 'creator', 'lifestyle'],
   'lifestyle': ['lifestyle', 'street', 'portrait'],
   'editorial': ['editorial', 'portrait', 'fotodump'],
   'night-out': ['nightout', 'street', 'selfies'],
+  // LATAM cultural
+  'paisa':    ['lifestyle', 'street', 'portrait'],
+  'costena':  ['lifestyle', 'pool', 'fotodump'],
+  'paulista': ['editorial', 'portrait', 'fotodump'],
+  'chilanga': ['street', 'lifestyle', 'fotodump'],
+  'limena':   ['portrait', 'editorial', 'lifestyle'],
+  // Creator mode (sensual editorial)
+  'lenceria': ['editorial', 'portrait'],
+  'beach-br': ['pool', 'lifestyle', 'fotodump'],
+  'boudoir':  ['portrait', 'editorial'],
 }
 const DEFAULT_VIBES = ['selfies', 'lifestyle']
 
@@ -699,7 +726,7 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
         </div>
       </div>
 
-      {/* Quick Styles */}
+      {/* Quick Styles — universal */}
       <div>
         <span style={labelStyle}>Estilo Rápido</span>
         <div style={{ display: 'flex', gap: compact ? 6 : 8, flexWrap: compact ? 'nowrap' : 'wrap', overflowX: compact ? 'auto' : undefined, paddingBottom: compact ? 4 : 0 }}>
@@ -708,6 +735,31 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
           ))}
         </div>
       </div>
+
+      {/* LATAM Cultural — wedge differentiator, all users see these */}
+      <div>
+        <span style={labelStyle}>Vibe LATAM</span>
+        <div style={{ display: 'flex', gap: compact ? 6 : 8, flexWrap: compact ? 'nowrap' : 'wrap', overflowX: compact ? 'auto' : undefined, paddingBottom: compact ? 4 : 0 }}>
+          {LATAM_QUICK_STYLES.map(p => (
+            <button key={p.id} className="pill-btn" onClick={() => applyQuickStyle(p)} style={{ padding: compact ? '6px 12px' : '8px 16px', borderRadius: 20, fontSize: compact ? '0.75rem' : '0.8rem', cursor: 'pointer', whiteSpace: 'nowrap', border: `1px solid ${activeQuickStyle === p.id ? 'var(--accent)' : 'var(--border)'}`, background: activeQuickStyle === p.id ? 'var(--accent)' : 'white', color: activeQuickStyle === p.id ? 'white' : 'var(--text-2)', transition: 'all 0.15s' }}>{p.emoji} {p.label}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Creator Mode — only visible if user opted in (+18). Server-side safety classifier rejects topless/explicit outputs. */}
+      {profile?.contentMode === 'creator' && (
+        <div>
+          <span style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
+            Modo Creator
+            <span style={{ fontSize: '0.55rem', padding: '1px 6px', borderRadius: 4, background: '#1A1A1A', color: '#fff', letterSpacing: '0.08em' }}>+18</span>
+          </span>
+          <div style={{ display: 'flex', gap: compact ? 6 : 8, flexWrap: compact ? 'nowrap' : 'wrap', overflowX: compact ? 'auto' : undefined, paddingBottom: compact ? 4 : 0 }}>
+            {CREATOR_QUICK_STYLES.map(p => (
+              <button key={p.id} className="pill-btn" onClick={() => applyQuickStyle(p)} style={{ padding: compact ? '6px 12px' : '8px 16px', borderRadius: 20, fontSize: compact ? '0.75rem' : '0.8rem', cursor: 'pointer', whiteSpace: 'nowrap', border: `1px solid ${activeQuickStyle === p.id ? 'var(--accent)' : 'var(--border)'}`, background: activeQuickStyle === p.id ? 'var(--accent)' : 'white', color: activeQuickStyle === p.id ? 'white' : 'var(--text-2)', transition: 'all 0.15s' }}>{p.emoji} {p.label}</button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Outfit — improved upload card */}
       <div>

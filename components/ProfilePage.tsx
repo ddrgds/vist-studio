@@ -15,10 +15,10 @@ import { SubscriptionPlan } from '../types';
 // ─────────────────────────────────────────────
 
 const PLAN_STYLES: Record<SubscriptionPlan, { label: string; icon: React.ReactNode; color: string; bg: string; border: string }> = {
-  starter: { label: 'Starter', icon: <User  className="w-3 h-3" />, color: 'var(--joi-text-2)',  bg: 'var(--joi-bg-2)', border: 'var(--joi-border)' },
-  pro:     { label: 'Pro',     icon: <Zap   className="w-3 h-3" />, color: 'var(--joi-violet)',  bg: 'var(--joi-bg-2)', border: 'var(--joi-border)' },
-  studio:  { label: 'Studio',  icon: <Star  className="w-3 h-3" />, color: 'var(--joi-pink)',    bg: 'var(--joi-bg-2)', border: 'var(--joi-border)' },
-  brand:   { label: 'Brand',   icon: <Building2 className="w-3 h-3" />, color: 'var(--joi-text-1)', bg: 'var(--joi-bg-3)', border: 'var(--joi-border-h)' },
+  starter: { label: 'Starter', icon: <User  className="w-3 h-3" />, color: '#555555',  bg: '#FFFFFF', border: 'rgba(0,0,0,0.06)' },
+  pro:     { label: 'Pro',     icon: <Zap   className="w-3 h-3" />, color: '#555555',  bg: '#FFFFFF', border: 'rgba(0,0,0,0.06)' },
+  studio:  { label: 'Studio',  icon: <Star  className="w-3 h-3" />, color: '#1A1A1A',    bg: '#FFFFFF', border: 'rgba(0,0,0,0.06)' },
+  brand:   { label: 'Brand',   icon: <Building2 className="w-3 h-3" />, color: '#111111', bg: '#F3F4F6', border: 'rgba(0,0,0,0.12)' },
 };
 
 const PlanBadge: React.FC<{ plan: SubscriptionPlan }> = ({ plan }) => {
@@ -40,10 +40,10 @@ const PlanBadge: React.FC<{ plan: SubscriptionPlan }> = ({ plan }) => {
 const StatCard: React.FC<{ label: string; value: string | number }> = ({ label, value }) => (
   <div
     className="flex flex-col items-center gap-1 px-6 py-4 rounded-2xl"
-    style={{ background: 'var(--joi-bg-2)', border: '1px solid var(--joi-border)' }}
+    style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.06)' }}
   >
-    <span className="text-2xl font-bold font-display" style={{ color: 'var(--joi-pink)' }}>{value}</span>
-    <span className="text-xs font-jet" style={{ color: 'var(--joi-text-3)' }}>{label}</span>
+    <span className="text-2xl font-bold font-display" style={{ color: '#1A1A1A' }}>{value}</span>
+    <span className="text-xs font-jet" style={{ color: '#999999' }}>{label}</span>
   </div>
 );
 
@@ -124,7 +124,7 @@ const ProfilePage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full" style={{ color: 'var(--joi-text-3)' }}>
+      <div className="flex items-center justify-center h-full" style={{ color: '#999999' }}>
         <span className="animate-pulse text-sm font-jet">Cargando perfil…</span>
       </div>
     );
@@ -133,7 +133,7 @@ const ProfilePage: React.FC = () => {
   return (
     <div
       className="min-h-full overflow-y-auto pb-20 lg:pb-12 custom-scrollbar"
-      style={{ background: 'var(--joi-bg-0)' }}
+      style={{ background: '#FAFAFA' }}
     >
       <div className="max-w-xl mx-auto px-4 sm:px-6 pt-10 pb-12 space-y-8">
 
@@ -144,7 +144,7 @@ const ProfilePage: React.FC = () => {
           <div className="relative group">
             <div
               className="w-24 h-24 rounded-full flex items-center justify-center overflow-hidden"
-              style={{ background: 'var(--joi-bg-2)', border: '2px solid var(--joi-border-h)' }}
+              style={{ background: '#FFFFFF', border: '2px solid rgba(0,0,0,0.12)' }}
             >
               {profile?.avatarUrl ? (
                 <img
@@ -153,7 +153,7 @@ const ProfilePage: React.FC = () => {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-3xl font-bold font-display" style={{ color: 'var(--joi-pink)' }}>
+                <span className="text-3xl font-bold font-display" style={{ color: '#1A1A1A' }}>
                   {initials}
                 </span>
               )}
@@ -169,7 +169,7 @@ const ProfilePage: React.FC = () => {
               onClick={() => avatarInputRef.current?.click()}
               disabled={avatarUploading}
               className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
-              style={{ background: 'linear-gradient(135deg, var(--joi-pink), var(--joi-violet))', boxShadow: '0 2px 8px rgba(255,107,157,0.5)' }}
+              style={{ background: '#1A1A1A', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
               title="Cambiar avatar"
             >
               <Camera className="w-3.5 h-3.5 text-white" />
@@ -184,19 +184,19 @@ const ProfilePage: React.FC = () => {
           </div>
 
           <div className="space-y-1">
-            <p className="text-lg font-bold font-display text-white">
+            <p className="text-lg font-bold font-display" style={{ color: '#111111' }}>
               {profile?.displayName || user?.email?.split('@')[0] || 'Tu nombre'}
             </p>
-            <p className="text-sm font-jet" style={{ color: 'var(--joi-text-3)' }}>{user?.email}</p>
+            <p className="text-sm font-jet" style={{ color: '#999999' }}>{user?.email}</p>
             <div className="flex items-center justify-center gap-2 mt-2">
               <PlanBadge plan={sub.plan} />
               {sub.plan === 'starter' && (
                 <button
                   onClick={() => navigate('/pricing')}
                   className="text-xs font-jet font-semibold transition-colors"
-                  style={{ color: 'var(--joi-pink)' }}
-                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--joi-violet)')}
-                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--joi-pink)')}
+                  style={{ color: '#1A1A1A' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#555555')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#1A1A1A')}
                 >
                   Mejorar Plan →
                 </button>
@@ -215,11 +215,11 @@ const ProfilePage: React.FC = () => {
         {/* ── Subscription & Credits ── */}
         <div
           className="rounded-2xl p-6 space-y-4"
-          style={{ background: 'var(--joi-bg-2)', border: '1px solid var(--joi-border)' }}
+          style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.06)' }}
         >
           <h2
             className="text-xs font-jet font-semibold tracking-widest uppercase"
-            style={{ color: 'var(--joi-text-3)' }}
+            style={{ color: '#999999' }}
           >
             Suscripción
           </h2>
@@ -227,8 +227,8 @@ const ProfilePage: React.FC = () => {
           {/* Credits bar */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs font-jet">
-              <span style={{ color: 'var(--joi-text-2)' }}>Créditos restantes</span>
-              <span className="font-bold" style={{ color: 'var(--joi-violet)' }}>
+              <span style={{ color: '#555555' }}>Créditos restantes</span>
+              <span className="font-bold" style={{ color: '#555555' }}>
                 {sub.isUnlimited
                   ? <span className="flex items-center gap-1"><Infinity className="w-3 h-3" /> Ilimitados</span>
                   : sub.credits.toLocaleString('en-US')
@@ -238,7 +238,7 @@ const ProfilePage: React.FC = () => {
             {!sub.isUnlimited && (
               <div
                 className="w-full h-1.5 rounded-full overflow-hidden"
-                style={{ background: 'var(--joi-bg-3)' }}
+                style={{ background: '#F3F4F6' }}
               >
                 {(() => {
                   const max = sub.plan === 'brand' ? 8000 : sub.plan === 'studio' ? 1500 : sub.plan === 'pro' ? 500 : 50;
@@ -248,7 +248,7 @@ const ProfilePage: React.FC = () => {
                       className="h-full rounded-full transition-all"
                       style={{
                         width: `${pct}%`,
-                        background: pct > 30 ? 'linear-gradient(90deg, var(--joi-pink), var(--joi-violet))' : '#ff4444',
+                        background: pct > 30 ? '#1A1A1A' : '#ff4444',
                       }}
                     />
                   );
@@ -259,7 +259,7 @@ const ProfilePage: React.FC = () => {
 
           {/* Renewal info */}
           {sub.renewsAt && (
-            <p className="text-xs font-jet" style={{ color: 'var(--joi-text-3)' }}>
+            <p className="text-xs font-jet" style={{ color: '#999999' }}>
               {sub.status === 'cancelled' ? 'Acceso hasta' : 'Se renueva el'}{' '}
               {new Date(sub.renewsAt).toLocaleDateString('es-MX', { month: 'long', day: 'numeric', year: 'numeric' })}
             </p>
@@ -272,8 +272,8 @@ const ProfilePage: React.FC = () => {
                 onClick={() => navigate('/pricing')}
                 className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all"
                 style={{
-                  background: 'linear-gradient(135deg, var(--joi-pink), var(--joi-violet))',
-                  boxShadow: '0 2px 12px rgba(255,107,157,0.3)',
+                  background: '#1A1A1A',
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.10)',
                   fontFamily: 'var(--font-display)',
                 }}
               >
@@ -284,9 +284,9 @@ const ProfilePage: React.FC = () => {
                 <button
                   onClick={() => navigate('/pricing')}
                   className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
-                  style={{ background: 'var(--joi-bg-1)', border: '1px solid var(--joi-border)', color: 'var(--joi-text-2)', fontFamily: 'var(--font-display)' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--joi-border-h)'; (e.currentTarget as HTMLElement).style.color = 'var(--joi-pink)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--joi-border)'; (e.currentTarget as HTMLElement).style.color = 'var(--joi-text-2)'; }}
+                  style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.06)', color: '#555555', fontFamily: 'var(--font-display)' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,0,0,0.12)'; (e.currentTarget as HTMLElement).style.color = '#1A1A1A'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,0,0,0.06)'; (e.currentTarget as HTMLElement).style.color = '#555555'; }}
                 >
                   Cambiar plan
                 </button>
@@ -295,9 +295,9 @@ const ProfilePage: React.FC = () => {
                     onClick={handleManageSubscription}
                     disabled={portalLoading}
                     className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2"
-                    style={{ background: 'var(--joi-bg-1)', border: '1px solid var(--joi-border)', color: 'var(--joi-text-2)', fontFamily: 'var(--font-display)' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--joi-border-h)'; (e.currentTarget as HTMLElement).style.color = 'var(--joi-pink)'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--joi-border)'; (e.currentTarget as HTMLElement).style.color = 'var(--joi-text-2)'; }}
+                    style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.06)', color: '#555555', fontFamily: 'var(--font-display)' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,0,0,0.12)'; (e.currentTarget as HTMLElement).style.color = '#1A1A1A'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,0,0,0.06)'; (e.currentTarget as HTMLElement).style.color = '#555555'; }}
                   >
                     {portalLoading ? '…' : <><ExternalLink className="w-3.5 h-3.5" /> Administrar</>}
                   </button>
@@ -310,46 +310,46 @@ const ProfilePage: React.FC = () => {
         {/* ── Edit form ── */}
         <div
           className="rounded-2xl p-6 space-y-5"
-          style={{ background: 'var(--joi-bg-2)', border: '1px solid var(--joi-border)' }}
+          style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.06)' }}
         >
           <h2
             className="text-xs font-jet font-semibold tracking-widest uppercase"
-            style={{ color: 'var(--joi-text-3)' }}
+            style={{ color: '#999999' }}
           >
             Perfil
           </h2>
 
           {/* Display name */}
           <div className="space-y-1.5">
-            <label className="text-xs font-jet" style={{ color: 'var(--joi-text-2)' }}>Nombre visible</label>
+            <label className="text-xs font-jet" style={{ color: '#555555' }}>Nombre visible</label>
             <input
               type="text"
               value={displayName}
               onChange={e => setDisplayName(e.target.value)}
               placeholder="Tu nombre"
               maxLength={50}
-              className="w-full px-4 py-2.5 rounded-xl text-sm text-white outline-none transition-all"
-              style={{ background: 'var(--joi-bg-1)', border: '1px solid var(--joi-border)', fontFamily: 'var(--font-body)' }}
-              onFocus={e => (e.currentTarget.style.borderColor = 'var(--joi-border-h)')}
-              onBlur={e => (e.currentTarget.style.borderColor = 'var(--joi-border)')}
+              className="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
+              style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.06)', color: '#111', fontFamily: 'var(--font-body)' }}
+              onFocus={e => (e.currentTarget.style.borderColor = 'rgba(0,0,0,0.12)')}
+              onBlur={e => (e.currentTarget.style.borderColor = 'rgba(0,0,0,0.06)')}
             />
           </div>
 
           {/* Bio */}
           <div className="space-y-1.5">
-            <label className="text-xs font-jet" style={{ color: 'var(--joi-text-2)' }}>Biografía</label>
+            <label className="text-xs font-jet" style={{ color: '#555555' }}>Biografía</label>
             <textarea
               value={bio}
               onChange={e => setBio(e.target.value)}
               placeholder="Cuéntale al mundo sobre tu visión creativa…"
               maxLength={200}
               rows={3}
-              className="w-full px-4 py-2.5 rounded-xl text-sm text-white outline-none transition-all resize-none"
-              style={{ background: 'var(--joi-bg-1)', border: '1px solid var(--joi-border)', fontFamily: 'var(--font-body)' }}
-              onFocus={e => (e.currentTarget.style.borderColor = 'var(--joi-border-h)')}
-              onBlur={e => (e.currentTarget.style.borderColor = 'var(--joi-border)')}
+              className="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all resize-none"
+              style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.06)', color: '#111', fontFamily: 'var(--font-body)' }}
+              onFocus={e => (e.currentTarget.style.borderColor = 'rgba(0,0,0,0.12)')}
+              onBlur={e => (e.currentTarget.style.borderColor = 'rgba(0,0,0,0.06)')}
             />
-            <p className="text-right text-[10px] font-jet" style={{ color: 'var(--joi-text-3)' }}>
+            <p className="text-right text-[10px] font-jet" style={{ color: '#999999' }}>
               {bio.length}/200
             </p>
           </div>
@@ -362,10 +362,10 @@ const ProfilePage: React.FC = () => {
             style={{
               background: saved
                 ? 'linear-gradient(135deg, #16a34a, #22c55e)'
-                : 'linear-gradient(135deg, var(--joi-pink), var(--joi-violet))',
+                : '#1A1A1A',
               opacity: saving ? 0.7 : 1,
               fontFamily: 'var(--font-display)',
-              boxShadow: '0 2px 12px rgba(255,107,157,0.3)',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.10)',
             }}
           >
             {saved ? (
@@ -384,11 +384,11 @@ const ProfilePage: React.FC = () => {
         {/* ── Account / Danger zone ── */}
         <div
           className="rounded-2xl p-6 space-y-3"
-          style={{ background: 'var(--joi-bg-2)', border: '1px solid var(--joi-border)' }}
+          style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.06)' }}
         >
           <h2
             className="text-xs font-jet font-semibold tracking-widest uppercase"
-            style={{ color: 'var(--joi-text-3)' }}
+            style={{ color: '#999999' }}
           >
             Cuenta
           </h2>
@@ -396,14 +396,14 @@ const ProfilePage: React.FC = () => {
           <button
             onClick={signOut}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
-            style={{ background: 'var(--joi-bg-1)', border: '1px solid var(--joi-border)', color: 'var(--joi-text-2)' }}
+            style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.06)', color: '#555555' }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLElement).style.color = '#ff6b6b';
               (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,107,107,0.3)';
             }}
             onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.color = 'var(--joi-text-2)';
-              (e.currentTarget as HTMLElement).style.borderColor = 'var(--joi-border)';
+              (e.currentTarget as HTMLElement).style.color = '#555555';
+              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,0,0,0.06)';
             }}
           >
             <LogOut className="w-4 h-4" />

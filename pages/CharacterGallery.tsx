@@ -134,7 +134,7 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
 
   if (isLoadingChars) {
     return (
-      <div className="min-h-screen joi-mesh" style={{ background: 'var(--joi-bg-0)' }}>
+      <div className="min-h-screen " style={{ background: '#FAFAFA' }}>
         <div className="px-8 pt-8 pb-2">
           <div className="h-7 w-48 rounded-lg animate-pulse mb-2" style={{ background: 'rgba(255,255,255,.05)' }} />
           <div className="h-4 w-32 rounded animate-pulse" style={{ background: 'rgba(255,255,255,.03)' }} />
@@ -151,15 +151,15 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
 
   if (storeCharacters.length === 0) {
     return (
-      <div className="min-h-screen joi-mesh flex items-center justify-center" style={{ background: 'var(--joi-bg-0)' }}>
-        <div className="joi-glass px-10 py-12 text-center max-w-md rounded-2xl" style={{ border: '1px solid rgba(255,255,255,.04)' }}>
+      <div className="min-h-screen  flex items-center justify-center" style={{ background: '#FAFAFA' }}>
+        <div className="bg-white border border-black/5 px-10 py-12 text-center max-w-md rounded-2xl" style={{ border: '1px solid rgba(255,255,255,.04)' }}>
           <div className="text-3xl mb-4">✦</div>
-          <h2 className="joi-heading text-lg mb-2">Aún no hay personajes</h2>
-          <p className="text-[12px] mb-6" style={{ color:'var(--joi-text-3)' }}>
+          <h2 className=" text-lg mb-2">Aún no hay personajes</h2>
+          <p className="text-[12px] mb-6" style={{ color:'#999999' }}>
             Los personajes son tus influencers virtuales. Crea uno para empezar a generar contenido.
           </p>
           <button onClick={() => onNav?.('create')}
-            className="joi-btn-solid px-6 py-2.5 text-sm joi-breathe">
+            className="rounded-xl px-6 py-2.5 text-sm ">
             ⊕ Crear Tu Primer Personaje
           </button>
         </div>
@@ -168,13 +168,13 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--joi-bg-0)' }}>
+    <div className="min-h-screen" style={{ background: '#FAFAFA' }}>
       <div className="px-4 md:px-8 pt-8 pb-2 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">
-            <span style={{ color: 'var(--joi-pink)' }}>Galería de</span> <span style={{ color: 'var(--joi-text-1)' }}>Personajes</span>
+            <span style={{ color: '#1A1A1A' }}>Galería de</span> <span style={{ color: '#111111' }}>Personajes</span>
           </h1>
-          <p className="mt-1" style={{ color: 'var(--joi-text-3)' }}>Tu colección de influencers virtuales</p>
+          <p className="mt-1" style={{ color: '#999999' }}>Tu colección de influencers virtuales</p>
         </div>
         <button className="btn-primary px-5 py-2.5 text-sm">⊕ Nuevo Personaje</button>
       </div>
@@ -187,8 +187,8 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
           { l:'Fotos', v:String(totalPhotos), c:'var(--rose)' },
           { l:'Ediciones AI', v:String(totalEdits), c:'var(--magenta)' },
         ].map(s=>(
-          <div key={s.l} className="px-4 py-3 rounded-md" style={{ background: 'var(--joi-bg-2)', border: '1px solid rgba(255,255,255,.04)' }}>
-            <div className="text-[9px] font-mono uppercase tracking-wider" style={{ color:'var(--joi-text-3)' }}>{s.l}</div>
+          <div key={s.l} className="px-4 py-3 rounded-md" style={{ background: '#FFFFFF', border: '1px solid rgba(255,255,255,.04)' }}>
+            <div className="text-[9px] font-mono uppercase tracking-wider" style={{ color:'#999999' }}>{s.l}</div>
             <div className="text-lg font-bold mt-0.5" style={{ color:s.c }}>{s.v}</div>
           </div>
         ))}
@@ -201,9 +201,9 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
             <div
               key={c.id}
               onClick={() => { setSelectedChar(i); setDetailTab('Resumen'); }}
-              className={`overflow-hidden cursor-pointer transition-all rounded-md joi-glass`}
+              className={`overflow-hidden cursor-pointer transition-all rounded-md bg-white border border-black/5`}
               style={{
-                background: 'var(--joi-bg-2)',
+                background: '#FFFFFF',
                 border: `1px solid ${selectedChar===i ? 'rgba(240,104,72,.25)' : 'rgba(255,255,255,.04)'}`,
                 boxShadow: selectedChar===i ? '0 0 25px rgba(240,104,72,.08)' : undefined,
               }}
@@ -219,14 +219,14 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                 <div className="flex-1 p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h3 className="text-sm font-bold" style={{ color:'var(--joi-text-1)' }}>{c.name}</h3>
+                      <h3 className="text-sm font-bold" style={{ color:'#111111' }}>{c.name}</h3>
                       <span className="text-[10px] font-mono" style={{ color:'var(--accent)' }}>{c.handle}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[9px] font-mono px-2 py-0.5 rounded-md"
                         style={{
                           background: 'rgba(99,102,241,.06)',
-                          color: 'var(--joi-text-3)',
+                          color: '#999999',
                           border: '1px solid rgba(255,255,255,.06)',
                         }}>{c.photos} fotos</span>
                       <button
@@ -239,12 +239,12 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                         }}
                         title="Eliminar personaje"
                         className="w-6 h-6 rounded-md flex items-center justify-center transition-all hover:scale-110"
-                        style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--joi-text-3)', border: 'none', fontSize: '11px', cursor: 'pointer' }}>
+                        style={{ background: 'rgba(255,255,255,0.04)', color: '#999999', border: 'none', fontSize: '11px', cursor: 'pointer' }}>
                         🗑
                       </button>
                     </div>
                   </div>
-                  <p className="text-[10px] mt-1.5" style={{ color:'var(--joi-text-3)' }}>{c.style}</p>
+                  <p className="text-[10px] mt-1.5" style={{ color:'#999999' }}>{c.style}</p>
                   {selectedChar === null && (
                     <div className="flex gap-4 mt-3 pt-3" style={{ borderTop:'1px solid rgba(255,255,255,.04)' }}>
                       {[
@@ -254,8 +254,8 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                         { l:'Creado', v:c.created },
                       ].map(s=>(
                         <div key={s.l}>
-                          <div className="text-xs font-bold" style={{ color:'var(--joi-text-1)' }}>{s.v}</div>
-                          <div className="text-[8px] font-mono" style={{ color:'var(--joi-text-3)' }}>{s.l}</div>
+                          <div className="text-xs font-bold" style={{ color:'#111111' }}>{s.v}</div>
+                          <div className="text-[8px] font-mono" style={{ color:'#999999' }}>{s.l}</div>
                         </div>
                       ))}
                     </div>
@@ -271,12 +271,12 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
           <div className="flex-1 min-w-0 anim-in">
             {/* Mobile back button */}
             <button className="md:hidden mb-3 flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg w-full"
-              style={{ color: 'var(--joi-text-2)', background: 'var(--joi-bg-2)', border: '1px solid rgba(255,255,255,.04)' }}
+              style={{ color: '#555555', background: '#FFFFFF', border: '1px solid rgba(255,255,255,.04)' }}
               onClick={() => setSelectedChar(null)}>
               ← Volver a Personajes
             </button>
           <div className="anim-in">
-            <div className="overflow-hidden rounded-md" style={{ background: 'var(--joi-bg-2)', border: '1px solid rgba(255,255,255,.04)' }}>
+            <div className="overflow-hidden rounded-md" style={{ background: '#FFFFFF', border: '1px solid rgba(255,255,255,.04)' }}>
               <div className="h-40 relative" style={{ background: characters[selectedChar].gradient }}>
                 {characters[selectedChar].thumbnailUrl && (
                   <img src={characters[selectedChar].thumbnailUrl!} className="absolute inset-0 w-full h-full object-cover opacity-40" />
@@ -286,7 +286,7 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                   style={{ background:'rgba(0,0,0,.3)', color:'#fff' }}>✕</button>
                 <div className="absolute bottom-4 left-5 flex items-end gap-3">
                   <div className="w-16 h-16 rounded-md flex items-center justify-center text-3xl overflow-hidden"
-                    style={{ background:'var(--joi-bg-2)', border:'3px solid var(--joi-bg-2)', boxShadow:'0 4px 16px rgba(0,0,0,.3)' }}>
+                    style={{ background:'#FFFFFF', border:'3px solid #FFFFFF', boxShadow:'0 4px 16px rgba(0,0,0,.3)' }}>
                     {characters[selectedChar].thumbnailUrl ? (
                       <img src={characters[selectedChar].thumbnailUrl!} className="w-full h-full object-cover" />
                     ) : (
@@ -304,7 +304,7 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                 {detailTabs.map(t=>(
                   <button key={t} onClick={()=>setDetailTab(t)}
                     className="px-3 py-2.5 text-[11px] font-medium relative transition-all"
-                    style={{ color: detailTab===t ? 'var(--accent)' : 'var(--joi-text-3)' }}>
+                    style={{ color: detailTab===t ? 'var(--accent)' : '#999999' }}>
                     {t}
                     {detailTab===t && <div className="absolute bottom-0 left-1 right-1 h-[2px] rounded-full" style={{ background:'var(--accent)' }} />}
                   </button>
@@ -315,8 +315,8 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                 {detailTab === 'Resumen' && (
                   <div className="space-y-5">
                     <div>
-                      <div className="text-[10px] font-mono uppercase tracking-wider mb-1.5" style={{ color:'var(--joi-text-3)' }}>Biografía</div>
-                      <p className="text-sm" style={{ color:'var(--joi-text-2)' }}>{characters[selectedChar].bio}</p>
+                      <div className="text-[10px] font-mono uppercase tracking-wider mb-1.5" style={{ color:'#999999' }}>Biografía</div>
+                      <p className="text-sm" style={{ color:'#555555' }}>{characters[selectedChar].bio}</p>
                     </div>
 
                     {/* Model / consistency images */}
@@ -326,7 +326,7 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                       if (urls.length === 0) return null
                       return (
                         <div>
-                          <div className="text-[10px] font-mono uppercase tracking-wider mb-2" style={{ color:'var(--joi-text-3)' }}>
+                          <div className="text-[10px] font-mono uppercase tracking-wider mb-2" style={{ color:'#999999' }}>
                             Imágenes de Consistencia IA
                           </div>
                           <div className="grid grid-cols-5 gap-2">
@@ -336,14 +336,14 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                                 <img src={url} className="w-full h-full object-cover" />
                                 {i === 0 && (
                                   <div className="absolute bottom-0 inset-x-0 text-[7px] text-center py-0.5 font-mono"
-                                    style={{ background: 'rgba(0,0,0,.65)', color: 'var(--joi-pink)' }}>
+                                    style={{ background: 'rgba(0,0,0,.65)', color: '#1A1A1A' }}>
                                     principal
                                   </div>
                                 )}
                               </div>
                             ))}
                           </div>
-                          <p className="text-[10px] mt-1.5" style={{ color:'var(--joi-text-3)' }}>
+                          <p className="text-[10px] mt-1.5" style={{ color:'#999999' }}>
                             Estas imágenes se pasan automáticamente como referencia al generar contenido.
                           </p>
                         </div>
@@ -357,14 +357,14 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                         { l:'Ediciones AI', v:characters[selectedChar].edits, c:'var(--rose)' },
                         { l:'Creado', v:characters[selectedChar].created, c:'var(--blue)' },
                       ].map(s=>(
-                        <div key={s.l} className="p-3 rounded-lg" style={{ background:'var(--joi-bg-3)' }}>
+                        <div key={s.l} className="p-3 rounded-lg" style={{ background:'#F3F4F6' }}>
                           <div className="text-lg font-bold" style={{ color:s.c }}>{s.v}</div>
-                          <div className="text-[9px] font-mono" style={{ color:'var(--joi-text-3)' }}>{s.l}</div>
+                          <div className="text-[9px] font-mono" style={{ color:'#999999' }}>{s.l}</div>
                         </div>
                       ))}
                     </div>
                     <div>
-                      <div className="text-[10px] font-mono uppercase tracking-wider mb-2" style={{ color:'var(--joi-text-3)' }}>
+                      <div className="text-[10px] font-mono uppercase tracking-wider mb-2" style={{ color:'#999999' }}>
                         Últimas Creaciones
                       </div>
                       <div className="grid grid-cols-5 gap-2">
@@ -381,7 +381,7 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                       </div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-mono uppercase tracking-wider mb-2" style={{ color:'var(--joi-text-3)' }}>
+                      <div className="text-[10px] font-mono uppercase tracking-wider mb-2" style={{ color:'#999999' }}>
                         Ediciones por Tipo
                       </div>
                       <div className="space-y-1.5">
@@ -401,8 +401,8 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                           return counts.map(b => ({ ...b, max: maxVal }))
                         })().map(b=>(
                           <div key={b.l} className="flex items-center gap-2">
-                            <span className="text-[10px] w-20 shrink-0" style={{ color:'var(--joi-text-2)' }}>{b.l}</span>
-                            <div className="flex-1 h-2 rounded-full" style={{ background:'var(--joi-bg-3)' }}>
+                            <span className="text-[10px] w-20 shrink-0" style={{ color:'#555555' }}>{b.l}</span>
+                            <div className="flex-1 h-2 rounded-full" style={{ background:'#F3F4F6' }}>
                               <div className="h-full rounded-full" style={{ width:`${(b.v/b.max)*100}%`, background:b.c }} />
                             </div>
                             <span className="text-[10px] font-mono w-6 text-right" style={{ color:b.c }}>{b.v}</span>
@@ -425,9 +425,9 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                             <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg"
                               style={{ background: 'rgba(80,216,160,0.1)', border: '1px solid rgba(80,216,160,0.15)' }}>
                               <span className="text-sm" style={{ color: '#50d8a0' }}>&#10003;</span>
-                              <span className="text-[12px] font-medium" style={{ color: 'var(--joi-text-2)' }}>LoRA entrenado</span>
+                              <span className="text-[12px] font-medium" style={{ color: '#555555' }}>LoRA entrenado</span>
                               {sc.loraTrainedAt && (
-                                <span className="ml-auto text-[9px] font-mono" style={{ color: 'var(--joi-text-3)' }}>
+                                <span className="ml-auto text-[9px] font-mono" style={{ color: '#999999' }}>
                                   {new Date(sc.loraTrainedAt).toLocaleDateString('es', { month: 'short', day: 'numeric' })}
                                 </span>
                               )}
@@ -439,7 +439,7 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                             <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg"
                               style={{ background: 'rgba(129,140,248,0.1)', border: '1px solid rgba(129,140,248,0.15)' }}>
                               <span className="inline-block w-3.5 h-3.5 border-2 border-[#818CF8]/30 border-t-[#818CF8] rounded-full animate-spin" />
-                              <span className="text-[12px] font-medium" style={{ color: 'var(--joi-text-2)' }}>Entrenando LoRA (~15 min)...</span>
+                              <span className="text-[12px] font-medium" style={{ color: '#555555' }}>Entrenando LoRA (~15 min)...</span>
                             </div>
                           )
                         }
@@ -448,7 +448,7 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                             <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg"
                               style={{ background: 'rgba(255,107,107,0.08)', border: '1px solid rgba(255,107,107,0.15)' }}>
                               <span className="text-sm" style={{ color: '#ff6b6b' }}>!</span>
-                              <span className="text-[12px] font-medium" style={{ color: 'var(--joi-text-2)' }}>Entrenamiento fallido</span>
+                              <span className="text-[12px] font-medium" style={{ color: '#555555' }}>Entrenamiento fallido</span>
                               <button
                                 onClick={async () => {
                                   try { await trainLoRA(sc.id); toast.success('Entrenamiento LoRA reiniciado') }
@@ -478,7 +478,7 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[12px] font-medium transition-all"
                             style={{
                               background: photoCount < 5 ? 'rgba(255,255,255,0.03)' : 'rgba(129,140,248,0.15)',
-                              color: photoCount < 5 ? 'var(--joi-text-3)' : '#818CF8',
+                              color: photoCount < 5 ? '#999999' : '#818CF8',
                               border: `1px solid ${photoCount < 5 ? 'rgba(255,255,255,0.04)' : 'rgba(129,140,248,0.25)'}`,
                               cursor: photoCount < 5 ? 'not-allowed' : 'pointer',
                             }}>
@@ -493,7 +493,7 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                   <div>
                     {/* Header row */}
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-[11px]" style={{ color: 'var(--joi-text-3)' }}>
+                      <span className="text-[11px]" style={{ color: '#999999' }}>
                         {charPhotoItems.length} fotos
                       </span>
                       {!refSelectMode ? (
@@ -506,7 +506,7 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                           className="text-[11px] px-3 py-1 rounded-lg transition-colors"
                           style={{
                             background: 'rgba(99,102,241,0.08)',
-                            color: 'var(--joi-pink)',
+                            color: '#1A1A1A',
                             border: '1px solid rgba(99,102,241,0.15)',
                           }}
                         >
@@ -514,13 +514,13 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                         </button>
                       ) : (
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-mono" style={{ color: 'var(--joi-text-3)' }}>
+                          <span className="text-[10px] font-mono" style={{ color: '#999999' }}>
                             {pendingRefs.length}/20
                           </span>
                           <button
                             onClick={() => setRefSelectMode(false)}
                             className="text-[10px] px-2 py-1 rounded"
-                            style={{ color: 'var(--joi-text-3)' }}
+                            style={{ color: '#999999' }}
                           >
                             Cancelar
                           </button>
@@ -533,7 +533,7 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                               toast.success(`${pendingRefs.length} referencias guardadas`)
                             }}
                             className="text-[11px] px-3 py-1 rounded-lg font-medium"
-                            style={{ background: 'var(--joi-pink)', color: '#fff' }}
+                            style={{ background: '#1A1A1A', color: '#fff' }}
                           >
                             Guardar
                           </button>
@@ -594,7 +594,7 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                                   <div
                                     className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
                                     style={{
-                                      background: isRef ? 'var(--joi-pink)' : 'rgba(0,0,0,0.5)',
+                                      background: isRef ? '#1A1A1A' : 'rgba(0,0,0,0.5)',
                                       border: '2px solid white',
                                       color: 'white',
                                     }}
@@ -606,7 +606,7 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                                 {!refSelectMode && isRef && (
                                   <div
                                     className="absolute top-1 left-1 w-2 h-2 rounded-full"
-                                    style={{ background: 'var(--joi-pink)' }}
+                                    style={{ background: '#1A1A1A' }}
                                   />
                                 )}
                               </div>
@@ -623,7 +623,7 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                 {detailTab === 'Ediciones AI' && (
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-[11px]" style={{ color: 'var(--joi-text-3)' }}>
+                      <span className="text-[11px]" style={{ color: '#999999' }}>
                         {charEditItems.length} ediciones
                       </span>
                     </div>
@@ -682,7 +682,7 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                     <div className="space-y-5">
                       {/* Name */}
                       <div>
-                        <label className="text-[10px] font-mono uppercase block mb-1.5" style={{ color: 'var(--joi-text-3)' }}>Nombre</label>
+                        <label className="text-[10px] font-mono uppercase block mb-1.5" style={{ color: '#999999' }}>Nombre</label>
                         <input
                           key={sc.id + '-name'}
                           defaultValue={sc.name}
@@ -691,15 +691,15 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                             if (val && val !== sc.name) updateCharacter(sc.id, { name: val })
                           }}
                           className="w-full px-3 py-2 rounded-lg text-xs border outline-none"
-                          style={{ background: 'var(--joi-bg-3)', borderColor: 'rgba(255,255,255,.06)', color: 'var(--joi-text-1)' }}
+                          style={{ background: '#F3F4F6', borderColor: 'rgba(255,255,255,.06)', color: '#111111' }}
                         />
                       </div>
 
                       {/* Render Style */}
                       <div>
-                        <label className="text-[10px] font-mono uppercase block mb-2" style={{ color: 'var(--joi-text-3)' }}>
+                        <label className="text-[10px] font-mono uppercase block mb-2" style={{ color: '#999999' }}>
                           Estilo de Render
-                          <span className="ml-1.5 normal-case" style={{ color: 'var(--joi-text-3)', opacity: 0.6 }}>— usado por el Director para mantener el estilo del personaje</span>
+                          <span className="ml-1.5 normal-case" style={{ color: '#999999', opacity: 0.6 }}>— usado por el Director para mantener el estilo del personaje</span>
                         </label>
                         <div className="grid grid-cols-3 gap-1.5">
                           {RENDER_STYLES.map(rs => {
@@ -709,9 +709,9 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                                 onClick={() => updateCharacter(sc.id, { renderStyle: rs.id })}
                                 className="flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl text-[11px] font-medium transition-all"
                                 style={{
-                                  background: active ? 'rgba(240,104,72,.12)' : 'var(--joi-bg-3)',
+                                  background: active ? 'rgba(240,104,72,.12)' : '#F3F4F6',
                                   border: `1px solid ${active ? 'rgba(240,104,72,.35)' : 'rgba(255,255,255,.05)'}`,
-                                  color: active ? 'var(--accent)' : 'var(--joi-text-2)',
+                                  color: active ? 'var(--accent)' : '#555555',
                                 }}>
                                 <span>{rs.icon}</span>
                                 <span>{rs.label}</span>
@@ -724,13 +724,13 @@ export function CharacterGallery({ onNav }: { onNav?: (page: string) => void }) 
                       {/* Raw prompt (read-only) */}
                       {sc.characteristics && (
                         <details className="group">
-                          <summary className="text-[10px] font-mono uppercase cursor-pointer flex items-center gap-1.5 py-1" style={{ color: 'var(--joi-text-3)' }}>
+                          <summary className="text-[10px] font-mono uppercase cursor-pointer flex items-center gap-1.5 py-1" style={{ color: '#999999' }}>
                             <span className="text-[9px] transition-transform group-open:rotate-90">▶</span>
                             Prompt técnico
                           </summary>
                           <textarea readOnly rows={4} value={sc.characteristics}
                             className="w-full mt-2 px-3 py-2 rounded-lg text-[10px] border outline-none resize-none font-mono"
-                            style={{ background: 'var(--joi-bg-3)', borderColor: 'rgba(255,255,255,.04)', color: 'var(--joi-text-3)' }} />
+                            style={{ background: '#F3F4F6', borderColor: 'rgba(255,255,255,.04)', color: '#999999' }} />
                         </details>
                       )}
 
