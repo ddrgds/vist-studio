@@ -156,7 +156,7 @@ export default function Landing({ onAuth }: LandingProps) {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
           {[
-            { icon: '🧬', title: 'Crea tu modelo desde cero', desc: 'Diseña su rostro, cuerpo, estilo y vibe LATAM en minutos. Genera fotos consistentes con la misma identidad cada vez. Editorial, lifestyle, sensual editorial.' },
+            { icon: '🧬', title: 'Crea tu modelo desde cero', desc: 'Diseña su rostro, cuerpo y estilo en minutos. Genera fotos consistentes con la misma identidad cada vez. Editorial, lifestyle, sensual editorial.' },
             { icon: '📖', title: 'El playbook incluido', desc: 'Cómo configurar IG/TikTok, qué postear las primeras 4 semanas, cómo crecer hasta el primer ingreso. Paso a paso, en español.' },
             { icon: '👥', title: 'Comunidad de operadores', desc: 'Discord activo de gente construyendo lo mismo. Ves casos reales, preguntas, te validas. Esto no se hace solo.' },
           ].map((f, i) => (
@@ -226,7 +226,7 @@ export default function Landing({ onAuth }: LandingProps) {
             {[
               { icon: '⚡', stat: '5 min', label: 'Para crear tu primera modelo' },
               { icon: '🎯', stat: '100%', label: 'Consistencia de rostro entre fotos' },
-              { icon: '🌎', stat: 'LATAM', label: 'Estilos culturales nativos: paisa, costeña, paulista, chilanga, limeña' },
+              { icon: '🌎', stat: 'Español', label: 'Plataforma 100% en español, soporte en tu zona horaria, comunidad LATAM activa' },
             ].map((item, i) => (
               <Reveal key={item.label} delay={0.15 + i * 0.08}>
                 <div style={{
@@ -431,7 +431,7 @@ export default function Landing({ onAuth }: LandingProps) {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
           {[
-            { num: '1', title: 'Define tu modelo', desc: "Nombre, vibe, estilo, look. Elige presets LATAM (paisa, costeña, paulista) o construye desde cero. La IA genera la primera sesión de fotos consistente.", icon: '🧬' },
+            { num: '1', title: 'Define tu modelo', desc: "Nombre, look, estilo. Elige una estética (editorial, beach, cosmopolitan, street, coastal) o construye desde cero. La IA genera la primera sesión de fotos consistente.", icon: '🧬' },
             { num: '2', title: 'Genera contenido', desc: 'Sesiones de fotos, reels, try-on, lifestyle. Misma identidad cada vez. Modo Standard editorial o Modo Creator con presets sensuales (opt-in +18).', icon: '📸' },
             { num: '3', title: 'Lanza y monetiza', desc: 'El playbook te guía: cómo configurar IG/TikTok/OF, qué postear las primeras 4 semanas, cómo crecer. Comunidad Discord para consultas.', icon: '🚀' },
           ].map((s, i) => (
@@ -526,7 +526,7 @@ export default function Landing({ onAuth }: LandingProps) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
           {[
             { tier: 'Free', price: '$0', sub: 'para siempre', desc: '50 cr al registro · 25 cr/sem · 1 modelo · Modo Standard · Discord', cta: 'Empezar gratis', highlight: false },
-            { tier: 'Side Project', price: '$19', sub: 'al mes', desc: '800 cr/mes · 1 modelo · Standard + Creator · sin watermark · 2K · presets LATAM', cta: 'Suscribirme', highlight: true },
+            { tier: 'Side Project', price: '$19', sub: 'al mes', desc: '800 cr/mes · 1 modelo · Standard + Creator · sin watermark · 2K · todas las estéticas', cta: 'Suscribirme', highlight: true },
             { tier: 'Negocio', price: '$79', sub: 'al mes', desc: '4,000 cr/mes · 3 modelos · Reels HD · voces LATAM · playbook completo · priority queue', cta: 'Suscribirme', highlight: false },
             { tier: 'Pro', price: '$199', sub: 'al mes', desc: '12,000 cr/mes · 10 modelos · multi-personaje · 1:1 setup · affiliate dashboard', cta: 'Suscribirme', highlight: false },
           ].map((p, i) => (

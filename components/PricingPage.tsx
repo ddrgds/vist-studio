@@ -117,7 +117,7 @@ const PLANS: Plan[] = [
       { label: '4,000 créditos mensuales (~615 fotos · 46 reels)' },
       { label: '3 modelos virtuales' },
       { label: 'Reels HD (Kling Pro)' },
-      { label: 'Voces ElevenLabs LATAM (paisa, paulista, mexicana)' },
+      { label: 'Voces ElevenLabs en español (acentos variados)' },
       { label: 'Playbook completo de monetización' },
       { label: 'Cola prioritaria' },
     ],

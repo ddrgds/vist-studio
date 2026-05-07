@@ -13,7 +13,7 @@ import { X, ChevronRight, ChevronLeft, Sparkles, Camera, Calendar, Rocket, Heart
  * Steps:
  *   0) Bienvenida + caso real del fundador (1,700+ followers)
  *   1) Tu wedge (qué tipo de modelo crear: editorial / lifestyle / sensual)
- *   2) Configura tu primera modelo (nombre + vibe LATAM)
+ *   2) Configura tu primera modelo (nombre + estética inicial)
  *   3) Tu primera sesión (qué generar)
  *   4) Plan primer mes + Discord + lanzamiento
  */
@@ -207,7 +207,7 @@ const Step1Focus: React.FC<{
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
       {[
         { id: 'editorial' as const, emoji: '📷', title: 'Editorial', desc: 'IG limpio, fashion, lifestyle, sin contenido sensual. Marketing y marcas.' },
-        { id: 'lifestyle' as const, emoji: '🌴', title: 'Lifestyle LATAM', desc: 'Vibe regional (paisa, costeña, paulista...), día a día, viajes, fashion.' },
+        { id: 'lifestyle' as const, emoji: '🌴', title: 'Lifestyle', desc: 'Día a día, viajes, fashion, beach, urban — estéticas variadas.' },
         { id: 'sensual' as const, emoji: '🔥', title: 'Editorial Sensual', desc: 'Lencería, beach, boudoir editorial. Para teaser de OF/Fansly. Modo Creator (+18).' },
       ].map(opt => (
         <button key={opt.id}
@@ -234,18 +234,18 @@ const Step2Model: React.FC<{
   onVibe: (v: string) => void
 }> = ({ name, vibe, onName, onVibe }) => {
   const VIBES = [
-    { id: 'paisa', label: 'Paisa Chic', emoji: '🌹' },
-    { id: 'costena', label: 'Costeña', emoji: '🌴' },
-    { id: 'paulista', label: 'Paulista', emoji: '🇧🇷' },
-    { id: 'chilanga', label: 'Chilanga', emoji: '🌵' },
-    { id: 'limena', label: 'Limeña', emoji: '🪶' },
+    { id: 'editorial-chic', label: 'Editorial Chic', emoji: '🌹' },
+    { id: 'beach-tropical', label: 'Beach Tropical', emoji: '🌴' },
+    { id: 'urban-cosmopolitan', label: 'Urban', emoji: '🏙️' },
+    { id: 'street-editorial', label: 'Street', emoji: '🌃' },
+    { id: 'coastal-minimal', label: 'Coastal Minimal', emoji: '🪶' },
     { id: 'free', label: 'Construyo desde cero', emoji: '✦' },
   ]
   return (
     <div className="space-y-5">
       <div>
         <h2 className="text-[22px] font-bold mb-2" style={{ color: '#1A1A1A' }}>Tu primera modelo</h2>
-        <p className="text-[14px]" style={{ color: '#555' }}>Elige un nombre y una vibe inicial. Luego le defines look, ropa y estilo en Crear Personaje.</p>
+        <p className="text-[14px]" style={{ color: '#555' }}>Elige un nombre y una estética inicial. Luego le defines look, ropa y estilo en Crear Personaje.</p>
       </div>
       <div>
         <label className="text-[11px] font-mono uppercase tracking-wider mb-1.5 block" style={{ color: '#999' }}>Nombre</label>

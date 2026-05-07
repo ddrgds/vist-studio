@@ -858,7 +858,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
           Construye tu modelo virtual
         </h1>
         <p className="text-[12px] mt-1" style={{ color: '#666' }}>
-          Define su look, vibe LATAM y estilo. Cada foto que generes después mantendrá su misma identidad.
+          Define su look y estilo. Cada foto que generes después mantendrá su misma identidad.
         </p>
       </div>
 
@@ -886,7 +886,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
         </div>
         <div className="text-[10px] mt-2" style={{ color: '#999' }}>
           {mode === 'create'
-            ? '🎨 Diseña tu modelo virtual desde cero. Define estilo, vibe LATAM, look. Listo para sesiones.'
+            ? '🎨 Diseña tu modelo virtual desde cero. Define estilo, look y atributos. Listo para sesiones.'
             : '✨ ¿Ya tienes fotos? Súbelas y la AI extrae los rasgos para mantener consistencia.'}
         </div>
       </div>
@@ -1083,25 +1083,21 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               </div>
             )}
 
-            {/* ─── Quick Start templates — LATAM-first vibes for AI Operator wedge ─── */}
+            {/* ─── Quick Start templates — neutral aesthetic categories ─── */}
             {step === 0 && !name.trim() && (
               <div className="p-5 mb-4 rounded-xl" style={{ background: 'linear-gradient(135deg, #FAFAFA, #F3F4F6)', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 12 }}>
-                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                  <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#555' }}>
-                    ⚡ Vibes populares <span className="text-[10px] font-normal normal-case" style={{ color: '#999' }}>· o configura abajo</span>
-                  </div>
-                  <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ background: '#1A1A1A', color: '#fff', letterSpacing: '0.05em' }}>LATAM</span>
+                <div className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: '#555' }}>
+                  ⚡ Empieza con una estética <span className="text-[10px] font-normal normal-case" style={{ color: '#999' }}>· o configura abajo</span>
                 </div>
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
                   {[
-                    // LATAM cultural vibes — wedge differentiator, all photorealistic
-                    { id:'paisa', label:'Paisa Chic', icon:'🌹', desc:'Medellín polished', renderIdx:0, substyle:'editorial', gender:'female', age:'20s' },
-                    { id:'costena', label:'Costeña Caribe', icon:'🌴', desc:'Caribe sun-kissed', renderIdx:0, substyle:'ugc', gender:'female', age:'20s' },
-                    { id:'paulista', label:'Paulista', icon:'🇧🇷', desc:'São Paulo cosmopolitan', renderIdx:0, substyle:'editorial', gender:'female', age:'20s' },
-                    { id:'chilanga', label:'Chilanga', icon:'🌵', desc:'CDMX street + refined', renderIdx:0, substyle:'street', gender:'female', age:'20s' },
-                    { id:'limena', label:'Limeña Moderna', icon:'🪶', desc:'Lima costera elegante', renderIdx:0, substyle:'editorial', gender:'female', age:'20s' },
-                    // Non-LATAM vibe for variety
-                    { id:'influencer-fitness', label:'Fitness IG', icon:'💪', desc:'Activewear lifestyle', renderIdx:0, substyle:'ugc', gender:'female', age:'20s' },
+                    // Universal aesthetic categories — fashion/lifestyle moods, not regional
+                    { id:'editorial-chic', label:'Editorial Chic', icon:'🌹', desc:'Polished elegant', renderIdx:0, substyle:'editorial', gender:'female', age:'20s' },
+                    { id:'beach-tropical', label:'Beach Tropical', icon:'🌴', desc:'Sun-kissed coastal', renderIdx:0, substyle:'ugc', gender:'female', age:'20s' },
+                    { id:'urban-cosmopolitan', label:'Urban Cosmopolitan', icon:'🏙️', desc:'Sleek metropolitan', renderIdx:0, substyle:'editorial', gender:'female', age:'20s' },
+                    { id:'street-editorial', label:'Street Editorial', icon:'🌃', desc:'Casual refined', renderIdx:0, substyle:'street', gender:'female', age:'20s' },
+                    { id:'fitness-lifestyle', label:'Fitness IG', icon:'💪', desc:'Activewear lifestyle', renderIdx:0, substyle:'ugc', gender:'female', age:'20s' },
+                    { id:'coastal-minimal', label:'Coastal Minimal', icon:'🪶', desc:'Soft beige elegance', renderIdx:0, substyle:'editorial', gender:'female', age:'20s' },
                   ].map(t => (
                     <button key={t.id}
                       onClick={() => {
@@ -1119,7 +1115,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                   ))}
                 </div>
                 <div className="text-[10px] mt-3 text-center" style={{ color: '#999' }}>
-                  ¿Buscas anime, 3D o pixel art? Configura el estilo abajo.
+                  ¿Anime, 3D, ilustración o pixel art? Configura el estilo abajo.
                 </div>
               </div>
             )}

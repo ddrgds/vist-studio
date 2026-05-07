@@ -39,19 +39,22 @@ const QUICK_STYLE_PRESETS = [
   { id: 'night-out', emoji: '🌆', label: 'Night Out', desc: 'Ciudad de noche', scenario: 'night out in the city, vibrant nightlife atmosphere, city lights bokeh background, going out vibe', camera: 'portrait', lighting: 'neon', pose: 'leaning' },
 ]
 
-// LATAM Cultural Quick Styles — visible to all users (the wedge differentiator)
-const LATAM_QUICK_STYLES = [
-  { id: 'paisa', emoji: '🌹', label: 'Paisa', desc: 'Medellín chic', scenario: 'modern Medellín paisa style, polished feminine elegance, fitted contemporary fashion, warm honey tones, urban Colombian backdrop, golden afternoon light', camera: 'portrait', lighting: 'golden', pose: 'standing' },
-  { id: 'costena', emoji: '🌴', label: 'Costeña', desc: 'Caribe vibes', scenario: 'Caribbean coastal vibe, breezy linen and cotton, sun-kissed glow, beach-side or palm tree backdrop, vibrant tropical colors, salty hair and sea breeze', camera: 'wide', lighting: 'natural', pose: 'walking' },
-  { id: 'paulista', emoji: '🇧🇷', label: 'Paulista', desc: 'São Paulo editorial', scenario: 'São Paulo metropolitan style, sleek tailored fashion, neutral palette with statement accessory, modernist architecture backdrop, sophisticated cosmopolitan energy', camera: 'portrait', lighting: 'studio', pose: 'standing' },
-  { id: 'chilanga', emoji: '🌵', label: 'Chilanga', desc: 'CDMX cool', scenario: 'Mexico City contemporary style, mix of streetwear and refined detail, warm earthy palette with bold accent, Roma/Condesa cafe or rooftop backdrop, golden hour CDMX light', camera: 'wide', lighting: 'golden', pose: 'leaning' },
-  { id: 'limena', emoji: '🪶', label: 'Limeña', desc: 'Lima moderna', scenario: 'modern Lima Pacific coast style, soft beige and ivory palette with andean accent detail, refined understated elegance, Miraflores ocean cliff backdrop, diffused coastal light', camera: 'portrait', lighting: 'natural', pose: 'standing' },
+// Aesthetic Quick Styles — neutral fashion/lifestyle categories (universal)
+// Were named after LATAM regions in 2026-05-05 sprint — reverted to avoid
+// stereotyping. Spanish-language UI + LATAM-friendly payments are the
+// market wedge; the model's look is the user's choice.
+const AESTHETIC_QUICK_STYLES = [
+  { id: 'editorial-chic', emoji: '🌹', label: 'Editorial Chic', desc: 'Polished elegant', scenario: 'polished editorial fashion shoot, contemporary tailored fashion, warm honey tones, urban backdrop, golden afternoon light, confident expression', camera: 'portrait', lighting: 'golden', pose: 'standing' },
+  { id: 'beach-tropical', emoji: '🌴', label: 'Beach Tropical', desc: 'Sun-kissed coastal', scenario: 'tropical coastal vibe, breezy linen and cotton, sun-kissed glow, beach-side or palm tree backdrop, vibrant warm colors, salty hair and sea breeze', camera: 'wide', lighting: 'natural', pose: 'walking' },
+  { id: 'urban-cosmopolitan', emoji: '🏙️', label: 'Urban Cosmopolitan', desc: 'Sleek metropolitan', scenario: 'metropolitan style, sleek tailored fashion, neutral palette with statement accessory, modernist architecture backdrop, sophisticated cosmopolitan energy', camera: 'portrait', lighting: 'studio', pose: 'standing' },
+  { id: 'street-editorial', emoji: '🌃', label: 'Street Editorial', desc: 'Casual refined', scenario: 'contemporary street style, mix of streetwear and refined detail, warm earthy palette with bold accent, urban cafe or rooftop backdrop, golden hour light', camera: 'wide', lighting: 'golden', pose: 'leaning' },
+  { id: 'coastal-minimal', emoji: '🪶', label: 'Coastal Minimalist', desc: 'Soft beige elegance', scenario: 'coastal minimalist style, soft beige and ivory palette, refined understated elegance, ocean cliff or seaside backdrop, diffused natural light', camera: 'portrait', lighting: 'natural', pose: 'standing' },
 ]
 
 // Sensual Quick Styles — visible only when profile.contentMode === 'creator' (+18 opt-in)
 const CREATOR_QUICK_STYLES = [
   { id: 'lenceria', emoji: '🌹', label: 'Lencería', desc: 'Editorial sensual', scenario: 'editorial lingerie photoshoot in the style of high-end fashion magazines, tasteful boudoir aesthetic, soft golden window light, satin and lace fabrics, elegant feminine pose, sophisticated and refined', camera: 'portrait', lighting: 'natural', pose: 'standing' },
-  { id: 'beach-br', emoji: '🏖️', label: 'Beach BR', desc: 'Brazilian beach', scenario: 'Brazilian beach editorial, sun-kissed skin, tropical bikini fashion, vibrant ocean backdrop, golden afternoon light, confident playful pose, Ipanema vibe', camera: 'wide', lighting: 'golden', pose: 'walking' },
+  { id: 'beach-editorial', emoji: '🏖️', label: 'Beach Editorial', desc: 'Sun-kissed swimwear', scenario: 'editorial beach photoshoot, sun-kissed skin, tropical bikini fashion, vibrant ocean backdrop, golden afternoon light, confident playful pose, magazine quality', camera: 'wide', lighting: 'golden', pose: 'walking' },
   { id: 'boudoir', emoji: '🕯️', label: 'Boudoir', desc: 'Íntimo cálido', scenario: 'intimate boudoir photography, soft warm bedroom light through sheer curtains, silk robe and elegant lingerie, romantic and feminine, painterly shadows, vintage editorial mood', camera: 'portrait', lighting: 'natural', pose: 'leaning' },
 ]
 
@@ -61,16 +64,16 @@ const QUICK_STYLE_TO_VIBES: Record<string, string[]> = {
   'lifestyle': ['lifestyle', 'street', 'portrait'],
   'editorial': ['editorial', 'portrait', 'fotodump'],
   'night-out': ['nightout', 'street', 'selfies'],
-  // LATAM cultural
-  'paisa':    ['lifestyle', 'street', 'portrait'],
-  'costena':  ['lifestyle', 'pool', 'fotodump'],
-  'paulista': ['editorial', 'portrait', 'fotodump'],
-  'chilanga': ['street', 'lifestyle', 'fotodump'],
-  'limena':   ['portrait', 'editorial', 'lifestyle'],
+  // Aesthetic categories (neutral)
+  'editorial-chic':     ['editorial', 'portrait', 'fotodump'],
+  'beach-tropical':     ['lifestyle', 'pool', 'fotodump'],
+  'urban-cosmopolitan': ['editorial', 'portrait', 'fotodump'],
+  'street-editorial':   ['street', 'lifestyle', 'fotodump'],
+  'coastal-minimal':    ['portrait', 'editorial', 'lifestyle'],
   // Creator mode (sensual editorial)
-  'lenceria': ['editorial', 'portrait'],
-  'beach-br': ['pool', 'lifestyle', 'fotodump'],
-  'boudoir':  ['portrait', 'editorial'],
+  'lenceria':           ['editorial', 'portrait'],
+  'beach-editorial':    ['pool', 'lifestyle', 'fotodump'],
+  'boudoir':            ['portrait', 'editorial'],
 }
 const DEFAULT_VIBES = ['selfies', 'lifestyle']
 
@@ -1020,11 +1023,11 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
         </div>
       </div>
 
-      {/* LATAM Cultural — wedge differentiator, all users see these */}
+      {/* Aesthetic Quick Styles — universal fashion/lifestyle categories */}
       <div>
-        <span style={labelStyle}>Vibe LATAM</span>
+        <span style={labelStyle}>Estética</span>
         <div style={{ display: 'flex', gap: compact ? 6 : 8, flexWrap: compact ? 'nowrap' : 'wrap', overflowX: compact ? 'auto' : undefined, paddingBottom: compact ? 4 : 0 }}>
-          {LATAM_QUICK_STYLES.map(p => (
+          {AESTHETIC_QUICK_STYLES.map(p => (
             <button key={p.id} className="pill-btn" onClick={() => applyQuickStyle(p)} style={{ padding: compact ? '6px 12px' : '8px 16px', borderRadius: 20, fontSize: compact ? '0.75rem' : '0.8rem', cursor: 'pointer', whiteSpace: 'nowrap', border: `1px solid ${activeQuickStyle === p.id ? 'var(--accent)' : 'var(--border)'}`, background: activeQuickStyle === p.id ? 'var(--accent)' : 'white', color: activeQuickStyle === p.id ? 'white' : 'var(--text-2)', transition: 'all 0.15s' }}>{p.emoji} {p.label}</button>
           ))}
         </div>
