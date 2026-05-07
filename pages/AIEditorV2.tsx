@@ -626,31 +626,85 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         resultUrls = [bgRemovedUrl]
       } else if (activeTool === 'reimagine') {
         const selectedStyles = SOUL_STYLES.filter(s => reimagineStyleIds.has(s.id))
-        const styleDescriptions = selectedStyles.map(s => s.hint || s.name)
-        const direction = reimagineCustom.trim() || styleDescriptions.join('. Also: ') || 'editorial fashion'
-        // Detect if any selected style is non-photorealistic
+        const customDirection = reimagineCustom.trim()
+        const primaryStyle = selectedStyles[0]
+        const accentStyles = selectedStyles.slice(1)
+
+        // Detect stylized vs photorealistic — affects skin rendering rules
         const nonPhotoCategories = new Set(['concept', 'experimental'])
         const nonPhotoKeywords = /anime|pixel|cartoon|3d render|illustration|comic|manga|cel.shad|stylized|vaporwave|glitch|cyanotype|lenticular/i
         const isStylizedReimagine = selectedStyles.some(s => nonPhotoCategories.has(s.category) || nonPhotoKeywords.test(s.hint || '') || nonPhotoKeywords.test(s.name))
-        const skinRule = isStylizedReimagine
-          ? `Render quality consistent with the ${selectedStyles.map(s => s.name).join(' + ') || 'requested'} style. Sharp details, no AI artifacts.`
-          : 'Real human skin with visible pores, fine texture, micro-freckles, natural luminosity. NEVER plastic, airbrushed, or CGI-looking skin.'
-        const reimagineSpec = {
-          task: 'REIMAGINE \u2014 Create a completely NEW photo of this person',
-          identity: { source: 'Base Image + Reference Images', preserve: ['face', 'bone_structure', 'eye_shape', 'skin_tone', 'body_proportions'], rule: 'Person must be instantly recognizable as the SAME individual' },
-          creative_direction: { style: direction, composition: 'NEW pose, NEW angle, NEW framing \u2014 do NOT copy the original photo layout', outfit: `Clothing must match the ${selectedStyles.map(s => s.name).join(' + ') || 'requested'} aesthetic \u2014 IGNORE clothing from reference images`, environment: 'NEW setting and background matching the style direction', lighting: 'Match the mood and atmosphere of the style direction' },
-          rules: { change_everything_except_identity: true, render_quality: skinRule, never_add: ['text', 'words', 'letters', 'labels', 'watermarks', 'brand names', 'logos'] },
-        }
-        const jsonInstruction = `REIMAGINE SPECIFICATION:\n${JSON.stringify(reimagineSpec, null, 2)}`
         const styleNames = selectedStyles.map(s => s.name).join(' + ') || 'editorial'
+        const skinRule = isStylizedReimagine
+          ? `Render quality consistent with the ${styleNames} style. Sharp details, no AI artifacts.`
+          : 'Real human skin with visible pores, fine texture, micro-freckles, natural luminosity. NEVER plastic, airbrushed, or CGI-looking skin.'
+
+        // Build the structured spec — primary + accents pattern fixes the
+        // multi-select "una imagen por cada cosa" bug. When user picks 2-3 styles,
+        // the primary determines outfit + core aesthetic; accents only contribute
+        // setting/environment/lighting. No more "Also:" concatenation.
+        const reimagineSpec: any = {
+          task: 'REIMAGINE — Generate a NEW photograph of the SAME person in a different aesthetic',
+          identity: {
+            source: 'Reference Images (these define WHO the person is)',
+            preserve: [
+              'face_features', 'bone_structure', 'eye_shape', 'eye_color',
+              'lip_shape', 'jaw_line', 'skin_tone',
+              'hair_style', 'hair_color', 'hair_length',  // ← previously missing
+              'body_proportions', 'build', 'height',
+              'distinguishing_features (tattoos, scars, moles)',
+            ],
+            rule: 'The person must be instantly recognizable as the SAME individual. Identity is sacred.',
+          },
+          creative_direction: {
+            ...(customDirection ? { custom_user_direction: customDirection } : {}),
+            primary_style: primaryStyle ? {
+              name: primaryStyle.name,
+              description: primaryStyle.hint || primaryStyle.name,
+              determines: ['outfit/wardrobe', 'core_visual_aesthetic', 'overall_look'],
+            } : {
+              name: 'editorial fashion',
+              description: customDirection || 'professional editorial fashion shoot',
+              determines: ['outfit', 'aesthetic'],
+            },
+            ...(accentStyles.length > 0 ? {
+              accent_styles: accentStyles.map(s => ({
+                name: s.name,
+                description: s.hint || s.name,
+                contributes: ['setting/environment', 'lighting/mood', 'atmosphere'],
+              })),
+              blend_rule: 'Primary style dominates the OUTFIT and CORE LOOK. Accent styles ONLY contribute setting, environment, lighting, and mood. Do NOT generate a hybrid outfit — the wardrobe must come purely from primary style.',
+            } : {}),
+            composition: 'NEW pose, NEW camera angle, NEW framing — do not copy the original photo layout. Vary based on primary style.',
+            aspect_ratio: outputOpts.aspectRatio,
+          },
+          rules: {
+            must_change: ['pose', 'camera_angle', 'framing', 'background', 'outfit'],
+            must_preserve: ['identity', 'physical_features', 'recognizability'],
+            render_quality: skinRule,
+            never_add: ['text', 'words', 'letters', 'labels', 'watermarks', 'brand_names', 'logos'],
+          },
+        }
+
+        const jsonInstruction = `REIMAGINE SPECIFICATION:\n${JSON.stringify(reimagineSpec, null, 2)}`
+
+        // Flat instruction for Grok fallback — Grok works better with direct prose.
+        // Mirrors the JSON structure but in natural language. Keeps primary/accent split.
         const skinFlat = isStylizedReimagine
           ? `Render in authentic ${styleNames} style with sharp details.`
           : 'Skin must look real — visible pores, natural texture, subtle imperfections. NO plastic/airbrushed skin.'
+        const primaryDesc = primaryStyle?.hint || primaryStyle?.name || customDirection || 'editorial fashion'
+        const accentText = accentStyles.length > 0
+          ? ` Setting and lighting should incorporate elements from: ${accentStyles.map(s => s.name).join(', ')} (${accentStyles.map(s => s.hint || s.name).join('; ')}). But the OUTFIT and core look come from the primary style.`
+          : ''
+        const customText = customDirection ? ` User direction: ${customDirection}.` : ''
+
         const charRefs = await getCharRefFiles()
-        // Reimagine uses character reference as base (identity source), not editor input
         const reimagineBase = charRefs.length > 0 ? charRefs[0] : inputFile!
         const reimagineIdentityRefs = charRefs.slice(1)
-        const flatInstruction = `Edit Figure 1: Transform into a ${styleNames} aesthetic photo. CHANGE: background to match ${direction} setting, outfit to fit the ${styleNames} style, pose and framing to be completely new. KEEP EXACTLY: the person's face, bone structure, eye color, skin tone, body proportions from Figure 1${reimagineIdentityRefs.length > 0 ? ' and Figure 2 (identity reference)' : ''}. ${skinFlat} NO text, watermarks, logos, brand names.`
+
+        const flatInstruction = `Edit Figure 1: Generate a NEW photograph of this same person in a different aesthetic. PRIMARY STYLE: ${primaryStyle?.name || 'editorial'} — ${primaryDesc}.${accentText}${customText} CHANGE: pose, camera angle, framing, background, outfit. KEEP EXACTLY: the person's face, bone structure, eye color, eye shape, lip shape, skin tone, hair style, hair color, body proportions${reimagineIdentityRefs.length > 0 ? ' from Figure 1 and Figure 2 (identity references)' : ''}. ${skinFlat} NO text, watermarks, logos, brand names. Aspect ratio: ${outputOpts.aspectRatio}.`
+
         try {
           const results = await editImageWithAI({ baseImage: reimagineBase, referenceImage: reimagineIdentityRefs[0] ?? undefined, instruction: jsonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
