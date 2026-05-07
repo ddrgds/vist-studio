@@ -224,6 +224,10 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   // Substyle section is collapsed by default — opt-in for users who want fine control.
   // Auto-expands when user picks a substyle (e.g. via Quick Start template).
   const [substyleExpanded, setSubstyleExpanded] = useState(false)
+  // Estilo de Render section: collapsed by default after a Quick Start template
+  // is picked or as soon as the user has a known good combo. Reduces step 0
+  // visual weight — most users don't need to revisit style choice.
+  const [styleExpanded, setStyleExpanded] = useState(false)
   useEffect(() => { if (selSubstyle) setSubstyleExpanded(true) }, [selSubstyle])
   const [chipSelections, setChipSelections] = useState<Record<string, string[]>>({
     ethnicity: [], hairStyle: [], hairColor: [], skinTone: [], eyeColor: [],
@@ -1120,72 +1124,79 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               </div>
             )}
 
-            {/* ─── Step 0: Base ───────────────────────────────────── */}
+            {/* ─── Step 0: Look base — simplified ─────────────────── */}
             {step === 0 && (
               <div className="p-6 space-y-5 rounded-xl" style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 12 }}>
+                {/* Estilo de Render — collapsable header showing current selection */}
                 <div>
-                  <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                    <label className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#555' }}>Estilo de Render</label>
-                    <span className="text-[10px]" style={{ color: '#999' }}>
-                      {showAllStyles ? 'Mostrando todos' : 'Fotorrealista recomendado para IG/OF/TikTok'}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    {renderStyles.filter((rs, i) => showAllStyles || i === 0).map((rs) => {
-                      const i = renderStyles.findIndex(r => r.id === rs.id)
-                      return (
-                      <button key={rs.id}
-                        onClick={() => { setSelRenderStyle(i); setSelSubstyle(null) }}
-                        className={`rounded-xl text-left transition-all hover:scale-[1.02] overflow-hidden ${rs.id === 'photorealistic' && !showAllStyles ? 'col-span-3' : ''}`}
-                        style={{
-                          background: 'white',
-                          border: `1.5px solid ${selRenderStyle === i ? '#1A1A1A' : 'rgba(0,0,0,0.06)'}`,
-                          boxShadow: selRenderStyle === i ? '0 0 0 1px #1A1A1A, 0 4px 16px rgba(0,0,0,0.06)' : 'none',
-                          position: 'relative',
-                        }}>
-                        {/* Real thumbnail with gradient backdrop + emoji as fallback */}
-                        <div className="aspect-[4/3] flex items-center justify-center relative overflow-hidden" style={{ background: rs.bg }}>
-                          <img
-                            src={styleThumb(rs.id)}
-                            alt={rs.label}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                            onError={(e) => {
-                              const el = e.currentTarget
-                              el.style.display = 'none'
-                              const fb = el.nextElementSibling as HTMLElement | null
-                              if (fb) fb.style.display = 'flex'
-                            }}
-                          />
-                          <span className="absolute inset-0 hidden items-center justify-center text-4xl"
-                            style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.08))' }}>{rs.icon}</span>
-                          {selRenderStyle === i && (
-                            <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
-                              style={{ background: '#1A1A1A', color: '#fff' }}>✓</span>
-                          )}
-                        </div>
-                        {/* Label area */}
-                        <div className="p-2.5">
-                          <div className="text-[12px] font-semibold leading-tight" style={{ color: selRenderStyle === i ? '#1A1A1A' : '#555' }}>{rs.label}</div>
-                          <div className="text-[9px] mt-0.5 leading-snug" style={{ color: '#999' }}>{rs.desc}</div>
-                          {rs.substyles && (
-                            <div className="text-[8px] mt-1 font-mono" style={{ color: '#1A1A1A', opacity: 0.5 }}>{rs.substyles.length} subestilos</div>
-                          )}
-                        </div>
-                      </button>
-                    )})}
-                  </div>
-                  {/* Toggle "show all styles" — keeps focus on Photorealistic by default */}
                   <button
-                    onClick={() => setShowAllStyles(v => !v)}
-                    className="w-full mt-3 py-2 rounded-xl text-[11px] font-medium transition-all hover:bg-[#FAFAFA]"
-                    style={{ background: 'transparent', color: '#555', border: '1px dashed rgba(0,0,0,0.12)', cursor: 'pointer' }}>
-                    {showAllStyles ? '← Solo fotorrealista' : 'Mostrar otros estilos (anime, 3D, ilustración, etc) ↓'}
+                    onClick={() => setStyleExpanded(v => !v)}
+                    className="w-full flex items-center justify-between py-2.5 px-3 rounded-xl transition-all hover:bg-[#FAFAFA]"
+                    style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)', cursor: 'pointer' }}>
+                    <div className="flex items-center gap-2 text-left flex-wrap">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#555' }}>Estilo</span>
+                      <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded" style={{ background: '#1A1A1A', color: '#fff' }}>
+                        {renderStyles[selRenderStyle]?.label.toUpperCase()}
+                      </span>
+                      {selSubstyle && renderStyles[selRenderStyle]?.substyles && (
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded" style={{ background: '#F3F4F6', color: '#1A1A1A' }}>
+                          {renderStyles[selRenderStyle]?.substyles?.find(s => s.id === selSubstyle)?.label}
+                        </span>
+                      )}
+                      <span className="text-[10px]" style={{ color: '#999' }}>
+                        {styleExpanded ? '· cierra cuando termines' : '· click para cambiar'}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '0.6rem', transition: 'transform .2s', transform: styleExpanded ? 'rotate(180deg)' : 'rotate(0deg)', color: '#999' }}>▼</span>
                   </button>
+
+                  {styleExpanded && (
+                    <div className="mt-3">
+                      <div className="grid grid-cols-3 gap-3">
+                        {renderStyles.filter((rs, i) => showAllStyles || i === 0).map((rs) => {
+                          const i = renderStyles.findIndex(r => r.id === rs.id)
+                          return (
+                          <button key={rs.id}
+                            onClick={() => { setSelRenderStyle(i); setSelSubstyle(null) }}
+                            className={`rounded-xl text-left transition-all hover:scale-[1.02] overflow-hidden ${rs.id === 'photorealistic' && !showAllStyles ? 'col-span-3' : ''}`}
+                            style={{
+                              background: 'white',
+                              border: `1.5px solid ${selRenderStyle === i ? '#1A1A1A' : 'rgba(0,0,0,0.06)'}`,
+                              boxShadow: selRenderStyle === i ? '0 0 0 1px #1A1A1A, 0 4px 16px rgba(0,0,0,0.06)' : 'none',
+                              position: 'relative',
+                            }}>
+                            <div className="aspect-[4/3] flex items-center justify-center relative overflow-hidden" style={{ background: rs.bg }}>
+                              <img src={styleThumb(rs.id)} alt={rs.label} className="w-full h-full object-cover" loading="lazy"
+                                onError={(e) => { const el = e.currentTarget; el.style.display = 'none'; const fb = el.nextElementSibling as HTMLElement | null; if (fb) fb.style.display = 'flex' }}
+                              />
+                              <span className="absolute inset-0 hidden items-center justify-center text-4xl" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.08))' }}>{rs.icon}</span>
+                              {selRenderStyle === i && (
+                                <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: '#1A1A1A', color: '#fff' }}>✓</span>
+                              )}
+                            </div>
+                            <div className="p-2.5">
+                              <div className="text-[12px] font-semibold leading-tight" style={{ color: selRenderStyle === i ? '#1A1A1A' : '#555' }}>{rs.label}</div>
+                              <div className="text-[9px] mt-0.5 leading-snug" style={{ color: '#999' }}>{rs.desc}</div>
+                              {rs.substyles && (
+                                <div className="text-[8px] mt-1 font-mono" style={{ color: '#1A1A1A', opacity: 0.5 }}>{rs.substyles.length} subestilos</div>
+                              )}
+                            </div>
+                          </button>
+                        )})}
+                      </div>
+                      {/* Toggle "show all styles" — inside expanded panel */}
+                      <button
+                        onClick={() => setShowAllStyles(v => !v)}
+                        className="w-full mt-3 py-2 rounded-xl text-[11px] font-medium transition-all hover:bg-[#FAFAFA]"
+                        style={{ background: 'transparent', color: '#555', border: '1px dashed rgba(0,0,0,0.12)', cursor: 'pointer' }}>
+                        {showAllStyles ? '← Solo fotorrealista (recomendado para IG/OF/TikTok)' : 'Mostrar otros estilos (anime, 3D, ilustración, pixel art) ↓'}
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                {/* Substyles — appear when parent style is selected and has substyles */}
-                {renderStyles[selRenderStyle]?.substyles && (
+                {/* Substyles — only show when style section is expanded */}
+                {styleExpanded && renderStyles[selRenderStyle]?.substyles && (
                   <div>
                     {/* Collapsible header */}
                     <button
@@ -1278,26 +1289,29 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                   )}
                 </div>
 
-                <div data-required-empty={showValidation && !selGender ? 'true' : undefined}
-                  style={{ padding: showValidation && !selGender ? '8px' : 0, margin: showValidation && !selGender ? '-8px' : 0,
-                           borderRadius: 8,
-                           background: showValidation && !selGender ? 'rgba(220,38,38,0.04)' : 'transparent',
-                           border: showValidation && !selGender ? '1px solid rgba(220,38,38,0.3)' : '1px solid transparent',
-                           transition: 'all 0.15s' }}>
-                  <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: showValidation && !selGender ? '#DC2626' : '#555' }}>Género <span style={{ color: '#1A1A1A' }}>*</span></label>
-                  <ChipSelector options={GENDERS} selected={selGender ? [selGender] : []}
-                    onSelect={ids => setSelGender(ids[0] || null)} />
-                </div>
+                {/* Género + Edad — side-by-side compact layout */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div data-required-empty={showValidation && !selGender ? 'true' : undefined}
+                    style={{ padding: showValidation && !selGender ? '8px' : 0, margin: showValidation && !selGender ? '-8px' : 0,
+                             borderRadius: 8,
+                             background: showValidation && !selGender ? 'rgba(220,38,38,0.04)' : 'transparent',
+                             border: showValidation && !selGender ? '1px solid rgba(220,38,38,0.3)' : '1px solid transparent',
+                             transition: 'all 0.15s' }}>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: showValidation && !selGender ? '#DC2626' : '#555' }}>Género <span style={{ color: '#1A1A1A' }}>*</span></label>
+                    <ChipSelector options={GENDERS} selected={selGender ? [selGender] : []}
+                      onSelect={ids => setSelGender(ids[0] || null)} />
+                  </div>
 
-                <div data-required-empty={showValidation && !selAge ? 'true' : undefined}
-                  style={{ padding: showValidation && !selAge ? '8px' : 0, margin: showValidation && !selAge ? '-8px' : 0,
-                           borderRadius: 8,
-                           background: showValidation && !selAge ? 'rgba(220,38,38,0.04)' : 'transparent',
-                           border: showValidation && !selAge ? '1px solid rgba(220,38,38,0.3)' : '1px solid transparent',
-                           transition: 'all 0.15s' }}>
-                  <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: showValidation && !selAge ? '#DC2626' : '#555' }}>Edad <span style={{ color: '#1A1A1A' }}>*</span></label>
-                  <ChipSelector options={AGE_RANGES} selected={selAge ? [selAge] : []}
-                    onSelect={ids => setSelAge(ids[0] || null)} />
+                  <div data-required-empty={showValidation && !selAge ? 'true' : undefined}
+                    style={{ padding: showValidation && !selAge ? '8px' : 0, margin: showValidation && !selAge ? '-8px' : 0,
+                             borderRadius: 8,
+                             background: showValidation && !selAge ? 'rgba(220,38,38,0.04)' : 'transparent',
+                             border: showValidation && !selAge ? '1px solid rgba(220,38,38,0.3)' : '1px solid transparent',
+                             transition: 'all 0.15s' }}>
+                    <label className="text-[11px] font-semibold uppercase tracking-wider block mb-2" style={{ color: showValidation && !selAge ? '#DC2626' : '#555' }}>Edad <span style={{ color: '#1A1A1A' }}>*</span></label>
+                    <ChipSelector options={AGE_RANGES} selected={selAge ? [selAge] : []}
+                      onSelect={ids => setSelAge(ids[0] || null)} />
+                  </div>
                 </div>
               </div>
             )}
