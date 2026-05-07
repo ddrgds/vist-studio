@@ -388,6 +388,60 @@ Raw Input: "${text}"`,
   }
 };
 
+/**
+ * Extract structured style descriptors from a reference image using Gemini Vision.
+ * Used by the AI Editor's "Style Reference" feature to convert visual style into
+ * explicit textual descriptors that diffusion models follow more reliably than
+ * raw image references alone.
+ *
+ * Returns a single line of comma-separated style attributes ready to inject into
+ * a generation prompt. Example output:
+ *   "color_palette: warm honey + cream highlights · rendering: cel-shaded
+ *    painterly · lighting: golden hour soft directional from left · mood:
+ *    nostalgic intimate · post: subtle film grain low contrast lifted blacks ·
+ *    DOF: medium-shallow creamy bokeh · texture: smooth with painterly strokes"
+ *
+ * Failure mode: returns empty string if extraction fails — caller should fall
+ * back to using the visual reference alone.
+ */
+export const extractStyleDescriptors = async (imageFile: File): Promise<string> => {
+  const ai = createGeminiClient();
+  try {
+    const part = await fileToPart(imageFile);
+    const response = await withExponentialBackoff(() =>
+      ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: {
+          parts: [
+            part,
+            { text: `You are an expert visual analyst for diffusion model prompt engineering. Analyze this image and extract ONLY its visual STYLE attributes (not the subject or content).
+
+Return a single line with these labeled descriptors, separated by " · ":
+- color_palette: [dominant colors and their relationship — e.g. "warm honey + cream highlights", "cool teal-magenta contrast"]
+- rendering: [technique — e.g. "photorealistic", "cel-shaded painterly", "3D Pixar-style", "anime cel-shading", "oil painting"]
+- lighting: [direction, quality, color temp — e.g. "golden hour soft directional from left", "harsh studio key from front", "blue hour ambient"]
+- mood: [emotional tone — e.g. "nostalgic intimate", "energetic playful", "moody cinematic"]
+- post_processing: [grain, contrast curve, color grade — e.g. "subtle film grain, lifted blacks, low contrast", "high saturation, crushed shadows"]
+- depth_of_field: [e.g. "shallow with creamy bokeh", "deep f/8 sharpness", "medium f/4"]
+- texture: [skin/surface quality — e.g. "smooth painterly", "highly detailed pores", "soft idealized"]
+
+Rules:
+- Only describe STYLE, never describe subject/person/objects.
+- Be specific and concrete, not vague.
+- Output ONLY the single labeled line. No prose, no explanations.
+- Maximum 200 characters total.` },
+          ],
+        },
+        config: { safetySettings: relaxedSafetySettings },
+      })
+    );
+    return (response.text || '').trim().slice(0, 400);
+  } catch (err) {
+    console.warn('Style descriptor extraction failed:', err);
+    return '';
+  }
+};
+
 // ─────────────────────────────────────────────
 // Generate Influencer Image
 // ─────────────────────────────────────────────

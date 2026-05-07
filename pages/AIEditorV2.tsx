@@ -247,7 +247,26 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
   // When set, this image is passed as additional reference + prompt is augmented.
   const [styleRefFile, setStyleRefFile] = useState<File | null>(null)
   const [styleRefPreview, setStyleRefPreview] = useState<string | null>(null)
+  const [styleRefDescriptors, setStyleRefDescriptors] = useState<string>('')
+  const [styleRefAnalyzing, setStyleRefAnalyzing] = useState(false)
   const styleRefInputRef = useRef<HTMLInputElement>(null)
+
+  // Extract structured style descriptors when a style ref is set. Cached in
+  // state so we don't re-call Gemini on every generation. The descriptors are
+  // a much stronger signal than the visual ref alone — diffusion models follow
+  // explicit textual style attributes more reliably than visual style transfer.
+  const setStyleReference = async (file: File) => {
+    setStyleRefFile(file)
+    setStyleRefPreview(URL.createObjectURL(file))
+    setStyleRefDescriptors('')
+    setStyleRefAnalyzing(true)
+    try {
+      const { extractStyleDescriptors } = await import('../services/geminiService')
+      const descriptors = await extractStyleDescriptors(file)
+      setStyleRefDescriptors(descriptors)
+    } catch { /* fail silent — style ref still works as visual reference */ }
+    finally { setStyleRefAnalyzing(false) }
+  }
   const [reimagineStyleIds, setReimagineStyleIds] = useState<Set<string>>(new Set())
   const [reimagineCategory, setReimagineCategory] = useState<SoulStyleCategory | 'all'>('all')
   const [reimagineSearch, setReimagineSearch] = useState('')
@@ -476,17 +495,44 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
       if (activeTool === 'freeai' || activeTool === 'dazz') {
         const charRefs = await getCharRefFiles()
         const userInstruction = freePrompt.trim()
-        // When user has provided a style reference, augment the prompt to tell
-        // the model to match that style. This solves the consistency problem:
-        // same prompt + different base image was producing different styles.
-        // Now the style ref locks the visual aesthetic.
-        const instruction = styleRefFile
-          ? `${userInstruction}. STYLE REFERENCE: Match the EXACT visual style, color grading, rendering quality, and aesthetic of the style reference image (the last image attached). Apply it to the base image while keeping the base image's subject identity.`
-          : userInstruction
-        const isSensitive = NB2_SENSITIVE_ES.test(userInstruction)
-        // Build refs array — char refs first (for identity), style ref last so
-        // it's clearly distinguishable as "the style image" in the references.
+        // Build refs in EXPLICIT order so the JSON spec can address them by index.
+        // Order: BASE (always image_1), then char refs (image_2..N), then STYLE_REF (last).
         const refsForGen = [...charRefs, ...(styleRefFile ? [styleRefFile] : [])]
+        const styleRefIndex = styleRefFile ? (1 + charRefs.length + 1) : null  // image_N where N = base(1) + char count + 1
+
+        // When user has provided a style reference, build a JSON spec that
+        // assigns explicit roles per image. This is dramatically more reliable
+        // than a prose-style "match the style" instruction — diffusion models
+        // follow structured role assignments more consistently.
+        let instruction: string
+        if (styleRefFile) {
+          const styleSpec = {
+            task: 'STYLE-MATCHED EDIT',
+            image_1_BASE: {
+              role: 'CONTENT — the photo to edit',
+              use_for: ['subject', 'person_identity', 'composition_layout'],
+              user_edit_intent: userInstruction,
+            },
+            ...(charRefs.length > 0 ? {
+              image_identity_refs: {
+                role: 'IDENTITY anchors — preserve face/body of this person',
+                positions: `image_2 to image_${1 + charRefs.length}`,
+              },
+            } : {}),
+            [`image_${styleRefIndex}_STYLE_REFERENCE`]: {
+              role: 'STYLE ANCHOR — visual aesthetic only, NOT subject',
+              extract: ['color_palette', 'rendering_technique', 'lighting_style', 'color_grading', 'mood', 'post_processing', 'depth_of_field', 'contrast_curve', 'texture_quality'],
+              ignore_completely: ['subject', 'person', 'objects', 'scene_content', 'composition'],
+              ...(styleRefDescriptors ? { extracted_descriptors: styleRefDescriptors } : {}),
+            },
+            blend_rule: 'Apply user_edit_intent to BASE. Transfer ALL visual style attributes from STYLE REFERENCE (color, rendering, lighting, mood, post-processing). Subject identity stays from BASE. Style identity copies from STYLE REFERENCE. The output must be visually indistinguishable from the STYLE REFERENCE in terms of color grading, rendering style, and atmosphere.',
+            output: 'A photograph that combines: subject from BASE + visual style from STYLE REFERENCE. The new image should look like it was shot/rendered by the same artist who made the STYLE REFERENCE.',
+          }
+          instruction = `STYLE-MATCHED EDIT SPECIFICATION:\n${JSON.stringify(styleSpec, null, 2)}`
+        } else {
+          instruction = userInstruction
+        }
+        const isSensitive = NB2_SENSITIVE_ES.test(userInstruction)
         // editImageWithAI only takes a single referenceImage — for multi-ref we
         // need to call editWithNB2Fal directly to pass all of them.
         try {
@@ -895,23 +941,35 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           <input ref={styleRefInputRef} type="file" accept="image/*" className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0]
-              if (f) {
-                setStyleRefFile(f)
-                setStyleRefPreview(URL.createObjectURL(f))
-              }
+              if (f) setStyleReference(f)
               if (e.target) e.target.value = ''
             }} />
           {styleRefFile && styleRefPreview ? (
-            <div className="flex gap-2 items-center p-2 rounded-xl" style={{ background: '#F8F8F8', border: '1px solid rgba(0,0,0,0.06)' }}>
-              <img src={styleRefPreview} className="w-14 h-14 rounded-lg object-cover shrink-0" alt="Style ref" style={{ border: '1px solid rgba(0,0,0,0.08)' }} />
-              <div className="flex-1 min-w-0">
-                <div className="text-[11px] font-semibold" style={{ color: '#1A1A1A' }}>Estilo bloqueado</div>
-                <div className="text-[10px]" style={{ color: '#666' }}>El nuevo output va a copiar este look</div>
+            <div className="space-y-2">
+              <div className="flex gap-2 items-center p-2 rounded-xl" style={{ background: '#F8F8F8', border: '1px solid rgba(0,0,0,0.06)' }}>
+                <img src={styleRefPreview} className="w-14 h-14 rounded-lg object-cover shrink-0" alt="Style ref" style={{ border: '1px solid rgba(0,0,0,0.08)' }} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-[11px] font-semibold" style={{ color: '#1A1A1A' }}>
+                    {styleRefAnalyzing ? '⟳ Analizando estilo...' : '✓ Estilo bloqueado'}
+                  </div>
+                  <div className="text-[10px]" style={{ color: '#666' }}>
+                    {styleRefAnalyzing ? 'Gemini extrayendo descriptores' : 'Outputs van a copiar este look'}
+                  </div>
+                </div>
+                <button onClick={() => { setStyleRefFile(null); setStyleRefPreview(null); setStyleRefDescriptors('') }}
+                  className="px-2 py-1 rounded-lg text-[10px]" style={{ background: 'transparent', color: '#999', border: '1px solid rgba(0,0,0,0.08)' }}>
+                  Quitar
+                </button>
               </div>
-              <button onClick={() => { setStyleRefFile(null); setStyleRefPreview(null) }}
-                className="px-2 py-1 rounded-lg text-[10px]" style={{ background: 'transparent', color: '#999', border: '1px solid rgba(0,0,0,0.08)' }}>
-                Quitar
-              </button>
+              {/* Show extracted descriptors so user knows what was detected */}
+              {styleRefDescriptors && !styleRefAnalyzing && (
+                <details className="text-[9px]" style={{ color: '#888' }}>
+                  <summary style={{ cursor: 'pointer', listStyle: 'none' }}>▸ Estilo detectado por AI</summary>
+                  <div className="mt-1.5 p-2 rounded-lg leading-relaxed" style={{ background: '#FAFAFA', border: '1px solid rgba(0,0,0,0.04)', color: '#666', fontFamily: "'JetBrains Mono', monospace", fontSize: '9px' }}>
+                    {styleRefDescriptors}
+                  </div>
+                </details>
+              )}
             </div>
           ) : (
             <div className="flex gap-2">
@@ -926,8 +984,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                   if (!url) return
                   try {
                     const file = await urlToFile(url, 'style-ref.png')
-                    setStyleRefFile(file)
-                    setStyleRefPreview(url)
+                    await setStyleReference(file)
                     toast.success('Última foto guardada como estilo')
                   } catch { toast.error('No se pudo cargar la última foto') }
                 }}
@@ -940,7 +997,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
             </div>
           )}
           <div className="text-[9px] mt-1.5" style={{ color: '#999', lineHeight: 1.4 }}>
-            Útil cuando tienes un resultado que te gustó (ej. conversión 2D→3D) y quieres aplicar ese mismo estilo a otra foto.
+            La AI analiza tu foto de estilo y extrae descriptores específicos (color, lighting, render). Más confiable que solo pasar la imagen.
           </div>
         </div>
       </>}
