@@ -41,6 +41,17 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   const responseHeaders = new Headers(response.headers);
   Object.entries(corsHeaders()).forEach(([k, v]) => responseHeaders.set(k, v));
 
+  // Log validation errors server-side for debugging — body is consumed once,
+  // re-emit for the client. Helps diagnose 422s (which fal returns with a JSON
+  // body listing the offending field but the SDK swallows it on the client).
+  if (response.status === 422 || response.status === 400) {
+    try {
+      const cloned = response.clone();
+      const bodyText = await cloned.text();
+      console.error(`[fal-api ${response.status}] ${targetUrl}: ${bodyText.slice(0, 1000)}`);
+    } catch { /* best-effort */ }
+  }
+
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,

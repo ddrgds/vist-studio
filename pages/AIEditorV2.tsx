@@ -1548,17 +1548,29 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                   style={{ background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', fontSize: '0.75rem', cursor: 'pointer' }}>✕</button>
 
                 {resultImage ? (
-                  /* Result available — comparison slider */
+                  /* Result available — comparison slider when there's an original,
+                     otherwise just show the result (e.g. Reimaginar without uploaded
+                     base, where the original was a character reference). */
                   <>
                     <div className="w-full lg:max-w-[min(520px,_42vw)] rounded-xl lg:rounded-2xl overflow-hidden"
                       style={{ ...cardStyle, height: 'min(55vh, 520px)', minHeight: 250 }}>
-                      <ImageComparison
-                        leftImage={inputImage}
-                        rightImage={resultImage}
-                        altLeft="Original"
-                        altRight="Resultado"
-                        className="w-full h-full rounded-2xl"
-                      />
+                      {inputImage ? (
+                        <ImageComparison
+                          leftImage={inputImage}
+                          rightImage={resultImage}
+                          altLeft="Original"
+                          altRight="Resultado"
+                          className="w-full h-full rounded-2xl"
+                        />
+                      ) : (
+                        <img
+                          src={resultImage}
+                          alt="Resultado"
+                          className="w-full h-full object-contain bg-[#FAFAFA] cursor-zoom-in"
+                          onClick={() => setEditorLightbox(resultImage)}
+                          title="Click para ampliar"
+                        />
+                      )}
                     </div>
                     <div className="flex gap-2 flex-wrap justify-center">
                       <button onClick={async () => {

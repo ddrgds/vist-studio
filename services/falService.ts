@@ -1569,15 +1569,28 @@ export const editWithNB2Fal = async (
 
   const allImages = [baseImage, ...referenceImages.slice(0, 13)]; // max 14 total
   const imageUrls = await Promise.all(allImages.map(f => uploadToFalStorage(f)));
+
+  // Defensive: filter out empty/invalid URLs that snuck through (data URIs,
+  // empty strings). fal-ai/nano-banana-2/edit returns 422 if any URL is bad.
+  const validImageUrls = imageUrls.filter(u => typeof u === 'string' && u.startsWith('http'));
+  if (validImageUrls.length === 0) {
+    throw new Error('NB2 Edit: no valid image URLs after upload. Re-upload the base image.');
+  }
+  if (validImageUrls.length !== imageUrls.length) {
+    console.warn(`NB2 Edit: dropped ${imageUrls.length - validImageUrls.length} invalid URL(s) before request`);
+  }
+
   if (onProgress) onProgress(30);
 
-  // Wrap instruction with safety intent context
-  const wrappedPrompt = `[Professional virtual influencer content creation] ${instruction}`;
+  // Wrap instruction with safety intent context. Defensive: if instruction is
+  // empty (which would 422 fal), fall back to a generic edit instruction.
+  const cleanInstruction = (instruction || '').trim() || 'Generate a professional photo of this person';
+  const wrappedPrompt = `[Professional virtual influencer content creation] ${cleanInstruction}`;
 
   const result = await fal.subscribe(FalModel.NanoBanana2Edit, {
     input: {
       prompt: wrappedPrompt,
-      image_urls: imageUrls,
+      image_urls: validImageUrls,
       num_images: 1,
       resolution: options?.resolution || '1K',
       safety_tolerance: '6', // most permissive — respects body proportions
@@ -1587,6 +1600,12 @@ export const editWithNB2Fal = async (
     onQueueUpdate: (update: any) => {
       if (update.status === 'IN_PROGRESS' && onProgress) onProgress(Math.min(88, 35 + Math.random() * 50));
     },
+  }).catch((err: any) => {
+    // Surface the actual fal error body so we can debug instead of a generic ValidationError.
+    const detail = err?.body || err?.response?.body || err?.message || String(err);
+    console.error('[editWithNB2Fal] fal returned error:', detail);
+    console.error('[editWithNB2Fal] payload sent:', { prompt: wrappedPrompt.slice(0, 200), image_urls: validImageUrls, resolution: options?.resolution || '1K' });
+    throw err;
   }) as any;
 
   const r = unwrap(result);
@@ -1838,10 +1857,17 @@ export const editImageWithGrokFal = async (
     fullPrompt = `Edit only the requested elements. ${compiledEdit}`;
   }
 
+  // Defensive: filter empty/invalid URLs and ensure prompt non-empty.
+  const allUrls = [imageUrl, ...refUrls].filter(u => typeof u === 'string' && u.startsWith('http'));
+  if (allUrls.length === 0) {
+    throw new Error('Grok Edit: no valid image URLs after upload.');
+  }
+  const cleanPrompt = (fullPrompt || '').trim() || 'Generate a professional photo';
+
   const result = await fal.subscribe('xai/grok-imagine-image/edit', {
     input: {
-      prompt: fullPrompt,
-      image_urls: [imageUrl, ...refUrls],
+      prompt: cleanPrompt,
+      image_urls: allUrls,
       num_images: 1,
       output_format: 'jpeg',
     },
@@ -1850,6 +1876,11 @@ export const editImageWithGrokFal = async (
         onProgress(Math.min(88, 40 + Math.random() * 45));
       }
     },
+  }).catch((err: any) => {
+    const detail = err?.body || err?.response?.body || err?.message || String(err);
+    console.error('[editImageWithGrokFal] fal returned error:', detail);
+    console.error('[editImageWithGrokFal] payload sent:', { prompt: cleanPrompt.slice(0, 200), image_urls: allUrls });
+    throw err;
   }) as any;
 
   if (onProgress) onProgress(90);
