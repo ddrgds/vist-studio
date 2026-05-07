@@ -1152,44 +1152,53 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
 
                   {styleExpanded && (
                     <div className="mt-3">
-                      <div className="grid grid-cols-3 gap-3">
+                      {/* Compact tile grid — uniform sizing, no hero card. Inspired by Higgsfield's style catalog. */}
+                      <div className={`grid gap-2 ${showAllStyles ? 'grid-cols-3 lg:grid-cols-4' : 'grid-cols-1'}`}>
                         {renderStyles.filter((rs, i) => showAllStyles || i === 0).map((rs) => {
                           const i = renderStyles.findIndex(r => r.id === rs.id)
+                          const isPhotorealOnly = rs.id === 'photorealistic' && !showAllStyles
                           return (
                           <button key={rs.id}
                             onClick={() => { setSelRenderStyle(i); setSelSubstyle(null) }}
-                            className={`rounded-xl text-left transition-all hover:scale-[1.02] overflow-hidden ${rs.id === 'photorealistic' && !showAllStyles ? 'col-span-3' : ''}`}
+                            className="rounded-lg text-left transition-all hover:scale-[1.02] overflow-hidden flex items-center gap-2"
                             style={{
                               background: 'white',
                               border: `1.5px solid ${selRenderStyle === i ? '#1A1A1A' : 'rgba(0,0,0,0.06)'}`,
-                              boxShadow: selRenderStyle === i ? '0 0 0 1px #1A1A1A, 0 4px 16px rgba(0,0,0,0.06)' : 'none',
+                              boxShadow: selRenderStyle === i ? '0 0 0 1px #1A1A1A' : 'none',
                               position: 'relative',
+                              padding: isPhotorealOnly ? '10px' : '0',
+                              flexDirection: isPhotorealOnly ? 'row' : 'column',
                             }}>
-                            <div className="aspect-[4/3] flex items-center justify-center relative overflow-hidden" style={{ background: rs.bg }}>
+                            <div className={`flex items-center justify-center relative overflow-hidden shrink-0 ${isPhotorealOnly ? 'w-12 h-12 rounded-md' : 'w-full aspect-square'}`} style={{ background: rs.bg }}>
                               <img src={styleThumb(rs.id)} alt={rs.label} className="w-full h-full object-cover" loading="lazy"
                                 onError={(e) => { const el = e.currentTarget; el.style.display = 'none'; const fb = el.nextElementSibling as HTMLElement | null; if (fb) fb.style.display = 'flex' }}
                               />
-                              <span className="absolute inset-0 hidden items-center justify-center text-4xl" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.08))' }}>{rs.icon}</span>
-                              {selRenderStyle === i && (
-                                <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: '#1A1A1A', color: '#fff' }}>✓</span>
+                              <span className="absolute inset-0 hidden items-center justify-center text-xl" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.08))' }}>{rs.icon}</span>
+                              {selRenderStyle === i && !isPhotorealOnly && (
+                                <span className="absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: '#1A1A1A', color: '#fff' }}>✓</span>
                               )}
                             </div>
-                            <div className="p-2.5">
-                              <div className="text-[12px] font-semibold leading-tight" style={{ color: selRenderStyle === i ? '#1A1A1A' : '#555' }}>{rs.label}</div>
-                              <div className="text-[9px] mt-0.5 leading-snug" style={{ color: '#999' }}>{rs.desc}</div>
-                              {rs.substyles && (
-                                <div className="text-[8px] mt-1 font-mono" style={{ color: '#1A1A1A', opacity: 0.5 }}>{rs.substyles.length} subestilos</div>
+                            <div className={isPhotorealOnly ? 'flex-1 min-w-0' : 'px-1.5 py-1.5'}>
+                              <div className="text-[11px] font-semibold leading-tight truncate" style={{ color: selRenderStyle === i ? '#1A1A1A' : '#555' }}>{rs.label}</div>
+                              {isPhotorealOnly && (
+                                <div className="text-[10px] mt-0.5 leading-snug" style={{ color: '#666' }}>Recomendado para IG/OF/TikTok</div>
+                              )}
+                              {!isPhotorealOnly && rs.substyles && (
+                                <div className="text-[8px] mt-0.5 font-mono" style={{ color: '#1A1A1A', opacity: 0.4 }}>{rs.substyles.length} subestilos</div>
                               )}
                             </div>
+                            {isPhotorealOnly && selRenderStyle === i && (
+                              <span className="text-[10px] font-bold" style={{ color: '#1A1A1A' }}>✓</span>
+                            )}
                           </button>
                         )})}
                       </div>
                       {/* Toggle "show all styles" — inside expanded panel */}
                       <button
                         onClick={() => setShowAllStyles(v => !v)}
-                        className="w-full mt-3 py-2 rounded-xl text-[11px] font-medium transition-all hover:bg-[#FAFAFA]"
-                        style={{ background: 'transparent', color: '#555', border: '1px dashed rgba(0,0,0,0.12)', cursor: 'pointer' }}>
-                        {showAllStyles ? '← Solo fotorrealista (recomendado para IG/OF/TikTok)' : 'Mostrar otros estilos (anime, 3D, ilustración, pixel art) ↓'}
+                        className="w-full mt-2 py-1.5 rounded-lg text-[10px] font-medium transition-all hover:bg-[#FAFAFA]"
+                        style={{ background: 'transparent', color: '#999', border: '1px dashed rgba(0,0,0,0.10)', cursor: 'pointer' }}>
+                        {showAllStyles ? '← Solo fotorrealista' : 'Ver otros estilos (anime, 3D, ilustración, pixel art) →'}
                       </button>
                     </div>
                   )}
@@ -1228,14 +1237,14 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                     </button>
 
                     {substyleExpanded && (
-                    <div className="grid grid-cols-3 lg:grid-cols-4 gap-2 mt-3">
+                    <div className="grid grid-cols-4 lg:grid-cols-5 gap-1.5 mt-3">
                       {renderStyles[selRenderStyle].substyles!.map(sub => {
                         const active = selSubstyle === sub.id
                         return (
                           <button key={sub.id}
                             onClick={() => setSelSubstyle(active ? null : sub.id)}
-                            title={sub.desc}
-                            className="rounded-lg overflow-hidden transition-all hover:scale-[1.03] text-left"
+                            title={`${sub.label}${sub.desc ? ' · ' + sub.desc : ''}`}
+                            className="rounded-lg overflow-hidden transition-all hover:scale-[1.04] text-left"
                             style={{
                               background: 'white',
                               border: `1.5px solid ${active ? '#1A1A1A' : 'rgba(0,0,0,0.06)'}`,
@@ -1254,17 +1263,16 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                                   if (fb) fb.style.display = 'flex'
                                 }}
                               />
-                              <span className="absolute inset-0 hidden items-center justify-center text-2xl">{sub.icon}</span>
+                              <span className="absolute inset-0 hidden items-center justify-center text-lg">{sub.icon}</span>
                               {active && (
-                                <span className="absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold"
+                                <span className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full flex items-center justify-center text-[7px] font-bold"
                                   style={{ background: '#1A1A1A', color: '#fff' }}>✓</span>
                               )}
-                            </div>
-                            <div className="px-1.5 py-1">
-                              <div className="text-[10px] font-semibold leading-tight truncate" style={{ color: active ? '#1A1A1A' : '#555' }}>{sub.label}</div>
-                              {sub.desc && (
-                                <div className="text-[8px] mt-0.5 truncate" style={{ color: '#999' }}>{sub.desc}</div>
-                              )}
+                              {/* Label overlay on bottom of thumbnail — saves vertical space */}
+                              <div className="absolute bottom-0 left-0 right-0 px-1 py-0.5"
+                                style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.7))' }}>
+                                <div className="text-[9px] font-semibold leading-tight truncate text-white">{sub.label}</div>
+                              </div>
                             </div>
                           </button>
                         )
