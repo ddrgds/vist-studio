@@ -242,6 +242,12 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
   const [selBg, setSelBg] = useState(0)
   const [bgMode, setBgMode] = useState<'Preset'|'Upload'|'Prompt'>('Preset')
   const [freePrompt, setFreePrompt] = useState('')
+  // Style reference for freeai/dazz — solves consistency problem when applying
+  // same prompt to different base images (user gets different style each run).
+  // When set, this image is passed as additional reference + prompt is augmented.
+  const [styleRefFile, setStyleRefFile] = useState<File | null>(null)
+  const [styleRefPreview, setStyleRefPreview] = useState<string | null>(null)
+  const styleRefInputRef = useRef<HTMLInputElement>(null)
   const [reimagineStyleIds, setReimagineStyleIds] = useState<Set<string>>(new Set())
   const [reimagineCategory, setReimagineCategory] = useState<SoulStyleCategory | 'all'>('all')
   const [reimagineSearch, setReimagineSearch] = useState('')
@@ -469,16 +475,42 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
 
       if (activeTool === 'freeai' || activeTool === 'dazz') {
         const charRefs = await getCharRefFiles()
-        const instruction = freePrompt.trim()
-        const isSensitive = NB2_SENSITIVE_ES.test(instruction)
+        const userInstruction = freePrompt.trim()
+        // When user has provided a style reference, augment the prompt to tell
+        // the model to match that style. This solves the consistency problem:
+        // same prompt + different base image was producing different styles.
+        // Now the style ref locks the visual aesthetic.
+        const instruction = styleRefFile
+          ? `${userInstruction}. STYLE REFERENCE: Match the EXACT visual style, color grading, rendering quality, and aesthetic of the style reference image (the last image attached). Apply it to the base image while keeping the base image's subject identity.`
+          : userInstruction
+        const isSensitive = NB2_SENSITIVE_ES.test(userInstruction)
+        // Build refs array — char refs first (for identity), style ref last so
+        // it's clearly distinguishable as "the style image" in the references.
+        const refsForGen = [...charRefs, ...(styleRefFile ? [styleRefFile] : [])]
+        // editImageWithAI only takes a single referenceImage — for multi-ref we
+        // need to call editWithNB2Fal directly to pass all of them.
         try {
-          const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
-          if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
-          resultUrls = results
+          if (refsForGen.length > 1) {
+            // Multiple refs: char identity + style ref. Use editWithNB2Fal directly
+            // (supports up to 14 image_urls via fal-ai/nano-banana-2/edit).
+            const fal = await loadFal()
+            const results = await fal.editWithNB2Fal(
+              inputFile!, instruction, refsForGen, (p) => setProgress(p),
+              { resolution: outputOpts.imageSize === '1K' ? '1K' : '2K' },
+              abortRef.current?.signal,
+            )
+            if (!results || results.length === 0) throw new Error('NB2 returned empty')
+            resultUrls = results
+          } else {
+            // Standard single-ref path
+            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
+            if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
+            resultUrls = results
+          }
         } catch (nb2Err) {
           console.warn('Wan/NB2 freeai failed, trying Grok:', nb2Err)
           // Pass bypassCompiler when sensitive — avoids re-introducing trigger words via promptCompiler.
-          resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, instruction, (p) => setProgress(p), undefined, charRefs, isSensitive)
+          resultUrls = await (await loadFal()).editImageWithGrokFal(inputFile!, instruction, (p) => setProgress(p), undefined, refsForGen, isSensitive)
         }
       } else if (activeTool === 'relight') {
         const preset = relightPresets[selPreset]
@@ -849,6 +881,67 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
             style={{ ...pill(false), color: '#777', fontSize: '10px' }}>
             {showAllSuggestions ? '− Menos' : '+ Más'}
           </button>
+        </div>
+
+        {/* Style reference — solves consistency problem when applying same prompt
+            to different base images. Pass a previous "good" result as style anchor. */}
+        <div>
+          <div style={{ ...sectionLabel, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+            <span>🎨 Foto de estilo <span style={{ fontWeight: 400, opacity: 0.6 }}>(opcional)</span></span>
+            <span style={{ fontSize: '9px', fontWeight: 400, color: '#999', textTransform: 'none' }}>
+              Mantiene mismo look entre fotos
+            </span>
+          </div>
+          <input ref={styleRefInputRef} type="file" accept="image/*" className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              if (f) {
+                setStyleRefFile(f)
+                setStyleRefPreview(URL.createObjectURL(f))
+              }
+              if (e.target) e.target.value = ''
+            }} />
+          {styleRefFile && styleRefPreview ? (
+            <div className="flex gap-2 items-center p-2 rounded-xl" style={{ background: '#F8F8F8', border: '1px solid rgba(0,0,0,0.06)' }}>
+              <img src={styleRefPreview} className="w-14 h-14 rounded-lg object-cover shrink-0" alt="Style ref" style={{ border: '1px solid rgba(0,0,0,0.08)' }} />
+              <div className="flex-1 min-w-0">
+                <div className="text-[11px] font-semibold" style={{ color: '#1A1A1A' }}>Estilo bloqueado</div>
+                <div className="text-[10px]" style={{ color: '#666' }}>El nuevo output va a copiar este look</div>
+              </div>
+              <button onClick={() => { setStyleRefFile(null); setStyleRefPreview(null) }}
+                className="px-2 py-1 rounded-lg text-[10px]" style={{ background: 'transparent', color: '#999', border: '1px solid rgba(0,0,0,0.08)' }}>
+                Quitar
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <button onClick={() => styleRefInputRef.current?.click()}
+                className="flex-1 py-2 px-3 rounded-xl text-[11px] font-medium transition-all"
+                style={{ background: 'transparent', border: '1px dashed rgba(0,0,0,0.15)', color: '#555' }}>
+                ↑ Subir foto de estilo
+              </button>
+              {(resultImage || editHistory[0]) && (
+                <button onClick={async () => {
+                  const url = resultImage || editHistory[0]
+                  if (!url) return
+                  try {
+                    const file = await urlToFile(url, 'style-ref.png')
+                    setStyleRefFile(file)
+                    setStyleRefPreview(url)
+                    toast.success('Última foto guardada como estilo')
+                  } catch { toast.error('No se pudo cargar la última foto') }
+                }}
+                  title="Usa la última foto generada como referencia de estilo"
+                  className="py-2 px-3 rounded-xl text-[11px] font-medium transition-all whitespace-nowrap"
+                  style={{ background: '#1A1A1A', color: '#fff', border: 'none' }}>
+                  ← Usar última
+                </button>
+              )}
+            </div>
+          )}
+          <div className="text-[9px] mt-1.5" style={{ color: '#999', lineHeight: 1.4 }}>
+            Útil cuando tienes un resultado que te gustó (ej. conversión 2D→3D) y quieres aplicar ese mismo estilo a otra foto.
+          </div>
         </div>
       </>}
 
