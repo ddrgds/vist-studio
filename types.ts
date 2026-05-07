@@ -293,7 +293,7 @@ export enum FalModel {
   Flux2ProGen = 'fal-ai/flux-2-pro',                      // FLUX.2 Pro — text-to-image, JSON prompts, safety_tolerance
   NanoBanana2 = 'fal-ai/nano-banana-2',                      // NB2 t2i via fal.ai — safety_tolerance 6, thinking mode
   NanoBanana2Edit = 'fal-ai/nano-banana-2/edit',             // NB2 Edit via fal.ai — safety_tolerance 6, 14 refs
-  GrokImagineGen = 'xai/grok-imagine-image',               // Grok Imagine — text-to-image via fal.ai, permissive
+  GrokImagineGen = 'xai/grok-imagine-image/quality/text-to-image',  // Grok Imagine Quality (Pro) t2i — better skin, $0.05/img, permissive · upgraded 2026-05-07
   Seedream45 = 'fal-ai/bytedance/seedream/v4.5/text-to-image',   // ByteDance — photorealism 4K
   Seedream50 = 'fal-ai/bytedance/seedream/v5/lite/text-to-image', // ByteDance — web search + reasoning
   ZImageTurbo = 'fal-ai/z-image/turbo',                  // Alibaba Tongyi-MAI 6B — uncensored, $0.005/mp · 2025

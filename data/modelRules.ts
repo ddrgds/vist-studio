@@ -106,8 +106,9 @@ const MODEL_FAMILY_MAP: Record<string, ModelFamily> = {
   // Z-Image — ultra-short, 30 token limit
   'fal-ai/z-image/turbo':              'Z_IMAGE_TURBO',
 
-  // Grok generation
-  'xai/grok-imagine-image':            'RUNWAY_GROK',
+  // Grok generation (standard + quality variant)
+  'xai/grok-imagine-image':                       'RUNWAY_GROK',
+  'xai/grok-imagine-image/quality/text-to-image': 'RUNWAY_GROK',
 
   // Ideogram
   'ideogram-v3':                       'IDEOGRAM',
