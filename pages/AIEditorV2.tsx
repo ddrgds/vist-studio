@@ -26,26 +26,27 @@ const InpaintingModal = lazy(() => import('../components/InpaintingModal'))
 const SkinEnhancerModal = lazy(() => import('../components/SkinEnhancerModal'))
 const ImageEditor = lazy(() => import('../components/ImageEditor'))
 
-// Primary tools — always visible in toolbar
+// Primary tools — always visible in toolbar.
+// shortLabel: single word fits 56px toolbar tile. label: full descriptive name.
 const PRIMARY_TOOLS = [
-  { id:'freeai', label:'AI Edit', icon:'\u2728', desc:'Edita con cualquier instruccion en lenguaje natural' },
-  { id:'reimagine', label:'Reimaginar', icon:'\u2726', desc:'Crea una foto nueva con 100+ estilos', featured: true },
-  { id:'dazz', label:'Efectos', icon:'\uD83C\uDFAC', desc:'Camaras analogicas, filtros de pelicula y efectos' },
-  { id:'realskin', label:'Piel', icon:'\uD83E\uDDF4', desc:'Agrega poros naturales, textura e imperfecciones' },
+  { id:'reimagine', label:'Reimaginar', shortLabel:'Reimaginar', icon:'\u2726', desc:'Crea una foto nueva con 100+ estilos', featured: true },
+  { id:'freeai', label:'AI Edit', shortLabel:'AI Edit', icon:'\u2728', desc:'Edita con cualquier instruccion en lenguaje natural' },
+  { id:'dazz', label:'Efectos', shortLabel:'Efectos', icon:'\uD83C\uDFAC', desc:'Camaras analogicas, filtros de pelicula y efectos' },
+  { id:'realskin', label:'Piel realista', shortLabel:'Piel', icon:'\uD83E\uDDF4', desc:'Agrega poros naturales, textura e imperfecciones' },
 ]
 
-// Secondary tools — shown in "Otros" expandable
+// Secondary tools — shown in "Más" expandable
 const SECONDARY_TOOLS = [
-  { id:'relight', label:'Reiluminar', icon:'\uD83D\uDCA1', desc:'Cambia la iluminacion de cualquier foto' },
-  { id:'faceswap', label:'Cambio de Rostro', icon:'\uD83C\uDFAD', desc:'Intercambia rostros entre imagenes' },
-  { id:'tryon', label:'Try-On Virtual', icon:'\uD83D\uDC57', desc:'Prueba ropa y accesorios' },
-  { id:'rotate360', label:'Angulos 360\u00b0', icon:'\uD83D\uDD04', desc:'Genera vistas desde todos los angulos' },
-  { id:'composite', label:'Escena / Fondo', icon:'\uD83C\uDFAC', desc:'Cambia el fondo o coloca en otra escena' },
-  { id:'enhance', label:'Mejorar', icon:'\u2728', desc:'Mejora la calidad y los detalles' },
-  { id:'style', label:'Transferencia de Estilo', icon:'\uD83C\uDFA8', desc:'Aplica estilos artisticos' },
-  { id:'inpaint', label:'Inpaint', icon:'\uD83D\uDD8C\uFE0F', desc:'Edita areas especificas' },
-  { id:'rembg', label:'Quitar Fondo', icon:'\u2702\uFE0F', desc:'Elimina el fondo al instante' },
-  { id:'expand', label:'Expandir', icon:'\u2194\uFE0F', desc:'Expande la imagen mas alla de sus bordes' },
+  { id:'tryon', label:'Try-On Virtual', shortLabel:'Try-On', icon:'\uD83D\uDC57', desc:'Prueba ropa y accesorios' },
+  { id:'composite', label:'Cambiar Escena', shortLabel:'Escena', icon:'\uD83C\uDFAC', desc:'Cambia el fondo o coloca en otra escena' },
+  { id:'relight', label:'Reiluminar', shortLabel:'Luz', icon:'\uD83D\uDCA1', desc:'Cambia la iluminacion de cualquier foto' },
+  { id:'faceswap', label:'Cambio de Rostro', shortLabel:'Rostro', icon:'\uD83C\uDFAD', desc:'Intercambia rostros entre imagenes' },
+  { id:'rotate360', label:'Angulos 360\u00b0', shortLabel:'Ángulos', icon:'\uD83D\uDD04', desc:'Genera vistas desde todos los angulos' },
+  { id:'enhance', label:'Mejorar calidad', shortLabel:'Mejorar', icon:'\u2728', desc:'Mejora la calidad y los detalles' },
+  { id:'style', label:'Transferir Estilo', shortLabel:'Estilo', icon:'\uD83C\uDFA8', desc:'Aplica estilos artisticos' },
+  { id:'inpaint', label:'Inpaint', shortLabel:'Inpaint', icon:'\uD83D\uDD8C\uFE0F', desc:'Edita areas especificas' },
+  { id:'rembg', label:'Quitar Fondo', shortLabel:'Sin BG', icon:'\u2702\uFE0F', desc:'Elimina el fondo al instante' },
+  { id:'expand', label:'Expandir', shortLabel:'Expandir', icon:'\u2194\uFE0F', desc:'Expande la imagen mas alla de sus bordes' },
 ]
 
 // Combined for logic that needs all tools
@@ -223,7 +224,9 @@ const routeEdit = async (
 
 export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
   // ── All state (identical to AIEditor) ──────────────────────────
-  const [activeTool, setActiveTool] = useState('freeai')
+  // Default to 'reimagine' — most visual + 100+ presets, easier first touch for
+  // aspirantes than the open-ended 'freeai' prompt box.
+  const [activeTool, setActiveTool] = useState('reimagine')
   const [selPreset, setSelPreset] = useState(0)
   const [relightDir, setRelightDir] = useState('front')
   const [relightIntensity, setRelightIntensity] = useState('normal')
@@ -294,7 +297,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
   const sheetRef = useRef<HTMLDivElement>(null)
   const dragStartY = useRef(0)
 
-  const { decrementCredits, restoreCredits } = useProfile()
+  const { decrementCredits, restoreCredits, profile } = useProfile()
   const characters = useCharacterStore(s => s.characters)
 
   const pipelineCharId = usePipelineStore(s => s.characterId)
@@ -650,6 +653,23 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
       const validUrls = resultUrls.filter(Boolean)
       if (validUrls.length > 0) {
         resultUrls = validUrls
+        // Server-side safety check — blocks outputs that cross the line for
+        // the user's content mode (standard 0.30 / creator 0.70). Fail-open.
+        try {
+          const { checkImageSafety } = await import('../services/safetyService')
+          const mode = profile?.contentMode === 'creator' ? 'creator' : 'standard'
+          const safety = await checkImageSafety(resultUrls[0], mode)
+          if (!safety.allowed && !safety.error) {
+            restoreCredits(cost)
+            const reason = safety.label === 'topless' ? 'topless'
+              : safety.label === 'explicit' ? 'contenido explícito'
+              : 'contenido sensual no permitido en Modo Standard'
+            toast.error(`Edición bloqueada: ${reason}. Tus créditos se restauraron.`)
+            setProcessing(false); setProgress(0); abortRef.current = null
+            return
+          }
+        } catch { /* fail-open */ }
+
         // Wan via DashScope now supports native 2K — no AuraSR upscale needed
         setResultImage(resultUrls[0])
         setEditHistory(prev => [resultUrls[0], ...prev].slice(0, 20))
@@ -1349,8 +1369,15 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
       <div className="hidden lg:flex items-center h-12 px-5 gap-3 shrink-0" style={{ ...cardStyle, borderRadius: 0, borderBottom: '1px solid rgba(0,0,0,0.06)', boxShadow: 'none' }}>
         <span className="text-lg">{currentTool.icon}</span>
         <span className="text-[13px] font-semibold" style={{ color: '#111' }}>{currentTool.label}</span>
+        <span className="text-[11px]" style={{ color: '#999' }}>· {currentTool.desc}</span>
         <div className="flex-1" />
-        {inputImage && <span className="text-[10px]" style={{ color: '#999' }}>Clic en imagen para ver en grande</span>}
+        {profile?.contentMode === 'creator' && (
+          <span title="Modo Creator activo — presets sensuales habilitados (+18)"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.6rem', padding: '3px 8px', borderRadius: 999, background: '#1A1A1A', color: '#fff', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.05em' }}>
+            ✦ CREATOR · +18
+          </span>
+        )}
+        {inputImage && <span className="text-[10px]" style={{ color: '#999' }}>Clic en imagen para ampliar</span>}
       </div>
 
       {/* ── MAIN BODY ─────────────────────────────────────────── */}
@@ -1370,7 +1397,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
               title={t.label}>
               <span className="text-[16px] leading-none" style={{ filter: activeTool === t.id ? 'none' : 'grayscale(1) opacity(0.6)' }}>{t.icon}</span>
               <span className="text-[8px] mt-1 font-medium leading-tight text-center" style={{ color: activeTool === t.id ? '#FFF' : '#999' }}>
-                {t.label.split(' ')[0]}
+                {(t as any).shortLabel ?? t.label}
               </span>
             </button>
           ))}
@@ -1381,7 +1408,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
             style={{ background: showAllTools || SECONDARY_TOOLS.some(t => t.id === activeTool) ? 'rgba(0,0,0,0.05)' : 'transparent', color: '#777' }}
             title="Más herramientas">
             <span className="text-[14px]">⋯</span>
-            <span className="text-[7px] font-medium" style={{ color: '#999' }}>Otros</span>
+            <span className="text-[7px] font-medium" style={{ color: '#999' }}>Más</span>
           </button>
           {showAllTools && SECONDARY_TOOLS.map(t => (
             <button key={t.id} onClick={() => setActiveTool(t.id)}
@@ -1393,7 +1420,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
               title={t.label}>
               <span className="text-[14px] leading-none" style={{ filter: activeTool === t.id ? 'none' : 'grayscale(1) opacity(0.6)' }}>{t.icon}</span>
               <span className="text-[7px] mt-0.5 font-medium leading-tight text-center" style={{ color: activeTool === t.id ? '#FFF' : '#999' }}>
-                {t.label.split(' ')[0]}
+                {(t as any).shortLabel ?? t.label}
               </span>
             </button>
           ))}
@@ -1589,7 +1616,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                       className="w-[52px] py-1.5 rounded-xl flex flex-col items-center justify-center shrink-0 transition-all gap-0.5"
                       style={{ background: activeTool === t.id ? '#1A1A1A' : 'transparent', color: activeTool === t.id ? '#FFF' : '#333' }}>
                       <span className="text-[12px] leading-none" style={{ filter: activeTool === t.id ? 'none' : 'grayscale(1) opacity(0.7)' }}>{t.icon}</span>
-                      <span className="text-[6px] leading-tight font-semibold" style={{ color: activeTool === t.id ? '#FFF' : '#666' }}>{t.label.split(' ')[0]}</span>
+                      <span className="text-[6px] leading-tight font-semibold" style={{ color: activeTool === t.id ? '#FFF' : '#666' }}>{(t as any).shortLabel ?? t.label}</span>
                     </button>
                   ))}
                 </div>
@@ -1606,7 +1633,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                       border: ('featured' in t && t.featured && activeTool !== t.id) ? '1px solid rgba(0,0,0,0.12)' : '1px solid transparent',
                     }}>
                     <span className="text-[14px] leading-none" style={{ filter: activeTool === t.id ? 'none' : 'grayscale(1) opacity(0.7)' }}>{t.icon}</span>
-                    <span className="text-[7px] leading-tight font-semibold" style={{ color: activeTool === t.id ? '#FFF' : '#666' }}>{t.label.split(' ')[0]}</span>
+                    <span className="text-[7px] leading-tight font-semibold" style={{ color: activeTool === t.id ? '#FFF' : '#666' }}>{(t as any).shortLabel ?? t.label}</span>
                   </button>
                 ))}
                 <button onClick={() => setShowAllTools(p => !p)}
