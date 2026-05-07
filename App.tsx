@@ -27,10 +27,12 @@ const Landing = lazy(() => import('./pages/Landing'));
 const PricingPage = lazy(() => import('./components/PricingPage'));
 const ProfilePage = lazy(() => import('./components/ProfilePage'));
 const ExportModal = lazy(() => import('./features/export/ExportModal'));
-const VideoStudio = lazy(() => import('./pages/VideoStudio'));
+// VideoStudio removed from active routes 2026-05-07. File still exists in
+// pages/VideoStudio.tsx for future Reel Composer rewrite (Wan 2.7 + templates).
+// Re-import + add to pages map when rebuilding.
 const OnboardingWizard = lazy(() => import('./components/OnboardingWizard').then(m => ({ default: m.OnboardingWizard })));
 
-export type Page = 'create' | 'studio' | 'editor' | 'gallery' | 'characters' | 'pricing' | 'profile' | 'video';
+export type Page = 'create' | 'studio' | 'editor' | 'gallery' | 'characters' | 'pricing' | 'profile';
 
 function App() {
   return (
@@ -159,7 +161,6 @@ function AuthenticatedApp() {
     characters: <CharacterGallery onNav={handleNav} />,
     pricing: <PricingPage />,
     profile: <ProfilePage />,
-    video: <VideoStudio onNav={handleNav} />,
   };
 
   return (

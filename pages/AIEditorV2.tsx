@@ -28,25 +28,26 @@ const ImageEditor = lazy(() => import('../components/ImageEditor'))
 
 // Primary tools — always visible in toolbar.
 // shortLabel: single word fits 56px toolbar tile. label: full descriptive name.
+// cost: approximate credit cost shown in tooltip (helps user decide).
 const PRIMARY_TOOLS = [
-  { id:'reimagine', label:'Reimaginar', shortLabel:'Reimaginar', icon:'\u2726', desc:'Crea una foto nueva con 100+ estilos', featured: true },
-  { id:'freeai', label:'AI Edit', shortLabel:'AI Edit', icon:'\u2728', desc:'Edita con cualquier instruccion en lenguaje natural' },
-  { id:'dazz', label:'Efectos', shortLabel:'Efectos', icon:'\uD83C\uDFAC', desc:'Camaras analogicas, filtros de pelicula y efectos' },
-  { id:'realskin', label:'Piel realista', shortLabel:'Piel', icon:'\uD83E\uDDF4', desc:'Agrega poros naturales, textura e imperfecciones' },
+  { id:'reimagine', label:'Reimaginar', shortLabel:'Reimaginar', icon:'\u2726', desc:'Crea una foto nueva con 100+ estilos', featured: true, cost:'~13cr' },
+  { id:'freeai', label:'AI Edit', shortLabel:'AI Edit', icon:'\u2728', desc:'Edita con cualquier instruccion en lenguaje natural', cost:'~13cr' },
+  { id:'dazz', label:'Efectos', shortLabel:'Efectos', icon:'\uD83C\uDFAC', desc:'Camaras analogicas, filtros de pelicula y efectos', cost:'~13cr' },
+  { id:'realskin', label:'Piel realista', shortLabel:'Piel', icon:'\uD83E\uDDF4', desc:'Agrega poros naturales, textura e imperfecciones', cost:'6cr' },
 ]
 
 // Secondary tools — shown in "Más" expandable
 const SECONDARY_TOOLS = [
-  { id:'tryon', label:'Try-On Virtual', shortLabel:'Try-On', icon:'\uD83D\uDC57', desc:'Prueba ropa y accesorios' },
-  { id:'composite', label:'Cambiar Escena', shortLabel:'Escena', icon:'\uD83C\uDFAC', desc:'Cambia el fondo o coloca en otra escena' },
-  { id:'relight', label:'Reiluminar', shortLabel:'Luz', icon:'\uD83D\uDCA1', desc:'Cambia la iluminacion de cualquier foto' },
-  { id:'faceswap', label:'Cambio de Rostro', shortLabel:'Rostro', icon:'\uD83C\uDFAD', desc:'Intercambia rostros entre imagenes' },
-  { id:'rotate360', label:'Angulos 360\u00b0', shortLabel:'Ángulos', icon:'\uD83D\uDD04', desc:'Genera vistas desde todos los angulos' },
-  { id:'enhance', label:'Mejorar calidad', shortLabel:'Mejorar', icon:'\u2728', desc:'Mejora la calidad y los detalles' },
-  { id:'style', label:'Transferir Estilo', shortLabel:'Estilo', icon:'\uD83C\uDFA8', desc:'Aplica estilos artisticos' },
-  { id:'inpaint', label:'Inpaint', shortLabel:'Inpaint', icon:'\uD83D\uDD8C\uFE0F', desc:'Edita areas especificas' },
-  { id:'rembg', label:'Quitar Fondo', shortLabel:'Sin BG', icon:'\u2702\uFE0F', desc:'Elimina el fondo al instante' },
-  { id:'expand', label:'Expandir', shortLabel:'Expandir', icon:'\u2194\uFE0F', desc:'Expande la imagen mas alla de sus bordes' },
+  { id:'tryon', label:'Try-On Virtual', shortLabel:'Try-On', icon:'\uD83D\uDC57', desc:'Prueba ropa y accesorios', cost:'14cr' },
+  { id:'composite', label:'Cambiar Escena', shortLabel:'Escena', icon:'\uD83C\uDFAC', desc:'Cambia el fondo o coloca en otra escena', cost:'6cr' },
+  { id:'relight', label:'Reiluminar', shortLabel:'Luz', icon:'\uD83D\uDCA1', desc:'Cambia la iluminacion de cualquier foto', cost:'6cr' },
+  { id:'faceswap', label:'Cambio de Rostro', shortLabel:'Rostro', icon:'\uD83C\uDFAD', desc:'Intercambia rostros entre imagenes', cost:'6cr' },
+  { id:'rotate360', label:'Angulos 360\u00b0', shortLabel:'Ángulos', icon:'\uD83D\uDD04', desc:'Genera vistas desde todos los angulos', cost:'19cr' },
+  { id:'enhance', label:'Mejorar calidad', shortLabel:'Mejorar', icon:'\u2728', desc:'Mejora la calidad y los detalles', cost:'9cr' },
+  { id:'style', label:'Transferir Estilo', shortLabel:'Estilo', icon:'\uD83C\uDFA8', desc:'Aplica estilos artisticos', cost:'6cr' },
+  { id:'inpaint', label:'Inpaint', shortLabel:'Inpaint', icon:'\uD83D\uDD8C\uFE0F', desc:'Edita areas especificas', cost:'6cr' },
+  { id:'rembg', label:'Quitar Fondo', shortLabel:'Sin BG', icon:'\u2702\uFE0F', desc:'Elimina el fondo al instante', cost:'6cr' },
+  { id:'expand', label:'Expandir', shortLabel:'Expandir', icon:'\u2194\uFE0F', desc:'Expande la imagen mas alla de sus bordes', cost:'14cr' },
 ]
 
 // Combined for logic that needs all tools
@@ -669,6 +670,12 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
             return
           }
         } catch { /* fail-open */ }
+
+        // Free-tier watermark — premium users get clean output. Fail-open.
+        try {
+          const { watermarkIfFreeTier } = await import('../services/watermarkService')
+          resultUrls[0] = await watermarkIfFreeTier(resultUrls[0], profile?.subscriptionPlan, profile?.subscriptionStatus)
+        } catch { /* fail open */ }
 
         // Wan via DashScope now supports native 2K — no AuraSR upscale needed
         setResultImage(resultUrls[0])
@@ -1394,7 +1401,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                 color: activeTool === t.id ? '#FFF' : '#555',
                 border: ('featured' in t && t.featured && activeTool !== t.id) ? '1px solid rgba(0,0,0,0.1)' : 'none',
               }}
-              title={t.label}>
+              title={`${t.label} · ${(t as any).cost ?? '—'}\n${t.desc}`}>
               <span className="text-[16px] leading-none" style={{ filter: activeTool === t.id ? 'none' : 'grayscale(1) opacity(0.6)' }}>{t.icon}</span>
               <span className="text-[8px] mt-1 font-medium leading-tight text-center" style={{ color: activeTool === t.id ? '#FFF' : '#999' }}>
                 {(t as any).shortLabel ?? t.label}
@@ -1417,7 +1424,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
                 background: activeTool === t.id ? '#1A1A1A' : 'transparent',
                 color: activeTool === t.id ? '#FFF' : '#555',
               }}
-              title={t.label}>
+              title={`${t.label} · ${(t as any).cost ?? '—'}\n${t.desc}`}>
               <span className="text-[14px] leading-none" style={{ filter: activeTool === t.id ? 'none' : 'grayscale(1) opacity(0.6)' }}>{t.icon}</span>
               <span className="text-[7px] mt-0.5 font-medium leading-tight text-center" style={{ color: activeTool === t.id ? '#FFF' : '#999' }}>
                 {(t as any).shortLabel ?? t.label}

@@ -443,16 +443,18 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
         })}
       </div>
 
-      {/* Status filter pills */}
-      <div className="flex gap-2 px-8 pb-2 flex-wrap">
+      {/* Status filter pills — workflow stages */}
+      <div className="flex gap-2 px-4 lg:px-8 pb-2 flex-wrap items-center">
+        <span className="text-[9px] font-mono uppercase tracking-wider mr-1" style={{ color: '#999' }}>Estado</span>
         {([
-          { id: null, label: 'Todos los estados' },
-          { id: 'borrador', label: '📝 Borrador' },
-          { id: 'editado', label: '✏️ Editado' },
-          { id: 'aprobado', label: '✓ Aprobado' },
-          { id: 'publicado', label: '↑ Publicado' },
+          { id: null, label: 'Todos', tip: 'Mostrar todas las fotos sin filtrar por estado' },
+          { id: 'borrador', label: '📝 Borrador', tip: 'Recién generada — aún no decides qué hacer' },
+          { id: 'editado', label: '✏️ Editado', tip: 'Pasó por el Editor IA con cambios aplicados' },
+          { id: 'aprobado', label: '✓ Aprobado', tip: 'Lista para postear — tu mejor versión' },
+          { id: 'publicado', label: '↑ Publicado', tip: 'Ya posteada en redes sociales' },
         ] as const).map(s => (
           <button key={String(s.id)} onClick={() => setStatusFilter(s.id as string | null)}
+            title={s.tip}
             className="pill-btn px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all"
             style={{
               background: statusFilter === s.id ? '#1A1A1A' : '#fff',
@@ -480,16 +482,16 @@ export function Gallery({ onNav, onEditImage, onExportImage }: { onNav?: (page: 
         <div className="px-8 pb-8 flex items-center justify-center" style={{ minHeight: '50vh' }}>
           <div className="px-10 py-12 text-center rounded-2xl" style={{ maxWidth: '460px', background: '#fff', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
             <div className="text-3xl mb-4">✦</div>
-            <h2 className="text-lg mb-2 font-semibold" style={{ color: '#111' }}>Tu galería está vacía</h2>
+            <h2 className="text-lg mb-2 font-semibold" style={{ color: '#111' }}>Aún no tienes contenido</h2>
             <p className="text-[12px] mb-6" style={{ color:'#999' }}>
-              ¡Empieza a crear! Dirige una toma o edita una imagen con herramientas AI.
+              Genera tu primera foto en Studio o edita una imagen en el Editor IA. Aparecerán aquí para que las apruebes y publiques.
             </p>
-            <div className="flex gap-3 justify-center">
+            <div className="flex gap-3 justify-center flex-wrap">
               <button onClick={() => onNav?.('studio')} className="px-5 py-2.5 text-[12px] rounded-xl font-medium transition-all" style={{ background: '#1A1A1A', color: '#fff' }}>
-                ◎ Dirigir una Escena
+                📸 Crear primera foto
               </button>
-              <button onClick={() => onNav?.('studio')} className="px-5 py-2.5 text-[12px] rounded-xl font-medium transition-all" style={{ background: 'transparent', color: '#555', border: '1px solid rgba(0,0,0,0.12)' }}>
-                ✦ Abrir Editor AI
+              <button onClick={() => onNav?.('editor')} className="px-5 py-2.5 text-[12px] rounded-xl font-medium transition-all" style={{ background: 'transparent', color: '#555', border: '1px solid rgba(0,0,0,0.12)' }}>
+                ✦ Abrir Editor IA
               </button>
             </div>
           </div>

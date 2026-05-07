@@ -539,6 +539,12 @@ export function StudioV2({ onNav, onEditImage, onExportImage }: {
           }
         } catch { /* fail open — don't punish users for classifier outage */ }
 
+        // Free-tier watermark — premium users get clean output. Fail-open.
+        try {
+          const { watermarkIfFreeTier } = await import('../services/watermarkService')
+          results[0] = await watermarkIfFreeTier(results[0], profile?.subscriptionPlan, profile?.subscriptionStatus)
+        } catch { /* fail open */ }
+
         triggerFlash(); setHeroImage(results[0]); pipelineSetHeroShot(results[0])
         useGalleryStore.getState().addItems(results.map(url => ({ id: crypto.randomUUID(), url, prompt: scenario || 'Studio hero shot', model: eng?.userFriendlyName || 'gemini-nb2', timestamp: Date.now(), type: 'create' as const, characterId: charIdAtStart, tags: ['studio', 'hero-shot'], source: 'director' as const })))
         if (charIdAtStart) useCharacterStore.getState().incrementUsage(charIdAtStart)
