@@ -203,7 +203,10 @@ const ChipSelector = ({
 // ─── Main component ─────────────────────────────────────────────────
 export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   // Mode
-  const [mode, setMode] = useState<'create' | 'import'>('import')
+  // Default to 'create' — wedge is "construye tu modelo desde cero". Most users
+  // arriving don't have reference photos yet (that's what they're here to make).
+  // Existing creators with photos can switch to 'import' tab.
+  const [mode, setMode] = useState<'create' | 'import'>('create')
   const [step, setStep] = useState(0)
 
   // Step 0 — Base
@@ -337,7 +340,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
     setChipSelections(prev => ({ ...prev, [category]: ids }))
   }
 
-  const steps = ['Base', 'Apariencia', 'Estilo y Personalidad']
+  const steps = ['Look base', 'Apariencia', 'Vibe + accesorios']
   const isPhotorealistic = renderStyles[selRenderStyle]?.id === 'photorealistic'
 
   // Build the full prompt for generation.
@@ -851,16 +854,19 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
   return (
     <div className="min-h-screen" style={{ background: '#F3F4F6' }}>
       <div className="px-4 md:px-8 pt-8 pb-2">
-        <h1 className="text-2xl font-bold" style={{ color: '#1A1A1A' }}>
-          Crear Personaje
+        <h1 className="text-2xl font-bold" style={{ fontFamily: "'Instrument Serif', serif", color: '#1A1A1A' }}>
+          Construye tu modelo virtual
         </h1>
-        <p className="text-[11px] font-semibold uppercase tracking-wider mt-1" style={{ color: '#999' }}>Crea desde cero o importa imágenes de referencia</p>
+        <p className="text-[12px] mt-1" style={{ color: '#666' }}>
+          Define su look, vibe LATAM y estilo. Cada foto que generes después mantendrá su misma identidad.
+        </p>
       </div>
 
-      {/* Mode Toggle — Import is recommended (faster + better identity) */}
+      {/* Mode Toggle — Create is default (wedge: build your model from scratch).
+          Import only matters for users who already have reference photos. */}
       <div className="px-4 md:px-8 py-4">
         <div className="flex w-full md:w-auto md:inline-flex rounded-xl p-1" style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)' }}>
-          {(['import', 'create'] as const).map(m => (
+          {(['create', 'import'] as const).map(m => (
             <button key={m} onClick={() => { setMode(m); setCharacterSaved(false) }}
               className="px-5 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2"
               style={{
@@ -868,8 +874,8 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                 color: mode === m ? '#fff' : '#999',
                 boxShadow: mode === m ? '0 2px 8px rgba(0,0,0,.08)' : 'none',
               }}>
-              {m === 'import' ? '\u2191 Importar Imágenes' : '\u2295 Crear desde Cero'}
-              {m === 'import' && (
+              {m === 'create' ? '\u2728 Construir desde Cero' : '\u2191 Importar Fotos'}
+              {m === 'create' && (
                 <span className="text-[9px] font-mono px-1.5 py-0.5 rounded"
                   style={{ background: mode === m ? 'rgba(255,255,255,0.2)' : '#FEF3C7', color: mode === m ? '#fff' : '#92400E' }}>
                   RECOMENDADO
@@ -879,9 +885,9 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
           ))}
         </div>
         <div className="text-[10px] mt-2" style={{ color: '#999' }}>
-          {mode === 'import'
-            ? '✨ Sube fotos del personaje real — la AI extrae rasgos automáticamente. Mejor identidad.'
-            : '🎨 Diseña desde cero con estilo, género, edad, atributos. Más control creativo.'}
+          {mode === 'create'
+            ? '🎨 Diseña tu modelo virtual desde cero. Define estilo, vibe LATAM, look. Listo para sesiones.'
+            : '✨ ¿Ya tienes fotos? Súbelas y la AI extrae los rasgos para mantener consistencia.'}
         </div>
       </div>
 
@@ -1025,7 +1031,7 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                 )
               })}
 
-              {/* Enhancer toggle + Engine wrench */}
+              {/* Enhancer toggle + Engine wrench (only show motor when not auto) */}
               <div className="flex items-center gap-1.5 shrink-0 ml-auto">
                 <button
                   onClick={() => {
@@ -1041,20 +1047,25 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                     color: useEnhancer ? '#FFF' : '#999',
                     border: `1px solid ${useEnhancer ? '#1A1A1A' : 'rgba(0,0,0,0.08)'}`,
                   }}
-                  title={useEnhancer ? 'Enhancer ON: Gemini expande los chips en descriptores únicos' : 'Enhancer OFF: chips pasan directo al motor'}>
-                  ✦ AI
+                  title={useEnhancer ? 'Mejorar prompt con AI: ON. La AI enriquece tu descripción para resultados más detallados.' : 'Mejorar prompt con AI: OFF. Tu descripción pasa tal cual al motor.'}>
+                  ✦ AI {useEnhancer ? 'ON' : 'OFF'}
                 </button>
-                <div className="relative">
-                  <button onClick={() => setShowEngineModal(v => !v)}
-                    className="h-8 px-2.5 rounded-xl flex items-center gap-1.5 text-[10px] font-medium relative"
-                    style={{ background: 'white', border: '1px solid rgba(0,0,0,0.08)', color: '#555' }}
-                    title="Cambiar motor de generación (avanzado). Auto elige el mejor según el caso.">
-                    ⚙️ Motor: <span style={{ fontFamily: "'JetBrains Mono', monospace", color: '#1A1A1A', fontWeight: 600 }}>{selectedEngine === 'auto' ? 'Auto' : selectedEngine.split(':').pop()?.toUpperCase()}</span>
-                    {selectedEngine !== 'auto' && (
-                      <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full" style={{ background: '#1A1A1A' }} />
-                    )}
-                  </button>
-                </div>
+                {/* Engine selector — subtle when auto (default), prominent when overridden */}
+                <button onClick={() => setShowEngineModal(v => !v)}
+                  className="h-8 px-2 rounded-xl flex items-center gap-1 text-[10px] font-medium relative"
+                  style={{
+                    background: selectedEngine !== 'auto' ? '#1A1A1A' : 'transparent',
+                    border: `1px solid ${selectedEngine !== 'auto' ? '#1A1A1A' : 'rgba(0,0,0,0.06)'}`,
+                    color: selectedEngine !== 'auto' ? '#fff' : '#bbb',
+                  }}
+                  title={selectedEngine === 'auto'
+                    ? 'Motor: Auto (NB2 → Grok cascade). Click para overrides avanzados.'
+                    : 'Motor manual. Click para cambiar o volver a Auto.'}>
+                  ⚙️
+                  {selectedEngine !== 'auto' && (
+                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>{selectedEngine.split(':').pop()?.toUpperCase()}</span>
+                  )}
+                </button>
               </div>
               </div>
             </div>
@@ -1072,18 +1083,25 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
               </div>
             )}
 
-            {/* ─── Quick Start templates — only at step 0 with no name yet ─── */}
+            {/* ─── Quick Start templates — LATAM-first vibes for AI Operator wedge ─── */}
             {step === 0 && !name.trim() && (
               <div className="p-5 mb-4 rounded-xl" style={{ background: 'linear-gradient(135deg, #FAFAFA, #F3F4F6)', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 12 }}>
-                <div className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: '#555' }}>
-                  ⚡ Empieza con una plantilla <span className="text-[10px] font-normal normal-case" style={{ color: '#999' }}>· o crea desde cero</span>
+                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                  <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#555' }}>
+                    ⚡ Vibes populares <span className="text-[10px] font-normal normal-case" style={{ color: '#999' }}>· o configura abajo</span>
+                  </div>
+                  <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ background: '#1A1A1A', color: '#fff', letterSpacing: '0.05em' }}>LATAM</span>
                 </div>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
                   {[
-                    { id:'influencer-fashion', label:'Influencer Fashion', icon:'👗', desc:'Mujer joven editorial', renderIdx:0, substyle:'editorial', gender:'female', age:'20s' },
-                    { id:'streamer-gamer', label:'Streamer', icon:'🎮', desc:'3D Pixar casual', renderIdx:2, substyle:'pixar', gender:'female', age:'20s' },
-                    { id:'anime-oc', label:'Anime OC', icon:'🌸', desc:'Personaje anime', renderIdx:1, substyle:'shojo', gender:'female', age:'20s' },
-                    { id:'brand-mascot', label:'Mascota Marca', icon:'✨', desc:'Estilizado memorable', renderIdx:4, substyle:'soft-anime', gender:'female', age:'20s' },
+                    // LATAM cultural vibes — wedge differentiator, all photorealistic
+                    { id:'paisa', label:'Paisa Chic', icon:'🌹', desc:'Medellín polished', renderIdx:0, substyle:'editorial', gender:'female', age:'20s' },
+                    { id:'costena', label:'Costeña Caribe', icon:'🌴', desc:'Caribe sun-kissed', renderIdx:0, substyle:'ugc', gender:'female', age:'20s' },
+                    { id:'paulista', label:'Paulista', icon:'🇧🇷', desc:'São Paulo cosmopolitan', renderIdx:0, substyle:'editorial', gender:'female', age:'20s' },
+                    { id:'chilanga', label:'Chilanga', icon:'🌵', desc:'CDMX street + refined', renderIdx:0, substyle:'street', gender:'female', age:'20s' },
+                    { id:'limena', label:'Limeña Moderna', icon:'🪶', desc:'Lima costera elegante', renderIdx:0, substyle:'editorial', gender:'female', age:'20s' },
+                    // Non-LATAM vibe for variety
+                    { id:'influencer-fitness', label:'Fitness IG', icon:'💪', desc:'Activewear lifestyle', renderIdx:0, substyle:'ugc', gender:'female', age:'20s' },
                   ].map(t => (
                     <button key={t.id}
                       onClick={() => {
@@ -1100,6 +1118,9 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                     </button>
                   ))}
                 </div>
+                <div className="text-[10px] mt-3 text-center" style={{ color: '#999' }}>
+                  ¿Buscas anime, 3D o pixel art? Configura el estilo abajo.
+                </div>
               </div>
             )}
 
@@ -1107,16 +1128,24 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
             {step === 0 && (
               <div className="p-6 space-y-5 rounded-xl" style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 12 }}>
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wider block mb-3" style={{ color: '#555' }}>Estilo de Render</label>
+                  <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                    <label className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#555' }}>Estilo de Render</label>
+                    <span className="text-[10px]" style={{ color: '#999' }}>
+                      {showAllStyles ? 'Mostrando todos' : 'Fotorrealista recomendado para IG/OF/TikTok'}
+                    </span>
+                  </div>
                   <div className="grid grid-cols-3 gap-3">
-                    {renderStyles.map((rs, i) => (
+                    {renderStyles.filter((rs, i) => showAllStyles || i === 0).map((rs) => {
+                      const i = renderStyles.findIndex(r => r.id === rs.id)
+                      return (
                       <button key={rs.id}
                         onClick={() => { setSelRenderStyle(i); setSelSubstyle(null) }}
-                        className="rounded-xl text-left transition-all hover:scale-[1.02] overflow-hidden"
+                        className={`rounded-xl text-left transition-all hover:scale-[1.02] overflow-hidden ${rs.id === 'photorealistic' && !showAllStyles ? 'col-span-3' : ''}`}
                         style={{
                           background: 'white',
                           border: `1.5px solid ${selRenderStyle === i ? '#1A1A1A' : 'rgba(0,0,0,0.06)'}`,
                           boxShadow: selRenderStyle === i ? '0 0 0 1px #1A1A1A, 0 4px 16px rgba(0,0,0,0.06)' : 'none',
+                          position: 'relative',
                         }}>
                         {/* Real thumbnail with gradient backdrop + emoji as fallback */}
                         <div className="aspect-[4/3] flex items-center justify-center relative overflow-hidden" style={{ background: rs.bg }}>
@@ -1148,8 +1177,15 @@ export function UploadCharacter({ onNav }: { onNav?: (page: string) => void }) {
                           )}
                         </div>
                       </button>
-                    ))}
+                    )})}
                   </div>
+                  {/* Toggle "show all styles" — keeps focus on Photorealistic by default */}
+                  <button
+                    onClick={() => setShowAllStyles(v => !v)}
+                    className="w-full mt-3 py-2 rounded-xl text-[11px] font-medium transition-all hover:bg-[#FAFAFA]"
+                    style={{ background: 'transparent', color: '#555', border: '1px dashed rgba(0,0,0,0.12)', cursor: 'pointer' }}>
+                    {showAllStyles ? '← Solo fotorrealista' : 'Mostrar otros estilos (anime, 3D, ilustración, etc) ↓'}
+                  </button>
                 </div>
 
                 {/* Substyles — appear when parent style is selected and has substyles */}
