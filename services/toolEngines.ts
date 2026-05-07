@@ -129,10 +129,10 @@ export async function grokEdit(imageUrl: string, prompt: string): Promise<string
   // Compile through Flash Lite (EDIT_INPAINT rules: delta only)
   const compiled = await compilePrompt({
     subjectIntent: prompt,
-    targetModel: 'xai/grok-imagine-image/edit',
+    targetModel: 'xai/grok-imagine-image/quality/edit',
     isEdit: true,
   });
-  const result = await fal.subscribe('xai/grok-imagine-image/edit', {
+  const result = await fal.subscribe('xai/grok-imagine-image/quality/edit', {
     input: {
       image_urls: [imageUrl],
       prompt: compiled,
@@ -147,7 +147,7 @@ export async function grokEdit(imageUrl: string, prompt: string): Promise<string
 
 /** Grok edit with multiple images (face swap) */
 async function grokEditMulti(imageUrls: string[], prompt: string): Promise<string> {
-  const result = await fal.subscribe('xai/grok-imagine-image/edit', {
+  const result = await fal.subscribe('xai/grok-imagine-image/quality/edit', {
     input: {
       image_urls: imageUrls,
       prompt,

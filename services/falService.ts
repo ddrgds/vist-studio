@@ -1815,7 +1815,10 @@ export const faceSwapWithFal = async (
 };
 
 // ─────────────────────────────────────────────
-// Grok Imagine Edit — xai/grok-imagine-image/edit (fal.ai)
+// Grok Imagine Edit (Quality/Pro) — xai/grok-imagine-image/quality/edit (fal.ai).
+// Upgraded 2026-05-07 from standard `xai/grok-imagine-image/edit` ($0.022, plastic skin)
+// to `quality/edit` ($0.05, professional skin texture). Permissive moderation preserved
+// — Grok's unique strength is content tolerance for fashion/sensual editorial.
 // Image-to-image editing via xAI Aurora model
 // image_urls: array of public URLs (max 3) — we upload to fal.storage first
 // ─────────────────────────────────────────────
@@ -1849,7 +1852,7 @@ export const editImageWithGrokFal = async (
     // Compile edit prompt through Flash Lite (EDIT_INPAINT rules: delta only)
     const compiledEdit = await compilePrompt({
       subjectIntent: prompt,
-      targetModel: 'xai/grok-imagine-image/edit',
+      targetModel: 'xai/grok-imagine-image/quality/edit',
       isEdit: true,
     });
     // Neutral preservation hint — avoids "face/pose unchanged" wording which combined
@@ -1864,7 +1867,7 @@ export const editImageWithGrokFal = async (
   }
   const cleanPrompt = (fullPrompt || '').trim() || 'Generate a professional photo';
 
-  const result = await fal.subscribe('xai/grok-imagine-image/edit', {
+  const result = await fal.subscribe('xai/grok-imagine-image/quality/edit', {
     input: {
       prompt: cleanPrompt,
       image_urls: allUrls,
@@ -1908,7 +1911,7 @@ export const editImageWithGrokFal = async (
 };
 
 // ─────────────────────────────────────────────
-// Photo Session with Grok (xai/grok-imagine-image/edit)
+// Photo Session with Grok Quality (xai/grok-imagine-image/quality/edit)
 // Uploads reference image once, then runs N shots with different angles.
 // ─────────────────────────────────────────────
 
@@ -1941,7 +1944,7 @@ export const generatePhotoSessionWithGrok = async (
   const compiledSessionScene = options.scenario
     ? await compilePrompt({
         subjectIntent: options.scenario,
-        targetModel: 'xai/grok-imagine-image/edit',
+        targetModel: 'xai/grok-imagine-image/quality/edit',
         isEdit: true,
         isRealistic: options.realistic !== false,
       })
@@ -1977,7 +1980,7 @@ export const generatePhotoSessionWithGrok = async (
       ? `${FACE_LOCK_PROMPT} ${OUTFIT_PRESERVE_PROMPT} Shot on iPhone 15 Pro, natural phone camera quality, looks like a real Instagram post not AI. Photo session — shot ${i + 1} of ${clampedCount}. Same person as reference image. Keep the EXACT same face, skin tone, hair color and style from the base image. Creative direction for this shot: ${angle}.${scenePart}${boostPart} The person should adopt the pose, expression, and body language described naturally — NOT a stiff copy of the reference. Phone visible in hand where the pose involves a selfie or mirror. Natural window light, no flash, slight lens softness, imperfect framing. Real environment clutter visible. Vary the pose and mood for each shot while keeping the same person and outfit.${negativePart} ${FACE_CHECK_PROMPT}`
       : `${FACE_LOCK_PROMPT} ${OUTFIT_PRESERVE_PROMPT} Photo session — shot ${i + 1} of ${clampedCount}. Same person as reference image. Keep the EXACT same face, skin tone, hair color and style from the base image. Creative direction for this shot: ${angle}.${scenePart}${boostPart} The person should adopt the pose, expression, and body language described naturally — NOT a stiff copy of the reference. Vary the pose and mood for each shot while keeping the same person and outfit.${negativePart} ${FACE_CHECK_PROMPT}`;
 
-    const result = await fal.subscribe('xai/grok-imagine-image/edit', {
+    const result = await fal.subscribe('xai/grok-imagine-image/quality/edit', {
       input: { prompt, image_urls: [imageUrl] },
       onQueueUpdate: (update: any) => {
         if (update.status === 'IN_PROGRESS' && onProgress) {

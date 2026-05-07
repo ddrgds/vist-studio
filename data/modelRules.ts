@@ -121,6 +121,7 @@ const MODEL_FAMILY_MAP: Record<string, ModelFamily> = {
   'fal-ai/flux-2-pro/edit':                   'EDIT_INPAINT',
   'fal-ai/flux-pro/inpainting':               'EDIT_INPAINT',
   'xai/grok-imagine-image/edit':              'EDIT_INPAINT',
+  'xai/grok-imagine-image/quality/edit':      'EDIT_INPAINT',
   'fal-ai/bytedance/seedream/v5/lite/edit':   'EDIT_INPAINT',
   'fal-ai/qwen-image-2/pro/edit':             'EDIT_INPAINT',
 
