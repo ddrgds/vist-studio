@@ -976,6 +976,10 @@ export const removeBackground = async (
 // Inpaint Image — fal-ai/flux-pro/inpainting
 // imageFile = original, maskFile = B&W mask (white = inpaint, black = keep)
 // ─────────────────────────────────────────────
+// Inpaint via Ideogram v3 Quality — replaced 2026-05-07 from `fal-ai/flux-pro/inpainting`
+// (Flux 1, strength 0.99 caused full-region replacement losing context).
+// Ideogram v3 is purpose-built for mask-based editing with better context preservation.
+// Quality tier ($0.09) for best output. Falls back to NB2 edit if Ideogram fails.
 export const inpaintImage = async (
   imageFile: File,
   maskFile: File,
@@ -993,30 +997,55 @@ export const inpaintImage = async (
 
   if (onProgress) onProgress(30);
 
-  const result: any = await fal.subscribe('fal-ai/flux-pro/inpainting', {
-    input: {
-      image_url: imageUrl,
-      mask_url: maskUrl,
-      prompt,
-      guidance_scale: 3.5,
-      num_inference_steps: 28,
-      strength: 0.99,
-      num_images: 1,
-    },
-    onQueueUpdate: (update: any) => {
-      if (update.status === 'IN_PROGRESS' && onProgress) {
-        onProgress(Math.min(88, 35 + Math.random() * 50));
-      }
-    },
-  });
+  // Defensive: empty prompt would 422 Ideogram
+  const cleanPrompt = (prompt || '').trim() || 'natural seamless integration matching surrounding image';
 
-  const r = unwrap(result);
-  if (r?.has_nsfw_concepts?.[0]) {
-    throw new Error('FLUX Inpaint filtered the content. Try a more neutral instruction.');
+  let outputUrl: string | null = null;
+
+  // Primary: Ideogram v3 Quality (purpose-built mask inpainting)
+  try {
+    const result: any = await fal.subscribe('fal-ai/ideogram/v3/edit', {
+      input: {
+        image_url: imageUrl,
+        mask_url: maskUrl,
+        prompt: cleanPrompt,
+        rendering_speed: 'QUALITY',
+        expand_prompt: true,
+        num_images: 1,
+      },
+      onQueueUpdate: (update: any) => {
+        if (update.status === 'IN_PROGRESS' && onProgress) {
+          onProgress(Math.min(85, 35 + Math.random() * 45));
+        }
+      },
+    }).catch((err: any) => {
+      const detail = err?.body || err?.message || String(err);
+      console.error('[inpaint Ideogram] error:', detail);
+      throw err;
+    });
+
+    const r = unwrap(result);
+    outputUrl = r?.images?.[0]?.url || r?.image?.url || null;
+    if (!outputUrl) throw new Error('Ideogram returned no images');
+  } catch (ideoErr) {
+    console.warn('Ideogram inpaint failed, falling back to NB2 edit:', ideoErr);
+    // Fallback: NB2 edit (instruction-based, won't respect mask exactly but
+    // can produce usable results for whole-image transforms)
+    if (onProgress) onProgress(50);
+    const nb2Result: any = await fal.subscribe(FalModel.NanoBanana2Edit, {
+      input: {
+        prompt: `[Inpainting fallback] ${cleanPrompt}. Edit only the area indicated by the mask region. Keep everything else identical.`,
+        image_urls: [imageUrl, maskUrl],
+        num_images: 1,
+        resolution: '1K',
+        safety_tolerance: '6',
+        output_format: 'jpeg',
+      },
+    });
+    const r = unwrap(nb2Result);
+    outputUrl = r?.images?.[0]?.url || null;
+    if (!outputUrl) throw new Error('Inpaint: no output from Ideogram or NB2 fallback.');
   }
-
-  const outputUrl: string = r?.images?.[0]?.url || r?.image?.url;
-  if (!outputUrl) throw new Error('Inpaint: no output returned.');
 
   if (onProgress) onProgress(90);
   const resp = await fetch(outputUrl);

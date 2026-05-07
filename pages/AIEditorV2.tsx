@@ -43,7 +43,7 @@ const SECONDARY_TOOLS = [
   { id:'relight', label:'Reiluminar', shortLabel:'Luz', icon:'\uD83D\uDCA1', desc:'Cambia la iluminacion de cualquier foto', cost:'6cr' },
   { id:'faceswap', label:'Cambio de Rostro', shortLabel:'Rostro', icon:'\uD83C\uDFAD', desc:'Intercambia rostros entre imagenes', cost:'6cr' },
   { id:'rotate360', label:'Angulos 360\u00b0', shortLabel:'Ángulos', icon:'\uD83D\uDD04', desc:'Genera vistas desde todos los angulos', cost:'19cr' },
-  { id:'enhance', label:'Mejorar calidad', shortLabel:'Mejorar', icon:'\u2728', desc:'Mejora la calidad y los detalles', cost:'9cr' },
+  { id:'enhance', label:'Retoque pro', shortLabel:'Retoque', icon:'\u2728', desc:'Suaviza piel, quita imperfecciones — estilo revista', cost:'6cr' },
   { id:'style', label:'Transferir Estilo', shortLabel:'Estilo', icon:'\uD83C\uDFA8', desc:'Aplica estilos artisticos', cost:'6cr' },
   { id:'inpaint', label:'Inpaint', shortLabel:'Inpaint', icon:'\uD83D\uDD8C\uFE0F', desc:'Edita areas especificas', cost:'6cr' },
   { id:'rembg', label:'Quitar Fondo', shortLabel:'Sin BG', icon:'\u2702\uFE0F', desc:'Elimina el fondo al instante', cost:'6cr' },
@@ -75,9 +75,9 @@ const relightDirections = [
 ]
 
 const relightIntensities = [
-  { id: 'subtle',   label: 'Sutil',     prompt: 'Apply the lighting change subtly, as a gentle shift in mood' },
-  { id: 'normal',   label: 'Normal',    prompt: 'Apply a clear, natural lighting change' },
-  { id: 'dramatic', label: 'Dramatico', prompt: 'Apply an extreme, highly dramatic lighting change with strong contrast' },
+  { id: 'subtle',   label: 'Sutil',     prompt: 'CHANGE the lighting noticeably but keep it subtle and refined. Visible shift in shadows, color temperature, and highlights.' },
+  { id: 'normal',   label: 'Normal',    prompt: 'COMPLETELY REPLACE the existing lighting with the new lighting style. Re-render all shadows, highlights, color cast, and rim light to match the new lighting direction and quality. The change must be obvious.' },
+  { id: 'dramatic', label: 'Dramatico', prompt: 'TOTALLY TRANSFORM the lighting with extreme intensity. Deep contrast, harsh shadows, vivid color cast, dramatic mood. Make it cinematic and bold — the change should be the most striking element of the new image.' },
 ]
 
 const angleViews = ['Front','Right 45\u00b0','Right 90\u00b0','Back Right','Back','Back Left','Left 90\u00b0','Left 45\u00b0']
@@ -289,7 +289,9 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
   const [showBasicEditor, setShowBasicEditor] = useState(false)
   const [expandDirection, setExpandDirection] = useState<string>('all')
   const [expandPixels, setExpandPixels] = useState(256)
-  const [skinPreset, setSkinPreset] = useState<'soft'|'natural'|'realistic'|'ultra'|'custom'>('natural')
+  // Default to 'realistic' (visible pores) instead of 'natural' (subtle).
+  // User feedback: skin enhance was too subtle to notice without zoom.
+  const [skinPreset, setSkinPreset] = useState<'soft'|'natural'|'realistic'|'ultra'|'custom'>('realistic')
   const [skinSliders, setSkinSliders] = useState({ pores: 50, veins: 20, tension: 40, imperfections: 30, sss: 50, hydration: 40 })
   const canvasContainerRef = useRef<HTMLDivElement>(null)
 
@@ -482,23 +484,28 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         const preset = relightPresets[selPreset]
         const dir = relightDirections.find(d => d.id === relightDir) || relightDirections[1]
         const intensity = relightIntensities.find(i => i.id === relightIntensity) || relightIntensities[1]
-        const instruction = `${preset.prompt}. ${dir.prompt}. ${intensity.prompt}`
+        // RELIGHT-specific override prefix — without this, the EDIT_INPAINT preserve rules
+        // (added by promptCompiler) tell the model to preserve original lighting,
+        // which neutralizes the relight intent. This prefix overrides that.
+        const instruction = `RELIGHT (overrides preservation rule): Completely replace the lighting in this photograph. Target lighting: ${preset.prompt}. ${dir.prompt}. ${intensity.prompt} Re-render all shadows, highlights, color cast, and skin tones to match the new lighting. Keep the person's face, expression, pose, outfit, and background composition identical — ONLY the lighting changes.`
         const result = await (await import('../services/toolEngines')).runEditWithFallback(inputImage!, instruction, 'nb2', 'relight', outputOpts)
         resultUrls = [result.url]
       } else if (activeTool === 'rotate360') {
         const view = angleViews[sel360]
-        const envHints: Record<string, string> = {
-          'Front': 'centered background, eye-level perspective',
-          'Right 45\u00b0': 'background shifts to show what was to the left of the original frame, slight parallax',
-          'Right 90\u00b0': 'completely different background \u2014 perpendicular view of the space, only the side wall or environment visible',
-          'Back Right': 'background now shows what was behind the camera in the original photo',
-          'Back': 'full reverse view \u2014 we see the opposite side of the environment',
-          'Back Left': 'background shows what was behind and to the right of the original camera',
-          'Left 90\u00b0': 'completely different background \u2014 perpendicular view from the other side',
-          'Left 45\u00b0': 'background shifts to show what was to the right of the original frame, slight parallax',
+        // Explicit camera physics — model needs to understand this is a NEW PHOTO
+        // taken from a new camera position, not a flat 2D rotation of the subject.
+        const cameraDescriptions: Record<string, string> = {
+          'Front':       'directly facing the camera at eye level (0° rotation, frontal view of face and body)',
+          'Right 45\u00b0': 'the camera has moved 45° clockwise around the subject (subject\'s body is rotated showing the right 3/4 view, right shoulder forward, left side of face partially hidden)',
+          'Right 90\u00b0': 'the camera has moved 90° clockwise around the subject (pure profile view of subject\'s left side of face, right shoulder pointing toward camera, body in full side profile)',
+          'Back Right':  'the camera has moved 135° clockwise around the subject (back-right 3/4 view, we see the back of the head and right side of the body)',
+          'Back':        'the camera is directly behind the subject (180° rotation, we see the back of the head, neck, and body — no facial features visible)',
+          'Back Left':   'the camera has moved 225° clockwise around the subject (back-left 3/4 view, we see the back of the head and left side of the body)',
+          'Left 90\u00b0':  'the camera has moved 270° clockwise around the subject (pure profile view of subject\'s right side of face, left shoulder pointing toward camera)',
+          'Left 45\u00b0':  'the camera has moved 315° clockwise around the subject (left 3/4 view, left shoulder forward, right side of face partially hidden)',
         }
-        const envHint = envHints[view] || 'background changes naturally to match the new camera position'
-        const instruction = `Create a new photograph of this person from a ${view.toLowerCase()} camera angle. The camera has moved around the subject. Keep exact same person, clothing, hairstyle, body. Background MUST change: ${envHint}. Render from the new camera perspective.`
+        const cameraSpec = cameraDescriptions[view] || `${view} camera angle`
+        const instruction = `CAMERA ROTATION (overrides preservation rule): Generate a NEW PHOTOGRAPH of the SAME person from a different camera angle. ${cameraSpec}. The subject has not moved — only the camera moved around them. Keep IDENTICAL: face identity, clothing, hairstyle, body proportions, accessories, lighting style. Re-render: which side of face is visible, body silhouette from new angle, perspective foreshortening, background visible from new viewpoint. Output a photorealistic photo as if taken with a real camera from this new position.`
         const result = await (await import('../services/toolEngines')).runEditWithFallback(inputImage!, instruction, 'nb2', 'angles', outputOpts)
         resultUrls = [result.url]
       } else if (activeTool === 'composite') {
@@ -563,7 +570,10 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           if (skinSliders.hydration > 5) parts.push(`${lvl(skinSliders.hydration)} natural moisture and skin shine`)
           skinInstruction = parts.length > 0 ? `Add the following skin details: ${parts.join(', ')}.` : 'Preserve the current skin texture as-is.'
         }
-        const instruction = `${skinInstruction} Do not alter the face shape, features, expression, hair, outfit, pose, or background.`
+        // SKIN RETOUCH override prefix — without this, the EDIT_INPAINT preserve
+        // rules can suppress skin texture changes. The override tells the model
+        // skin texture is the EXPLICIT target of this edit.
+        const instruction = `SKIN TEXTURE RETOUCH (overrides preservation rule for skin only): ${skinInstruction} Apply this skin texture change visibly across all visible skin areas (face, neck, arms, hands). Do not alter the face shape, features, expression, hair, outfit, pose, or background.`
         resultUrls = await routeEdit(selectedEngine, inputFile!, instruction, (p) => setProgress(p))
       } else if (activeTool === 'faceswap' && faceSwapFile) {
         const faceInstruction = `Replace the face of the person in the base image with the face from the reference image. Keep hair, body, pose, clothing, and background exactly the same. Only change facial features.`

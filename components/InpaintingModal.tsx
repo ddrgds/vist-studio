@@ -317,14 +317,37 @@ const InpaintingModal: React.FC<InpaintingModalProps> = ({ item, onClose, onSave
 
           {/* Prompt Input */}
           <div className="space-y-3">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Prompt de Generación</label>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Qué generar</label>
             <textarea
               value={prompt}
               onChange={e => setPrompt(e.target.value)}
-              placeholder="Describe qué generar en la zona pintada (ej: 'un bolso rojo', 'lentes de sol')..."
-              rows={4}
+              placeholder="Describe qué quieres en la zona pintada"
+              rows={3}
               className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300 focus:bg-gray-100 transition-all resize-none shadow-inner"
             />
+            {/* Quick suggestion chips — common inpaint use cases */}
+            <div>
+              <div className="text-[10px] text-gray-500 mb-1.5 font-mono uppercase tracking-wider">Sugerencias</div>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  'collar de oro',
+                  'aretes minimalistas',
+                  'lentes de sol negros',
+                  'bolso de cuero',
+                  'sombrero de paja',
+                  'reloj plateado',
+                  'tatuaje pequeño',
+                  'quitar objeto',
+                  'fondo limpio',
+                ].map(suggestion => (
+                  <button key={suggestion} type="button"
+                    onClick={() => setPrompt(suggestion)}
+                    className="text-[11px] px-2.5 py-1 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 transition-colors">
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Actions Footer */}

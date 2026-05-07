@@ -125,6 +125,7 @@ const MODEL_FAMILY_MAP: Record<string, ModelFamily> = {
   'xai/grok-imagine-image/quality/edit':      'EDIT_INPAINT',
   'fal-ai/bytedance/seedream/v5/lite/edit':   'EDIT_INPAINT',
   'fal-ai/qwen-image-2/pro/edit':             'EDIT_INPAINT',
+  'fal-ai/ideogram/v3/edit':                  'EDIT_INPAINT',
 
   // Higgsfield/Soul
   'higgsfield-soul':                   'SOUL_HIGGSFIELD',

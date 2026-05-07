@@ -1317,16 +1317,27 @@ export const faceSwapWithGemini = async (
   onProgress?: (percent: number) => void,
   abortSignal?: AbortSignal
 ): Promise<string> => {
+  // Stronger face-swap instruction with explicit identity-transfer JSON spec.
+  // Was producing inconsistent identity in 2026-03 testing; rewritten 2026-05-07
+  // to be more explicit about which parts come from which image.
+  const faceSwapSpec = {
+    task: 'FACE SWAP — Transfer ONLY the face',
+    image_1_BASE: {
+      role: 'THE BODY/SCENE — keep everything except face',
+      preserve: ['body', 'pose', 'clothing', 'hair_style', 'hair_color', 'background', 'lighting_direction', 'color_grade', 'composition', 'photo_quality', 'image_resolution'],
+      rule: 'Do NOT change anything except the facial features',
+    },
+    image_2_FACE_REFERENCE: {
+      role: 'THE FACE — extract identity only',
+      transfer: ['bone_structure', 'eye_shape', 'eye_color', 'nose_shape', 'lip_shape', 'jaw_line', 'facial_proportions', 'skin_tone', 'facial_expression_subtle'],
+      ignore: 'IGNORE the body, clothing, hair, background, lighting from the reference — those come from Image 1',
+    },
+    integration: 'The new face must inherit Image 1 lighting direction, shadows, and color temperature so it integrates seamlessly. Match skin tone exactly between face and neck.',
+  };
+  const instruction = `FACE SWAP SPECIFICATION:\n${JSON.stringify(faceSwapSpec, null, 2)}\n\nOutput: photorealistic image of the body/pose/clothing from Image 1 with the face from Image 2.`;
   const params: AIEditParams = {
     baseImage,
-    instruction: [
-      'Replace the face of the person in the Base Image with the face shown in the Reference image.',
-      'Keep everything else identical: body pose, body shape, clothing, background, lighting, color grade, composition.',
-      'Only the facial identity changes: bone structure, eye shape, eye color, nose, lips, jaw, skin tone.',
-      'The new face must match the original lighting direction, color temperature, and shadow angles on the face.',
-      'Hair style and color: keep from the Base Image (do NOT import hair from the Reference).',
-      'Output: a complete photorealistic image at the same quality as the Base Image.',
-    ].join(' '),
+    instruction,
     referenceImage: faceImage,
     model: GeminiImageModel.Flash2,
   };
