@@ -8,13 +8,33 @@
  * Design lives at /public/mockup_headshot_pro_mobile_v2.html
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft, RefreshCw, Sparkles, Aperture, Download, Edit3, Share2, Upload, X } from 'lucide-react';
+import { RefreshCw, Sparkles, Aperture, Download, Edit3, Share2, Upload } from 'lucide-react';
 import type { Page } from '../App';
 import { useCharacterStore } from '../stores/characterStore';
 import { useGalleryStore } from '../stores/galleryStore';
 import { useProfile } from '../contexts/ProfileContext';
 import { useToast } from '../contexts/ToastContext';
-import { hapticLight, hapticMedium, hapticSuccess, hapticError, sharePhoto, takePhoto, isNativePlatform } from '../services/nativeService';
+import { hapticLight, hapticMedium, hapticSuccess, hapticError, sharePhoto } from '../services/nativeService';
+import {
+  AppTopBar, AppHero, AppCharRow, AppEmptyState, AppFloatingCTA,
+  useAppUpload, urlToFile, type AppMood,
+} from '../components/apps/_shared';
+import { identityProse, NO_TEXT_RULE, NEVER_ADD_TEXT, lightingPhrase, detectRenderStyle, PHOTOREAL_SKIN, renderStyleSkin } from '../services/promptBuilder';
+
+// Mood: Atelier — cream + terracotta + clay
+const HEADSHOT_MOOD: AppMood = {
+  bg0: '#F4EDE0',
+  bgCard: '#FFFCF5',
+  paper: '#F2E8D2',
+  ink0: '#1F1A14',
+  ink1: '#3D332A',
+  ink2: '#6F5E4C',
+  ink3: '#A8957D',
+  line: 'rgba(31, 26, 20, 0.10)',
+  accent: '#C9785C',
+  accentDeep: '#8E5640',
+  gold: '#D4A85F',
+};
 
 // ─── Types ─────────────────────────────────────
 
@@ -74,14 +94,6 @@ const EXPRESSION_PROMPTS: Record<ExpressionId, string> = {
 
 const COST = 10;
 
-// ─── Helper: URL → File ────────────────────────
-
-async function urlToFile(url: string, filename = 'character.png'): Promise<File> {
-  const res = await fetch(url);
-  const blob = await res.blob();
-  return new File([blob], filename, { type: blob.type || 'image/png' });
-}
-
 // ─── Component ─────────────────────────────────
 
 export default function HeadshotPro({ onNav }: Props) {
@@ -93,8 +105,6 @@ export default function HeadshotPro({ onNav }: Props) {
 
   // ─── State ───
   const [selectedCharId, setSelectedCharId] = useState<string | null>(null);
-  const [customBaseFile, setCustomBaseFile] = useState<File | null>(null);
-  const [customBaseUrl, setCustomBaseUrl] = useState<string | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<StyleId>('editorial');
   const [selectedBackdrop, setSelectedBackdrop] = useState<BackdropId>('studio');
   const [selectedExpressions, setSelectedExpressions] = useState<Set<ExpressionId>>(new Set(['neutral']));
@@ -103,7 +113,13 @@ export default function HeadshotPro({ onNav }: Props) {
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
   const abortRef = useRef<AbortController | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Upload state managed by shared hook
+  const upload = useAppUpload({
+    onError: toast.error,
+    onUpload: () => setSelectedCharId(null),
+  });
+  const { customBaseFile, customBaseUrl } = upload;
 
   // Default to first character if none selected and no custom upload
   useEffect(() => {
@@ -112,46 +128,9 @@ export default function HeadshotPro({ onNav }: Props) {
     }
   }, [characters, selectedCharId, customBaseFile]);
 
-  // ─── Upload handler ───
-  const handleUploadClick = async () => {
-    hapticLight();
-    if (await isNativePlatform()) {
-      const photo = await takePhoto({ source: 'prompt', quality: 90 });
-      if (photo) {
-        setCustomBaseFile(photo.file);
-        setCustomBaseUrl(photo.dataUrl);
-        setSelectedCharId(null);
-      }
-    } else {
-      fileInputRef.current?.click();
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      toast.error('Solo imágenes (JPG, PNG, WEBP)');
-      return;
-    }
-    if (file.size > 12 * 1024 * 1024) {
-      toast.error('Máximo 12 MB');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setCustomBaseUrl(reader.result as string);
-      setCustomBaseFile(file);
-      setSelectedCharId(null);
-      hapticLight();
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const clearCustomBase = () => {
-    hapticLight();
-    setCustomBaseFile(null);
-    setCustomBaseUrl(null);
+  // ─── Clear upload helper — restores first character if any ───
+  const clearCustomBaseAndRestoreChar = () => {
+    upload.clearCustomBase();
     if (characters.length > 0) setSelectedCharId(characters[0].id);
   };
 
@@ -250,14 +229,13 @@ export default function HeadshotPro({ onNav }: Props) {
       // of forcing realism. Without this, anime/3D/illustration characters get
       // re-rendered as photos. Custom uploads are assumed photoreal unless the
       // user explicitly tagged otherwise (future: detect from image).
-      const renderStyle = (selectedChar?.renderStyle || 'photorealistic').toLowerCase();
-      const isPhotoreal = !selectedChar || renderStyle === 'photorealistic' || !selectedChar.renderStyle;
+      const { isPhotoreal, renderStyle, charIsNonPhoto } = detectRenderStyle(selectedChar);
 
       const renderStyleInstruction = isPhotoreal
         ? {
             mode: 'photorealistic',
-            skin: 'natural skin texture with visible pores, micro-freckles, no plastic/airbrush look',
-            quality: '8k quality, magazine print resolution, professional retouching only',
+            skin: PHOTOREAL_SKIN,
+            quality: 'High-end editorial photography. Documentary-style skin realism — preserve natural skin imperfections. NO airbrushing, NO porcelain finish, NO digital smoothing.',
             lighting: 'professional photography lighting, key + fill, soft catchlights in eyes',
             camera: '85mm portrait lens, f/2.0, shallow depth of field',
           }
@@ -292,7 +270,7 @@ export default function HeadshotPro({ onNav }: Props) {
           must_change: ['lighting setup', 'backdrop', 'pose subtly', 'expression as specified'],
           must_preserve: ['identity', isPhotoreal ? 'natural skin texture (no plastic/airbrush look)' : `${renderStyle} rendering style (anime stays anime, 3D stays 3D)`, 'proportions consistent with character'],
           render_quality: renderStyleInstruction.quality,
-          never_add: ['text', 'watermarks', 'logos', 'props not requested'],
+          never_add: [...NEVER_ADD_TEXT, 'props not requested'],
         },
       };
 
@@ -315,10 +293,22 @@ export default function HeadshotPro({ onNav }: Props) {
         );
       }
 
+      // Build optimized prose for fallback engines (Seedream / Grok).
+      // Seedream loves "Figure N" referencing + specific lighting vocab.
+      // Grok will get auto-sanitized in editFallback.ts.
+      const fallbackProse = `Edit Figure 1: Generate a professional ${stylePreset.name.toLowerCase()} headshot. ${identityProse({
+        numReferences: refFiles.length,
+        charIsNonPhoto,
+        renderStyle: charIsNonPhoto ? renderStyle : undefined,
+        customUploadOnly: !!customBaseFile && refFiles.length === 0,
+      })} Style: ${STYLE_PROMPTS[selectedStyle]}. Backdrop: ${BACKDROP_PROMPTS[selectedBackdrop]}. Expression: ${expressions}. Framing: head and shoulders, eyes at upper third, sharp focus on eyes. Camera: 85mm portrait lens at f/2.0, shallow depth of field. Lighting: ${lightingPhrase('studio')}. ${isPhotoreal ? PHOTOREAL_SKIN : renderStyleSkin(renderStyle)} ${NO_TEXT_RULE}`;
+
       setProgress(15);
 
-      // Try NB2 first, fall back to Grok if rejected
-      const { editWithNB2Fal, editImageWithGrokFal } = await import('../services/falService');
+      // Try NB2 first, fall back to configured engine (Seedream v5 by default,
+      // Grok if USE_GROK_FALLBACK flag is flipped — see services/editFallback.ts)
+      const { editWithNB2Fal } = await import('../services/falService');
+      const { editFallback } = await import('../services/editFallback');
 
       try {
         resultUrls = await editWithNB2Fal(
@@ -332,15 +322,15 @@ export default function HeadshotPro({ onNav }: Props) {
         if (!resultUrls || resultUrls.length === 0) throw new Error('NB2 returned empty');
       } catch (nb2Err: any) {
         if (nb2Err?.name === 'AbortError') throw nb2Err;
-        console.warn('NB2 rejected, falling back to Grok:', nb2Err?.message);
+        console.warn('NB2 rejected, using fallback:', nb2Err?.message);
         toast.info('Reintentando con motor alternativo…');
-        resultUrls = await editImageWithGrokFal(
-          baseFile,
-          instruction,
-          p => setProgress(Math.min(85, 15 + Math.round(p * 0.7))),
-          abortRef.current.signal,
-          refFiles,
-        );
+        resultUrls = await editFallback({
+          baseImage: baseFile,
+          flatInstruction: fallbackProse, // optimized prose, not JSON
+          referenceImages: refFiles,
+          onProgress: p => setProgress(Math.min(85, 15 + Math.round(p * 0.7))),
+          abortSignal: abortRef.current.signal,
+        });
         if (!resultUrls || resultUrls.length === 0) throw new Error('Ambos motores fallaron');
       }
 
@@ -418,31 +408,23 @@ export default function HeadshotPro({ onNav }: Props) {
     return (
       <div className="hp-shell">
         <style>{HEADSHOT_STYLES}</style>
-        <div className="hp-topbar">
-          <button className="hp-back" onClick={() => onNav('studio')} aria-label="Volver">
-            <ChevronLeft size={18} />
-          </button>
-          <span className="hp-title-mono">
-            <span className="hp-title-dot" /> Headshot · Pro
-          </span>
-          <span className="hp-credits">
-            <span className="hp-credits-dot" />{credits}
-          </span>
-        </div>
-        <div className="hp-empty">
-          <div className="hp-empty-icon"><Aperture size={28} /></div>
-          <h2 className="hp-empty-title">Empieza con una <em>foto</em></h2>
-          <p className="hp-empty-sub">Sube una foto tuya o crea un personaje para tirarle un headshot pro.</p>
-          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-            <button className="hp-empty-cta" onClick={handleUploadClick}>
-              <Upload size={14} /> Subir foto
-            </button>
-            <button className="hp-empty-cta" style={{ background: 'transparent', color: 'var(--ink-1)', border: '1px solid var(--line)', boxShadow: 'none' }} onClick={() => onNav('create')}>
-              <Sparkles size={14} /> Crear personaje
-            </button>
-          </div>
-          <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleFileChange} />
-        </div>
+        <AppTopBar
+          mood={HEADSHOT_MOOD}
+          title="Headshot · Pro"
+          credits={credits}
+          onBack={() => onNav('studio')}
+        />
+        <AppEmptyState
+          mood={HEADSHOT_MOOD}
+          icon={<Aperture size={28} />}
+          title={<>Empieza con una <em>foto</em></>}
+          sub="Sube una foto tuya o crea un personaje para tirarle un headshot pro."
+          ctas={[
+            { label: 'Subir foto', icon: <Upload size={14} />, onClick: upload.openUploadPicker, variant: 'primary' },
+            { label: 'Crear personaje', icon: <Sparkles size={14} />, onClick: () => onNav('create'), variant: 'ghost' },
+          ]}
+        />
+        <input ref={upload.fileInputRef} type="file" accept="image/*" hidden onChange={upload.handleFileChange} />
       </div>
     );
   }
@@ -453,77 +435,35 @@ export default function HeadshotPro({ onNav }: Props) {
       <style>{HEADSHOT_STYLES}</style>
 
       {/* Top bar */}
-      <div className="hp-topbar">
-        <button className="hp-back" onClick={() => onNav('studio')} aria-label="Volver">
-          <ChevronLeft size={18} />
-        </button>
-        <span className="hp-title-mono">
-          <span className="hp-title-dot" /> Headshot · Pro
-        </span>
-        <span className="hp-credits">
-          <span className="hp-credits-dot" />{credits}
-        </span>
-      </div>
+      <AppTopBar
+        mood={HEADSHOT_MOOD}
+        title="Headshot · Pro"
+        credits={credits}
+        onBack={() => onNav('studio')}
+      />
 
       {/* Hero */}
-      <section className="hp-hero">
-        <div className="hp-hero-eyebrow">App premium · Foundation</div>
-        <h1 className="hp-hero-title">
-          Retrato profesional,<br /><em>en 30 segundos.</em>
-        </h1>
-        <p className="hp-hero-sub">
-          Editorial, corporativo, beauty. Tu personaje, retocado como portada de revista.
-        </p>
-      </section>
+      <AppHero
+        mood={HEADSHOT_MOOD}
+        eyebrow="App premium · Foundation"
+        title={<>Retrato profesional,<br /><em>en 30 segundos.</em></>}
+        sub="Editorial, corporativo, beauty. Tu personaje, retocado como portada de revista."
+      />
 
       {/* Character chip + upload */}
-      <div className="hp-char-row">
-        {customBaseFile && customBaseUrl ? (
-          <div className="hp-char-chip is-active hp-char-upload">
-            <span
-              className="hp-char-thumb"
-              style={{ backgroundImage: `url(${customBaseUrl})` }}
-            />
-            <span className="hp-char-name">Mi foto</span>
-            <button
-              className="hp-char-x"
-              onClick={clearCustomBase}
-              aria-label="Quitar mi foto"
-            >
-              <X size={11} />
-            </button>
-          </div>
-        ) : (
-          <button
-            className="hp-char-chip hp-char-upload-btn"
-            onClick={handleUploadClick}
-          >
-            <span className="hp-char-thumb hp-char-thumb-upload">
-              <Upload size={13} />
-            </span>
-            <span className="hp-char-name">Subir foto</span>
-          </button>
-        )}
-        {characters.map(c => (
-          <button
-            key={c.id}
-            className={`hp-char-chip ${selectedCharId === c.id && !customBaseFile ? 'is-active' : ''}`}
-            onClick={() => {
-              hapticLight();
-              setCustomBaseFile(null);
-              setCustomBaseUrl(null);
-              setSelectedCharId(c.id);
-            }}
-          >
-            <span
-              className="hp-char-thumb"
-              style={{ backgroundImage: c.thumbnail ? `url(${c.thumbnail})` : undefined }}
-            />
-            <span className="hp-char-name">{c.name}</span>
-          </button>
-        ))}
-        <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleFileChange} />
-      </div>
+      <AppCharRow
+        mood={HEADSHOT_MOOD}
+        characters={characters.map(c => ({ id: c.id, name: c.name, thumbnail: c.thumbnail }))}
+        selectedCharId={selectedCharId}
+        onSelectChar={(id) => { upload.clearCustomBase(); setSelectedCharId(id); }}
+        customBaseFile={customBaseFile}
+        customBaseUrl={customBaseUrl}
+        onUploadClick={upload.openUploadPicker}
+        onClearCustomBase={clearCustomBaseAndRestoreChar}
+        onFileChange={upload.handleFileChange}
+        fileInputRef={upload.fileInputRef}
+      />
+
 
       {/* Result canvas */}
       <div className="hp-canvas">
@@ -663,31 +603,17 @@ export default function HeadshotPro({ onNav }: Props) {
       </section>
 
       {/* Floating CTA */}
-      <div className="hp-cta-wrap">
-        <div className="hp-cta-row">
-          <button
-            className="hp-cta-secondary"
-            onClick={() => { setResultUrl(null); setHistory([]); }}
-            aria-label="Reset"
-            disabled={generating}
-          >
-            <RefreshCw size={16} />
-          </button>
-          <button
-            className="hp-cta-primary"
-            onClick={handleGenerate}
-            disabled={generating || !canAfford}
-          >
-            <span className="hp-cta-cost">{COST} cr · 1 retrato</span>
-            <span className="hp-cta-label">{generating ? 'Generando…' : resultUrl ? 'Generar otro' : 'Generar retrato'}</span>
-            <span className="hp-cta-arrow">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </span>
-          </button>
-        </div>
-      </div>
+      <AppFloatingCTA
+        mood={HEADSHOT_MOOD}
+        secondaryIcon={<RefreshCw size={16} />}
+        secondaryAriaLabel="Reset"
+        onSecondary={() => { setResultUrl(null); setHistory([]); }}
+        secondaryDisabled={generating}
+        primaryCost={`${COST} cr · 1 retrato`}
+        primaryLabel={generating ? 'Generando…' : resultUrl ? 'Generar otro' : 'Generar retrato'}
+        onPrimary={handleGenerate}
+        primaryDisabled={generating || !canAfford}
+      />
     </div>
   );
 }
@@ -718,7 +644,7 @@ const HEADSHOT_STYLES = `
   color: var(--ink-0);
   font-family: 'DM Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
-  padding-bottom: 110px;
+  padding-bottom: calc(140px + env(safe-area-inset-bottom));
   background-image:
     radial-gradient(circle at 20% 10%, rgba(31,26,20,0.025) 1px, transparent 1px),
     radial-gradient(circle at 80% 60%, rgba(31,26,20,0.02) 1px, transparent 1px);

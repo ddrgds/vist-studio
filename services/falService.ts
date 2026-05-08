@@ -1100,6 +1100,7 @@ export const editImageWithSeedream5 = async (
         onProgress(Math.min(88, 40 + Math.random() * 45));
       }
     },
+    ...(abortSignal ? { signal: abortSignal } : {}),
   }) as any;
 
   const r = unwrap(result);
@@ -1629,6 +1630,7 @@ export const editWithNB2Fal = async (
     onQueueUpdate: (update: any) => {
       if (update.status === 'IN_PROGRESS' && onProgress) onProgress(Math.min(88, 35 + Math.random() * 50));
     },
+    ...(abortSignal ? { signal: abortSignal } : {}),
   }).catch((err: any) => {
     // Surface the actual fal error body so we can debug instead of a generic ValidationError.
     const detail = err?.body || err?.response?.body || err?.message || String(err);
@@ -1890,16 +1892,23 @@ export const editImageWithGrokFal = async (
   }
 
   // Defensive: filter empty/invalid URLs and ensure prompt non-empty.
+  // IMPORTANT: Grok edit accepts only 1 image in image_urls (validation max=1).
+  // Reference images are dropped here — for multi-ref identity preservation,
+  // the NB2 path must handle it. Grok is fallback only.
   const allUrls = [imageUrl, ...refUrls].filter(u => typeof u === 'string' && u.startsWith('http'));
   if (allUrls.length === 0) {
     throw new Error('Grok Edit: no valid image URLs after upload.');
   }
+  if (refUrls.length > 0) {
+    console.warn(`[editImageWithGrokFal] Dropping ${refUrls.length} reference image(s) — Grok edit accepts only 1 image. NB2 should be used for multi-ref scenarios.`);
+  }
+  const grokImageUrls = [allUrls[0]]; // strict: 1 image only
   const cleanPrompt = (fullPrompt || '').trim() || 'Generate a professional photo';
 
   const result = await fal.subscribe('xai/grok-imagine-image/quality/edit', {
     input: {
       prompt: cleanPrompt,
-      image_urls: allUrls,
+      image_urls: grokImageUrls,
       num_images: 1,
       output_format: 'jpeg',
     },
@@ -1908,6 +1917,7 @@ export const editImageWithGrokFal = async (
         onProgress(Math.min(88, 40 + Math.random() * 45));
       }
     },
+    ...(abortSignal ? { signal: abortSignal } : {}),
   }).catch((err: any) => {
     const detail = err?.body || err?.response?.body || err?.message || String(err);
     console.error('[editImageWithGrokFal] fal returned error:', detail);

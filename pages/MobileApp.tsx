@@ -357,8 +357,7 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
         className="m-content"
         style={{
           opacity: transitioning ? 0 : 1,
-          transform: transitioning ? 'translateY(8px)' : 'translateY(0)',
-          transition: 'opacity 120ms ease-out, transform 180ms cubic-bezier(0.32, 0.72, 0, 1)',
+          transition: 'opacity 140ms ease-out',
         }}
       >
         {renderActive()}

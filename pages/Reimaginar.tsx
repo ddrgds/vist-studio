@@ -20,6 +20,7 @@ import { useProfile } from '../contexts/ProfileContext';
 import { useToast } from '../contexts/ToastContext';
 import { hapticLight, hapticMedium, hapticSuccess, hapticError, sharePhoto, takePhoto, isNativePlatform } from '../services/nativeService';
 import { SOUL_STYLES, SOUL_STYLE_CATEGORIES, type SoulStyle, type SoulStyleCategory } from '../data/soulStyles';
+import { identityProse, NO_TEXT_RULE, NEVER_ADD_TEXT, PHOTOREAL_SKIN, renderStyleSkin } from '../services/promptBuilder';
 
 // ─── Types ─────────────────────────────────────
 
@@ -304,7 +305,7 @@ export default function Reimaginar({ onNav }: Props) {
         ? `Maintain authentic ${charRenderStyle} rendering — do NOT convert to photorealism. The character stays in ${charRenderStyle} style with the new ${styleNames} aesthetic applied to outfit, setting, and mood.`
         : isStylized
           ? `Render quality consistent with the ${styleNames} style. Sharp details, no AI artifacts.`
-          : 'Real human skin with visible pores, fine texture, micro-freckles, natural luminosity. NEVER plastic, airbrushed, or CGI-looking skin.';
+          : `${PHOTOREAL_SKIN} Documentary editorial realism, NEVER porcelain or CGI-looking.`;
 
       const reimagineSpec: any = {
         task: charIsNonPhoto
@@ -351,7 +352,7 @@ export default function Reimaginar({ onNav }: Props) {
           must_change: ['pose', 'camera_angle', 'framing', 'background', 'outfit'],
           must_preserve: ['identity', 'physical_features', 'recognizability'],
           render_quality: skinRule,
-          never_add: ['text', 'words', 'letters', 'labels', 'watermarks', 'brand_names', 'logos'],
+          never_add: NEVER_ADD_TEXT,
         },
       };
 
@@ -374,7 +375,8 @@ export default function Reimaginar({ onNav }: Props) {
 
       setProgress(15);
 
-      const { editWithNB2Fal, editImageWithGrokFal } = await import('../services/falService');
+      const { editWithNB2Fal } = await import('../services/falService');
+      const { editFallback } = await import('../services/editFallback');
 
       let resultUrls: string[] = [];
 
@@ -390,32 +392,38 @@ export default function Reimaginar({ onNav }: Props) {
         if (!resultUrls || resultUrls.length === 0) throw new Error('NB2 empty');
       } catch (nb2Err: any) {
         if (nb2Err?.name === 'AbortError') throw nb2Err;
-        console.warn('NB2 rejected, falling back to Grok:', nb2Err?.message);
+        console.warn('NB2 rejected, using fallback:', nb2Err?.message);
         toast.info('Reintentando con motor alternativo…');
 
-        // Flat instruction for Grok — works better with prose
+        // Flat prose optimized for Seedream (Grok auto-sanitized in editFallback).
+        // Targets 50-80 word sweet spot. Uses identityProse helper for "Figure N" mention.
         const skinFlat = charIsNonPhoto
-          ? `CRITICAL: keep the character in ${charRenderStyle} rendering style — do NOT convert to photorealism. Same ${charRenderStyle} character, new aesthetic.`
+          ? renderStyleSkin(charRenderStyle)
           : isStylized
             ? `Render in authentic ${styleNames} style with sharp details.`
-            : 'Skin must look real — visible pores, natural texture, subtle imperfections. NO plastic/airbrushed skin.';
+            : PHOTOREAL_SKIN;
         const primaryDesc = primaryStyle?.hint || primaryStyle?.name || customDirection || 'editorial fashion';
         const accentText = accentStyles.length > 0
-          ? ` Setting and lighting incorporate elements from: ${accentStyles.map(s => s.name).join(', ')} (${accentStyles.map(s => s.hint || s.name).join('; ')}). But OUTFIT and core look come from primary style.`
+          ? ` Setting and lighting elements from: ${accentStyles.map(s => s.name).join(', ')}. Outfit and core look come from the primary style only.`
           : '';
         const customText = customDirection ? ` User direction: ${customDirection}.` : '';
 
         const taskVerb = charIsNonPhoto ? `Generate a NEW ${charRenderStyle} image` : 'Generate a NEW photograph';
-        const flatInstruction = `Edit Figure 1: ${taskVerb} of this same character in a different aesthetic. PRIMARY STYLE: ${primaryStyle?.name || 'editorial'} — ${primaryDesc}.${accentText}${customText} CHANGE: pose, camera angle, framing, background, outfit. KEEP: face, bone structure, eye color, eye shape, lip shape, skin tone, hair style, hair color, body proportions${charIsNonPhoto ? `, AND the ${charRenderStyle} rendering style` : ''}. ${skinFlat} NO text, watermarks, logos.`;
+        const idProse = identityProse({
+          numReferences: refFiles.length,
+          charIsNonPhoto,
+          renderStyle: charIsNonPhoto ? charRenderStyle : undefined,
+          customUploadOnly: !!customBaseFile && refFiles.length === 0,
+        });
+        const flatInstruction = `Edit Figure 1: ${taskVerb} of this same character in a different aesthetic. ${idProse} PRIMARY STYLE: ${primaryStyle?.name || 'editorial'} — ${primaryDesc}.${accentText}${customText} CHANGE: pose, camera angle, framing, background, outfit. ${skinFlat} ${NO_TEXT_RULE}`;
 
-        resultUrls = await editImageWithGrokFal(
-          baseFile,
+        resultUrls = await editFallback({
+          baseImage: baseFile,
           flatInstruction,
-          p => setProgress(Math.min(85, 15 + Math.round(p * 0.7))),
-          abortRef.current.signal,
-          refFiles,
-          true, // bypassCompiler — already optimized prose
-        );
+          referenceImages: refFiles,
+          onProgress: p => setProgress(Math.min(85, 15 + Math.round(p * 0.7))),
+          abortSignal: abortRef.current.signal,
+        });
         if (!resultUrls || resultUrls.length === 0) throw new Error('Ambos motores fallaron');
       }
 
@@ -915,7 +923,7 @@ const REIMAGINAR_STYLES = `
   color: var(--ink-0);
   font-family: 'DM Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
-  padding-bottom: 130px;
+  padding-bottom: calc(150px + env(safe-area-inset-bottom));
   background-image:
     radial-gradient(circle at 20% 10%, rgba(31,26,20,0.025) 1px, transparent 1px),
     radial-gradient(circle at 80% 60%, rgba(31,26,20,0.02) 1px, transparent 1px);

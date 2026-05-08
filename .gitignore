@@ -66,6 +66,10 @@ stitch-v2.html
 .claude/
 .gstack/
 
+# Engine comparison artifacts (private)
+comparison-input/
+comparison-output/
+
 # Capacitor native build outputs (commit project files, ignore build artifacts)
 android/.gradle/
 android/app/build/

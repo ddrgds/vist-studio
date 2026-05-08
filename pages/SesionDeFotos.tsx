@@ -19,6 +19,7 @@ import { useGalleryStore } from '../stores/galleryStore';
 import { useProfile } from '../contexts/ProfileContext';
 import { useToast } from '../contexts/ToastContext';
 import { hapticLight, hapticMedium, hapticSuccess, hapticError, sharePhoto, takePhoto, isNativePlatform } from '../services/nativeService';
+import { identityProse, NO_TEXT_RULE, NEVER_ADD_TEXT, lightingPhrase, PHOTOREAL_SKIN, renderStyleSkin } from '../services/promptBuilder';
 
 // ─── Types ─────────────────────────────────────
 
@@ -267,9 +268,9 @@ export default function SesionDeFotos({ onNav }: Props) {
         must_change: ['pose', 'camera_angle', 'composition'],
         must_preserve: ['scenario', 'outfit', 'lighting', 'identity', 'render_style'],
         render_quality: isPhotoreal
-          ? 'natural skin texture, visible pores, no plastic look'
+          ? PHOTOREAL_SKIN
           : `Sharp ${charRenderTag} rendering, consistent line work and palette`,
-        never_add: ['text', 'watermarks', 'logos', 'props not in scenario'],
+        never_add: [...NEVER_ADD_TEXT, 'props not in scenario'],
       },
       aspect_ratio: aspectRatio,
     };
@@ -277,7 +278,8 @@ export default function SesionDeFotos({ onNav }: Props) {
     const instruction = `PHOTO SESSION SHOT (${poseName}):\n${JSON.stringify(spec, null, 2)}`;
 
     try {
-      const { editWithNB2Fal, editImageWithGrokFal } = await import('../services/falService');
+      const { editWithNB2Fal } = await import('../services/falService');
+      const { editFallback } = await import('../services/editFallback');
 
       try {
         const r = await editWithNB2Fal(
@@ -292,14 +294,20 @@ export default function SesionDeFotos({ onNav }: Props) {
         throw new Error('NB2 empty');
       } catch (nb2Err: any) {
         if (nb2Err?.name === 'AbortError') throw nb2Err;
-        // Grok fallback with flat prose
-        const skinFlat = isPhotoreal
-          ? 'Real skin with pores, no plastic look.'
-          : `Keep ${charRenderTag} rendering, do NOT convert to photorealism.`;
-        const flat = `Edit Figure 1: Generate a photo session shot of this ${isPhotoreal ? 'person' : `${charRenderTag} character`}. SCENE: ${scenarioDesc}. OUTFIT: ${outfitDesc}. POSE: ${poseDesc} (${poseName}). LIGHTING: ${lightingDesc}. KEEP: face, identity, outfit, scene. CHANGE only: pose, camera angle. ${skinFlat} Aspect ratio: ${aspectRatio}. NO text/watermarks.`;
-        const r = await editImageWithGrokFal(
-          baseFile, flat, undefined, abortSignal, refFiles, true,
-        );
+        // Fallback prose optimized for Seedream (Grok auto-sanitized in editFallback).
+        const skinFlat = isPhotoreal ? PHOTOREAL_SKIN : renderStyleSkin(charRenderTag);
+        const idProse = identityProse({
+          numReferences: refFiles.length,
+          charIsNonPhoto: !isPhotoreal,
+          renderStyle: !isPhotoreal ? renderStyle : undefined,
+        });
+        const flat = `Edit Figure 1: Generate a photo session shot of this ${isPhotoreal ? 'person' : `${charRenderTag} character`}. ${idProse} Scene: ${scenarioDesc}. Outfit: ${outfitDesc}. Pose: ${poseDesc} (${poseName}). Lighting: ${lightingPhrase(undefined, lightingDesc)}. Change only: pose, camera angle. Keep scenario, outfit, identity. ${skinFlat} Aspect ratio: ${aspectRatio}. ${NO_TEXT_RULE}`;
+        const r = await editFallback({
+          baseImage: baseFile,
+          flatInstruction: flat,
+          referenceImages: refFiles,
+          abortSignal,
+        });
         return r && r.length > 0 ? r[0] : null;
       }
     } catch (err: any) {
@@ -393,6 +401,8 @@ export default function SesionDeFotos({ onNav }: Props) {
 
     const startNext = () => {
       if (abortSignal.aborted) {
+        // Mark any remaining pending slots as failed so UI reflects cancel
+        setSlots(prev => prev.map(s => s.status === 'pending' ? { ...s, status: 'failed', error: 'Cancelado' } : s));
         if (activeWorkers === 0 && resolvedAll) resolvedAll();
         return;
       }
@@ -424,9 +434,11 @@ export default function SesionDeFotos({ onNav }: Props) {
           })
           .finally(() => {
             activeWorkers--;
-            if (nextIdx >= photoSpecs.length && activeWorkers === 0) {
+            // Resolve when (a) all done normally, OR (b) aborted and no more in-flight
+            const allConsumed = nextIdx >= photoSpecs.length;
+            if ((abortSignal.aborted || allConsumed) && activeWorkers === 0) {
               if (resolvedAll) resolvedAll();
-            } else {
+            } else if (!abortSignal.aborted) {
               startNext();
             }
           });
@@ -474,7 +486,9 @@ export default function SesionDeFotos({ onNav }: Props) {
   };
 
   const handleCancel = () => {
+    hapticLight();
     abortRef.current?.abort();
+    toast.info('Cancelando sesión…');
   };
 
   // ─── Mark photos keep / reject ───
@@ -911,7 +925,7 @@ const SESION_STYLES = `
   color: var(--ink-0);
   font-family: 'DM Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
-  padding-bottom: 120px;
+  padding-bottom: calc(150px + env(safe-area-inset-bottom));
   background-image:
     radial-gradient(circle at 25% 15%, rgba(26,20,16,0.04) 1px, transparent 1px),
     radial-gradient(circle at 75% 70%, rgba(26,20,16,0.025) 1px, transparent 1px);

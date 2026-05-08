@@ -10,7 +10,8 @@
     "mobile:sync": "vite build && cap sync",
     "mobile:android": "vite build && cap sync android && cap open android",
     "mobile:ios": "vite build && cap sync ios && cap open ios",
-    "mobile:run:android": "vite build && cap sync android && cap run android"
+    "mobile:run:android": "vite build && cap sync android && cap run android",
+    "compare:engines": "node scripts/compare-engines.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.2",
