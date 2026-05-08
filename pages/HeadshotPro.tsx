@@ -8,12 +8,13 @@
  * Design lives at /public/mockup_headshot_pro_mobile_v2.html
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft, RefreshCw, Sparkles, Aperture, Download, Edit3, Save } from 'lucide-react';
+import { ChevronLeft, RefreshCw, Sparkles, Aperture, Download, Edit3, Share2 } from 'lucide-react';
 import type { Page } from '../App';
 import { useCharacterStore } from '../stores/characterStore';
 import { useGalleryStore } from '../stores/galleryStore';
 import { useProfile } from '../contexts/ProfileContext';
 import { useToast } from '../contexts/ToastContext';
+import { hapticLight, hapticMedium, hapticSuccess, hapticError, sharePhoto } from '../services/nativeService';
 
 // ─── Types ─────────────────────────────────────
 
@@ -118,6 +119,7 @@ export default function HeadshotPro({ onNav }: Props) {
 
   // ─── Toggle expression chip ───
   const toggleExpression = (id: ExpressionId) => {
+    hapticLight();
     setSelectedExpressions(prev => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -129,18 +131,42 @@ export default function HeadshotPro({ onNav }: Props) {
     });
   };
 
+  // ─── Native share ───
+  const handleShare = async () => {
+    if (!resultUrl) return;
+    hapticLight();
+    const stylePreset = STYLE_PRESETS.find(s => s.id === selectedStyle);
+    const ok = await sharePhoto({
+      url: resultUrl,
+      title: 'VIST · Headshot',
+      text: `Hecho con VIST · ${stylePreset?.name || 'Headshot Pro'}`,
+      filename: `vist-headshot-${Date.now()}.jpg`,
+    });
+    if (!ok) {
+      // Fallback: trigger download
+      const a = document.createElement('a');
+      a.href = resultUrl;
+      a.download = `vist-headshot-${Date.now()}.jpg`;
+      a.click();
+      toast.info('Descarga iniciada — no hay compartir nativo en este navegador');
+    }
+  };
+
   // ─── Generate ───
   const handleGenerate = async () => {
     if (!selectedChar) {
       toast.error('Selecciona un personaje primero');
+      hapticError();
       return;
     }
     if (generating) return;
     if (!canAfford) {
       toast.error(`Necesitas ${COST} créditos. Tienes ${credits}.`);
+      hapticError();
       onNav('pricing');
       return;
     }
+    hapticMedium(); // tactile confirmation that primary CTA fired
 
     // Reference URLs from character (face + body refs from creation)
     const refUrls = [
@@ -281,6 +307,7 @@ export default function HeadshotPro({ onNav }: Props) {
       setResultUrl(url);
       setHistory(prev => [url, ...prev].slice(0, 4));
       toast.success('Headshot generado');
+      hapticSuccess();
     } catch (err: any) {
       restoreCredits(COST);
       if (err?.name !== 'AbortError') {
@@ -289,6 +316,7 @@ export default function HeadshotPro({ onNav }: Props) {
         toast.error(isModeration
           ? 'Esta combinación fue rechazada. Tus créditos se restauraron — prueba otro estilo.'
           : `Error: ${msg.slice(0, 120)}`);
+        hapticError();
         console.error(err);
       }
     } finally {
@@ -365,7 +393,7 @@ export default function HeadshotPro({ onNav }: Props) {
           <button
             key={c.id}
             className={`hp-char-chip ${selectedCharId === c.id ? 'is-active' : ''}`}
-            onClick={() => setSelectedCharId(c.id)}
+            onClick={() => { hapticLight(); setSelectedCharId(c.id); }}
           >
             <span
               className="hp-char-thumb"
@@ -391,14 +419,19 @@ export default function HeadshotPro({ onNav }: Props) {
           <>
             <img src={resultUrl} alt="Headshot generado" className="hp-canvas-img" />
             <div className="hp-canvas-actions">
-              <a href={resultUrl} download={`headshot-${Date.now()}.png`} className="hp-canvas-btn">
-                <Download size={14} /> Descargar
-              </a>
-              <button className="hp-canvas-btn" onClick={() => onNav('editor')}>
-                <Edit3 size={14} /> Editar más
+              <button className="hp-canvas-btn" onClick={() => { hapticLight(); onNav('editor'); }}>
+                <Edit3 size={14} /> Editar
               </button>
-              <button className="hp-canvas-btn hp-canvas-btn-prim" onClick={() => onNav('gallery')}>
-                <Save size={14} /> Ir a galería
+              <a
+                href={resultUrl}
+                download={`headshot-${Date.now()}.png`}
+                className="hp-canvas-btn"
+                onClick={() => hapticLight()}
+              >
+                <Download size={14} /> Bajar
+              </a>
+              <button className="hp-canvas-btn hp-canvas-btn-prim" onClick={handleShare}>
+                <Share2 size={14} /> Compartir
               </button>
             </div>
           </>
@@ -438,7 +471,7 @@ export default function HeadshotPro({ onNav }: Props) {
             <button
               key={s.id}
               className={`hp-style-card ${selectedStyle === s.id ? 'is-active' : ''}`}
-              onClick={() => setSelectedStyle(s.id)}
+              onClick={() => { hapticLight(); setSelectedStyle(s.id); }}
             >
               <div className="hp-style-img" style={{ backgroundImage: `url(${s.img})` }} />
               <div className="hp-style-overlay">
@@ -468,7 +501,7 @@ export default function HeadshotPro({ onNav }: Props) {
             <button
               key={b.id}
               className={`hp-chip ${selectedBackdrop === b.id ? 'is-active' : ''}`}
-              onClick={() => setSelectedBackdrop(b.id)}
+              onClick={() => { hapticLight(); setSelectedBackdrop(b.id); }}
             >
               <span className="hp-chip-icon">{b.emoji}</span>
               {b.name}

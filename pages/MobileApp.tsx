@@ -13,6 +13,7 @@ import type { Page } from '../App';
 import { useCharacterStore } from '../stores/characterStore';
 import { useGalleryStore } from '../stores/galleryStore';
 import { useProfile } from '../contexts/ProfileContext';
+import { hapticLight } from '../services/nativeService';
 
 const HeadshotPro = lazy(() => import('./HeadshotPro'));
 const CreatePersona = lazy(() => import('./UploadCharacter'));
@@ -128,7 +129,7 @@ function MobileHome({ onNav }: { onNav: (p: MobilePage) => void }) {
               key={`${app.name}-${i}`}
               className={`m-app-card ${!app.isLive ? 'is-soon' : ''}`}
               disabled={!app.isLive}
-              onClick={() => app.isLive && onNav(app.id as MobilePage)}
+              onClick={() => { if (app.isLive) { hapticLight(); onNav(app.id as MobilePage); } }}
               style={{ '--app-accent': app.accent } as React.CSSProperties}
             >
               <div className="m-app-bg" style={{ backgroundImage: `url(${app.bg})` }} />
@@ -207,7 +208,7 @@ function MobileBottomNav({ active, onNav }: { active: MobilePage; onNav: (p: Mob
         <button
           key={id}
           className={`m-nav-item ${active === id ? 'is-active' : ''}`}
-          onClick={() => onNav(id)}
+          onClick={() => { if (active !== id) hapticLight(); onNav(id); }}
         >
           <Icon size={20} />
           <span>{label}</span>
