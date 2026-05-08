@@ -6,9 +6,25 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "mobile:sync": "vite build && cap sync",
+    "mobile:android": "vite build && cap sync android && cap open android",
+    "mobile:ios": "vite build && cap sync ios && cap open ios",
+    "mobile:run:android": "vite build && cap sync android && cap run android"
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.2",
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/camera": "^8.2.0",
+    "@capacitor/core": "^8.3.2",
+    "@capacitor/filesystem": "^8.1.2",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "^8.3.2",
+    "@capacitor/keyboard": "^8.0.3",
+    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/share": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2",
     "@fal-ai/client": "^1.9.2",
     "@google/genai": "^1.30.0",
     "@lemonsqueezy/lemonsqueezy.js": "^4.0.0",
@@ -27,6 +43,7 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.3.2",
     "@cloudflare/workers-types": "^4.20260306.1",
     "@tailwindcss/vite": "^4.2.1",
     "@types/node": "^22.14.0",

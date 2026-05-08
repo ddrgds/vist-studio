@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>VIST · Sesión de Fotos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Sesión de Fotos mood: Proof Sheet — warm sand, copper, charcoal */
+  --bg-0: #EFE5D2;
+  --bg-1: #F7EFDD;
+  --bg-card: #FDF7E8;
+  --paper: #F2E8D2;
+  --ink-0: #1A1410;
+  --ink-1: #2E2A24;
+  --ink-2: #5E5447;
+  --ink-3: #998E7C;
+  --line: rgba(26, 20, 16, 0.10);
+  --line-soft: rgba(26, 20, 16, 0.05);
+  --copper: #B0772D;
+  --copper-deep: #855317;
+  --amber: #D49544;
+  --gold: #C9A76A;
+  --rust: #8E4A2C;
+  --olive: #6E6A3C;
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  background: var(--bg-0);
+  color: var(--ink-0);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+body {
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding-bottom: 110px;
+  background-image:
+    radial-gradient(circle at 25% 15%, rgba(26,20,16,0.04) 1px, transparent 1px),
+    radial-gradient(circle at 75% 70%, rgba(26,20,16,0.025) 1px, transparent 1px);
+  background-size: 26px 26px, 42px 42px;
+}
+
+.serif { font-family: 'Instrument Serif', serif; font-weight: 400; }
+.italic { font-style: italic; }
+.mono { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+
+/* ─── Top bar ─── */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px 10px;
+  background: linear-gradient(180deg, var(--bg-0) 0%, var(--bg-0) 80%, transparent 100%);
+  backdrop-filter: blur(8px);
+}
+.back-btn {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: transform 0.3s var(--ease);
+}
+.back-btn:active { transform: scale(0.92); }
+
+.topbar-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.topbar-title-dot {
+  width: 6px; height: 6px;
+  background: var(--copper);
+  border-radius: 50%;
+}
+
+.topbar-credits {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 11px;
+  background: var(--bg-card);
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--ink-0);
+  font-weight: 500;
+}
+.topbar-credits-dot { width: 5px; height: 5px; background: var(--gold); border-radius: 50%; }
+
+/* ─── Hero ─── */
+.hero {
+  padding: 6px 20px 0;
+  position: relative;
+}
+.hero-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 8px;
+}
+.hero h1 {
+  font-family: 'Instrument Serif', serif;
+  font-size: 42px;
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  color: var(--ink-0);
+  font-weight: 400;
+}
+.hero h1 em { font-style: italic; color: var(--copper); }
+
+.hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.hero-meta-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: url('https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=120&q=80') center/cover;
+  flex-shrink: 0;
+  border: 2px solid var(--bg-card);
+  box-shadow: 0 0 0 1px var(--line);
+}
+.hero-meta-info {
+  flex: 1;
+  display: flex; flex-direction: column;
+  gap: 2px;
+}
+.hero-meta-info small {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.hero-meta-info strong { font-size: 13px; font-weight: 600; color: var(--ink-0); }
+.hero-meta-action {
+  font-size: 11px;
+  color: var(--copper-deep);
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ─── Contact sheet (PROOF SHEET) ─── */
+.proof {
+  margin: 24px 20px 0;
+  padding: 18px 16px 14px;
+  background: var(--bg-card);
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  position: relative;
+  box-shadow: 0 16px 32px -16px rgba(26, 20, 16, 0.18);
+}
+
+.proof-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.proof-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.proof-title {
+  font-family: 'Instrument Serif', serif;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+.proof-title em { font-style: italic; }
+.proof-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--copper-deep);
+}
+
+.proof-toolbar {
+  display: flex;
+  gap: 4px;
+}
+.proof-tool-btn {
+  width: 32px; height: 32px;
+  border-radius: 9px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-1);
+  cursor: pointer;
+  transition: all 0.3s var(--ease);
+}
+.proof-tool-btn:active { transform: scale(0.92); border-color: var(--copper); color: var(--copper-deep); }
+
+/* Grid 3x4 contact sheet */
+.proof-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  background: var(--ink-0);
+  padding: 6px;
+  border-radius: 10px;
+}
+
+.proof-frame {
+  position: relative;
+  aspect-ratio: 4/5;
+  background: #2E2A24;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s var(--ease);
+}
+.proof-frame:active { transform: scale(0.96); }
+
+.proof-img {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+}
+
+.proof-num {
+  position: absolute;
+  top: 4px; left: 4px;
+  z-index: 3;
+  background: rgba(26, 20, 16, 0.65);
+  backdrop-filter: blur(4px);
+  color: rgba(253, 247, 232, 0.92);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 600;
+  padding: 2px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.1em;
+}
+
+.proof-mark {
+  position: absolute;
+  top: 4px; right: 4px;
+  z-index: 3;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: all 0.3s var(--ease);
+}
+.proof-frame.keep .proof-mark { opacity: 1; transform: scale(1); background: var(--copper); }
+.proof-frame.reject .proof-mark { opacity: 1; transform: scale(1); background: rgba(26, 20, 16, 0.85); }
+
+.proof-frame.reject .proof-img {
+  filter: grayscale(0.85) brightness(0.55);
+}
+.proof-frame.reject::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1.5px solid rgba(255, 100, 100, 0.65);
+  border-radius: 2px;
+  background: linear-gradient(45deg, transparent 49%, rgba(255, 100, 100, 0.65) 49%, rgba(255, 100, 100, 0.65) 51%, transparent 51%),
+              linear-gradient(-45deg, transparent 49%, rgba(255, 100, 100, 0.65) 49%, rgba(255, 100, 100, 0.65) 51%, transparent 51%);
+  z-index: 2;
+}
+
+.proof-frame.empty {
+  background: var(--ink-1);
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(253, 247, 232, 0.35);
+}
+.proof-frame.empty::before {
+  content: '';
+  width: 12px; height: 12px;
+  border: 1.5px dashed rgba(253, 247, 232, 0.2);
+  border-radius: 2px;
+}
+
+/* Proof footer with stats */
+.proof-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+}
+.proof-footer-stats { display: flex; gap: 14px; }
+.proof-stat {
+  display: flex; align-items: center; gap: 4px;
+}
+.proof-stat-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+}
+.proof-stat-dot.keep { background: var(--copper); }
+.proof-stat-dot.reject { background: var(--rust); opacity: 0.6; }
+.proof-stat-dot.pending { background: var(--ink-3); }
+
+/* ─── Director controls ─── */
+.director {
+  margin: 28px 20px 0;
+}
+
+.section-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 14px;
+}
+.section-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--copper-deep);
+}
+.section-title {
+  font-family: 'Instrument Serif', serif;
+  font-size: 26px;
+  letter-spacing: -0.02em;
+  color: var(--ink-0);
+  margin-top: 4px;
+  line-height: 1;
+}
+.section-title em { font-style: italic; }
+
+/* Aspect ratio strip */
+.aspect-strip {
+  display: flex;
+  gap: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 6px;
+}
+.aspect-pill {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 4px 8px;
+  background: transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s var(--ease);
+}
+.aspect-pill.active {
+  background: var(--ink-0);
+  color: #FDF7E8;
+}
+.aspect-shape {
+  border: 1.4px solid currentColor;
+  opacity: 0.85;
+  border-radius: 1px;
+}
+.aspect-3-4 { width: 14px; height: 18px; }
+.aspect-1-1 { width: 16px; height: 16px; }
+.aspect-4-3 { width: 18px; height: 14px; }
+.aspect-9-16 { width: 11px; height: 18px; }
+.aspect-16-9 { width: 18px; height: 10px; }
+
+.aspect-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+.aspect-pill:not(.active) { color: var(--ink-2); }
+
+/* Field block */
+.field {
+  margin-top: 22px;
+}
+.field-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 10px;
+}
+.field-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-1);
+  display: flex; align-items: center; gap: 8px;
+}
+.field-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--copper-deep);
+  font-weight: 500;
+}
+.field-hint {
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.field-action {
+  font-size: 11px;
+  color: var(--copper-deep);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Scenario carousel cards */
+.cards-row {
+  display: flex; gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 -20px;
+  padding: 0 20px 4px;
+  scroll-snap-type: x mandatory;
+}
+.cards-row::-webkit-scrollbar { display: none; }
+
+.scn-card {
+  flex-shrink: 0;
+  width: 130px;
+  scroll-snap-align: start;
+  cursor: pointer;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  aspect-ratio: 4/5;
+  background: #2A1F18;
+  border: 2px solid transparent;
+  transition: transform 0.3s var(--ease);
+}
+.scn-card:active { transform: scale(0.96); }
+.scn-card.active { border-color: var(--copper); }
+
+.scn-img { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.scn-card::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.85) 100%);
+}
+.scn-info {
+  position: absolute;
+  bottom: 10px; left: 10px; right: 10px;
+  z-index: 2;
+  color: #FDF7E8;
+}
+.scn-name {
+  font-family: 'Instrument Serif', serif;
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1;
+}
+.scn-meta {
+  margin-top: 4px;
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  opacity: 0.78;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.scn-check {
+  position: absolute;
+  top: 8px; right: 8px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--copper);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 2;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: all 0.3s var(--ease);
+}
+.scn-card.active .scn-check { opacity: 1; transform: scale(1); }
+
+/* Pose grid 4-col */
+.pose-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.pose-tile {
+  position: relative;
+  aspect-ratio: 4/5;
+  background: var(--ink-0);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.3s var(--ease);
+}
+.pose-tile:active { transform: scale(0.94); }
+.pose-tile.active { border-color: var(--copper); }
+.pose-img { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.75; }
+.pose-tile::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.8) 100%);
+}
+.pose-label {
+  position: absolute;
+  bottom: 5px; left: 5px;
+  z-index: 2;
+  color: #FDF7E8;
+  font-size: 9px;
+  font-weight: 500;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Chips line for outfit/lighting */
+.chips-row {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.chip-2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 13px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-1);
+  cursor: pointer;
+  transition: all 0.3s var(--ease);
+}
+.chip-2.active {
+  background: var(--ink-0);
+  border-color: var(--ink-0);
+  color: #FDF7E8;
+}
+.chip-icon {
+  display: inline-flex;
+  width: 14px; height: 14px;
+  align-items: center; justify-content: center;
+}
+
+/* Lighting quick row (icons + labels) */
+.light-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.light-cell {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.3s var(--ease);
+}
+.light-cell.active { background: var(--ink-0); color: #FDF7E8; border-color: var(--ink-0); }
+.light-cell:not(.active) { color: var(--ink-1); }
+.light-cell svg { width: 22px; height: 22px; }
+.light-cell span {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Photo count selector */
+.count-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 6px;
+}
+.count-pill {
+  padding: 12px 6px;
+  text-align: center;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s var(--ease);
+}
+.count-pill.active { background: var(--ink-0); color: #FDF7E8; }
+.count-pill .count-num {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: 22px;
+  line-height: 1;
+}
+.count-pill .count-label {
+  display: block;
+  margin-top: 2px;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+  opacity: 0.7;
+}
+
+/* Camera/lens selector (compact, pro mode) */
+.camera-row {
+  display: flex;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+  align-items: center;
+  justify-content: space-between;
+}
+.camera-info {
+  display: flex; flex-direction: column; gap: 2px;
+}
+.camera-info small {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.camera-info strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.camera-info em {
+  font-style: italic;
+  color: var(--copper-deep);
+  font-family: 'Instrument Serif', serif;
+  font-weight: 400;
+}
+.camera-pro-toggle {
+  display: flex;
+  background: var(--paper);
+  padding: 3px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.camera-pro-toggle button {
+  border: none;
+  background: transparent;
+  padding: 5px 11px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  color: var(--ink-2);
+}
+.camera-pro-toggle button.active {
+  background: var(--copper);
+  color: #FDF7E8;
+}
+
+/* ─── Floating CTA ─── */
+.floating-cta-wrap {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  padding: 14px 20px calc(20px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, transparent 0%, var(--bg-0) 30%);
+  z-index: 50;
+}
+
+.floating-cta {
+  display: flex;
+  gap: 10px;
+}
+
+.cta-secondary {
+  width: 50px; height: 56px;
+  border-radius: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-1);
+  cursor: pointer;
+  transition: all 0.3s var(--ease);
+}
+.cta-secondary:active {
+  transform: scale(0.94);
+  border-color: var(--copper);
+  color: var(--copper-deep);
+}
+
+.cta-primary {
+  flex: 1;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--copper) 0%, var(--copper-deep) 100%);
+  color: #FDF7E8;
+  border: none;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s var(--ease);
+  box-shadow: 0 10px 24px -8px rgba(133, 83, 23, 0.55);
+}
+.cta-primary:active { transform: scale(0.98); }
+.cta-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: shimmer 3s var(--ease) infinite;
+}
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.cta-cost {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  opacity: 0.78;
+  text-transform: uppercase;
+}
+.cta-arrow {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: rgba(253, 247, 232, 0.18);
+  display: flex; align-items: center; justify-content: center;
+}
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="back-btn">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+  </div>
+  <div class="topbar-title">
+    <span class="topbar-title-dot"></span>
+    <span>Sesión · Studio</span>
+  </div>
+  <div class="topbar-credits">
+    <span class="topbar-credits-dot"></span>
+    <span>1,240</span>
+  </div>
+</div>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-eyebrow">Sesión #048 · Boudoir editorial</div>
+  <h1>Doce tomas,<br><em>una historia.</em></h1>
+
+  <div class="hero-meta">
+    <div class="hero-meta-avatar"></div>
+    <div class="hero-meta-info">
+      <small>Modelo principal</small>
+      <strong>Sofia</strong>
+    </div>
+    <div class="hero-meta-action">
+      Cambiar
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+  </div>
+</section>
+
+<!-- Contact sheet (Proof) -->
+<div class="proof">
+  <div class="proof-header">
+    <div class="proof-title-block">
+      <div class="proof-title">Hoja de <em>contactos</em></div>
+      <div class="proof-meta">9 generadas · 3 keeper · 12 total</div>
+    </div>
+    <div class="proof-toolbar">
+      <div class="proof-tool-btn" title="Comparar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="18" rx="1"/><rect x="13" y="3" width="8" height="18" rx="1"/></svg>
+      </div>
+      <div class="proof-tool-btn" title="Compartir">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg>
+      </div>
+      <div class="proof-tool-btn" title="Más">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="6" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="18" r="1.5" fill="currentColor"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="proof-grid">
+    <!-- Row 1 -->
+    <div class="proof-frame keep">
+      <div class="proof-img" style="background-image: url('https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&q=85');"></div>
+      <span class="proof-num">01</span>
+      <span class="proof-mark">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FDF7E8" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+      </span>
+    </div>
+    <div class="proof-frame">
+      <div class="proof-img" style="background-image: url('https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=300&q=85');"></div>
+      <span class="proof-num">02</span>
+    </div>
+    <div class="proof-frame reject">
+      <div class="proof-img" style="background-image: url('https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=300&q=85');"></div>
+      <span class="proof-num">03</span>
+      <span class="proof-mark"></span>
+    </div>
+    <!-- Row 2 -->
+    <div class="proof-frame keep">
+      <div class="proof-img" style="background-image: url('https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=300&q=85');"></div>
+      <span class="proof-num">04</span>
+      <span class="proof-mark">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FDF7E8" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+      </span>
+    </div>
+    <div class="proof-frame">
+      <div class="proof-img" style="background-image: url('https://images.unsplash.com/photo-1521252659862-eec69941b071?w=300&q=85');"></div>
+      <span class="proof-num">05</span>
+    </div>
+    <div class="proof-frame">
+      <div class="proof-img" style="background-image: url('https://images.unsplash.com/photo-1542140372-de3a3f87a9a4?w=300&q=85');"></div>
+      <span class="proof-num">06</span>
+    </div>
+    <!-- Row 3 -->
+    <div class="proof-frame keep">
+      <div class="proof-img" style="background-image: url('https://images.unsplash.com/photo-1551316679-9c6ae9dec224?w=300&q=85');"></div>
+      <span class="proof-num">07</span>
+      <span class="proof-mark">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FDF7E8" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+      </span>
+    </div>
+    <div class="proof-frame">
+      <div class="proof-img" style="background-image: url('https://images.unsplash.com/photo-1496440737103-cd596325d314?w=300&q=85');"></div>
+      <span class="proof-num">08</span>
+    </div>
+    <div class="proof-frame">
+      <div class="proof-img" style="background-image: url('https://images.unsplash.com/photo-1548142813-c348350df52b?w=300&q=85');"></div>
+      <span class="proof-num">09</span>
+    </div>
+    <!-- Row 4 -->
+    <div class="proof-frame empty"></div>
+    <div class="proof-frame empty"></div>
+    <div class="proof-frame empty"></div>
+  </div>
+
+  <div class="proof-footer">
+    <div class="proof-footer-stats">
+      <div class="proof-stat"><span class="proof-stat-dot keep"></span>3 keeper</div>
+      <div class="proof-stat"><span class="proof-stat-dot reject"></span>1 reject</div>
+      <div class="proof-stat"><span class="proof-stat-dot pending"></span>3 pendiente</div>
+    </div>
+    <span>·</span>
+    <span>40 cr · 2m 14s</span>
+  </div>
+</div>
+
+<!-- Director — Aspect ratio -->
+<section class="director">
+  <div class="section-head">
+    <div>
+      <span class="section-eyebrow">Dirección · 01</span>
+      <h2 class="section-title"><em>Formato</em></h2>
+    </div>
+  </div>
+
+  <div class="aspect-strip">
+    <div class="aspect-pill">
+      <div class="aspect-shape aspect-3-4"></div>
+      <span class="aspect-label">3:4</span>
+    </div>
+    <div class="aspect-pill">
+      <div class="aspect-shape aspect-1-1"></div>
+      <span class="aspect-label">1:1</span>
+    </div>
+    <div class="aspect-pill">
+      <div class="aspect-shape aspect-4-3"></div>
+      <span class="aspect-label">4:3</span>
+    </div>
+    <div class="aspect-pill active">
+      <div class="aspect-shape aspect-9-16"></div>
+      <span class="aspect-label">9:16</span>
+    </div>
+    <div class="aspect-pill">
+      <div class="aspect-shape aspect-16-9"></div>
+      <span class="aspect-label">16:9</span>
+    </div>
+  </div>
+
+  <!-- Photo count -->
+  <div class="field">
+    <div class="field-head">
+      <div class="field-name"><span class="field-num">02</span>Cantidad</div>
+      <div class="field-hint">Más tomas = más coherencia</div>
+    </div>
+    <div class="count-row">
+      <div class="count-pill">
+        <div class="count-num">4</div>
+        <span class="count-label">Quick</span>
+      </div>
+      <div class="count-pill">
+        <div class="count-num">6</div>
+        <span class="count-label">Mini</span>
+      </div>
+      <div class="count-pill">
+        <div class="count-num">9</div>
+        <span class="count-label">Full</span>
+      </div>
+      <div class="count-pill active">
+        <div class="count-num">12</div>
+        <span class="count-label">Ed.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scenario -->
+  <div class="field">
+    <div class="field-head">
+      <div class="field-name"><span class="field-num">03</span>Escenario</div>
+      <div class="field-action">Ver 28 →</div>
+    </div>
+    <div class="cards-row">
+      <div class="scn-card">
+        <div class="scn-img" style="background-image: url('https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=400&q=85');"></div>
+        <div class="scn-info">
+          <div class="scn-name">Loft Brooklyn</div>
+          <div class="scn-meta">Interior · día</div>
+        </div>
+      </div>
+      <div class="scn-card active">
+        <div class="scn-img" style="background-image: url('https://images.unsplash.com/photo-1542038784456-1ea8e935640e?w=400&q=85');"></div>
+        <div class="scn-info">
+          <div class="scn-name">Hotel boutique</div>
+          <div class="scn-meta">Suite · ventana</div>
+        </div>
+        <div class="scn-check">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FDF7E8" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+        </div>
+      </div>
+      <div class="scn-card">
+        <div class="scn-img" style="background-image: url('https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=400&q=85');"></div>
+        <div class="scn-info">
+          <div class="scn-name">Beach Tulum</div>
+          <div class="scn-meta">Exterior · sunset</div>
+        </div>
+      </div>
+      <div class="scn-card">
+        <div class="scn-img" style="background-image: url('https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=400&q=85');"></div>
+        <div class="scn-info">
+          <div class="scn-name">Café parisino</div>
+          <div class="scn-meta">Interior · noche</div>
+        </div>
+      </div>
+      <div class="scn-card">
+        <div class="scn-img" style="background-image: url('https://images.unsplash.com/photo-1444723121867-7a241cacace9?w=400&q=85');"></div>
+        <div class="scn-info">
+          <div class="scn-name">Editorial studio</div>
+          <div class="scn-meta">Set · backdrop</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Outfit -->
+  <div class="field">
+    <div class="field-head">
+      <div class="field-name"><span class="field-num">04</span>Outfit</div>
+      <div class="field-hint">Multi-select · varían entre tomas</div>
+    </div>
+    <div class="chips-row">
+      <div class="chip-2 active"><span class="chip-icon">⌬</span>Slip dress seda</div>
+      <div class="chip-2 active"><span class="chip-icon">◐</span>Lencería editorial</div>
+      <div class="chip-2"><span class="chip-icon">▷</span>Camisa oversized</div>
+      <div class="chip-2"><span class="chip-icon">▲</span>Robe satin</div>
+      <div class="chip-2"><span class="chip-icon">◑</span>Bikini minimal</div>
+      <div class="chip-2"><span class="chip-icon">▽</span>Trench coat</div>
+    </div>
+  </div>
+
+  <!-- Pose -->
+  <div class="field">
+    <div class="field-head">
+      <div class="field-name"><span class="field-num">05</span>Pose</div>
+      <div class="field-action">Ver todas →</div>
+    </div>
+    <div class="pose-grid">
+      <div class="pose-tile active">
+        <div class="pose-img" style="background-image: url('https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=85');"></div>
+        <span class="pose-label">Sentada</span>
+      </div>
+      <div class="pose-tile">
+        <div class="pose-img" style="background-image: url('https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=200&q=85');"></div>
+        <span class="pose-label">Acostada</span>
+      </div>
+      <div class="pose-tile">
+        <div class="pose-img" style="background-image: url('https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=200&q=85');"></div>
+        <span class="pose-label">De pie</span>
+      </div>
+      <div class="pose-tile">
+        <div class="pose-img" style="background-image: url('https://images.unsplash.com/photo-1542140372-de3a3f87a9a4?w=200&q=85');"></div>
+        <span class="pose-label">Espejo</span>
+      </div>
+      <div class="pose-tile active">
+        <div class="pose-img" style="background-image: url('https://images.unsplash.com/photo-1521252659862-eec69941b071?w=200&q=85');"></div>
+        <span class="pose-label">Mirada lejos</span>
+      </div>
+      <div class="pose-tile">
+        <div class="pose-img" style="background-image: url('https://images.unsplash.com/photo-1551316679-9c6ae9dec224?w=200&q=85');"></div>
+        <span class="pose-label">Apoyo ventana</span>
+      </div>
+      <div class="pose-tile">
+        <div class="pose-img" style="background-image: url('https://images.unsplash.com/photo-1496440737103-cd596325d314?w=200&q=85');"></div>
+        <span class="pose-label">Caminando</span>
+      </div>
+      <div class="pose-tile">
+        <div class="pose-img" style="background-image: url('https://images.unsplash.com/photo-1548142813-c348350df52b?w=200&q=85');"></div>
+        <span class="pose-label">Reclinada</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lighting -->
+  <div class="field">
+    <div class="field-head">
+      <div class="field-name"><span class="field-num">06</span>Iluminación</div>
+    </div>
+    <div class="light-row">
+      <div class="light-cell active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg>
+        <span>Luz natural</span>
+      </div>
+      <div class="light-cell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2a7 7 0 017 7c0 3.5-2 5-3 6.5-.5.7-.5 1.5-.5 2v.5h-7v-.5c0-.5 0-1.3-.5-2-1-1.5-3-3-3-6.5a7 7 0 017-7z"/><path d="M9.5 21h5"/></svg>
+        <span>Golden hour</span>
+      </div>
+      <div class="light-cell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        <span>Estudio</span>
+      </div>
+      <div class="light-cell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/></svg>
+        <span>Nocturna</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Camera/lens -->
+  <div class="field">
+    <div class="field-head">
+      <div class="field-name"><span class="field-num">07</span>Cámara · Lente</div>
+    </div>
+    <div class="camera-row">
+      <div class="camera-info">
+        <small>Set up</small>
+        <strong>35mm <em>f/1.8</em> · medium shot</strong>
+      </div>
+      <div class="camera-pro-toggle">
+        <button>Auto</button>
+        <button class="active">Pro</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Floating CTA -->
+<div class="floating-cta-wrap">
+  <div class="floating-cta">
+    <button class="cta-secondary" title="Reset">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 0115.5-6.3L21 8"/><path d="M21 3v5h-5"/></svg>
+    </button>
+    <button class="cta-primary">
+      <span class="cta-cost">40 cr · 12 fotos</span>
+      <span style="font-family: 'Instrument Serif', serif; font-size: 19px; font-style: italic;">Generar sesión</span>
+      <span class="cta-arrow">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </span>
+    </button>
+  </div>
+</div>
+
+</body>
+</html>

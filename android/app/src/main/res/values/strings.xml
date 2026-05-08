@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">VIST</string>
+    <string name="title_activity_main">VIST</string>
+    <string name="package_name">com.vist.studio</string>
+    <string name="custom_url_scheme">com.vist.studio</string>
+</resources>

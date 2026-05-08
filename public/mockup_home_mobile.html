@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>VIST · Home</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-0: #F4EDE0;
+  --bg-1: #FAF6EE;
+  --bg-card: #FFFFFF;
+  --ink-0: #1A1614;
+  --ink-1: #3D3530;
+  --ink-2: #6E6258;
+  --ink-3: #A99B8C;
+  --line: rgba(26, 22, 20, 0.08);
+  --line-soft: rgba(26, 22, 20, 0.04);
+  --champagne: #C9985A;
+  --rose: #8B4566;
+  --terracotta: #C9785C;
+  --amber: #E8A04C;
+  --plum: #5C3A6E;
+  --gold: #D4A85F;
+  --cobalt: #2E4DA8;
+  --forest: #4A6B47;
+  --nude: #D8A39A;
+  --slate: #5A6B7E;
+  --teal: #2E7B7A;
+  --crimson: #A53A4A;
+  --olive: #707049;
+  --sky: #6BA8C9;
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  background: var(--bg-0);
+  color: var(--ink-0);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+body {
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding-bottom: 100px;
+  background-image:
+    radial-gradient(circle at 20% 10%, rgba(26,22,20,0.025) 1px, transparent 1px),
+    radial-gradient(circle at 80% 60%, rgba(26,22,20,0.025) 1px, transparent 1px);
+  background-size: 32px 32px, 48px 48px;
+}
+
+.serif { font-family: 'Instrument Serif', serif; font-weight: 400; }
+.italic { font-style: italic; }
+.mono { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+
+/* ─── Top bar ─── */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  background: linear-gradient(180deg, var(--bg-0) 0%, var(--bg-0) 75%, transparent 100%);
+  backdrop-filter: blur(8px);
+}
+
+.greet { display: flex; align-items: center; gap: 12px; }
+
+.avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: url('https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=200&q=80') center/cover;
+  border: 2px solid var(--bg-card);
+  box-shadow: 0 0 0 1px var(--line);
+  position: relative;
+}
+.avatar::after {
+  content: '';
+  position: absolute;
+  bottom: 0; right: 0;
+  width: 10px; height: 10px;
+  background: var(--gold);
+  border-radius: 50%;
+  border: 2px solid var(--bg-0);
+}
+
+.greet-text { display: flex; flex-direction: column; line-height: 1.1; }
+.greet-text small {
+  font-size: 11px; color: var(--ink-3);
+  letter-spacing: 0.05em; text-transform: uppercase;
+}
+.greet-text strong { font-size: 14px; color: var(--ink-0); font-weight: 600; margin-top: 2px; }
+
+.credits {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: var(--bg-card);
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  color: var(--ink-0);
+}
+.credits-dot { width: 6px; height: 6px; background: var(--gold); border-radius: 50%; }
+
+/* ─── Hero editorial ─── */
+.hero-section { padding: 8px 20px 4px; }
+
+.hero-header {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.hero-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 0.2em;
+  color: var(--ink-3); text-transform: uppercase;
+}
+.hero-link {
+  font-size: 12px; color: var(--ink-1);
+  text-decoration: none;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+
+.hero {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  aspect-ratio: 4/5;
+  background: #2A2520;
+  box-shadow: 0 24px 48px -16px rgba(26,22,20,0.25);
+}
+.hero-img {
+  position: absolute; inset: 0;
+  background: url('https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=800&q=85') center/cover;
+}
+.hero::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 30%, rgba(20,16,14,0.4) 60%, rgba(20,16,14,0.92) 100%);
+}
+
+.hero-tag {
+  position: absolute;
+  top: 18px; left: 18px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px;
+  background: rgba(250, 246, 238, 0.92);
+  backdrop-filter: blur(8px);
+  border-radius: 999px;
+  font-size: 10px; letter-spacing: 0.18em;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--ink-0); z-index: 2;
+}
+.hero-tag-dot { width: 6px; height: 6px; background: var(--rose); border-radius: 50%; }
+
+.hero-content {
+  position: absolute; bottom: 24px; left: 22px; right: 22px;
+  z-index: 2; color: #FAF6EE;
+}
+.hero-content h1 {
+  font-family: 'Instrument Serif', serif;
+  font-size: 38px; line-height: 0.95;
+  letter-spacing: -0.02em; font-weight: 400;
+}
+.hero-content h1 em { font-style: italic; color: var(--champagne); }
+.hero-content p {
+  margin-top: 12px; font-size: 13px;
+  color: rgba(250, 246, 238, 0.78);
+  max-width: 280px; line-height: 1.5;
+}
+.hero-cta {
+  margin-top: 20px;
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 12px 20px;
+  background: var(--bg-card);
+  color: var(--ink-0);
+  border: none; border-radius: 999px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px; font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.4s var(--ease);
+}
+.hero-cta:active { transform: scale(0.96); }
+
+/* ─── Sections ─── */
+.section { padding: 32px 20px 0; }
+.section-header {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.section-title {
+  font-family: 'Instrument Serif', serif;
+  font-size: 24px; letter-spacing: -0.01em;
+  color: var(--ink-0);
+}
+.section-title em { font-style: italic; }
+.section-link {
+  font-size: 12px; color: var(--ink-2);
+  text-decoration: none; font-weight: 500;
+}
+
+/* ─── Empieza aquí (foundational apps) ─── */
+.foundation-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.foundation-card {
+  position: relative;
+  padding: 18px;
+  border-radius: 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: transform 0.4s var(--ease), border-color 0.3s var(--ease);
+  overflow: hidden;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.foundation-card:active { transform: scale(0.97); }
+.foundation-card::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 100px; height: 100px;
+  border-radius: 50%;
+  opacity: 0.18;
+  filter: blur(20px);
+}
+.foundation-card.f-create::before { background: var(--terracotta); }
+.foundation-card.f-hero::before { background: var(--gold); }
+.foundation-step {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  z-index: 2;
+}
+.step-dot {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--ink-0);
+  color: var(--bg-0);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0;
+}
+.foundation-card h3 {
+  font-family: 'Instrument Serif', serif;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--ink-0);
+  margin-top: 24px;
+  position: relative; z-index: 2;
+}
+.foundation-card h3 em { font-style: italic; }
+.foundation-card small {
+  font-size: 12px;
+  color: var(--ink-2);
+  margin-top: 6px;
+  display: block;
+  line-height: 1.4;
+  position: relative; z-index: 2;
+}
+.foundation-card .arrow {
+  align-self: flex-end;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--ink-0);
+  color: var(--bg-0);
+  display: flex; align-items: center; justify-content: center;
+  position: relative; z-index: 2;
+  margin-top: 12px;
+}
+
+/* ─── Continue ─── */
+.continue {
+  display: flex; gap: 12px;
+  padding: 14px;
+  background: var(--bg-card);
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  align-items: center;
+}
+.continue-thumb {
+  width: 56px; height: 56px;
+  border-radius: 12px;
+  background: url('https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80') center/cover;
+  flex-shrink: 0;
+  position: relative;
+}
+.continue-thumb::after {
+  content: '';
+  position: absolute;
+  bottom: -3px; right: -3px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--rose);
+  border: 2.5px solid var(--bg-card);
+}
+.continue-info { flex: 1; min-width: 0; }
+.continue-info small {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--rose);
+}
+.continue-info h4 { font-size: 14px; font-weight: 600; color: var(--ink-0); margin-top: 2px; }
+.continue-info p { font-size: 12px; color: var(--ink-2); margin-top: 1px; }
+.continue-arrow {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--bg-0);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-1);
+}
+
+/* ─── Apps grid ─── */
+.apps-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 18px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+}
+.apps-tabs::-webkit-scrollbar { display: none; }
+
+.apps-tab {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 12px; font-weight: 500;
+  color: var(--ink-2); cursor: pointer;
+  transition: all 0.3s var(--ease);
+}
+.apps-tab.active {
+  background: var(--ink-0);
+  border-color: var(--ink-0);
+  color: var(--bg-0);
+}
+
+/* Group label */
+.group-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  margin: 22px 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.group-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.apps-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.app-card {
+  position: relative;
+  aspect-ratio: 3/4;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  background: #2A2520;
+  transition: transform 0.4s var(--ease);
+}
+.app-card:active { transform: scale(0.97); }
+
+.app-card-bg { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.app-card::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.85) 100%);
+}
+
+.app-card-corner {
+  position: absolute;
+  top: 12px; left: 12px;
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 9px;
+  background: rgba(250, 246, 238, 0.88);
+  backdrop-filter: blur(6px);
+  border-radius: 999px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-0);
+  z-index: 2;
+}
+.corner-dot { width: 5px; height: 5px; border-radius: 50%; }
+
+.app-card-lock, .app-card-new {
+  position: absolute;
+  top: 12px; right: 12px;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: rgba(20, 16, 14, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 2;
+}
+.app-card-new {
+  background: var(--rose);
+  width: auto;
+  padding: 4px 9px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  color: var(--bg-1);
+  border-radius: 999px;
+}
+
+.app-card-content {
+  position: absolute;
+  bottom: 14px; left: 14px; right: 14px;
+  z-index: 2;
+  color: #FAF6EE;
+}
+.app-card-content h3 {
+  font-family: 'Instrument Serif', serif;
+  font-size: 22px; line-height: 0.95;
+  letter-spacing: -0.01em;
+}
+.app-card-content h3 em { font-style: italic; }
+.app-card-content small {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: rgba(250, 246, 238, 0.75);
+  font-weight: 500;
+}
+
+.app-card-meta {
+  margin-top: 10px;
+  display: flex; align-items: center; gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: rgba(250, 246, 238, 0.6);
+  text-transform: uppercase;
+}
+
+/* ─── Inspiration row ─── */
+.inspo-section { padding: 36px 0 0; }
+.inspo-section .section-header { padding: 0 20px; }
+
+.inspo-row {
+  display: flex; gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 4px 20px 0;
+  scroll-snap-type: x mandatory;
+}
+.inspo-row::-webkit-scrollbar { display: none; }
+
+.inspo-card {
+  flex-shrink: 0;
+  width: 130px;
+  aspect-ratio: 3/4;
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+  background: #2A2520;
+  scroll-snap-align: start;
+}
+.inspo-card-img { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.inspo-card::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.85) 100%);
+}
+.inspo-tag {
+  position: absolute;
+  bottom: 10px; left: 10px;
+  z-index: 2;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: rgba(250, 246, 238, 0.92);
+  text-transform: uppercase;
+}
+
+/* ─── Bottom nav ─── */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: rgba(250, 246, 238, 0.92);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--line);
+  padding: 10px 16px calc(20px + env(safe-area-inset-bottom));
+  z-index: 50;
+}
+.nav-item {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 4px;
+  font-size: 10px; color: var(--ink-3);
+  font-weight: 500; cursor: pointer;
+  transition: color 0.3s var(--ease);
+}
+.nav-item.active { color: var(--ink-0); }
+.nav-item svg { width: 22px; height: 22px; }
+
+/* Per-app moods */
+.mood-headshot .app-card-bg { background-image: url('https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&q=85'); }
+.mood-headshot .corner-dot { background: var(--terracotta); }
+
+.mood-reimagine .app-card-bg { background-image: url('https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=600&q=85'); }
+.mood-reimagine .corner-dot { background: var(--rose); }
+
+.mood-recast .app-card-bg { background-image: url('https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=85'); }
+.mood-recast .corner-dot { background: var(--amber); }
+
+.mood-tryon .app-card-bg { background-image: url('https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&q=85'); }
+.mood-tryon .corner-dot { background: var(--plum); }
+
+.mood-soul .app-card-bg { background-image: url('https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&q=85'); }
+.mood-soul .corner-dot { background: var(--gold); }
+
+.mood-pose .app-card-bg { background-image: url('https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=600&q=85'); }
+.mood-pose .corner-dot { background: var(--cobalt); }
+
+.mood-skin .app-card-bg { background-image: url('https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=600&q=85'); }
+.mood-skin .corner-dot { background: var(--nude); }
+
+.mood-relight .app-card-bg { background-image: url('https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&q=85'); }
+.mood-relight .corner-dot { background: var(--amber); }
+
+.mood-backdrop .app-card-bg { background-image: url('https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=600&q=85'); }
+.mood-backdrop .corner-dot { background: var(--forest); }
+
+.mood-angles .app-card-bg { background-image: url('https://images.unsplash.com/photo-1545912452-8aea7e25a3d3?w=600&q=85'); }
+.mood-angles .corner-dot { background: var(--slate); }
+
+.mood-session .app-card-bg { background-image: url('https://images.unsplash.com/photo-1496440737103-cd596325d314?w=600&q=85'); }
+.mood-session .corner-dot { background: var(--terracotta); }
+
+.mood-freeai .app-card-bg { background-image: url('https://images.unsplash.com/photo-1542140372-de3a3f87a9a4?w=600&q=85'); }
+.mood-freeai .corner-dot { background: var(--ink-0); }
+
+.mood-faceswap .app-card-bg { background-image: url('https://images.unsplash.com/photo-1521252659862-eec69941b071?w=600&q=85'); }
+.mood-faceswap .corner-dot { background: var(--crimson); }
+
+.mood-style .app-card-bg { background-image: url('https://images.unsplash.com/photo-1551316679-9c6ae9dec224?w=600&q=85'); }
+.mood-style .corner-dot { background: var(--olive); }
+
+.mood-upscale .app-card-bg { background-image: url('https://images.unsplash.com/photo-1535324492437-d8dea70a38a7?w=600&q=85'); }
+.mood-upscale .corner-dot { background: var(--teal); }
+
+.mood-reels .app-card-bg { background-image: url('https://images.unsplash.com/photo-1542038784456-1ea8e935640e?w=600&q=85'); }
+.mood-reels .corner-dot { background: var(--rose); }
+
+.mood-voice .app-card-bg { background-image: url('https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=600&q=85'); }
+.mood-voice .corner-dot { background: var(--sky); }
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="greet">
+    <div class="avatar"></div>
+    <div class="greet-text">
+      <small>Trabajando con</small>
+      <strong>Sofia · Modelo principal</strong>
+    </div>
+  </div>
+  <div class="credits">
+    <span class="credits-dot"></span>
+    <span>1,240</span>
+  </div>
+</div>
+
+<!-- Hero featured app -->
+<section class="hero-section">
+  <div class="hero-header">
+    <span class="hero-eyebrow">App de la semana</span>
+    <a class="hero-link" href="#">Ver todas →</a>
+  </div>
+
+  <div class="hero">
+    <div class="hero-img"></div>
+    <div class="hero-tag">
+      <span class="hero-tag-dot"></span>
+      <span>NUEVO · REIMAGINAR</span>
+    </div>
+    <div class="hero-content">
+      <h1>Mismo modelo,<br><em>otro mundo.</em></h1>
+      <p>427 estilos editoriales. De boudoir a Y2K, de dark academia a beach tropical.</p>
+      <button class="hero-cta">
+        Probar ahora
+        <span style="font-size: 16px;">→</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- Empieza aquí (foundations) -->
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">Empieza <em>aquí</em></h2>
+    <a class="section-link" href="#">Tutorial →</a>
+  </div>
+  <div class="foundation-row">
+    <div class="foundation-card f-create">
+      <div class="foundation-step">
+        <span class="step-dot">1</span>
+        <span>Base</span>
+      </div>
+      <div>
+        <h3>Crear <em>Personaje</em></h3>
+        <small>Construye tu modelo virtual desde cero</small>
+      </div>
+      <div class="arrow">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </div>
+    </div>
+    <div class="foundation-card f-hero">
+      <div class="foundation-step">
+        <span class="step-dot">2</span>
+        <span>Canon</span>
+      </div>
+      <div>
+        <h3>Hero <em>Photo</em></h3>
+        <small>Foto canon que define a tu personaje</small>
+      </div>
+      <div class="arrow">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Continue -->
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">Continúa <em>donde lo dejaste</em></h2>
+  </div>
+  <div class="continue">
+    <div class="continue-thumb"></div>
+    <div class="continue-info">
+      <small>Reimaginar · Boudoir editorial</small>
+      <h4>Sesión #047</h4>
+      <p>3 fotos en proceso · hace 2h</p>
+    </div>
+    <div class="continue-arrow">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+  </div>
+</section>
+
+<!-- Apps suite -->
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">Apps <em>VIST</em></h2>
+    <a class="section-link" href="#">17 apps</a>
+  </div>
+
+  <div class="apps-tabs">
+    <button class="apps-tab active">Todas</button>
+    <button class="apps-tab">Crear</button>
+    <button class="apps-tab">Editar</button>
+    <button class="apps-tab">Video</button>
+    <button class="apps-tab">Voz</button>
+    <button class="apps-tab">Pro</button>
+  </div>
+
+  <!-- ─── CREAR ─── -->
+  <div class="group-label">Crear · Sesiones</div>
+  <div class="apps-grid">
+
+    <div class="app-card mood-session">
+      <div class="app-card-bg"></div>
+      <div class="app-card-corner"><span class="corner-dot"></span><span>Sesión</span></div>
+      <div class="app-card-content">
+        <h3>Sesión de <em>Fotos</em></h3>
+        <small>Multi-foto coherente</small>
+        <div class="app-card-meta"><span>40 cr</span><span>·</span><span>4-12 fotos</span></div>
+      </div>
+    </div>
+
+    <div class="app-card mood-headshot">
+      <div class="app-card-bg"></div>
+      <div class="app-card-corner"><span class="corner-dot"></span><span>Pro</span></div>
+      <div class="app-card-content">
+        <h3>Headshot <em>Pro</em></h3>
+        <small>Retratos profesionales</small>
+        <div class="app-card-meta"><span>10 cr</span><span>·</span><span>30s</span></div>
+      </div>
+    </div>
+
+    <div class="app-card mood-reimagine">
+      <div class="app-card-bg"></div>
+      <div class="app-card-new">NUEVO</div>
+      <div class="app-card-corner"><span class="corner-dot"></span><span>Editorial</span></div>
+      <div class="app-card-content">
+        <h3>Reima<em>ginar</em></h3>
+        <small>427 estilos</small>
+        <div class="app-card-meta"><span>10 cr</span><span>·</span><span>20s</span></div>
+      </div>
+    </div>
+
+    <div class="app-card mood-tryon">
+      <div class="app-card-bg"></div>
+      <div class="app-card-corner"><span class="corner-dot"></span><span>Outfit</span></div>
+      <div class="app-card-content">
+        <h3>Try-<em>On</em></h3>
+        <small>Pruébate cualquier prenda</small>
+        <div class="app-card-meta"><span>10 cr</span><span>·</span><span>25s</span></div>
+      </div>
+    </div>
+
+    <div class="app-card mood-pose">
+      <div class="app-card-bg"></div>
+      <div class="app-card-corner"><span class="corner-dot"></span><span>Director</span></div>
+      <div class="app-card-content">
+        <h3>Pose <em>Director</em></h3>
+        <small>Dirige cada ángulo</small>
+        <div class="app-card-meta"><span>10 cr</span><span>·</span><span>20s</span></div>
+      </div>
+    </div>
+
+    <div class="app-card mood-angles">
+      <div class="app-card-bg"></div>
+      <div class="app-card-corner"><span class="corner-dot"></span><span>Ficha</span></div>
+      <div class="app-card-content">
+        <h3><em>Ángulos</em></h3>
+        <small>Ficha completa 9 ángulos</small>
+        <div class="app-card-meta"><span>15 cr</span><span>·</span><span>40s</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ─── EDITAR ─── -->
+  <div class="group-label">Editar · Retoque</div>
+  <div class="apps-grid">
+
+    <div class="app-card mood-freeai">
+      <div class="app-card-bg"></div>
+      <div class="app-card-corner"><span class="corner-dot"></span><span>Libre</span></div>
+      <div class="app-card-content">
+        <h3>Editor <em>IA</em></h3>
+        <small>Pinta, borra, transforma</small>
+        <div class="app-card-meta"><span>8 cr</span><span>·</span><span>Inpaint</span></div>
+      </div>
+    </div>
+
+    <div class="app-card mood-skin">
+      <div class="app-card-bg"></div>
+      <div class="app-card-corner"><span class="corner-dot"></span><span>Retoque</span></div>
+      <div class="app-card-content">
+        <h3><em>Skin</em></h3>
+        <small>Piel de revista</small>
+        <div class="app-card-meta"><span>6 cr</span><span>·</span><span>15s</span></div>
+      </div>
+    </div>
+
+    <div class="app-card mood-relight">
+      <div class="app-card-bg"></div>
+      <div class="app-card-corner"><span class="corner-dot"></span><span>Luz</span></div>
+      <div class="app-card-content">
+        <h3>Re<em>light</em></h3>
+        <small>Vuelve a iluminar</small>
+        <div class="app-card-meta"><span>6 cr</span><span>·</span><span>15s</span></div>
+      </div>
+    </div>
+
+    <div class="app-card mood-backdrop">
+      <div class="app-card-bg"></div>
+      <div class="app-card-corner"><span class="corner-dot"></span><span>Fondo</span></div>
+      <div class="app-card-content">
+        <h3>Back<em>drop</em></h3>
+        <small>Cambia el mundo detrás</small>
+        <div class="app-card-meta"><span>8 cr</span><span>·</span><span>18s</span></div>
+      </div>
+    </div>
+
+    <div class="app-card mood-faceswap">
+      <div class="app-card-bg"></div>
+      <div class="app-card-corner"><span class="corner-dot"></span><span>Identity</span></div>
+      <div class="app-card-content">
+        <h3>Face <em>Swap</em></h3>
+        <small>Mismo rostro, otra escena</small>
+        <div class="app-card-meta"><span>8 cr</span><span>·</span><span>20s</span></div>
+      </div>
+    </div>
+
+    <div class="app-card mood-style">
+      <div class="app-card-bg"></div>
+      <div class="app-card-corner"><span class="corner-dot"></span><span>Style</span></div>
+      <div class="app-card-content">
+        <h3>Style <em>Transfer</em></h3>
+        <small>Misma pose, otro look</small>
+        <div class="app-card-meta"><span>8 cr</span><span>·</span><span>18s</span></div>
+      </div>
+    </div>
+
+    <div class="app-card mood-upscale">
+      <div class="app-card-bg"></div>
+      <div class="app-card-corner"><span class="corner-dot"></span><span>HD</span></div>
+      <div class="app-card-content">
+        <h3>Up<em>scale</em></h3>
+        <small>Resolución 4K</small>
+        <div class="app-card-meta"><span>4 cr</span><span>·</span><span>10s</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ─── VIDEO ─── -->
+  <div class="group-label">Video · Reels</div>
+  <div class="apps-grid">
+
+    <div class="app-card mood-recast">
+      <div class="app-card-bg"></div>
+      <div class="app-card-corner"><span class="corner-dot"></span><span>Cinema</span></div>
+      <div class="app-card-content">
+        <h3>Re<em>cast</em></h3>
+        <small>Reels filmicos motion control</small>
+        <div class="app-card-meta"><span>40 cr</span><span>·</span><span>2m</span></div>
+      </div>
+    </div>
+
+    <div class="app-card mood-reels">
+      <div class="app-card-bg"></div>
+      <div class="app-card-new">NUEVO</div>
+      <div class="app-card-corner"><span class="corner-dot"></span><span>Vertical</span></div>
+      <div class="app-card-content">
+        <h3>Reels <em>Maker</em></h3>
+        <small>9:16 IG · TikTok ready</small>
+        <div class="app-card-meta"><span>30 cr</span><span>·</span><span>90s</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ─── VOZ ─── -->
+  <div class="group-label">Voz · Audio</div>
+  <div class="apps-grid">
+
+    <div class="app-card mood-voice">
+      <div class="app-card-bg"></div>
+      <div class="app-card-corner"><span class="corner-dot"></span><span>TTS</span></div>
+      <div class="app-card-content">
+        <h3><em>Voice</em></h3>
+        <small>Voz natural en español</small>
+        <div class="app-card-meta"><span>5 cr</span><span>·</span><span>30s</span></div>
+      </div>
+    </div>
+
+    <div class="app-card mood-voice" style="opacity: 0.7;">
+      <div class="app-card-bg" style="background-image: url('https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&q=85');"></div>
+      <div class="app-card-lock">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FAF6EE" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      </div>
+      <div class="app-card-corner"><span class="corner-dot" style="background: var(--sky);"></span><span>Beta</span></div>
+      <div class="app-card-content">
+        <h3>Lip<em>Sync</em></h3>
+        <small>Sincronización labial</small>
+        <div class="app-card-meta"><span>20 cr</span><span>·</span><span>Pro+</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ─── PRO ─── -->
+  <div class="group-label">Pro · Premium</div>
+  <div class="apps-grid">
+
+    <div class="app-card mood-soul">
+      <div class="app-card-bg"></div>
+      <div class="app-card-corner"><span class="corner-dot"></span><span>Premium</span></div>
+      <div class="app-card-lock">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FAF6EE" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      </div>
+      <div class="app-card-content">
+        <h3><em>Soul</em></h3>
+        <small>Personajes con alma</small>
+        <div class="app-card-meta"><span>20 cr</span><span>·</span><span>Pro+</span></div>
+      </div>
+    </div>
+
+    <div class="app-card mood-soul" style="background: #2A2520;">
+      <div class="app-card-bg" style="background-image: url('https://images.unsplash.com/photo-1483985988355-763728e1935b?w=600&q=85');"></div>
+      <div class="app-card-corner"><span class="corner-dot" style="background: var(--gold);"></span><span>Brand</span></div>
+      <div class="app-card-lock">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FAF6EE" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      </div>
+      <div class="app-card-content">
+        <h3>Brand <em>Kit</em></h3>
+        <small>Identidad consistente</small>
+        <div class="app-card-meta"><span>15 cr</span><span>·</span><span>Pro+</span></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Inspiration -->
+<section class="inspo-section">
+  <div class="section-header">
+    <h2 class="section-title">Inspí<em>rate</em></h2>
+    <a class="section-link" href="#">Galería pública →</a>
+  </div>
+  <div class="inspo-row">
+    <div class="inspo-card">
+      <div class="inspo-card-img" style="background-image:url('https://images.unsplash.com/photo-1496440737103-cd596325d314?w=400&q=85');"></div>
+      <span class="inspo-tag">@valentina_rio · 12.4k</span>
+    </div>
+    <div class="inspo-card">
+      <div class="inspo-card-img" style="background-image:url('https://images.unsplash.com/photo-1542140372-de3a3f87a9a4?w=400&q=85');"></div>
+      <span class="inspo-tag">@_lalume · 8.1k</span>
+    </div>
+    <div class="inspo-card">
+      <div class="inspo-card-img" style="background-image:url('https://images.unsplash.com/photo-1521252659862-eec69941b071?w=400&q=85');"></div>
+      <span class="inspo-tag">@maira.studio · 21k</span>
+    </div>
+    <div class="inspo-card">
+      <div class="inspo-card-img" style="background-image:url('https://images.unsplash.com/photo-1551316679-9c6ae9dec224?w=400&q=85');"></div>
+      <span class="inspo-tag">@noura · 4.7k</span>
+    </div>
+  </div>
+</section>
+
+<!-- Bottom nav -->
+<nav class="bottom-nav">
+  <div class="nav-item active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
+    <span>Inicio</span>
+  </div>
+  <div class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    <span>Apps</span>
+  </div>
+  <div class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9" r="1" fill="currentColor"/><circle cx="15" cy="9" r="1" fill="currentColor"/></svg>
+    <span>Personajes</span>
+  </div>
+  <div class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+    <span>Galería</span>
+  </div>
+</nav>
+
+</body>
+</html>

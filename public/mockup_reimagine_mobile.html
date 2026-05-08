@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Reimagina — VIST mobile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  :root {
+    /* SENSUAL EDITORIAL palette — Vogue back issue */
+    --bg-0: #F4EDE0;           /* warm cream, deeper than headshot mockup */
+    --bg-card: #FFFEFB;
+    --bg-elev: #EEE5D4;
+    --text-1: #1F1318;         /* deep aubergine-black */
+    --text-2: #5C4754;         /* warm muted */
+    --text-3: #9D8B97;         /* dusty mauve */
+    --border: rgba(31, 19, 24, 0.08);
+    --border-strong: rgba(31, 19, 24, 0.15);
+    --accent-rose: #8B4566;    /* dusty rose / wine — primary accent */
+    --accent-rose-soft: #F1DFE5;
+    --accent-champagne: #C9985A; /* warm champagne — secondary */
+    --accent-champagne-soft: #F4E8D2;
+    --serif: 'Instrument Serif', Georgia, serif;
+    --sans: 'DM Sans', -apple-system, sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+    --ease: cubic-bezier(0.32, 0.72, 0, 1);
+    --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  html, body { background: #0F0B10; min-height: 100vh; font-family: var(--sans); }
+
+  /* Stage with editorial dark backdrop */
+  .stage {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 32px;
+    background: radial-gradient(ellipse at 30% 20%, #2B1822 0%, #0F0B10 70%);
+  }
+
+  .phone {
+    width: 390px; height: 844px;
+    background: var(--bg-0); border-radius: 50px;
+    box-shadow:
+      0 0 0 12px #1a1a1a, 0 0 0 13px #2c2c30,
+      0 40px 100px rgba(0,0,0,0.6),
+      0 0 100px rgba(139, 69, 102, 0.06);
+    overflow: hidden; position: relative;
+    color: var(--text-1); -webkit-font-smoothing: antialiased;
+  }
+  .notch {
+    position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+    width: 110px; height: 32px; background: #18171C; border-radius: 999px; z-index: 99;
+  }
+  .status-bar {
+    position: absolute; top: 0; left: 0; right: 0; height: 54px;
+    display: flex; align-items: flex-end; justify-content: space-between; padding: 0 28px 8px;
+    font-size: 14px; font-weight: 600; color: var(--text-1); z-index: 100;
+  }
+  .status-bar .right { display: flex; gap: 6px; align-items: center; font-size: 12px; opacity: 0.85; }
+
+  /* Background paper texture — subtle film grain feel */
+  .phone::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+    background-image: radial-gradient(rgba(31, 19, 24, 0.015) 1px, transparent 1px);
+    background-size: 3px 3px; opacity: 0.6;
+  }
+
+  .screen {
+    position: absolute; top: 54px; bottom: 0; left: 0; right: 0;
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding-bottom: 130px;
+  }
+  .screen::-webkit-scrollbar { display: none; }
+
+  /* Topnav */
+  .topnav {
+    padding: 10px 16px 8px; display: flex; align-items: center; gap: 10px;
+    position: sticky; top: 0; background: rgba(244, 237, 224, 0.85);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    z-index: 30; border-bottom: 1px solid transparent;
+    transition: border-color 0.3s var(--ease);
+  }
+  .topnav.scrolled { border-color: var(--border); }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 12px; background: var(--bg-card);
+    border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
+    font-size: 14px; cursor: pointer; flex-shrink: 0;
+    transition: transform 0.2s var(--ease);
+  }
+  .icon-btn:active { transform: scale(0.94); }
+  .topnav .breadcrumb {
+    flex: 1; font-size: 11px; color: var(--text-3); font-family: var(--mono); letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .credits-pill {
+    padding: 7px 12px; border-radius: 999px; background: var(--accent-rose-soft);
+    color: var(--accent-rose); font-size: 12px; font-weight: 600;
+    display: flex; gap: 6px; align-items: center;
+    border: 1px solid rgba(139, 69, 102, 0.15);
+  }
+  .credits-pill .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent-rose); }
+
+  /* HERO — editorial portrait with dramatic overlay */
+  .hero {
+    position: relative; margin: 8px 16px 28px; aspect-ratio: 4/5;
+    border-radius: 28px; overflow: hidden;
+    box-shadow: 0 16px 60px rgba(31,19,24,0.18);
+  }
+  .hero img.bg {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top center;
+    transition: transform 0.8s var(--ease); filter: brightness(0.95) contrast(1.05);
+  }
+  .hero:hover img.bg { transform: scale(1.04); }
+  .hero .overlay {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(to bottom, transparent 30%, rgba(31,19,24,0.5) 65%, rgba(31,19,24,0.95) 100%),
+      linear-gradient(to right, rgba(31,19,24,0.2), transparent 50%);
+  }
+  .hero .corner-tag {
+    position: absolute; top: 18px; left: 18px; z-index: 2;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .hero .corner-tag .dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--accent-champagne);
+    box-shadow: 0 0 8px var(--accent-champagne);
+  }
+  .hero .corner-tag .label {
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: rgba(255,255,255,0.85);
+  }
+  .hero .content {
+    position: absolute; left: 0; right: 0; bottom: 0; padding: 28px 24px; color: white; z-index: 2;
+  }
+  .hero .badge {
+    display: inline-block; font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em;
+    padding: 4px 10px; border-radius: 999px;
+    background: rgba(255,255,255,0.15); color: white; backdrop-filter: blur(12px);
+    margin-bottom: 14px; text-transform: uppercase;
+  }
+  .hero h1 {
+    font-family: var(--serif); font-size: 56px; line-height: 0.92; letter-spacing: -0.025em;
+    margin-bottom: 10px;
+  }
+  .hero h1 em {
+    font-style: italic; color: rgba(255,255,255,0.75);
+    background: linear-gradient(135deg, #F1DFE5 0%, #E5C9C0 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero p {
+    font-size: 13px; line-height: 1.55; color: rgba(255,255,255,0.82); max-width: 290px;
+  }
+
+  /* Section heading */
+  .section { padding: 0 20px 4px; }
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+  .section-num {
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent-champagne); font-weight: 600;
+  }
+  .section h2 {
+    font-family: var(--serif); font-size: 30px; line-height: 1.05; letter-spacing: -0.02em;
+    color: var(--text-1);
+  }
+  .section h2 em {
+    font-style: italic; color: var(--accent-rose);
+  }
+  .section .sub { color: var(--text-2); font-size: 12.5px; line-height: 1.55; margin-top: 4px; max-width: 320px; }
+
+  /* CHARACTER stories — compact, refined */
+  .chars-row {
+    display: flex; gap: 16px; overflow-x: auto; padding: 12px 20px 20px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .chars-row::-webkit-scrollbar { display: none; }
+  .char-slot {
+    flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer;
+  }
+  .char-ring {
+    padding: 3px; border-radius: 50%;
+    background: linear-gradient(135deg, transparent, transparent);
+    transition: background 0.4s var(--ease);
+  }
+  .char-slot.active .char-ring {
+    background: linear-gradient(135deg, var(--accent-rose), var(--accent-champagne));
+  }
+  .char-slot .avatar {
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 2px solid var(--bg-0); background-size: cover;
+  }
+  .char-slot .avatar.maria { background-image: linear-gradient(135deg, #F1DFE5, #C97896); }
+  .char-slot .avatar.luna  { background-image: linear-gradient(135deg, #DDD6FE, #8B5CF6); }
+  .char-slot .avatar.sofia { background-image: linear-gradient(135deg, #FED7AA, #C97A4A); }
+  .char-slot .avatar.add {
+    background: var(--bg-card); border: 2px dashed var(--border-strong);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; color: var(--text-3);
+  }
+  .char-slot .name {
+    font-size: 11px; color: var(--text-3); transition: color 0.2s;
+  }
+  .char-slot.active .name { color: var(--text-1); font-weight: 600; }
+
+  /* CATEGORY TABS — sticky, scrollable */
+  .category-tabs {
+    position: sticky; top: 54px; background: rgba(244, 237, 224, 0.95);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    z-index: 25; padding: 10px 0 14px;
+    border-bottom: 1px solid var(--border);
+    margin: 8px 0 16px;
+  }
+  .category-scroll {
+    display: flex; gap: 6px; overflow-x: auto; padding: 0 20px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .category-scroll::-webkit-scrollbar { display: none; }
+  .cat-tab {
+    flex-shrink: 0; padding: 8px 14px; border-radius: 999px;
+    font-size: 12px; font-weight: 500; color: var(--text-2);
+    background: transparent; border: 1px solid transparent;
+    cursor: pointer; transition: all 0.2s var(--ease); white-space: nowrap;
+  }
+  .cat-tab:hover { background: rgba(31,19,24,0.04); }
+  .cat-tab.active {
+    background: var(--text-1); color: var(--bg-card); font-weight: 600;
+  }
+  .cat-tab .count { opacity: 0.6; margin-left: 4px; font-family: var(--mono); font-size: 10px; }
+
+  /* SEARCH bar */
+  .search-row { padding: 0 20px 16px; }
+  .search-input {
+    width: 100%; padding: 12px 16px 12px 40px; border-radius: 14px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    font-family: var(--sans); font-size: 13px; color: var(--text-1);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239D8B97' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: 14px center; background-size: 16px;
+    transition: all 0.2s var(--ease);
+  }
+  .search-input:focus { outline: none; border-color: var(--accent-rose); background-color: white; }
+
+  /* FEATURED row — large editorial cards */
+  .featured-label {
+    padding: 0 20px 8px; font-family: var(--mono); font-size: 9px;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-champagne);
+  }
+  .featured-scroll {
+    display: flex; gap: 10px; overflow-x: auto; padding: 4px 20px 18px;
+    scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+  }
+  .featured-scroll::-webkit-scrollbar { display: none; }
+  .featured-card {
+    flex: 0 0 200px; aspect-ratio: 3/4; border-radius: 20px; overflow: hidden;
+    position: relative; cursor: pointer;
+    box-shadow: 0 8px 24px rgba(31,19,24,0.10);
+    transition: all 0.3s var(--ease);
+    scroll-snap-align: start;
+  }
+  .featured-card:active { transform: scale(0.97); }
+  .featured-card img { width: 100%; height: 100%; object-fit: cover; }
+  .featured-card::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(31,19,24,0.85) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .featured-card .info {
+    position: absolute; bottom: 0; left: 0; right: 0; padding: 14px 16px; color: white; z-index: 2;
+  }
+  .featured-card .name { font-family: var(--serif); font-size: 22px; line-height: 1; margin-bottom: 4px; letter-spacing: -0.01em; }
+  .featured-card .desc { font-size: 10.5px; color: rgba(255,255,255,0.85); }
+  .featured-card .tag-pill {
+    position: absolute; top: 12px; left: 12px;
+    padding: 3px 8px; border-radius: 999px;
+    font-family: var(--mono); font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase;
+    background: rgba(255,255,255,0.15); color: white; backdrop-filter: blur(8px);
+  }
+  .featured-card .badge18 {
+    position: absolute; top: 12px; right: 12px;
+    padding: 3px 7px; border-radius: 999px;
+    font-family: var(--mono); font-size: 8px; font-weight: 700; letter-spacing: 0.1em;
+    background: var(--accent-rose); color: white;
+  }
+  .featured-card.selected {
+    box-shadow: 0 0 0 3px var(--accent-rose), 0 8px 24px rgba(139,69,102,0.3);
+  }
+  .featured-card.selected::before {
+    content: '✓'; position: absolute; top: 12px; right: 12px; z-index: 3;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent-rose); color: white;
+    display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700;
+  }
+
+  /* ALL STYLES grid — compact */
+  .all-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    padding: 0 20px 20px;
+  }
+  .style-tile {
+    aspect-ratio: 1/1; border-radius: 14px; overflow: hidden; position: relative;
+    cursor: pointer; transition: all 0.2s var(--ease);
+    box-shadow: 0 2px 6px rgba(31,19,24,0.06);
+  }
+  .style-tile:active { transform: scale(0.96); }
+  .style-tile img { width: 100%; height: 100%; object-fit: cover; }
+  .style-tile::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(31,19,24,0.7) 0%, transparent 55%);
+  }
+  .style-tile .name {
+    position: absolute; bottom: 6px; left: 8px; right: 8px;
+    font-size: 10px; font-weight: 600; color: white;
+    line-height: 1.2; letter-spacing: -0.01em;
+  }
+  .style-tile.selected {
+    box-shadow: 0 0 0 2.5px var(--accent-rose), 0 4px 12px rgba(139,69,102,0.25);
+  }
+  .style-tile.selected::before {
+    content: '✓'; position: absolute; top: 6px; right: 6px; z-index: 3;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--accent-rose); color: white;
+    display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700;
+  }
+  .style-tile .lock {
+    position: absolute; top: 6px; right: 6px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: rgba(255,255,255,0.2); color: white; backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center; font-size: 9px;
+  }
+
+  /* CUSTOM PROMPT accordion */
+  .custom-section { margin: 8px 20px 20px; }
+  .custom-toggle {
+    width: 100%; padding: 14px 16px; border-radius: 14px;
+    background: var(--bg-card); border: 1px dashed var(--border-strong);
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 12.5px; color: var(--text-2); font-weight: 500;
+    cursor: pointer; transition: all 0.2s var(--ease);
+  }
+  .custom-toggle:hover { border-color: var(--accent-rose); color: var(--text-1); }
+  .custom-toggle .left { display: flex; align-items: center; gap: 10px; }
+  .custom-toggle .left .ic { font-size: 14px; color: var(--accent-rose); }
+  .custom-toggle .arrow { font-size: 11px; color: var(--text-3); transition: transform 0.3s var(--ease); }
+  .custom-section.open .custom-toggle .arrow { transform: rotate(180deg); }
+  .custom-content {
+    max-height: 0; overflow: hidden; transition: max-height 0.4s var(--ease);
+  }
+  .custom-section.open .custom-content { max-height: 200px; }
+  .custom-textarea {
+    width: 100%; margin-top: 10px; padding: 14px;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
+    font-family: var(--sans); font-size: 13px; color: var(--text-1); resize: none;
+    min-height: 80px;
+  }
+  .custom-textarea:focus { outline: none; border-color: var(--accent-rose); }
+  .custom-textarea::placeholder { color: var(--text-3); font-style: italic; }
+
+  /* SELECTED tray — sticky above CTA */
+  .selected-tray {
+    position: absolute; bottom: 130px; left: 16px; right: 16px;
+    padding: 10px 12px; border-radius: 16px;
+    background: rgba(255,254,251,0.92); backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 24px rgba(31,19,24,0.08);
+    z-index: 40;
+    display: flex; align-items: center; gap: 8px;
+    transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
+  }
+  .selected-tray.empty { opacity: 0; transform: translateY(8px); pointer-events: none; }
+  .selected-tray .tray-label {
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-3); flex-shrink: 0;
+  }
+  .selected-tray .pills {
+    display: flex; gap: 6px; overflow-x: auto; flex: 1;
+    -webkit-overflow-scrolling: touch;
+  }
+  .selected-tray .pills::-webkit-scrollbar { display: none; }
+  .tray-pill {
+    flex-shrink: 0; padding: 5px 9px; border-radius: 999px;
+    font-size: 10.5px; font-weight: 500;
+    background: var(--text-1); color: var(--bg-card);
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .tray-pill.primary {
+    background: var(--accent-rose); color: white;
+  }
+  .tray-pill.primary::before {
+    content: '★'; font-size: 8px;
+  }
+  .tray-pill .x {
+    margin-left: 2px; opacity: 0.6; cursor: pointer;
+  }
+
+  /* BOTTOM CTA */
+  .bottom-bar {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 14px 16px 28px;
+    background: linear-gradient(to top, var(--bg-0) 50%, rgba(244, 237, 224, 0.85) 80%, transparent);
+    z-index: 50;
+  }
+  .cta {
+    width: 100%; padding: 18px; border-radius: 22px;
+    background: linear-gradient(135deg, var(--accent-rose) 0%, #6B3450 100%);
+    color: white; border: none; font-family: var(--sans);
+    font-size: 16px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    cursor: pointer; transition: all 0.2s var(--ease);
+    box-shadow: 0 16px 40px rgba(139,69,102,0.35);
+    position: relative; overflow: hidden;
+  }
+  .cta::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%);
+    transform: translateX(-100%);
+    transition: transform 0.8s var(--ease);
+  }
+  .cta:hover::before { transform: translateX(100%); }
+  .cta:active { transform: scale(0.98); box-shadow: 0 8px 20px rgba(139,69,102,0.3); }
+  .cta .arrow {
+    width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.18);
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
+  }
+  .cta .cost {
+    font-family: var(--mono); font-size: 13px; opacity: 0.85;
+    padding: 4px 10px; border-radius: 999px;
+    background: rgba(255,255,255,0.12); margin-left: auto;
+  }
+
+  /* Side notes */
+  .side-info, .side-info-r {
+    position: fixed; top: 50%; transform: translateY(-50%); max-width: 240px;
+    color: rgba(255,255,255,0.85); font-family: var(--sans);
+  }
+  .side-info { left: 32px; }
+  .side-info-r { right: 32px; text-align: right; }
+  .side-info h3, .side-info-r h3 {
+    font-family: var(--serif); font-size: 24px; color: white; margin-bottom: 12px; line-height: 1.05;
+  }
+  .side-info h3 em, .side-info-r h3 em { color: rgba(255,255,255,0.55); font-style: italic; }
+  .side-info p, .side-info-r p { font-size: 13px; line-height: 1.6; opacity: 0.7; margin-bottom: 12px; }
+  .side-info .label, .side-info-r .label {
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: rgba(255,255,255,0.5); margin-bottom: 8px;
+  }
+  .side-info ul { list-style: none; padding: 0; }
+  .side-info li {
+    padding: 7px 0; font-size: 12px; opacity: 0.7;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .side-info li::before { content: '· '; opacity: 0.5; }
+
+  @media (max-width: 1100px) { .side-info, .side-info-r { display: none; } }
+  @media (max-width: 700px) {
+    .stage { padding: 0; background: #0F0B10; }
+    .phone { width: 100vw; height: 100vh; border-radius: 0; box-shadow: none; }
+    .phone .notch { display: none; }
+    .status-bar { display: none; }
+    .screen { top: 0; }
+    .selected-tray { bottom: 130px; }
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .hero, .section, .featured-scroll, .all-grid {
+    animation: fadeIn 0.6s var(--ease) backwards;
+  }
+  .hero { animation-delay: 0.05s; }
+</style>
+</head>
+<body>
+
+<div class="side-info">
+  <div class="label">Reimagina · App</div>
+  <h3>Mismo modelo,<br/><em>nuevo mundo</em></h3>
+  <p>100+ estilos curados. Tu modelo virtual en cualquier era, mood, escenario o aesthetic.</p>
+  <div class="label" style="margin-top: 16px;">Feel sensual editorial</div>
+  <ul>
+    <li>Paleta dusty rose + champagne</li>
+    <li>Hero portrait dramático</li>
+    <li>Texture grain papel sutil</li>
+    <li>Style picker como Vogue</li>
+    <li>Multi-select primary + accents</li>
+    <li>Categorías sticky scroll</li>
+    <li>Search instantáneo</li>
+  </ul>
+</div>
+
+<div class="side-info-r">
+  <div class="label">Diferenciación</div>
+  <h3>VIST Reimagina</h3>
+  <p>No es Higgsfield ni Lensa. Es una experiencia editorial — como navegar una revista de moda. Pensado en LATAM creator, sin ser caja de herramientas.</p>
+  <div class="label" style="margin-top: 16px;">Datos en mockup</div>
+  <p style="text-align: right;">Estilos populares: Editorial, Beach Tropical, Boudoir, Cyberpunk, Y2K, Polaroid, Mirror Selfie, K-pop, Dark Academia, Vintage Film...</p>
+</div>
+
+<div class="stage">
+  <div class="phone">
+    <div class="notch"></div>
+
+    <div class="status-bar">
+      <span>9:41</span>
+      <div class="right"><span>●●●</span><span>📶</span><span>🔋</span></div>
+    </div>
+
+    <div class="screen" id="screen">
+
+      <!-- Topnav -->
+      <div class="topnav" id="topnav">
+        <div class="icon-btn">←</div>
+        <div class="breadcrumb">Apps · Crear</div>
+        <div class="credits-pill">
+          <span class="dot"></span>
+          <span>2,840</span>
+        </div>
+      </div>
+
+      <!-- HERO editorial -->
+      <div class="hero">
+        <img class="bg" src="/landing/4.png" alt="Reimagina" />
+        <div class="overlay"></div>
+        <div class="corner-tag">
+          <span class="dot"></span>
+          <span class="label">EST. VIST · LATAM</span>
+        </div>
+        <div class="content">
+          <span class="badge">Reimagina · App</span>
+          <h1>Mismo modelo,<br/><em>otro mundo</em></h1>
+          <p>Editorial, beach, boudoir, cyberpunk, vintage... Tu modelo en 100+ estilos curados, mismo rostro, nueva atmósfera.</p>
+        </div>
+      </div>
+
+      <!-- CHARACTER picker compact -->
+      <div class="section">
+        <div class="section-head">
+          <h2><em>¿Cuál</em> modelo?</h2>
+          <span class="section-num">01 · Personaje</span>
+        </div>
+      </div>
+      <div class="chars-row">
+        <div class="char-slot active">
+          <div class="char-ring"><div class="avatar maria"></div></div>
+          <span class="name">Maria</span>
+        </div>
+        <div class="char-slot">
+          <div class="char-ring"><div class="avatar luna"></div></div>
+          <span class="name">Luna</span>
+        </div>
+        <div class="char-slot">
+          <div class="char-ring"><div class="avatar sofia"></div></div>
+          <span class="name">Sofia</span>
+        </div>
+        <div class="char-slot">
+          <div class="char-ring"><div class="avatar add">+</div></div>
+          <span class="name">Crear</span>
+        </div>
+      </div>
+
+      <!-- STYLE PICKER section header -->
+      <div class="section">
+        <div class="section-head">
+          <h2>Elige <em>el mood</em></h2>
+          <span class="section-num">02 · Estilos</span>
+        </div>
+        <p class="sub">Selecciona uno como primario. Suma hasta 3 acentos para mezclar atmósferas.</p>
+      </div>
+
+      <!-- CATEGORY tabs sticky -->
+      <div class="category-tabs">
+        <div class="category-scroll">
+          <button class="cat-tab active">Todos<span class="count">102</span></button>
+          <button class="cat-tab">Editorial<span class="count">18</span></button>
+          <button class="cat-tab">Lifestyle<span class="count">14</span></button>
+          <button class="cat-tab">Sensual <span class="count">+18</span></button>
+          <button class="cat-tab">Vintage<span class="count">12</span></button>
+          <button class="cat-tab">Concept<span class="count">9</span></button>
+          <button class="cat-tab">Place<span class="count">8</span></button>
+          <button class="cat-tab">Era<span class="count">11</span></button>
+          <button class="cat-tab">Aesthetic<span class="count">22</span></button>
+        </div>
+      </div>
+
+      <!-- SEARCH -->
+      <div class="search-row">
+        <input type="text" class="search-input" placeholder="Buscar estilo... (anime, beach, boudoir...)">
+      </div>
+
+      <!-- FEATURED -->
+      <div class="featured-label">★ Featured · Esta semana</div>
+      <div class="featured-scroll">
+        <div class="featured-card selected">
+          <img src="/landing/8.png" alt="">
+          <span class="tag-pill">Editorial</span>
+          <div class="info">
+            <div class="name">Boudoir</div>
+            <div class="desc">Íntimo · luz cálida · satín</div>
+          </div>
+        </div>
+        <div class="featured-card">
+          <img src="/landing/2.png" alt="">
+          <span class="tag-pill">Lifestyle</span>
+          <div class="info">
+            <div class="name">Beach Tropical</div>
+            <div class="desc">Caribe · sun-kissed · linen</div>
+          </div>
+        </div>
+        <div class="featured-card">
+          <img src="/landing/12.png" alt="">
+          <span class="tag-pill">Sensual</span>
+          <span class="badge18">+18</span>
+          <div class="info">
+            <div class="name">Lencería Editorial</div>
+            <div class="desc">Magazine · soft golden light</div>
+          </div>
+        </div>
+        <div class="featured-card">
+          <img src="/landing/4.png" alt="">
+          <span class="tag-pill">Era</span>
+          <div class="info">
+            <div class="name">Y2K</div>
+            <div class="desc">2002 nostalgia · low-rise</div>
+          </div>
+        </div>
+        <div class="featured-card">
+          <img src="/landing/5.png" alt="">
+          <span class="tag-pill">Concept</span>
+          <div class="info">
+            <div class="name">Dark Academia</div>
+            <div class="desc">Tweed · biblioteca · misterio</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALL grid -->
+      <div class="featured-label">Todos · explora</div>
+      <div class="all-grid">
+        <div class="style-tile selected"><img src="/landing/7.png"><div class="name">Editorial Chic</div></div>
+        <div class="style-tile"><img src="/landing/9.png"><div class="name">Mirror Selfie</div></div>
+        <div class="style-tile"><img src="/landing/6.png"><div class="name">Polaroid</div></div>
+        <div class="style-tile"><img src="/landing/3.png"><div class="name">Coastal Minimal</div></div>
+        <div class="style-tile"><img src="/landing/11.png"><div class="name">Cyberpunk</div></div>
+        <div class="style-tile"><img src="/landing/10.png"><div class="name">Vintage Film</div></div>
+        <div class="style-tile"><img src="/landing/2.png"><div class="name">Street Editorial</div></div>
+        <div class="style-tile"><img src="/landing/4.png"><div class="name">Studio Beauty</div></div>
+        <div class="style-tile"><img src="/landing/8.png"><div class="name">K-Pop Idol</div></div>
+        <div class="style-tile"><img src="/landing/12.png"><div class="name">Boudoir LATAM</div><span class="lock">🔒</span></div>
+        <div class="style-tile"><img src="/landing/5.png"><div class="name">Mukbang</div></div>
+        <div class="style-tile"><img src="/landing/6.png"><div class="name">Magazine Cover</div></div>
+      </div>
+
+      <!-- CUSTOM PROMPT accordion -->
+      <div class="custom-section" id="customSection">
+        <button class="custom-toggle" onclick="document.getElementById('customSection').classList.toggle('open')">
+          <span class="left">
+            <span class="ic">✏️</span>
+            <span>O escribe tu propia dirección creativa</span>
+          </span>
+          <span class="arrow">▼</span>
+        </button>
+        <div class="custom-content">
+          <textarea class="custom-textarea" placeholder="Ej: 'caminando por las calles de Tokio en la lluvia, neón reflejado en el pavimento, look futurista con chaqueta translúcida'"></textarea>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SELECTED TRAY (floats above CTA) -->
+    <div class="selected-tray">
+      <span class="tray-label">Picks · 3</span>
+      <div class="pills">
+        <span class="tray-pill primary">Boudoir<span class="x">×</span></span>
+        <span class="tray-pill">Editorial Chic<span class="x">×</span></span>
+        <span class="tray-pill">Vintage Film<span class="x">×</span></span>
+      </div>
+    </div>
+
+    <!-- BOTTOM CTA -->
+    <div class="bottom-bar">
+      <button class="cta">
+        <span class="arrow">✦</span>
+        <span>Reimaginar Maria</span>
+        <span class="cost">13 cr</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const screen = document.getElementById('screen');
+  const topnav = document.getElementById('topnav');
+  screen.addEventListener('scroll', () => {
+    if (screen.scrollTop > 4) topnav.classList.add('scrolled');
+    else topnav.classList.remove('scrolled');
+  });
+
+  // Featured cards
+  document.querySelectorAll('.featured-card').forEach(el => {
+    el.addEventListener('click', () => {
+      el.classList.toggle('selected');
+    });
+  });
+
+  // Style tiles
+  document.querySelectorAll('.style-tile').forEach(el => {
+    el.addEventListener('click', () => {
+      if (el.querySelector('.lock')) {
+        alert('Esta función requiere Modo Creator (+18). Actívalo en tu perfil.');
+        return;
+      }
+      el.classList.toggle('selected');
+    });
+  });
+
+  // Category tabs
+  document.querySelectorAll('.cat-tab').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.cat-tab').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+    });
+  });
+
+  // Char selection
+  document.querySelectorAll('.char-slot').forEach(el => {
+    el.addEventListener('click', () => {
+      if (el.querySelector('.avatar.add')) return;
+      document.querySelectorAll('.char-slot').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+    });
+  });
+
+  // CTA
+  document.querySelector('.cta').addEventListener('click', () => {
+    alert('En la app real: genera la foto con Maria + estilos seleccionados (Boudoir primary + Editorial Chic & Vintage Film accents).');
+  });
+</script>
+
+</body>
+</html>

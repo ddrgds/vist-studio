@@ -65,3 +65,19 @@ stitch-v2.html
 # Claude Code session data
 .claude/
 .gstack/
+
+# Capacitor native build outputs (commit project files, ignore build artifacts)
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+android/.idea/
+android/captures/
+ios/App/build/
+ios/App/Pods/
+ios/App/Podfile.lock
+ios/DerivedData/
+ios/.build/
+*.xcarchive
+*.ipa
+*.apk

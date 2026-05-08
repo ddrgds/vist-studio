@@ -1,0 +1,95 @@
+name: iOS Build (Capacitor)
+
+# Smoke-test build for iOS — verifies that the Capacitor iOS shell compiles
+# from a Windows-developed codebase. Produces an unsigned .xcarchive artifact.
+#
+# Trigger manually from GitHub Actions tab. Add code-signing + TestFlight
+# upload once you have an Apple Developer account ($99/yr) and certificates.
+
+on:
+  workflow_dispatch:        # manual trigger
+  push:
+    branches: [main]
+    paths:
+      - 'pages/**'
+      - 'components/**'
+      - 'services/**'
+      - 'capacitor.config.ts'
+      - 'ios/**'
+      - '.github/workflows/ios-build.yml'
+
+jobs:
+  build:
+    runs-on: macos-14   # Apple Silicon runner — fastest for iOS
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Build web bundle (Vite)
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Capacitor sync iOS
+        run: npx cap sync ios
+
+      - name: Setup CocoaPods cache
+        uses: actions/cache@v4
+        with:
+          path: ios/App/Pods
+          key: pods-${{ runner.os }}-${{ hashFiles('ios/App/Podfile.lock') }}
+          restore-keys: pods-${{ runner.os }}-
+
+      - name: Install CocoaPods deps
+        working-directory: ios/App
+        run: pod install --repo-update
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      # Unsigned archive — verifies the project compiles end-to-end.
+      # For signed TestFlight builds, add CODE_SIGN_IDENTITY + provisioning
+      # profile via App Store Connect API key (next iteration).
+      - name: Build archive (unsigned smoke test)
+        working-directory: ios/App
+        run: |
+          xcodebuild \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath $RUNNER_TEMP/VIST.xcarchive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            archive
+
+      - name: Upload archive artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VIST-ios-archive
+          path: ${{ runner.temp }}/VIST.xcarchive
+          retention-days: 7
+
+      - name: Build summary
+        run: |
+          echo "✅ iOS build succeeded."
+          echo "📦 Archive uploaded as artifact (unsigned, smoke-test only)."
+          echo ""
+          echo "Next steps to ship to TestFlight:"
+          echo "  1. Apple Developer account (\$99/yr)"
+          echo "  2. Create App Store Connect API key"
+          echo "  3. Add APP_STORE_CONNECT_API_KEY_ID + ISSUER_ID + KEY_BASE64 secrets"
+          echo "  4. Replace this step with signed export + altool upload"

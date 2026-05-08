@@ -6,17 +6,23 @@ import { useCharacterStore } from '../stores/characterStore'
 import { useGalleryStore } from '../stores/galleryStore'
 import {
   Sparkles, Clapperboard, Images, Users,
-  CreditCard, PanelLeftClose, PanelLeftOpen, Wand2, Film, MessageCircle,
+  CreditCard, PanelLeftClose, PanelLeftOpen, Wand2, Film, MessageCircle, Aperture,
 } from 'lucide-react'
 import { type LucideIcon } from 'lucide-react'
 
-const navSections: { title?: string; items: { id: Page; label: string; Icon: LucideIcon; sub: string }[] }[] = [
+const navSections: { title?: string; items: { id: Page; label: string; Icon: LucideIcon; sub: string; isNew?: boolean }[] }[] = [
   {
     items: [
       { id: 'create', label: 'Crear Personaje', Icon: Sparkles, sub: 'Diseña tu modelo AI' },
       { id: 'studio', label: 'Studio', Icon: Clapperboard, sub: 'Genera fotos y reels' },
       { id: 'editor', label: 'Editor IA', Icon: Wand2, sub: 'Reimagina · Try-On · Piel · más' },
       { id: 'gallery', label: 'Galería', Icon: Images, sub: 'Tu contenido' },
+    ],
+  },
+  {
+    title: 'Apps premium',
+    items: [
+      { id: 'headshot', label: 'Headshot Pro', Icon: Aperture, sub: 'Retratos profesionales', isNew: true },
     ],
   },
 ]
@@ -160,6 +166,12 @@ export function Sidebar({ page, onNav, collapsed, onToggle }: Props) {
                             <span className="text-[10px]" style={{ color: '#999999' }}>{PIPELINE_NUMBERS[n.id]}</span>
                           )}
                           {n.label}
+                          {n.isNew && (
+                            <span className="text-[7px] font-mono px-1 py-px rounded uppercase tracking-wider"
+                              style={{ background: '#C9785C', color: '#FFFCF5', letterSpacing: '0.1em' }}>
+                              Nuevo
+                            </span>
+                          )}
                         </div>
                         <div className="text-[9px] truncate flex items-center gap-1.5" style={{ color: '#999999' }}>
                           {n.sub}

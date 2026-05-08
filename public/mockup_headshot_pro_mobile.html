@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="theme-color" content="#FAFAFA" />
+<title>Headshot Pro — VIST mobile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Instrument+Serif&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --bg-0: #FAFAFA;
+    --bg-card: #FFFFFF;
+    --text-1: #0A0A0A;
+    --text-2: #555555;
+    --text-3: #999999;
+    --border: rgba(0,0,0,0.06);
+    --border-strong: rgba(0,0,0,0.12);
+    --accent: #1A1A1A;
+    --serif: 'Instrument Serif', Georgia, serif;
+    --sans: 'DM Sans', -apple-system, sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+  html, body { background: #2A2A30; min-height: 100vh; font-family: var(--sans); }
+
+  /* Phone frame for desktop preview */
+  .phone-stage {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  .phone {
+    width: 390px; height: 844px;
+    background: var(--bg-0); border-radius: 48px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.4), 0 0 0 12px #1a1a1a, 0 0 0 13px #333;
+    overflow: hidden; position: relative;
+    color: var(--text-1); -webkit-font-smoothing: antialiased;
+  }
+
+  /* Status bar */
+  .status-bar {
+    position: absolute; top: 0; left: 0; right: 0; height: 54px;
+    display: flex; align-items: flex-end; justify-content: space-between; padding: 0 32px 8px;
+    font-size: 14px; font-weight: 600; color: var(--text-1); z-index: 100;
+  }
+  .status-bar .right { display: flex; gap: 6px; align-items: center; font-size: 12px; }
+  .notch {
+    position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 32px; background: #1a1a1a; border-radius: 24px; z-index: 99;
+  }
+
+  /* Screen */
+  .screen {
+    position: absolute; top: 54px; bottom: 0; left: 0; right: 0;
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding-bottom: 100px;
+  }
+  .screen::-webkit-scrollbar { display: none; }
+
+  /* Top nav */
+  .topnav {
+    padding: 12px 20px 8px; display: flex; align-items: center; gap: 12px;
+    position: sticky; top: 0; background: var(--bg-0); z-index: 10;
+    border-bottom: 1px solid transparent; transition: border-color 0.2s;
+  }
+  .topnav.scrolled { border-color: var(--border); }
+  .back {
+    width: 36px; height: 36px; border-radius: 12px; background: white;
+    border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
+    font-size: 16px; cursor: pointer; flex-shrink: 0;
+  }
+  .topnav .title {
+    flex: 1; font-size: 13px; color: var(--text-2); font-family: var(--mono); letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .topnav .credits {
+    padding: 6px 10px; border-radius: 999px; background: white; border: 1px solid var(--border);
+    font-size: 11px; font-family: var(--mono); color: var(--text-2); display: flex; align-items: center; gap: 4px;
+  }
+  .topnav .credits .star { font-size: 10px; }
+
+  /* Hero */
+  .hero {
+    padding: 16px 20px 20px; text-align: left;
+  }
+  .hero .badge {
+    display: inline-block; font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em;
+    padding: 4px 10px; border-radius: 999px; background: var(--text-1); color: white; margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+  .hero h1 {
+    font-family: var(--serif); font-size: 38px; line-height: 1; color: var(--text-1);
+    margin-bottom: 8px; letter-spacing: -0.02em;
+  }
+  .hero p {
+    color: var(--text-2); font-size: 13px; line-height: 1.5; margin-bottom: 16px;
+  }
+
+  /* Before/After full width */
+  .ba {
+    position: relative; aspect-ratio: 4/5; border-radius: 24px; overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08); background: #F3F4F6;
+    margin: 0 20px 20px;
+  }
+  .ba-half { position: absolute; top: 0; height: 100%; overflow: hidden; }
+  .ba-before { left: 0; width: 50%; }
+  .ba-after { right: 0; width: 50%; }
+  .ba-img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+  .ba-after .ba-img { filter: contrast(1.05) saturate(1.05); }
+  .ba-divider {
+    position: absolute; top: 0; bottom: 0; left: 50%; width: 2px;
+    background: white; box-shadow: 0 0 8px rgba(0,0,0,0.3); transform: translateX(-50%);
+  }
+  .ba-handle {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 36px; height: 36px; border-radius: 50%; background: white;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: ew-resize;
+  }
+  .ba-handle::before { content: '◀ ▶'; font-size: 9px; letter-spacing: 1px; color: var(--text-1); }
+  .ba-label {
+    position: absolute; bottom: 12px; padding: 4px 10px; border-radius: 999px;
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase;
+    background: rgba(255,255,255,0.92); color: var(--text-1); backdrop-filter: blur(8px);
+  }
+  .ba-before .ba-label { left: 12px; }
+  .ba-after .ba-label { right: 12px; background: var(--text-1); color: white; }
+
+  /* Section in mobile */
+  .section { padding: 16px 20px; }
+  .section-label {
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-3); margin-bottom: 8px;
+  }
+  .section h2 {
+    font-family: var(--serif); font-size: 22px; line-height: 1.15; color: var(--text-1);
+    margin-bottom: 4px; letter-spacing: -0.01em;
+  }
+  .section .sub { color: var(--text-2); font-size: 12px; margin-bottom: 14px; line-height: 1.5; }
+
+  /* Looks horizontal scroll (mobile native pattern) */
+  .looks-scroll {
+    display: flex; gap: 10px; overflow-x: auto; padding: 4px 20px 12px; margin: 0 -20px;
+    scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+  }
+  .looks-scroll::-webkit-scrollbar { display: none; }
+  .look {
+    flex: 0 0 130px; border-radius: 16px; overflow: hidden; background: white;
+    border: 1.5px solid var(--border); transition: all 0.18s; position: relative;
+    scroll-snap-align: start;
+  }
+  .look.selected {
+    border-color: var(--text-1); box-shadow: 0 0 0 1px var(--text-1), 0 8px 20px rgba(0,0,0,0.08);
+  }
+  .look .preview { aspect-ratio: 1/1; background: linear-gradient(135deg, #f3f4f6, #e5e7eb); position: relative; overflow: hidden; }
+  .look .preview img { width: 100%; height: 100%; object-fit: cover; }
+  .look.selected .preview::after {
+    content: '✓'; position: absolute; top: 6px; right: 6px;
+    width: 20px; height: 20px; border-radius: 50%; background: var(--text-1); color: white;
+    display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700;
+  }
+  .look-label { padding: 8px 10px 10px; }
+  .look-label .name { font-size: 12px; font-weight: 600; color: var(--text-1); }
+  .look-label .desc { font-size: 10px; color: var(--text-3); margin-top: 1px; line-height: 1.3; }
+
+  /* Source: characters horizontal */
+  .chars-row {
+    display: flex; gap: 10px; overflow-x: auto; padding: 4px 20px 8px; margin: 0 -20px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .chars-row::-webkit-scrollbar { display: none; }
+  .char-slot {
+    flex: 0 0 64px; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer;
+  }
+  .char {
+    width: 60px; height: 60px; border-radius: 50%;
+    border: 2px solid transparent; transition: all 0.18s;
+  }
+  .char.maria { background-image: linear-gradient(135deg, #FCE7F3, #EC4899); }
+  .char.luna  { background-image: linear-gradient(135deg, #DDD6FE, #8B5CF6); }
+  .char.sofia { background-image: linear-gradient(135deg, #FED7AA, #F97316); }
+  .char.add {
+    background: rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: center;
+    font-size: 24px; color: #999; border: 2px dashed rgba(0,0,0,0.15);
+  }
+  .char-slot.active .char {
+    border-color: var(--text-1); box-shadow: 0 0 0 2px white, 0 0 0 4px var(--text-1);
+  }
+  .char-name { font-size: 11px; color: var(--text-2); }
+  .char-slot.active .char-name { color: var(--text-1); font-weight: 600; }
+
+  /* Upload button in source area */
+  .upload-row { padding: 12px 20px 0; }
+  .upload-btn {
+    width: 100%; padding: 14px; border-radius: 16px; background: white; border: 1.5px dashed var(--border-strong);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    font-size: 13px; color: var(--text-2); cursor: pointer; transition: all 0.18s;
+  }
+  .upload-btn:hover { background: rgba(0,0,0,0.02); }
+  .upload-btn .icon { font-size: 18px; }
+
+  /* Examples mini grid */
+  .examples-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 0 20px; }
+  .example { aspect-ratio: 3/4; border-radius: 10px; overflow: hidden; background: #F3F4F6; }
+  .example img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* Tip card */
+  .tip {
+    margin: 16px 20px; padding: 14px 16px; border-radius: 14px; background: #FFF8E6;
+    border: 1px solid #FDE68A; display: flex; gap: 10px; align-items: flex-start;
+  }
+  .tip .ic { font-size: 16px; flex-shrink: 0; }
+  .tip .text { font-size: 11px; line-height: 1.5; color: #5C3D0A; }
+
+  /* Bottom CTA fixed */
+  .bottom-bar {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 12px 16px 24px;
+    background: linear-gradient(to top, var(--bg-0) 70%, transparent);
+    z-index: 50;
+  }
+  .summary {
+    display: flex; align-items: center; gap: 8px; justify-content: center;
+    margin-bottom: 10px; flex-wrap: wrap;
+  }
+  .summary-pill {
+    padding: 4px 9px; border-radius: 999px; background: white;
+    font-size: 10px; color: var(--text-2); border: 1px solid var(--border);
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .summary-pill.active { background: var(--text-1); color: white; border-color: var(--text-1); }
+  .cta {
+    width: 100%; padding: 16px; border-radius: 18px; background: var(--text-1); color: white;
+    border: none; font-family: var(--sans); font-size: 15px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    cursor: pointer; transition: all 0.18s; box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+  }
+  .cta:active { transform: scale(0.98); }
+  .cta .cost { font-family: var(--mono); font-size: 12px; opacity: 0.7; padding-left: 12px; border-left: 1px solid rgba(255,255,255,0.2); }
+
+  /* Use chips */
+  .uses { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 20px 8px; }
+  .use-tag {
+    padding: 5px 10px; border-radius: 999px; background: white;
+    border: 1px solid var(--border); font-size: 10px; color: var(--text-2);
+  }
+
+  /* Side note (multiple phones layout) */
+  .side-note {
+    position: fixed; top: 32px; left: 32px; max-width: 280px;
+    padding: 16px 18px; border-radius: 14px; background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.85);
+    font-size: 12px; line-height: 1.5; backdrop-filter: blur(8px);
+  }
+  .side-note h3 {
+    font-family: var(--serif); font-size: 18px; color: white; margin-bottom: 8px;
+  }
+  .side-note .desc { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 12px; }
+
+  @media (max-width: 700px) {
+    .phone-stage { padding: 0; }
+    .phone { width: 100vw; height: 100vh; border-radius: 0; box-shadow: none; }
+    .side-note { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Side note for desktop preview -->
+<div class="side-note">
+  <h3>Headshot Pro · mobile</h3>
+  <div>Visualizándose como vivirá en el iPhone/Android. La app principal de VIST.</div>
+  <div class="desc">
+    En desktop esto es solo preview. La app real corre nativo (vía Capacitor) con cámara, cámara roll, share directo a IG/TikTok.
+  </div>
+</div>
+
+<div class="phone-stage">
+  <div class="phone">
+    <div class="notch"></div>
+
+    <!-- Status bar -->
+    <div class="status-bar">
+      <span>9:41</span>
+      <div class="right">
+        <span>●●●</span>
+        <span>📶</span>
+        <span>🔋</span>
+      </div>
+    </div>
+
+    <!-- Main scrollable screen -->
+    <div class="screen" id="screen">
+
+      <!-- Top nav -->
+      <div class="topnav" id="topnav">
+        <div class="back">←</div>
+        <div class="title">Apps · Crear</div>
+        <div class="credits">
+          <span class="star">✦</span>
+          <span>2,840</span>
+        </div>
+      </div>
+
+      <!-- Hero -->
+      <div class="hero">
+        <span class="badge">App · Crear</span>
+        <h1>Headshot Pro</h1>
+        <p>Foto de perfil profesional en 10 seg. Click → tu mejor versión para IG, OF, LinkedIn.</p>
+      </div>
+
+      <!-- Before/After -->
+      <div class="ba" id="baSlider">
+        <div class="ba-half ba-before">
+          <img class="ba-img" src="/landing/3.png" alt="Antes" />
+          <div class="ba-label">Antes</div>
+        </div>
+        <div class="ba-half ba-after">
+          <img class="ba-img" src="/landing/10.png" alt="Después" />
+          <div class="ba-label">Después</div>
+        </div>
+        <div class="ba-divider"></div>
+        <div class="ba-handle"></div>
+      </div>
+
+      <!-- Use cases tags -->
+      <div class="uses">
+        <span class="use-tag">📷 Instagram</span>
+        <span class="use-tag">💎 OnlyFans</span>
+        <span class="use-tag">💼 LinkedIn</span>
+        <span class="use-tag">📣 Press kit</span>
+      </div>
+
+      <!-- Looks (horizontal scroll) -->
+      <div class="section">
+        <div class="section-label">Paso 1 · Look</div>
+        <h2>Estilos curados</h2>
+        <p class="sub">Lighting, encuadre y vibe predefinidos.</p>
+      </div>
+      <div class="looks-scroll">
+        <div class="look selected">
+          <div class="preview"><img src="/landing/2.png" alt=""></div>
+          <div class="look-label">
+            <div class="name">Creator IG</div>
+            <div class="desc">Lifestyle, natural</div>
+          </div>
+        </div>
+        <div class="look">
+          <div class="preview"><img src="/landing/4.png" alt=""></div>
+          <div class="look-label">
+            <div class="name">Editorial</div>
+            <div class="desc">Magazine, dramatic</div>
+          </div>
+        </div>
+        <div class="look">
+          <div class="preview"><img src="/landing/5.png" alt=""></div>
+          <div class="look-label">
+            <div class="name">Corporate</div>
+            <div class="desc">Formal, neutro</div>
+          </div>
+        </div>
+        <div class="look">
+          <div class="preview"><img src="/landing/8.png" alt=""></div>
+          <div class="look-label">
+            <div class="name">OF Profile</div>
+            <div class="desc">Soft, golden hour</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Source picker -->
+      <div class="section">
+        <div class="section-label">Paso 2 · Personaje</div>
+        <h2>¿Cuál es la modelo?</h2>
+      </div>
+      <div class="chars-row">
+        <div class="char-slot active">
+          <div class="char maria"></div>
+          <span class="char-name">Maria</span>
+        </div>
+        <div class="char-slot">
+          <div class="char luna"></div>
+          <span class="char-name">Luna</span>
+        </div>
+        <div class="char-slot">
+          <div class="char sofia"></div>
+          <span class="char-name">Sofia</span>
+        </div>
+        <div class="char-slot">
+          <div class="char add">+</div>
+          <span class="char-name">Crear</span>
+        </div>
+      </div>
+
+      <div class="upload-row">
+        <div class="upload-btn">
+          <span class="icon">📷</span>
+          <span>O sube una foto desde tu cámara</span>
+        </div>
+      </div>
+
+      <!-- Examples -->
+      <div class="section">
+        <div class="section-label">Inspiración</div>
+        <h2>Mira lo que produce</h2>
+        <p class="sub">Outputs reales del look "Creator IG"</p>
+      </div>
+      <div class="examples-grid">
+        <div class="example"><img src="/landing/2.png" alt=""></div>
+        <div class="example"><img src="/landing/6.png" alt=""></div>
+        <div class="example"><img src="/landing/7.png" alt=""></div>
+      </div>
+
+      <!-- Tip -->
+      <div class="tip">
+        <div class="ic">💡</div>
+        <div class="text"><strong>Tip:</strong> parte de una foto donde el rostro esté bien visible. Headshot Pro hace zoom automático al rostro y reconstruye composición tipo retrato.</div>
+      </div>
+
+    </div>
+
+    <!-- Bottom CTA -->
+    <div class="bottom-bar">
+      <div class="summary">
+        <span class="summary-pill active">Creator IG</span>
+        <span class="summary-pill">Maria</span>
+        <span class="summary-pill">1024×1280</span>
+      </div>
+      <button class="cta">
+        ✨ Generar headshot
+        <span class="cost">6 cr</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Look selection
+  document.querySelectorAll('.look').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.look').forEach(x => x.classList.remove('selected'));
+      el.classList.add('selected');
+      const lookName = el.querySelector('.name').textContent;
+      document.querySelector('.summary-pill.active').textContent = lookName;
+    });
+  });
+
+  // Char selection
+  document.querySelectorAll('.char-slot').forEach(el => {
+    el.addEventListener('click', () => {
+      if (el.querySelector('.char.add')) return;
+      document.querySelectorAll('.char-slot').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      const charName = el.querySelector('.char-name').textContent;
+      document.querySelectorAll('.summary-pill')[1].textContent = charName;
+    });
+  });
+
+  // Topnav scroll shadow
+  const screen = document.getElementById('screen');
+  const topnav = document.getElementById('topnav');
+  screen.addEventListener('scroll', () => {
+    if (screen.scrollTop > 4) topnav.classList.add('scrolled');
+    else topnav.classList.remove('scrolled');
+  });
+
+  // Before/after slider
+  const ba = document.getElementById('baSlider');
+  const baBefore = ba.querySelector('.ba-before');
+  const baAfter = ba.querySelector('.ba-after');
+  const baDivider = ba.querySelector('.ba-divider');
+  const baHandle = ba.querySelector('.ba-handle');
+
+  let dragging = false;
+  function setSplit(p) {
+    p = Math.max(2, Math.min(98, p));
+    baBefore.style.width = p + '%';
+    baAfter.style.width = (100 - p) + '%';
+    baDivider.style.left = p + '%';
+    baHandle.style.left = p + '%';
+  }
+  function update(e) {
+    const rect = ba.getBoundingClientRect();
+    const x = (e.touches?.[0]?.clientX) ?? e.clientX;
+    const percent = ((x - rect.left) / rect.width) * 100;
+    setSplit(percent);
+  }
+  ba.addEventListener('mousedown', e => { dragging = true; update(e); });
+  ba.addEventListener('touchstart', e => { dragging = true; update(e); }, { passive: false });
+  document.addEventListener('mousemove', e => { if (dragging) update(e); });
+  document.addEventListener('touchmove', e => { if (dragging) { update(e); e.preventDefault(); } }, { passive: false });
+  document.addEventListener('mouseup', () => { dragging = false; });
+  document.addEventListener('touchend', () => { dragging = false; });
+  setSplit(50);
+
+  // CTA
+  document.querySelector('.cta').addEventListener('click', () => {
+    alert('Mockup: en la app real, esto generaría el headshot en ~10 seg y luego daría opción "Postear en IG / TikTok".');
+  });
+</script>
+
+</body>
+</html>

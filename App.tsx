@@ -19,6 +19,22 @@ const CharacterGallery = lazy(() => import('./pages/CharacterGallery'));
 const StudioV2 = lazy(() => import('./pages/StudioV2').then(m => ({ default: m.StudioV2 })));
 const AIEditor = lazy(() => import('./pages/AIEditorV2'));
 
+// ── Premium apps suite ──
+const HeadshotPro = lazy(() => import('./pages/HeadshotPro'));
+
+// ── Mobile-only shell (Capacitor native + ?mobile=1 in browser) ──
+const MobileApp = lazy(() => import('./pages/MobileApp'));
+
+/** Detect Capacitor native platform OR forced mobile via URL flag */
+function isMobileShell(): boolean {
+  if (typeof window === 'undefined') return false;
+  // Allow forcing mobile mode in browser via ?mobile=1 for testing
+  if (window.location.search.includes('mobile=1')) return true;
+  // Capacitor injects window.Capacitor when running in native shell
+  const cap = (window as any).Capacitor;
+  return Boolean(cap?.isNativePlatform?.());
+}
+
 // ── Auth ──
 const AuthScreen = lazy(() => import('./components/AuthScreen'));
 const Landing = lazy(() => import('./pages/Landing'));
@@ -32,7 +48,7 @@ const ExportModal = lazy(() => import('./features/export/ExportModal'));
 // Re-import + add to pages map when rebuilding.
 const OnboardingWizard = lazy(() => import('./components/OnboardingWizard').then(m => ({ default: m.OnboardingWizard })));
 
-export type Page = 'create' | 'studio' | 'editor' | 'gallery' | 'characters' | 'pricing' | 'profile';
+export type Page = 'create' | 'studio' | 'editor' | 'gallery' | 'characters' | 'pricing' | 'profile' | 'headshot';
 
 function App() {
   return (
@@ -93,6 +109,20 @@ function AppLayout() {
           </div>
         )}
       </>
+    );
+  }
+
+  // Native platform (Capacitor) OR forced via ?mobile=1 → render mobile-only shell
+  if (isMobileShell()) {
+    return (
+      <Suspense fallback={
+        <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F4EDE0', color: '#6F5E4C', fontSize: 13 }}>
+          Cargando…
+        </div>
+      }>
+        <MobileApp />
+        <StoreHydrator />
+      </Suspense>
     );
   }
 
@@ -161,6 +191,7 @@ function AuthenticatedApp() {
     characters: <CharacterGallery onNav={handleNav} />,
     pricing: <PricingPage />,
     profile: <ProfilePage />,
+    headshot: <HeadshotPro onNav={handleNav} />,
   };
 
   return (

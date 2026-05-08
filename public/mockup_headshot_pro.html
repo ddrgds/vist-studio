@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Headshot Pro — VIST · Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Instrument+Serif&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg-0: #FAFAFA;
+    --bg-card: #FFFFFF;
+    --text-1: #0A0A0A;
+    --text-2: #555555;
+    --text-3: #999999;
+    --border: rgba(0,0,0,0.06);
+    --border-strong: rgba(0,0,0,0.12);
+    --accent: #1A1A1A;
+    --serif: 'Instrument Serif', Georgia, serif;
+    --sans: 'DM Sans', -apple-system, sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+  html, body { background: var(--bg-0); color: var(--text-1); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+  body { min-height: 100vh; }
+
+  /* Layout grid: sidebar + main */
+  .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+
+  /* Sidebar (just for context) */
+  .sidebar {
+    background: white; border-right: 1px solid var(--border);
+    padding: 20px 16px; display: flex; flex-direction: column; gap: 4px;
+    position: sticky; top: 0; height: 100vh;
+  }
+  .sidebar .brand { font-family: var(--serif); font-size: 22px; padding: 0 12px 24px; color: var(--text-1); }
+  .sidebar .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 10px; cursor: pointer;
+    color: var(--text-2); font-size: 13px; transition: all 0.15s;
+  }
+  .sidebar .nav-item:hover { background: rgba(0,0,0,0.03); color: var(--text-1); }
+  .sidebar .nav-item.active { background: rgba(0,0,0,0.05); color: var(--text-1); font-weight: 600; }
+  .sidebar .nav-item .icon { font-size: 14px; opacity: 0.6; }
+  .sidebar .nav-item.active .icon { opacity: 1; }
+  .sidebar .num { font-family: var(--mono); font-size: 10px; color: var(--text-3); margin-left: auto; }
+
+  /* Main content */
+  .main { padding: 0; max-width: 1100px; }
+
+  /* Top breadcrumb */
+  .breadcrumb {
+    padding: 24px 48px 0; display: flex; align-items: center; gap: 12px;
+    color: var(--text-3); font-size: 12px; font-family: var(--mono); letter-spacing: 0.04em;
+  }
+  .breadcrumb a { color: var(--text-3); text-decoration: none; cursor: pointer; transition: color 0.15s; }
+  .breadcrumb a:hover { color: var(--text-1); }
+  .breadcrumb .arrow { opacity: 0.4; }
+  .breadcrumb .current { color: var(--text-1); }
+
+  /* Hero section */
+  .hero {
+    padding: 28px 48px 36px; display: grid; grid-template-columns: 1.1fr 1.4fr; gap: 48px; align-items: center;
+  }
+  .hero-text h1 {
+    font-family: var(--serif); font-size: 56px; line-height: 1.05; color: var(--text-1);
+    margin-bottom: 12px; letter-spacing: -0.02em;
+  }
+  .hero-text .badge {
+    display: inline-block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
+    padding: 4px 10px; border-radius: 999px; background: var(--text-1); color: white; margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+  .hero-text p {
+    color: var(--text-2); font-size: 15px; line-height: 1.6; margin-bottom: 24px; max-width: 420px;
+  }
+  .hero-text .meta { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
+  .hero-text .meta .chip {
+    font-size: 11px; color: var(--text-2); padding: 6px 12px;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .hero-text .meta .chip .dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; }
+
+  /* Before/After comparison */
+  .ba {
+    position: relative; aspect-ratio: 4/5; border-radius: 24px; overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.10), 0 0 0 1px var(--border);
+    background: #F3F4F6;
+  }
+  .ba-half { position: absolute; top: 0; height: 100%; overflow: hidden; }
+  .ba-before { left: 0; width: 50%; }
+  .ba-after { right: 0; width: 50%; }
+  .ba-img {
+    width: 100%; height: 100%; object-fit: cover; object-position: center top;
+  }
+  .ba-after .ba-img { object-position: center top; filter: contrast(1.05) saturate(1.05); }
+  .ba-divider {
+    position: absolute; top: 0; bottom: 0; left: 50%; width: 2px;
+    background: white; box-shadow: 0 0 16px rgba(0,0,0,0.3); transform: translateX(-50%);
+  }
+  .ba-handle {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 40px; height: 40px; border-radius: 50%; background: white;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    cursor: ew-resize;
+  }
+  .ba-handle::before { content: '◀ ▶'; font-size: 10px; letter-spacing: 2px; color: var(--text-1); }
+  .ba-label {
+    position: absolute; bottom: 16px; padding: 6px 12px; border-radius: 999px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+    background: rgba(255,255,255,0.92); color: var(--text-1); backdrop-filter: blur(8px);
+  }
+  .ba-before .ba-label { left: 16px; }
+  .ba-after .ba-label { right: 16px; background: var(--text-1); color: white; }
+
+  /* Section block */
+  .section { padding: 28px 48px; border-top: 1px solid var(--border); }
+  .section-label {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-3); margin-bottom: 16px;
+  }
+  .section h2 {
+    font-family: var(--serif); font-size: 24px; line-height: 1.2; color: var(--text-1);
+    margin-bottom: 4px; letter-spacing: -0.01em;
+  }
+  .section .sub { color: var(--text-2); font-size: 13px; margin-bottom: 20px; }
+
+  /* Looks grid */
+  .looks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .look {
+    cursor: pointer; border-radius: 16px; overflow: hidden; background: white;
+    border: 1.5px solid var(--border); transition: all 0.18s; position: relative;
+  }
+  .look:hover { transform: translateY(-2px); border-color: var(--border-strong); }
+  .look.selected {
+    border-color: var(--text-1); box-shadow: 0 0 0 1px var(--text-1), 0 8px 24px rgba(0,0,0,0.08);
+  }
+  .look .preview {
+    aspect-ratio: 1/1; background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+    position: relative; overflow: hidden;
+  }
+  .look .preview img { width: 100%; height: 100%; object-fit: cover; }
+  .look.selected .preview::after {
+    content: '✓'; position: absolute; top: 8px; right: 8px;
+    width: 24px; height: 24px; border-radius: 50%; background: var(--text-1); color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+  }
+  .look-label { padding: 12px 14px 14px; }
+  .look-label .name { font-size: 13px; font-weight: 600; color: var(--text-1); margin-bottom: 2px; }
+  .look-label .desc { font-size: 11px; color: var(--text-3); line-height: 1.4; }
+
+  /* Source picker */
+  .source { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; }
+  .source-block {
+    padding: 16px; border-radius: 16px; background: white; border: 1.5px solid var(--border);
+    cursor: pointer; transition: all 0.18s; min-height: 124px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .source-block:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+  .source-block.selected {
+    border-color: var(--text-1); box-shadow: 0 0 0 1px var(--text-1);
+  }
+  .source-block-header { display: flex; align-items: center; gap: 8px; }
+  .source-block-header .ic {
+    width: 28px; height: 28px; border-radius: 8px; background: rgba(0,0,0,0.04);
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
+  }
+  .source-block-header .name { font-size: 13px; font-weight: 600; color: var(--text-1); }
+  .source-block .characters {
+    display: flex; gap: 6px; overflow-x: auto; padding: 4px 0;
+  }
+  .source-block .char {
+    width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0; cursor: pointer;
+    background: linear-gradient(135deg, #C7D2FE, #818CF8);
+    border: 2px solid transparent; transition: all 0.18s;
+  }
+  .source-block .char.active {
+    border-color: var(--text-1); box-shadow: 0 0 0 2px white, 0 0 0 4px var(--text-1);
+  }
+  .source-block .char.maria { background-image: linear-gradient(135deg, #FCE7F3, #EC4899); }
+  .source-block .char.luna  { background-image: linear-gradient(135deg, #DDD6FE, #8B5CF6); }
+  .source-block .char.sofia { background-image: linear-gradient(135deg, #FED7AA, #F97316); }
+  .source-block .upload-zone {
+    flex: 1; border: 1px dashed rgba(0,0,0,0.15); border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 14px; text-align: center; transition: all 0.18s;
+  }
+  .source-block .upload-zone:hover { border-color: var(--text-1); background: rgba(0,0,0,0.02); }
+  .source-block .upload-zone .icon { font-size: 22px; opacity: 0.4; margin-bottom: 4px; }
+  .source-block .upload-zone .text { font-size: 12px; color: var(--text-2); }
+  .source-block .upload-zone .hint { font-size: 10px; color: var(--text-3); margin-top: 2px; }
+
+  /* CTA bar (sticky bottom) */
+  .cta-bar {
+    position: sticky; bottom: 0; padding: 16px 48px 24px;
+    background: linear-gradient(to top, var(--bg-0) 60%, transparent);
+    display: flex; gap: 12px; align-items: center;
+  }
+  .cta-bar .info {
+    flex: 1; font-size: 12px; color: var(--text-2);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .cta-bar .info .selected-look {
+    padding: 4px 10px; border-radius: 999px; background: var(--text-1); color: white;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  .cta-button {
+    background: var(--text-1); color: white; border: none; cursor: pointer;
+    padding: 14px 28px; border-radius: 14px; font-size: 14px; font-weight: 600;
+    display: flex; align-items: center; gap: 10px; transition: all 0.18s;
+    font-family: var(--sans); box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  }
+  .cta-button:hover { background: #2A2A2A; transform: translateY(-1px); box-shadow: 0 12px 32px rgba(0,0,0,0.16); }
+  .cta-button .cost { font-family: var(--mono); font-size: 12px; opacity: 0.7; padding-left: 10px; border-left: 1px solid rgba(255,255,255,0.2); }
+
+  /* Tips section */
+  .tips {
+    padding: 16px 20px; border-radius: 14px; background: #FFF8E6;
+    border: 1px solid #FDE68A; color: #5C3D0A; font-size: 12px; line-height: 1.55;
+    display: flex; gap: 12px;
+  }
+  .tips .ic { font-size: 16px; flex-shrink: 0; }
+
+  /* Examples gallery */
+  .examples-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .example { aspect-ratio: 3/4; border-radius: 12px; overflow: hidden; background: #F3F4F6; cursor: pointer; transition: transform 0.18s; }
+  .example:hover { transform: scale(1.02); }
+  .example img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* Use case footer */
+  .uses {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px;
+  }
+  .use-tag {
+    padding: 6px 12px; border-radius: 999px; background: var(--bg-card);
+    border: 1px solid var(--border); font-size: 11px; color: var(--text-2);
+  }
+
+  /* Mobile */
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .hero { grid-template-columns: 1fr; gap: 24px; padding: 20px 24px; }
+    .hero-text h1 { font-size: 38px; }
+    .section { padding: 20px 24px; }
+    .looks { grid-template-columns: repeat(2, 1fr); }
+    .source { grid-template-columns: 1fr; }
+    .examples-grid { grid-template-columns: repeat(3, 1fr); }
+    .cta-bar { padding: 12px 24px 18px; flex-direction: column; align-items: stretch; }
+    .cta-button { width: 100%; justify-content: center; }
+    .breadcrumb { padding: 16px 24px 0; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR (for context) -->
+  <aside class="sidebar">
+    <div class="brand">VIST</div>
+    <div class="nav-item"><span class="icon">✦</span><span>Crear Personaje</span><span class="num">①</span></div>
+    <div class="nav-item active"><span class="icon">▦</span><span>Apps</span><span class="num">②</span></div>
+    <div class="nav-item"><span class="icon">▢</span><span>Galería</span><span class="num">③</span></div>
+    <div class="nav-item"><span class="icon">◐</span><span>Personajes</span><span class="num">④</span></div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+      <a href="#">Apps</a>
+      <span class="arrow">/</span>
+      <a href="#">Crear</a>
+      <span class="arrow">/</span>
+      <span class="current">Headshot Pro</span>
+    </div>
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-text">
+        <span class="badge">App · Crear</span>
+        <h1>Headshot Pro</h1>
+        <p>Foto de perfil profesional en 10 segundos. Click → tienes tu mejor versión para Instagram, OnlyFans, LinkedIn o press kit. Sin estudio, sin fotógrafo, sin configurar prompts.</p>
+        <div class="meta">
+          <span class="chip"><span class="dot"></span> Powered by NB2</span>
+          <span class="chip">~10 seg</span>
+          <span class="chip">6 cr</span>
+        </div>
+      </div>
+
+      <!-- Before/After -->
+      <div class="ba" id="baSlider">
+        <div class="ba-half ba-before">
+          <img class="ba-img" src="/landing/3.png" alt="Antes" />
+          <div class="ba-label">Antes</div>
+        </div>
+        <div class="ba-half ba-after">
+          <img class="ba-img" src="/landing/10.png" alt="Después" />
+          <div class="ba-label">Después</div>
+        </div>
+        <div class="ba-divider"></div>
+        <div class="ba-handle" title="Arrastra para comparar"></div>
+      </div>
+    </section>
+
+    <!-- LOOKS PRESETS -->
+    <section class="section">
+      <div class="section-label">Paso 1 · Elige el look</div>
+      <h2>4 estilos curados</h2>
+      <p class="sub">Cada uno optimizado para una plataforma. Lighting, encuadre y vibe predefinidos para que no tengas que pensar en prompts.</p>
+
+      <div class="looks">
+
+        <!-- Look 1: Creator IG (selected by default) -->
+        <div class="look selected" data-look="creator-ig">
+          <div class="preview"><img src="/landing/2.png" alt="" /></div>
+          <div class="look-label">
+            <div class="name">Creator IG</div>
+            <div class="desc">Lifestyle, natural light, fondo limpio</div>
+          </div>
+        </div>
+
+        <!-- Look 2: Editorial -->
+        <div class="look" data-look="editorial">
+          <div class="preview"><img src="/landing/4.png" alt="" /></div>
+          <div class="look-label">
+            <div class="name">Editorial</div>
+            <div class="desc">Magazine, dramatic lighting</div>
+          </div>
+        </div>
+
+        <!-- Look 3: Corporate -->
+        <div class="look" data-look="corporate">
+          <div class="preview"><img src="/landing/5.png" alt="" /></div>
+          <div class="look-label">
+            <div class="name">Corporate</div>
+            <div class="desc">Formal, fondo gris neutro</div>
+          </div>
+        </div>
+
+        <!-- Look 4: OF Profile -->
+        <div class="look" data-look="of-profile">
+          <div class="preview"><img src="/landing/8.png" alt="" /></div>
+          <div class="look-label">
+            <div class="name">OF Profile</div>
+            <div class="desc">Soft, sensual, golden hour</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="uses">
+        <span class="use-tag">📷 Instagram bio</span>
+        <span class="use-tag">💎 OnlyFans avatar</span>
+        <span class="use-tag">💼 LinkedIn pro</span>
+        <span class="use-tag">📣 Press kit</span>
+        <span class="use-tag">✦ TikTok profile</span>
+      </div>
+    </section>
+
+    <!-- SOURCE PICKER -->
+    <section class="section">
+      <div class="section-label">Paso 2 · Elige la fuente</div>
+      <h2>¿De qué foto partimos?</h2>
+      <p class="sub">Selecciona uno de tus personajes guardados o sube una foto.</p>
+
+      <div class="source">
+
+        <div class="source-block selected">
+          <div class="source-block-header">
+            <div class="ic">◐</div>
+            <div class="name">Tus personajes</div>
+          </div>
+          <div class="characters">
+            <div class="char maria active" title="Maria"></div>
+            <div class="char luna" title="Luna"></div>
+            <div class="char sofia" title="Sofia"></div>
+            <div class="char" title="Crear nuevo" style="background: rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: center; font-size: 18px; color: #999; border: 2px dashed rgba(0,0,0,0.15);">+</div>
+          </div>
+          <div style="font-size: 11px; color: var(--text-3); margin-top: 4px;">Maria · creada hace 3 días · 12 fotos en galería</div>
+        </div>
+
+        <div class="source-block">
+          <div class="source-block-header">
+            <div class="ic">↑</div>
+            <div class="name">Subir foto</div>
+          </div>
+          <div class="upload-zone">
+            <div class="icon">↑</div>
+            <div class="text">Arrastra tu foto aquí</div>
+            <div class="hint">JPG, PNG · Min 512px</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- EXAMPLES -->
+    <section class="section">
+      <div class="section-label">Inspiración · Ejemplos del Look "Creator IG"</div>
+      <h2 style="margin-bottom: 16px;">Mira lo que produce</h2>
+
+      <div class="examples-grid">
+        <div class="example"><img src="/landing/2.png" alt="" /></div>
+        <div class="example"><img src="/landing/6.png" alt="" /></div>
+        <div class="example"><img src="/landing/7.png" alt="" /></div>
+        <div class="example"><img src="/landing/9.png" alt="" /></div>
+      </div>
+    </section>
+
+    <!-- TIPS -->
+    <section class="section">
+      <div class="tips">
+        <div class="ic">💡</div>
+        <div>
+          <strong>Tip pro:</strong> Para mejores resultados, parte de una foto donde tu modelo tenga rostro bien visible y centrado. Si la foto base es de cuerpo completo, Headshot Pro hace zoom automático al rostro y reconstruye composición tipo retrato.
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <div class="cta-bar">
+      <div class="info">
+        <span class="selected-look">Creator IG</span>
+        <span>· Maria · Output 1024×1280px</span>
+      </div>
+      <button class="cta-button">
+        ✨ Generar headshot
+        <span class="cost">6 cr</span>
+      </button>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // Look selection
+  document.querySelectorAll('.look').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.look').forEach(x => x.classList.remove('selected'));
+      el.classList.add('selected');
+      const lookName = el.querySelector('.name').textContent;
+      document.querySelector('.selected-look').textContent = lookName;
+    });
+  });
+
+  // Character selection
+  document.querySelectorAll('.char').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.char').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+    });
+  });
+
+  // Before/after slider
+  const ba = document.getElementById('baSlider');
+  const baBefore = ba.querySelector('.ba-before');
+  const baAfter = ba.querySelector('.ba-after');
+  const baDivider = ba.querySelector('.ba-divider');
+  const baHandle = ba.querySelector('.ba-handle');
+
+  let dragging = false;
+  function setSplit(percent) {
+    const p = Math.max(2, Math.min(98, percent));
+    baBefore.style.width = p + '%';
+    baAfter.style.width = (100 - p) + '%';
+    baDivider.style.left = p + '%';
+    baHandle.style.left = p + '%';
+  }
+  ba.addEventListener('mousedown', (e) => { dragging = true; updateSlider(e); });
+  document.addEventListener('mousemove', (e) => { if (dragging) updateSlider(e); });
+  document.addEventListener('mouseup', () => { dragging = false; });
+
+  ba.addEventListener('touchstart', (e) => { dragging = true; updateSliderTouch(e); }, { passive: false });
+  document.addEventListener('touchmove', (e) => { if (dragging) updateSliderTouch(e); }, { passive: false });
+  document.addEventListener('touchend', () => { dragging = false; });
+
+  function updateSlider(e) {
+    const rect = ba.getBoundingClientRect();
+    const percent = ((e.clientX - rect.left) / rect.width) * 100;
+    setSplit(percent);
+  }
+  function updateSliderTouch(e) {
+    const rect = ba.getBoundingClientRect();
+    const t = e.touches[0];
+    const percent = ((t.clientX - rect.left) / rect.width) * 100;
+    setSplit(percent);
+    e.preventDefault();
+  }
+  // Initial split
+  setSplit(50);
+
+  // CTA simulated click
+  document.querySelector('.cta-button').addEventListener('click', () => {
+    alert('Mockup: en la app real, esto generaría el headshot en ~10 seg.');
+  });
+</script>
+</body>
+</html>

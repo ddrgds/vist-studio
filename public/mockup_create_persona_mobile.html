@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>VIST · Crear Personaje</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Crear Personaje mood: Atelier — warm cream, terracotta, clay */
+  --bg-0: #F5EBDB;
+  --bg-1: #FAF3E5;
+  --bg-card: #FFFCF5;
+  --paper: #F8EFDD;
+  --ink-0: #1F1A14;
+  --ink-1: #3D332A;
+  --ink-2: #6F5E4C;
+  --ink-3: #A8957D;
+  --line: rgba(31, 26, 20, 0.10);
+  --line-soft: rgba(31, 26, 20, 0.05);
+  --accent: #C9785C;
+  --accent-deep: #8E5640;
+  --clay: #B8634A;
+  --gold: #D4A85F;
+  --sage: #8A9978;
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  background: var(--bg-0);
+  color: var(--ink-0);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+body {
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding-bottom: 100px;
+  background-image:
+    radial-gradient(circle at 20% 10%, rgba(31,26,20,0.03) 1px, transparent 1px),
+    radial-gradient(circle at 80% 60%, rgba(31,26,20,0.025) 1px, transparent 1px);
+  background-size: 28px 28px, 44px 44px;
+}
+
+.serif { font-family: 'Instrument Serif', serif; font-weight: 400; }
+.italic { font-style: italic; }
+.mono { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+
+/* ─── Top bar ─── */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px 10px;
+  background: linear-gradient(180deg, var(--bg-0) 0%, var(--bg-0) 80%, transparent 100%);
+  backdrop-filter: blur(8px);
+}
+
+.back-btn {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: transform 0.3s var(--ease);
+}
+.back-btn:active { transform: scale(0.92); }
+
+.topbar-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.topbar-title-dot {
+  width: 6px; height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+
+.save-draft {
+  font-size: 12px;
+  color: var(--ink-2);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* ─── Atelier hero ─── */
+.atelier {
+  padding: 4px 20px 0;
+}
+
+.atelier-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 10px;
+}
+
+.atelier h1 {
+  font-family: 'Instrument Serif', serif;
+  font-size: 44px;
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+  color: var(--ink-0);
+  font-weight: 400;
+}
+.atelier h1 em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.atelier-sub {
+  margin-top: 12px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 320px;
+}
+
+/* ─── Live preview portrait ─── */
+.preview-card {
+  margin: 24px 20px 0;
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  box-shadow: 0 20px 40px -16px rgba(31, 26, 20, 0.18);
+}
+
+.preview-portrait {
+  position: relative;
+  aspect-ratio: 4/5;
+  background: url('https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&q=85') center/cover;
+}
+.preview-portrait::after {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(180deg, transparent 50%, rgba(20, 16, 14, 0.55) 100%),
+    radial-gradient(circle at 30% 20%, rgba(201, 120, 92, 0.12), transparent 50%);
+}
+
+.preview-corner {
+  position: absolute;
+  top: 14px; left: 14px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 11px;
+  background: rgba(255, 252, 245, 0.94);
+  backdrop-filter: blur(8px);
+  border-radius: 999px;
+  z-index: 2;
+}
+.preview-corner-dot {
+  width: 6px; height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+.preview-corner span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-0);
+}
+
+.preview-iter {
+  position: absolute;
+  top: 14px; right: 14px;
+  display: flex; gap: 4px;
+  padding: 6px 10px;
+  background: rgba(31, 26, 20, 0.65);
+  backdrop-filter: blur(6px);
+  border-radius: 999px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: rgba(255, 252, 245, 0.95);
+  z-index: 2;
+}
+
+.preview-info {
+  position: absolute;
+  bottom: 14px; left: 14px; right: 14px;
+  z-index: 2;
+  color: #FFFCF5;
+}
+.preview-info-name {
+  font-family: 'Instrument Serif', serif;
+  font-size: 22px;
+  font-style: italic;
+  letter-spacing: -0.01em;
+}
+.preview-info-meta {
+  margin-top: 4px;
+  font-size: 11px;
+  opacity: 0.78;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.1em;
+}
+
+/* Iteration thumbnails */
+.iter-row {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: var(--bg-card);
+  border-top: 1px solid var(--line-soft);
+}
+.iter-thumb {
+  flex: 1;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.3s var(--ease);
+  border: 2px solid transparent;
+}
+.iter-thumb:active { transform: scale(0.94); }
+.iter-thumb.active { border-color: var(--accent); }
+.iter-thumb-add {
+  flex: 1;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  border: 1.5px dashed var(--line);
+  background: var(--paper);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--accent);
+  cursor: pointer;
+  transition: all 0.3s var(--ease);
+}
+.iter-thumb-add:active {
+  background: var(--bg-0);
+  transform: scale(0.94);
+}
+
+/* ─── Steps strip ─── */
+.steps {
+  margin: 28px 20px 0;
+  padding: 16px;
+  background: var(--bg-card);
+  border-radius: 18px;
+  border: 1px solid var(--line);
+}
+
+.steps-header {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 14px;
+}
+.steps-title {
+  font-family: 'Instrument Serif', serif;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  color: var(--ink-0);
+}
+.steps-title em { font-style: italic; }
+.steps-progress {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-deep);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+}
+
+.steps-list {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+  margin: 0 -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+.steps-list::-webkit-scrollbar { display: none; }
+
+.step-pill {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px 8px 8px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.3s var(--ease);
+}
+.step-pill .step-num {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--bg-1);
+  color: var(--ink-2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+}
+.step-pill .step-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.step-pill.completed {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.step-pill.completed .step-num {
+  background: rgba(255, 252, 245, 0.25);
+  color: #FFFCF5;
+}
+.step-pill.completed .step-name { color: #FFFCF5; }
+
+.step-pill.active {
+  background: var(--ink-0);
+  border-color: var(--ink-0);
+}
+.step-pill.active .step-num {
+  background: var(--accent);
+  color: #FFFCF5;
+}
+.step-pill.active .step-name { color: #FFFCF5; }
+
+/* ─── Section (chapter) ─── */
+.chapter {
+  padding: 28px 20px 0;
+}
+
+.chapter-head {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  margin-bottom: 14px;
+}
+.chapter-title-block { flex: 1; }
+.chapter-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--accent-deep);
+  text-transform: uppercase;
+}
+.chapter-title {
+  font-family: 'Instrument Serif', serif;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  color: var(--ink-0);
+  margin-top: 4px;
+  line-height: 1;
+}
+.chapter-title em { font-style: italic; }
+
+.chapter-toggle {
+  display: flex;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.chapter-toggle button {
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  color: var(--ink-2);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  transition: all 0.3s var(--ease);
+}
+.chapter-toggle button.active {
+  background: var(--ink-0);
+  color: #FFFCF5;
+}
+
+/* Field label */
+.field-label {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin: 22px 0 12px;
+}
+.field-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-1);
+  letter-spacing: 0.02em;
+}
+.field-hint {
+  font-size: 11px;
+  color: var(--ink-3);
+  font-style: italic;
+}
+.field-name .field-num {
+  display: inline-block;
+  margin-right: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--accent-deep);
+  font-weight: 500;
+}
+
+/* Style swatches (Estilo de Render) */
+.swatches-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.swatch {
+  position: relative;
+  aspect-ratio: 4/5;
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  background: #2A1F18;
+  transition: transform 0.3s var(--ease);
+  border: 2px solid transparent;
+}
+.swatch:active { transform: scale(0.96); }
+.swatch.selected { border-color: var(--accent); }
+.swatch-img { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.swatch::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 55%, rgba(0,0,0,0.85) 100%);
+}
+.swatch-label {
+  position: absolute;
+  bottom: 10px; left: 12px; right: 12px;
+  z-index: 2;
+  color: #FFFCF5;
+}
+.swatch-label-name {
+  font-family: 'Instrument Serif', serif;
+  font-size: 16px;
+  font-style: italic;
+  letter-spacing: -0.01em;
+}
+.swatch-label-meta {
+  margin-top: 2px;
+  font-size: 10px;
+  opacity: 0.75;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.swatch-check {
+  position: absolute;
+  top: 10px; right: 10px;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 2;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: all 0.3s var(--ease);
+}
+.swatch.selected .swatch-check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Two-col fields (Género / Edad) */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.dropdown {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: border-color 0.3s var(--ease);
+}
+.dropdown:active { border-color: var(--accent); }
+.dropdown-label {
+  display: flex; flex-direction: column; gap: 2px;
+}
+.dropdown-label small {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-family: 'JetBrains Mono', monospace;
+}
+.dropdown-label strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-0);
+}
+
+/* Color swatches (skin tones) */
+.color-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+}
+.color-row::-webkit-scrollbar { display: none; }
+
+.color-chip {
+  flex-shrink: 0;
+  width: 60px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  cursor: pointer;
+  transition: transform 0.3s var(--ease);
+}
+.color-chip:active { transform: scale(0.92); }
+.color-disc {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  box-shadow: inset 0 -8px 16px rgba(0,0,0,0.18);
+  transition: border-color 0.3s var(--ease);
+}
+.color-chip.selected .color-disc {
+  border-color: var(--ink-0);
+}
+.color-chip span {
+  font-size: 10px;
+  color: var(--ink-2);
+  font-weight: 500;
+}
+.color-chip.selected span { color: var(--ink-0); font-weight: 600; }
+
+/* Tile grid (hair, eyes) */
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.tile {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #2A1F18;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.3s var(--ease);
+}
+.tile:active { transform: scale(0.94); }
+.tile.selected { border-color: var(--accent); }
+.tile-img { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.tile::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 55%, rgba(0,0,0,0.7) 100%);
+}
+.tile-label {
+  position: absolute;
+  bottom: 6px; left: 8px;
+  z-index: 2;
+  font-size: 11px;
+  color: #FFFCF5;
+  font-weight: 500;
+}
+
+/* Chips */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 13px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-1);
+  cursor: pointer;
+  transition: all 0.3s var(--ease);
+}
+.chip.selected {
+  background: var(--ink-0);
+  border-color: var(--ink-0);
+  color: #FFFCF5;
+}
+.chip-emoji { font-size: 14px; }
+
+/* Prompt mode textarea */
+.prompt-box {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+}
+.prompt-textarea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  resize: none;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--ink-1);
+  line-height: 1.6;
+  outline: none;
+  min-height: 80px;
+}
+.prompt-textarea::placeholder { color: var(--ink-3); }
+.prompt-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+}
+.prompt-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-3);
+  letter-spacing: 0.1em;
+}
+.prompt-enhance {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--accent-deep);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Quick start templates */
+.templates-row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 -20px;
+  padding: 0 20px;
+  scroll-snap-type: x mandatory;
+}
+.templates-row::-webkit-scrollbar { display: none; }
+
+.template {
+  flex-shrink: 0;
+  width: 130px;
+  scroll-snap-align: start;
+  cursor: pointer;
+  transition: transform 0.3s var(--ease);
+}
+.template:active { transform: scale(0.95); }
+
+.template-img {
+  aspect-ratio: 3/4;
+  border-radius: 12px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  overflow: hidden;
+}
+.template-img::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.7) 100%);
+}
+.template-overlay {
+  position: absolute;
+  bottom: 8px; left: 8px;
+  z-index: 2;
+  color: #FFFCF5;
+}
+.template-overlay-name {
+  font-family: 'Instrument Serif', serif;
+  font-size: 14px;
+  font-style: italic;
+}
+.template-overlay-meta {
+  margin-top: 1px;
+  font-size: 9px;
+  opacity: 0.75;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.08em;
+}
+
+/* ─── Floating bottom CTA ─── */
+.floating-cta-wrap {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  padding: 14px 20px calc(20px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, transparent 0%, var(--bg-0) 30%);
+  z-index: 50;
+}
+
+.floating-cta {
+  display: flex;
+  gap: 10px;
+}
+
+.cta-secondary {
+  width: 50px; height: 52px;
+  border-radius: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-1);
+  cursor: pointer;
+  transition: all 0.3s var(--ease);
+}
+.cta-secondary:active {
+  transform: scale(0.94);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.cta-primary {
+  flex: 1;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-deep) 100%);
+  color: #FFFCF5;
+  border: none;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s var(--ease);
+  box-shadow: 0 8px 20px -8px rgba(142, 86, 64, 0.5);
+}
+.cta-primary:active { transform: scale(0.98); }
+.cta-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.15) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: shimmer 3s var(--ease) infinite;
+}
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.cta-cost {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  opacity: 0.7;
+  text-transform: uppercase;
+}
+.cta-arrow {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 252, 245, 0.18);
+  display: flex; align-items: center; justify-content: center;
+}
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="back-btn">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+  </div>
+  <div class="topbar-title">
+    <span class="topbar-title-dot"></span>
+    <span>Atelier · Crear</span>
+  </div>
+  <div class="save-draft">Guardar</div>
+</div>
+
+<!-- Atelier hero -->
+<section class="atelier">
+  <div class="atelier-eyebrow">Foundation · 01</div>
+  <h1>Construye<br>tu <em>modelo</em>.</h1>
+  <p class="atelier-sub">Define rasgos, look y voz. Cada decisión queda guardada en la ficha de tu personaje.</p>
+</section>
+
+<!-- Live preview portrait -->
+<div class="preview-card">
+  <div class="preview-portrait">
+    <div class="preview-corner">
+      <span class="preview-corner-dot"></span>
+      <span>Vista previa · live</span>
+    </div>
+    <div class="preview-iter">3 / 4</div>
+    <div class="preview-info">
+      <div class="preview-info-name">Sin nombre aún</div>
+      <div class="preview-info-meta">F · 24 AÑOS · PHOTOREAL</div>
+    </div>
+  </div>
+  <div class="iter-row">
+    <div class="iter-thumb" style="background-image: url('https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=200&q=80');"></div>
+    <div class="iter-thumb" style="background-image: url('https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=200&q=80');"></div>
+    <div class="iter-thumb active" style="background-image: url('https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80');"></div>
+    <div class="iter-thumb-add">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+    </div>
+  </div>
+</div>
+
+<!-- Steps strip -->
+<div class="steps">
+  <div class="steps-header">
+    <h3 class="steps-title">Pasos del <em>atelier</em></h3>
+    <span class="steps-progress">2 / 5</span>
+  </div>
+  <div class="steps-list">
+    <div class="step-pill completed">
+      <span class="step-num">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+      </span>
+      <span class="step-name">Esencia</span>
+    </div>
+    <div class="step-pill active">
+      <span class="step-num">2</span>
+      <span class="step-name">Rasgos</span>
+    </div>
+    <div class="step-pill">
+      <span class="step-num">3</span>
+      <span class="step-name">Look</span>
+    </div>
+    <div class="step-pill">
+      <span class="step-num">4</span>
+      <span class="step-name">Vibe</span>
+    </div>
+    <div class="step-pill">
+      <span class="step-num">5</span>
+      <span class="step-name">Nombre</span>
+    </div>
+  </div>
+</div>
+
+<!-- Quick start templates -->
+<section class="chapter">
+  <div class="chapter-head">
+    <div class="chapter-title-block">
+      <span class="chapter-num">Atajo</span>
+      <h2 class="chapter-title">O empieza con un <em>preset</em></h2>
+    </div>
+  </div>
+
+  <div class="templates-row">
+    <div class="template">
+      <div class="template-img" style="background-image: url('https://images.unsplash.com/photo-1521252659862-eec69941b071?w=400&q=85');">
+        <div class="template-overlay">
+          <div class="template-overlay-name">Editorial Chic</div>
+          <div class="template-overlay-meta">F · 25 · PHOTOREAL</div>
+        </div>
+      </div>
+    </div>
+    <div class="template">
+      <div class="template-img" style="background-image: url('https://images.unsplash.com/photo-1548142813-c348350df52b?w=400&q=85');">
+        <div class="template-overlay">
+          <div class="template-overlay-name">Beach Tropical</div>
+          <div class="template-overlay-meta">F · 23 · PHOTOREAL</div>
+        </div>
+      </div>
+    </div>
+    <div class="template">
+      <div class="template-img" style="background-image: url('https://images.unsplash.com/photo-1542140372-de3a3f87a9a4?w=400&q=85');">
+        <div class="template-overlay">
+          <div class="template-overlay-name">Urban Cosmopolitan</div>
+          <div class="template-overlay-meta">F · 28 · PHOTOREAL</div>
+        </div>
+      </div>
+    </div>
+    <div class="template">
+      <div class="template-img" style="background-image: url('https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&q=85');">
+        <div class="template-overlay">
+          <div class="template-overlay-name">Street Editorial</div>
+          <div class="template-overlay-meta">F · 22 · ANIME</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Chapter 02 — Rasgos -->
+<section class="chapter">
+  <div class="chapter-head">
+    <div class="chapter-title-block">
+      <span class="chapter-num">Capítulo · 02</span>
+      <h2 class="chapter-title"><em>Rasgos</em></h2>
+    </div>
+    <div class="chapter-toggle">
+      <button class="active">Visual</button>
+      <button>Prompt</button>
+    </div>
+  </div>
+
+  <!-- Estilo de Render (collapsed) -->
+  <div class="field-label">
+    <span class="field-name"><span class="field-num">01</span>Estilo de Render</span>
+    <span class="field-hint">Cambia el universo</span>
+  </div>
+  <div class="swatches-grid">
+    <div class="swatch selected">
+      <div class="swatch-img" style="background-image: url('https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=85');"></div>
+      <div class="swatch-check">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFCF5" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+      </div>
+      <div class="swatch-label">
+        <div class="swatch-label-name">Photorealistic</div>
+        <div class="swatch-label-meta">PRINCIPAL · DEFAULT</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-img" style="background-image: url('https://images.unsplash.com/photo-1578632292113-23dc46e90516?w=400&q=85');"></div>
+      <div class="swatch-label">
+        <div class="swatch-label-name">Anime / Manhwa</div>
+        <div class="swatch-label-meta">2D · STYLIZED</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Two-col: Género + Edad -->
+  <div class="field-label">
+    <span class="field-name"><span class="field-num">02</span>Identidad</span>
+  </div>
+  <div class="two-col">
+    <div class="dropdown">
+      <div class="dropdown-label">
+        <small>Género</small>
+        <strong>Femenino</strong>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+    <div class="dropdown">
+      <div class="dropdown-label">
+        <small>Edad</small>
+        <strong>24 años</strong>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+  </div>
+
+  <!-- Tono de piel -->
+  <div class="field-label">
+    <span class="field-name"><span class="field-num">03</span>Tono de piel</span>
+    <span class="field-hint">8 tonos</span>
+  </div>
+  <div class="color-row">
+    <div class="color-chip">
+      <div class="color-disc" style="background: #F4DBC6;"></div>
+      <span>Porcelana</span>
+    </div>
+    <div class="color-chip">
+      <div class="color-disc" style="background: #ECC8A4;"></div>
+      <span>Marfil</span>
+    </div>
+    <div class="color-chip selected">
+      <div class="color-disc" style="background: #D4A47C;"></div>
+      <span>Caramelo</span>
+    </div>
+    <div class="color-chip">
+      <div class="color-disc" style="background: #B8845A;"></div>
+      <span>Caoba</span>
+    </div>
+    <div class="color-chip">
+      <div class="color-disc" style="background: #8E5A3D;"></div>
+      <span>Sienna</span>
+    </div>
+    <div class="color-chip">
+      <div class="color-disc" style="background: #6A3F28;"></div>
+      <span>Espresso</span>
+    </div>
+    <div class="color-chip">
+      <div class="color-disc" style="background: #4A2A18;"></div>
+      <span>Cacao</span>
+    </div>
+    <div class="color-chip">
+      <div class="color-disc" style="background: #2E1810;"></div>
+      <span>Onyx</span>
+    </div>
+  </div>
+
+  <!-- Cabello -->
+  <div class="field-label">
+    <span class="field-name"><span class="field-num">04</span>Cabello</span>
+    <span class="field-hint">Estilo + color</span>
+  </div>
+  <div class="tile-grid">
+    <div class="tile selected">
+      <div class="tile-img" style="background-image: url('https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&q=85');"></div>
+      <span class="tile-label">Largo · castaño</span>
+    </div>
+    <div class="tile">
+      <div class="tile-img" style="background-image: url('https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=300&q=85');"></div>
+      <span class="tile-label">Bob · negro</span>
+    </div>
+    <div class="tile">
+      <div class="tile-img" style="background-image: url('https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=300&q=85');"></div>
+      <span class="tile-label">Ondas · rubio</span>
+    </div>
+    <div class="tile">
+      <div class="tile-img" style="background-image: url('https://images.unsplash.com/photo-1521252659862-eec69941b071?w=300&q=85');"></div>
+      <span class="tile-label">Coleta · cobrizo</span>
+    </div>
+    <div class="tile">
+      <div class="tile-img" style="background-image: url('https://images.unsplash.com/photo-1542140372-de3a3f87a9a4?w=300&q=85');"></div>
+      <span class="tile-label">Pixie · platino</span>
+    </div>
+    <div class="tile">
+      <div class="tile-img" style="background-image: url('https://images.unsplash.com/photo-1551316679-9c6ae9dec224?w=300&q=85');"></div>
+      <span class="tile-label">Rizos · rojo</span>
+    </div>
+  </div>
+
+  <!-- Ojos -->
+  <div class="field-label">
+    <span class="field-name"><span class="field-num">05</span>Ojos</span>
+  </div>
+  <div class="color-row">
+    <div class="color-chip selected">
+      <div class="color-disc" style="background: radial-gradient(circle, #5C4030 30%, #3A2818 100%);"></div>
+      <span>Castaño</span>
+    </div>
+    <div class="color-chip">
+      <div class="color-disc" style="background: radial-gradient(circle, #1A1410 30%, #000 100%);"></div>
+      <span>Negro</span>
+    </div>
+    <div class="color-chip">
+      <div class="color-disc" style="background: radial-gradient(circle, #6E5A3C 30%, #3A2818 100%);"></div>
+      <span>Avellana</span>
+    </div>
+    <div class="color-chip">
+      <div class="color-disc" style="background: radial-gradient(circle, #3A6E5C 30%, #1F4034 100%);"></div>
+      <span>Verde</span>
+    </div>
+    <div class="color-chip">
+      <div class="color-disc" style="background: radial-gradient(circle, #4A6E8E 30%, #2A4A6A 100%);"></div>
+      <span>Azul</span>
+    </div>
+    <div class="color-chip">
+      <div class="color-disc" style="background: radial-gradient(circle, #8A7A5C 30%, #5A4A3C 100%);"></div>
+      <span>Miel</span>
+    </div>
+  </div>
+
+  <!-- Body type chips -->
+  <div class="field-label">
+    <span class="field-name"><span class="field-num">06</span>Constitución</span>
+    <span class="field-hint">Multi-select</span>
+  </div>
+  <div class="chips">
+    <div class="chip selected"><span class="chip-emoji">⌬</span>Atlética</div>
+    <div class="chip"><span class="chip-emoji">◐</span>Curvy</div>
+    <div class="chip"><span class="chip-emoji">▷</span>Esbelta</div>
+    <div class="chip selected"><span class="chip-emoji">▲</span>Tonificada</div>
+    <div class="chip"><span class="chip-emoji">◑</span>Petite</div>
+    <div class="chip"><span class="chip-emoji">▽</span>Alta</div>
+    <div class="chip"><span class="chip-emoji">◇</span>Hourglass</div>
+    <div class="chip"><span class="chip-emoji">▢</span>Modelo</div>
+  </div>
+</section>
+
+<!-- Prompt mode preview (closed accordion-style) -->
+<section class="chapter">
+  <div class="chapter-head">
+    <div class="chapter-title-block">
+      <span class="chapter-num">Modo experto</span>
+      <h2 class="chapter-title">O escríbelo <em>libre</em></h2>
+    </div>
+  </div>
+  <div class="prompt-box">
+    <textarea class="prompt-textarea" placeholder="Mujer 24 años, piel caramelo, cabello largo castaño con ondas suaves, ojos castaños profundos, cuerpo atlético tonificado, expresión serena con media sonrisa..."></textarea>
+    <div class="prompt-actions">
+      <span class="prompt-meta">0 / 500 caracteres</span>
+      <button class="prompt-enhance">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/></svg>
+        Mejorar con IA
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- Floating CTA -->
+<div class="floating-cta-wrap">
+  <div class="floating-cta">
+    <button class="cta-secondary" title="Regenerar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 0115.5-6.3L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 01-15.5 6.3L3 16"/><path d="M3 21v-5h5"/></svg>
+    </button>
+    <button class="cta-primary">
+      <span class="cta-cost">10 créditos</span>
+      <span style="font-family: 'Instrument Serif', serif; font-size: 18px; font-style: italic;">Generar siguiente</span>
+      <span class="cta-arrow">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </span>
+    </button>
+  </div>
+</div>
+
+</body>
+</html>
