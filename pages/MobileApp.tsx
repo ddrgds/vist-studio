@@ -16,10 +16,12 @@ import { useProfile } from '../contexts/ProfileContext';
 import { hapticLight } from '../services/nativeService';
 
 const HeadshotPro = lazy(() => import('./HeadshotPro'));
+const Reimaginar = lazy(() => import('./Reimaginar'));
 const CreatePersona = lazy(() => import('./UploadCharacter'));
 const Gallery = lazy(() => import('./Gallery'));
+const ProfilePage = lazy(() => import('../components/ProfilePage'));
 
-type MobilePage = 'home' | 'headshot' | 'create' | 'gallery' | 'characters';
+type MobilePage = 'home' | 'headshot' | 'reimaginar' | 'create' | 'gallery' | 'characters' | 'profile';
 
 interface AppEntry {
   id: MobilePage | 'soon';
@@ -41,10 +43,10 @@ const APPS: AppEntry[] = [
     accent: '#C9785C', isLive: true, isNew: true,
   },
   {
-    id: 'soon', name: 'Reimaginar', tagline: '427 estilos editoriales',
+    id: 'reimaginar', name: 'Reimaginar', tagline: '500+ estéticas',
     cost: '10 cr · 20s',
     bg: 'https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=600&q=85',
-    accent: '#8B4566', isLive: false, comingSoon: 'Próxima',
+    accent: '#8B4566', isLive: true, isNew: true,
   },
   {
     id: 'soon', name: 'Sesión de Fotos', tagline: 'Multi-foto coherente',
@@ -68,20 +70,27 @@ function MobileHome({ onNav }: { onNav: (p: MobilePage) => void }) {
   const credits = profile?.creditsRemaining ?? 0;
   const displayName = profile?.displayName || 'Tú';
   const primary = characters[0];
+  const isCreator = profile?.contentMode === 'creator';
 
   return (
     <div className="m-home">
       <div className="m-topbar">
-        <div className="m-greet">
+        <button
+          className="m-greet m-greet-btn"
+          onClick={() => { hapticLight(); onNav('profile'); }}
+          aria-label="Abrir perfil y configuración"
+        >
           <div
             className="m-avatar"
             style={primary?.thumbnail ? { backgroundImage: `url(${primary.thumbnail})` } : undefined}
-          />
+          >
+            {isCreator && <span className="m-avatar-badge" title="Modo Creator activo">+18</span>}
+          </div>
           <div className="m-greet-text">
             <small>Hola</small>
             <strong>{displayName}</strong>
           </div>
-        </div>
+        </button>
         <div className="m-credits">
           <span className="m-credits-dot" />
           <span>{credits.toLocaleString()}</span>
@@ -264,6 +273,12 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
             <HeadshotPro onNav={navigateToWeb as any} />
           </Suspense>
         );
+      case 'reimaginar':
+        return (
+          <Suspense fallback={<MobileLoader />}>
+            <Reimaginar onNav={navigateToWeb as any} />
+          </Suspense>
+        );
       case 'create':
         return (
           <Suspense fallback={<MobileLoader />}>
@@ -278,6 +293,22 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
         );
       case 'characters':
         return <MobileCharacters onNav={navigateMobile} />;
+      case 'profile':
+        return (
+          <Suspense fallback={<MobileLoader />}>
+            <div className="m-profile-wrap">
+              <button
+                className="m-profile-back"
+                onClick={() => navigateMobile('home')}
+                aria-label="Volver"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>
+                <span>Volver</span>
+              </button>
+              <ProfilePage />
+            </div>
+          </Suspense>
+        );
       default:
         return <MobileHome onNav={navigateMobile} />;
     }
@@ -353,13 +384,66 @@ const MOBILE_STYLES = `
   backdrop-filter: blur(8px);
 }
 .m-shell .m-greet { display: flex; align-items: center; gap: 12px; }
+.m-shell .m-greet-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: opacity 0.3s var(--ease);
+}
+.m-shell .m-greet-btn:active { opacity: 0.7; }
 .m-shell .m-avatar {
+  position: relative;
   width: 40px; height: 40px;
   border-radius: 50%;
   background: var(--paper);
   background-size: cover; background-position: center;
   border: 2px solid var(--bg-card);
   box-shadow: 0 0 0 1px var(--line);
+  flex-shrink: 0;
+}
+.m-shell .m-avatar-badge {
+  position: absolute;
+  bottom: -4px; right: -6px;
+  background: #8B4566;
+  color: #FFFCF5;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 5px;
+  border-radius: 6px;
+  border: 1.5px solid var(--bg-0);
+  line-height: 1;
+}
+
+/* Profile page wrapper */
+.m-shell .m-profile-wrap {
+  background: var(--bg-0);
+  min-height: 100%;
+  padding-bottom: 100px;
+}
+.m-shell .m-profile-back {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 20px 10px;
+  background: linear-gradient(180deg, var(--bg-0) 0%, var(--bg-0) 80%, transparent 100%);
+  backdrop-filter: blur(8px);
+  border: none;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--ink-1);
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
 }
 .m-shell .m-greet-text { display: flex; flex-direction: column; line-height: 1.1; }
 .m-shell .m-greet-text small {
