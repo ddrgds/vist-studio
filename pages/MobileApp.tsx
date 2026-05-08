@@ -231,6 +231,7 @@ function MobileBottomNav({ active, onNav }: { active: MobilePage; onNav: (p: Mob
 
 export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }) {
   const [page, setPage] = useState<MobilePage>('home');
+  const [transitioning, setTransitioning] = useState(false);
 
   // Initialize native UI bits on mount (status bar, splash hide, etc)
   useEffect(() => {
@@ -255,7 +256,15 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
 
   // Bridge: MobilePage 'create' / 'gallery' use existing web pages
   const navigateMobile = (p: MobilePage) => {
-    setPage(p);
+    if (p === page) return;
+    setTransitioning(true);
+    // 100ms fade-out, swap, 100ms fade-in
+    setTimeout(() => {
+      setPage(p);
+      requestAnimationFrame(() => {
+        setTransitioning(false);
+      });
+    }, 100);
   };
 
   // Handle nav from sub-apps (HeadshotPro, Reimaginar) — they call onNav with
@@ -274,7 +283,7 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
       reimaginar: 'reimaginar',
     };
     const target = map[p] ?? 'home';
-    setPage(target);
+    navigateMobile(target);
     if (onWebNav && !map[p]) onWebNav(p); // fallback for any unmapped
   };
 
@@ -336,7 +345,16 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
   return (
     <div className="m-shell">
       <style>{MOBILE_STYLES}</style>
-      <div className="m-content">{renderActive()}</div>
+      <div
+        className="m-content"
+        style={{
+          opacity: transitioning ? 0 : 1,
+          transform: transitioning ? 'translateY(8px)' : 'translateY(0)',
+          transition: 'opacity 120ms ease-out, transform 180ms cubic-bezier(0.32, 0.72, 0, 1)',
+        }}
+      >
+        {renderActive()}
+      </div>
       {showBottomNav && <MobileBottomNav active={page} onNav={navigateMobile} />}
     </div>
   );
@@ -381,6 +399,8 @@ const MOBILE_STYLES = `
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  overscroll-behavior-y: contain;
   padding-bottom: 0;
 }
 

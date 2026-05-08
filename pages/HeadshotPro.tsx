@@ -533,12 +533,23 @@ export default function HeadshotPro({ onNav }: Props) {
               <div className="hp-loader-fill" style={{ height: `${progress}%` }} />
             </div>
             <div className="hp-loader-pct">{progress}%</div>
-            <div className="hp-loader-label">Componiendo retrato</div>
+            <div className="hp-loader-label">
+              {progress < 20 ? 'Preparando retrato' :
+               progress < 50 ? 'Iluminando escena' :
+               progress < 80 ? 'Componiendo' :
+               progress < 95 ? 'Refinando detalles' :
+               'Finalizando'}
+            </div>
             <button className="hp-cancel-btn" onClick={handleCancel}>Cancelar</button>
           </div>
         ) : resultUrl ? (
           <>
-            <img src={resultUrl} alt="Headshot generado" className="hp-canvas-img" />
+            <img
+              key={resultUrl}
+              src={resultUrl}
+              alt="Headshot generado"
+              className="hp-canvas-img hp-fade-in"
+            />
             <div className="hp-canvas-actions">
               <button className="hp-canvas-btn" onClick={() => { hapticLight(); onNav('editor'); }}>
                 <Edit3 size={14} /> Editar
@@ -795,7 +806,9 @@ const HEADSHOT_STYLES = `
   cursor: pointer;
   transition: all 0.3s var(--ease);
   font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
 }
+.hp-shell .hp-char-chip:active { transform: scale(0.96); }
 .hp-shell .hp-char-chip.is-active {
   background: var(--ink-0);
   border-color: var(--ink-0);
@@ -860,6 +873,13 @@ const HEADSHOT_STYLES = `
   width: 100%; height: 100%;
   object-fit: cover;
   display: block;
+}
+.hp-shell .hp-fade-in {
+  animation: hp-img-fade-in 380ms var(--ease) both;
+}
+@keyframes hp-img-fade-in {
+  from { opacity: 0; transform: scale(1.04); filter: blur(4px); }
+  to   { opacity: 1; transform: scale(1); filter: blur(0); }
 }
 .hp-shell .hp-canvas-empty {
   display: flex; flex-direction: column;
@@ -1056,7 +1076,9 @@ const HEADSHOT_STYLES = `
   cursor: pointer;
   font-family: inherit;
   transition: all 0.3s var(--ease);
+  -webkit-tap-highlight-color: transparent;
 }
+.hp-shell .hp-chip:active { transform: scale(0.94); }
 .hp-shell .hp-chip.is-active {
   background: var(--ink-0);
   border-color: var(--ink-0);

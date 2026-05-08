@@ -4,7 +4,6 @@ const config: CapacitorConfig = {
   appId: 'com.vist.studio',
   appName: 'VIST',
   webDir: 'dist',
-  bundledWebRuntime: false,
 
   // Server config — for dev hot-reload, point to local Vite or hosted URL.
   // Comment out the `url` line for production builds (uses bundled webDir).

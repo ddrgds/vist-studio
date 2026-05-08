@@ -627,12 +627,23 @@ export default function Reimaginar({ onNav }: Props) {
               <div className="rm-loader-fill" style={{ height: `${progress}%` }} />
             </div>
             <div className="rm-loader-pct">{progress}%</div>
-            <div className="rm-loader-label">Componiendo tu reimagen</div>
+            <div className="rm-loader-label">
+              {progress < 20 ? 'Preparando referencias' :
+               progress < 50 ? 'Aplicando estética' :
+               progress < 80 ? 'Componiendo' :
+               progress < 95 ? 'Refinando detalles' :
+               'Finalizando'}
+            </div>
             <button className="rm-cancel-btn" onClick={handleCancel}>Cancelar</button>
           </div>
         ) : resultUrl ? (
           <>
-            <img src={resultUrl} alt="Reimaginar resultado" className="rm-canvas-img" />
+            <img
+              key={resultUrl}
+              src={resultUrl}
+              alt="Reimaginar resultado"
+              className="rm-canvas-img rm-fade-in"
+            />
             <div className="rm-canvas-actions">
               <button className="rm-canvas-btn" onClick={() => { hapticLight(); onNav('editor'); }}>
                 <Edit3 size={14} /> Editar
@@ -992,7 +1003,9 @@ const REIMAGINAR_STYLES = `
   cursor: pointer;
   transition: all 0.3s var(--ease);
   font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
 }
+.rm-shell .rm-char-chip:active { transform: scale(0.96); }
 .rm-shell .rm-char-chip.is-active {
   background: var(--ink-0);
   border-color: var(--ink-0);
@@ -1053,6 +1066,13 @@ const REIMAGINAR_STYLES = `
 .rm-shell .rm-canvas-img {
   width: 100%; height: 100%;
   object-fit: cover; display: block;
+}
+.rm-shell .rm-fade-in {
+  animation: rm-img-fade-in 380ms var(--ease) both;
+}
+@keyframes rm-img-fade-in {
+  from { opacity: 0; transform: scale(1.04); filter: blur(4px); }
+  to   { opacity: 1; transform: scale(1); filter: blur(0); }
 }
 .rm-shell .rm-canvas-empty {
   display: flex; flex-direction: column;
@@ -1213,7 +1233,9 @@ const REIMAGINAR_STYLES = `
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  -webkit-tap-highlight-color: transparent;
 }
+.rm-shell .rm-tab:active { transform: scale(0.95); }
 .rm-shell .rm-tab.is-active {
   background: var(--ink-0);
   border-color: var(--ink-0);
@@ -1532,6 +1554,11 @@ const REIMAGINAR_STYLES = `
   transition: all 0.3s var(--ease);
 }
 .rm-shell .rm-cta-secondary:disabled { opacity: 0.4; cursor: not-allowed; }
+.rm-shell .rm-cta-secondary:not(:disabled):active {
+  transform: scale(0.94);
+  border-color: var(--rose);
+  color: var(--rose-deep);
+}
 .rm-shell .rm-cta-primary {
   flex: 1;
   height: 56px;

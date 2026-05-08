@@ -160,11 +160,15 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ToastContext.Provider value={{ addToast, success, error, info, warning, undoable }}>
       {children}
-      {/* Toast container — fixed, bottom-right */}
+      {/* Toast container — bottom-right on desktop, centered+above-nav on mobile.
+          On mobile we sit ~120px above the bottom edge to clear floating CTAs and
+          bottom navs. Desktop stays at bottom-6 right-6 as before. */}
       {toasts.length > 0 && (
         <div
           aria-label="Notifications"
-          className="fixed bottom-6 right-6 z-[200] flex flex-col gap-2 items-end pointer-events-none"
+          className="vist-toast-stack fixed z-[200] flex flex-col gap-2 pointer-events-none
+                     left-3 right-3 items-stretch
+                     sm:left-auto sm:right-6 sm:items-end sm:bottom-6"
         >
           {toasts.map(toast => (
             <div key={toast.id} className="pointer-events-auto">
@@ -173,6 +177,12 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           ))}
         </div>
       )}
+      <style>{`
+        .vist-toast-stack { bottom: calc(120px + env(safe-area-inset-bottom)); }
+        @media (min-width: 640px) {
+          .vist-toast-stack { bottom: 1.5rem; }
+        }
+      `}</style>
     </ToastContext.Provider>
   );
 };
