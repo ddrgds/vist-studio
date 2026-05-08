@@ -18,7 +18,7 @@ import { hapticLight } from '../services/nativeService';
 const HeadshotPro = lazy(() => import('./HeadshotPro'));
 const Reimaginar = lazy(() => import('./Reimaginar'));
 const SesionDeFotos = lazy(() => import('./SesionDeFotos'));
-const CreatePersona = lazy(() => import('./UploadCharacter'));
+const CrearPersonaje = lazy(() => import('./CrearPersonaje'));
 const Gallery = lazy(() => import('./Gallery'));
 const ProfilePage = lazy(() => import('../components/ProfilePage'));
 
@@ -108,8 +108,8 @@ function MobileHome({ onNav }: { onNav: (p: MobilePage) => void }) {
         </button>
       </section>
 
-      {/* Foundation: Crear personaje (only show if user has 0 characters) */}
-      {characters.length === 0 && (
+      {/* Foundation: Crear personaje — prominent when 0, compact when 1+ */}
+      {characters.length === 0 ? (
         <section className="m-section">
           <div className="m-section-head">
             <span className="m-eyebrow">Empieza aquí</span>
@@ -122,6 +122,17 @@ function MobileHome({ onNav }: { onNav: (p: MobilePage) => void }) {
               <small>Tu modelo virtual desde cero · 5 minutos</small>
             </div>
             <Sparkles size={18} />
+          </button>
+        </section>
+      ) : (
+        <section className="m-section">
+          <button className="m-create-quick" onClick={() => onNav('create')}>
+            <span className="m-create-quick-icon"><Sparkles size={14} /></span>
+            <span className="m-create-quick-text">
+              Crear nuevo personaje
+              <small>{characters.length} personaje{characters.length === 1 ? '' : 's'} guardado{characters.length === 1 ? '' : 's'}</small>
+            </span>
+            <span className="m-create-quick-arrow">→</span>
           </button>
         </section>
       )}
@@ -318,7 +329,7 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
       case 'create':
         return (
           <Suspense fallback={<MobileLoader />}>
-            <CreatePersona onNav={navigateFromSubApp} />
+            <CrearPersonaje onNav={navigateFromSubApp} />
           </Suspense>
         );
       case 'gallery':
@@ -594,6 +605,45 @@ const MOBILE_STYLES = `
 .m-shell .m-foundation-text { flex: 1; min-width: 0; }
 .m-shell .m-foundation-text strong { display: block; font-size: 14px; color: var(--ink-0); }
 .m-shell .m-foundation-text small { font-size: 11px; color: var(--ink-2); margin-top: 2px; display: block; }
+
+/* Compact create button (when user already has characters) */
+.m-shell .m-create-quick {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%;
+  padding: 13px 16px;
+  background: var(--bg-card);
+  border: 1.5px dashed var(--line);
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: all 0.3s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.m-shell .m-create-quick:active { transform: scale(0.98); border-color: var(--ink-0); }
+.m-shell .m-create-quick-icon {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--paper);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-1);
+  flex-shrink: 0;
+}
+.m-shell .m-create-quick-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.m-shell .m-create-quick-text small {
+  font-size: 11px; color: var(--ink-3);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.08em;
+  margin-top: 2px;
+}
+.m-shell .m-create-quick-text {
+  font-size: 13px; font-weight: 600; color: var(--ink-1);
+}
+.m-shell .m-create-quick-arrow {
+  color: var(--ink-3);
+  font-size: 16px;
+  flex-shrink: 0;
+}
 
 /* Apps grid */
 .m-shell .m-apps-grid {
