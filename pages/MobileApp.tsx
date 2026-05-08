@@ -253,15 +253,34 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
     return () => { cancelled = true; };
   }, []);
 
-  // Handle nav from MobilePage to web Page (for shared pages like Gallery)
-  const navigateToWeb = (p: Page) => {
-    if (onWebNav) onWebNav(p);
-  };
-
   // Bridge: MobilePage 'create' / 'gallery' use existing web pages
   const navigateMobile = (p: MobilePage) => {
     setPage(p);
   };
+
+  // Handle nav from sub-apps (HeadshotPro, Reimaginar) — they call onNav with
+  // web Page semantics ('studio', 'editor', etc). In mobile shell those routes
+  // don't exist, so we route them back to home or to the closest mobile equivalent.
+  const navigateFromSubApp = (p: Page) => {
+    const map: Partial<Record<Page, MobilePage>> = {
+      studio: 'home',         // back from app
+      editor: 'home',         // no editor in mobile shell yet
+      gallery: 'gallery',
+      characters: 'characters',
+      create: 'create',
+      profile: 'profile',
+      pricing: 'profile',     // Profile screen has the upgrade CTA
+      headshot: 'headshot',
+      reimaginar: 'reimaginar',
+    };
+    const target = map[p] ?? 'home';
+    setPage(target);
+    if (onWebNav && !map[p]) onWebNav(p); // fallback for any unmapped
+  };
+
+  // Sub-apps render the bottom nav themselves not — hide MobileBottomNav
+  // when in a deep sub-app to avoid CTA collision.
+  const showBottomNav = page === 'home' || page === 'characters';
 
   const renderActive = () => {
     switch (page) {
@@ -270,25 +289,25 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
       case 'headshot':
         return (
           <Suspense fallback={<MobileLoader />}>
-            <HeadshotPro onNav={navigateToWeb as any} />
+            <HeadshotPro onNav={navigateFromSubApp} />
           </Suspense>
         );
       case 'reimaginar':
         return (
           <Suspense fallback={<MobileLoader />}>
-            <Reimaginar onNav={navigateToWeb as any} />
+            <Reimaginar onNav={navigateFromSubApp} />
           </Suspense>
         );
       case 'create':
         return (
           <Suspense fallback={<MobileLoader />}>
-            <CreatePersona onNav={navigateToWeb as any} />
+            <CreatePersona onNav={navigateFromSubApp} />
           </Suspense>
         );
       case 'gallery':
         return (
           <Suspense fallback={<MobileLoader />}>
-            <Gallery onNav={navigateToWeb as any} onEditImage={() => {}} onExportImage={() => {}} />
+            <Gallery onNav={navigateFromSubApp} onEditImage={() => {}} onExportImage={() => {}} />
           </Suspense>
         );
       case 'characters':
@@ -318,7 +337,7 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
     <div className="m-shell">
       <style>{MOBILE_STYLES}</style>
       <div className="m-content">{renderActive()}</div>
-      <MobileBottomNav active={page} onNav={navigateMobile} />
+      {showBottomNav && <MobileBottomNav active={page} onNav={navigateMobile} />}
     </div>
   );
 }

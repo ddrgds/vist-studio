@@ -8,13 +8,13 @@
  * Design lives at /public/mockup_headshot_pro_mobile_v2.html
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft, RefreshCw, Sparkles, Aperture, Download, Edit3, Share2 } from 'lucide-react';
+import { ChevronLeft, RefreshCw, Sparkles, Aperture, Download, Edit3, Share2, Upload, X } from 'lucide-react';
 import type { Page } from '../App';
 import { useCharacterStore } from '../stores/characterStore';
 import { useGalleryStore } from '../stores/galleryStore';
 import { useProfile } from '../contexts/ProfileContext';
 import { useToast } from '../contexts/ToastContext';
-import { hapticLight, hapticMedium, hapticSuccess, hapticError, sharePhoto } from '../services/nativeService';
+import { hapticLight, hapticMedium, hapticSuccess, hapticError, sharePhoto, takePhoto, isNativePlatform } from '../services/nativeService';
 
 // ─── Types ─────────────────────────────────────
 
@@ -93,6 +93,8 @@ export default function HeadshotPro({ onNav }: Props) {
 
   // ─── State ───
   const [selectedCharId, setSelectedCharId] = useState<string | null>(null);
+  const [customBaseFile, setCustomBaseFile] = useState<File | null>(null);
+  const [customBaseUrl, setCustomBaseUrl] = useState<string | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<StyleId>('editorial');
   const [selectedBackdrop, setSelectedBackdrop] = useState<BackdropId>('studio');
   const [selectedExpressions, setSelectedExpressions] = useState<Set<ExpressionId>>(new Set(['neutral']));
@@ -101,13 +103,57 @@ export default function HeadshotPro({ onNav }: Props) {
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
   const abortRef = useRef<AbortController | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Default to first character if none selected
+  // Default to first character if none selected and no custom upload
   useEffect(() => {
-    if (!selectedCharId && characters.length > 0) {
+    if (!selectedCharId && !customBaseFile && characters.length > 0) {
       setSelectedCharId(characters[0].id);
     }
-  }, [characters, selectedCharId]);
+  }, [characters, selectedCharId, customBaseFile]);
+
+  // ─── Upload handler ───
+  const handleUploadClick = async () => {
+    hapticLight();
+    if (await isNativePlatform()) {
+      const photo = await takePhoto({ source: 'prompt', quality: 90 });
+      if (photo) {
+        setCustomBaseFile(photo.file);
+        setCustomBaseUrl(photo.dataUrl);
+        setSelectedCharId(null);
+      }
+    } else {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Solo imágenes (JPG, PNG, WEBP)');
+      return;
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      toast.error('Máximo 12 MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCustomBaseUrl(reader.result as string);
+      setCustomBaseFile(file);
+      setSelectedCharId(null);
+      hapticLight();
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearCustomBase = () => {
+    hapticLight();
+    setCustomBaseFile(null);
+    setCustomBaseUrl(null);
+    if (characters.length > 0) setSelectedCharId(characters[0].id);
+  };
 
   const selectedChar = useMemo(
     () => characters.find(c => c.id === selectedCharId) ?? null,
@@ -154,8 +200,8 @@ export default function HeadshotPro({ onNav }: Props) {
 
   // ─── Generate ───
   const handleGenerate = async () => {
-    if (!selectedChar) {
-      toast.error('Selecciona un personaje primero');
+    if (!selectedChar && !customBaseFile) {
+      toast.error('Selecciona un personaje o sube una foto');
       hapticError();
       return;
     }
@@ -169,13 +215,15 @@ export default function HeadshotPro({ onNav }: Props) {
     hapticMedium(); // tactile confirmation that primary CTA fired
 
     // Reference URLs from character (face + body refs from creation)
-    const refUrls = [
+    const refUrls = selectedChar ? [
       ...(selectedChar.referencePhotoUrls ?? []),
       ...(selectedChar.modelImageUrls ?? []),
-    ].filter(u => typeof u === 'string' && u.startsWith('http')).slice(0, 4);
+    ].filter(u => typeof u === 'string' && u.startsWith('http')).slice(0, 4) : [];
 
-    if (refUrls.length === 0) {
-      toast.error('Este personaje no tiene fotos de referencia. Genera al menos una foto canon en Studio.');
+    // If using custom upload AND there are no character refs, only the upload is used.
+    // If both character + custom upload, would be unusual — UI ensures mutual exclusivity.
+    if (refUrls.length === 0 && !customBaseFile) {
+      toast.error('Este personaje no tiene fotos de referencia. Genera al menos una foto canon en Studio o sube una foto.');
       return;
     }
 
@@ -198,8 +246,33 @@ export default function HeadshotPro({ onNav }: Props) {
       const stylePreset = STYLE_PRESETS.find(s => s.id === selectedStyle)!;
       const backdropPreset = BACKDROPS.find(b => b.id === selectedBackdrop)!;
 
+      // Detect non-photoreal characters → preserve their rendering style instead
+      // of forcing realism. Without this, anime/3D/illustration characters get
+      // re-rendered as photos. Custom uploads are assumed photoreal unless the
+      // user explicitly tagged otherwise (future: detect from image).
+      const renderStyle = (selectedChar?.renderStyle || 'photorealistic').toLowerCase();
+      const isPhotoreal = !selectedChar || renderStyle === 'photorealistic' || !selectedChar.renderStyle;
+
+      const renderStyleInstruction = isPhotoreal
+        ? {
+            mode: 'photorealistic',
+            skin: 'natural skin texture with visible pores, micro-freckles, no plastic/airbrush look',
+            quality: '8k quality, magazine print resolution, professional retouching only',
+            lighting: 'professional photography lighting, key + fill, soft catchlights in eyes',
+            camera: '85mm portrait lens, f/2.0, shallow depth of field',
+          }
+        : {
+            mode: renderStyle,
+            preserve_rendering: `Maintain authentic ${renderStyle} rendering — do NOT convert to photorealism. The output must look like the same ${renderStyle} character, just in headshot composition.`,
+            quality: `Sharp ${renderStyle} rendering quality, no AI artifacts, consistent line work / shading / palette with the reference images.`,
+            lighting: `Stylized lighting appropriate for ${renderStyle} (cel-shaded for anime, soft 3D lighting for 3D-render, etc.)`,
+            camera: 'Portrait framing with shallow background separation',
+          };
+
       const instructionSpec = {
-        task: 'PROFESSIONAL HEADSHOT — Generate a high-end professional portrait of the person in the reference images.',
+        task: isPhotoreal
+          ? 'PROFESSIONAL HEADSHOT — Generate a high-end professional portrait of the person in the reference images.'
+          : `PROFESSIONAL HEADSHOT (${renderStyle}) — Generate a high-end portrait in the SAME ${renderStyle} rendering style as the reference images. Do NOT convert to photorealism.`,
         style: {
           name: stylePreset.name,
           description: STYLE_PROMPTS[selectedStyle],
@@ -210,27 +283,37 @@ export default function HeadshotPro({ onNav }: Props) {
         },
         framing: 'head and shoulders, centered composition, eyes at upper third, looking directly at camera unless soft expression suggests otherwise',
         expression: expressions,
-        lighting: 'professional photography lighting, key + fill, soft catchlights in eyes, no harsh shadows on face',
-        camera: '85mm portrait lens, f/2.0, shallow depth of field, sharp focus on eyes',
+        rendering: renderStyleInstruction,
         identity: {
-          preserve: ['face features', 'bone structure', 'eye shape and color', 'hair color and texture', 'skin tone', 'distinguishing marks'],
-          rule: 'The person must be instantly recognizable as the same individual in the reference images.',
+          preserve: ['face features', 'bone structure', 'eye shape and color', 'hair color and texture', 'skin tone', 'distinguishing marks', 'rendering style (anime/3d/illustration/etc must stay as-is)'],
+          rule: `The person must be instantly recognizable as the same individual in the reference images, rendered in the same ${renderStyle} style.`,
         },
         rules: {
           must_change: ['lighting setup', 'backdrop', 'pose subtly', 'expression as specified'],
-          must_preserve: ['identity', 'natural skin texture (no plastic/airbrush look)', 'realistic proportions'],
-          render_quality: '8k quality, magazine print resolution, professional retouching only',
+          must_preserve: ['identity', isPhotoreal ? 'natural skin texture (no plastic/airbrush look)' : `${renderStyle} rendering style (anime stays anime, 3D stays 3D)`, 'proportions consistent with character'],
+          render_quality: renderStyleInstruction.quality,
           never_add: ['text', 'watermarks', 'logos', 'props not requested'],
         },
       };
 
       const instruction = JSON.stringify(instructionSpec);
 
-      // Convert first ref to File for NB2 base, rest as references
-      const baseFile = await urlToFile(refUrls[0], 'headshot-base.png');
-      const refFiles = await Promise.all(
-        refUrls.slice(1).map((url, i) => urlToFile(url, `headshot-ref-${i}.png`)),
-      );
+      // Build base + refs:
+      //  - Custom upload → upload IS the base, char refs (if any) are extra identity references
+      //  - No upload → first char ref is base, rest are identity references
+      let baseFile: File;
+      let refFiles: File[];
+      if (customBaseFile) {
+        baseFile = customBaseFile;
+        refFiles = refUrls.length > 0
+          ? await Promise.all(refUrls.slice(0, 3).map((url, i) => urlToFile(url, `headshot-ref-${i}.png`)))
+          : [];
+      } else {
+        baseFile = await urlToFile(refUrls[0], 'headshot-base.png');
+        refFiles = await Promise.all(
+          refUrls.slice(1).map((url, i) => urlToFile(url, `headshot-ref-${i}.png`)),
+        );
+      }
 
       setProgress(15);
 
@@ -294,16 +377,16 @@ export default function HeadshotPro({ onNav }: Props) {
       addItems([{
         id: crypto.randomUUID(),
         url,
-        prompt: `Headshot Pro · ${stylePreset.name} · ${backdropPreset.name}`,
+        prompt: `Headshot Pro · ${stylePreset.name} · ${backdropPreset.name}${customBaseFile ? ' · upload propio' : ''}`,
         model: 'nb2-headshot-pro',
         timestamp: Date.now(),
         type: 'create' as const,
-        characterId: selectedChar.id,
-        tags: ['headshot-pro', selectedStyle, selectedBackdrop],
+        characterId: selectedChar?.id ?? undefined,
+        tags: ['headshot-pro', selectedStyle, selectedBackdrop, ...(customBaseFile ? ['custom-upload'] : [])],
         source: 'headshot-pro' as any,
       }]);
 
-      incrementUsage(selectedChar.id);
+      if (selectedChar) incrementUsage(selectedChar.id);
       setResultUrl(url);
       setHistory(prev => [url, ...prev].slice(0, 4));
       toast.success('Headshot generado');
@@ -330,8 +413,8 @@ export default function HeadshotPro({ onNav }: Props) {
     abortRef.current?.abort();
   };
 
-  // ─── Empty state — no characters ───
-  if (characters.length === 0) {
+  // ─── Empty state — no characters AND no upload ───
+  if (characters.length === 0 && !customBaseFile) {
     return (
       <div className="hp-shell">
         <style>{HEADSHOT_STYLES}</style>
@@ -348,11 +431,17 @@ export default function HeadshotPro({ onNav }: Props) {
         </div>
         <div className="hp-empty">
           <div className="hp-empty-icon"><Aperture size={28} /></div>
-          <h2 className="hp-empty-title">Necesitas un <em>personaje</em> primero</h2>
-          <p className="hp-empty-sub">Crea tu modelo virtual antes de tirarle un headshot profesional.</p>
-          <button className="hp-empty-cta" onClick={() => onNav('create')}>
-            <Sparkles size={14} /> Crear personaje
-          </button>
+          <h2 className="hp-empty-title">Empieza con una <em>foto</em></h2>
+          <p className="hp-empty-sub">Sube una foto tuya o crea un personaje para tirarle un headshot pro.</p>
+          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+            <button className="hp-empty-cta" onClick={handleUploadClick}>
+              <Upload size={14} /> Subir foto
+            </button>
+            <button className="hp-empty-cta" style={{ background: 'transparent', color: 'var(--ink-1)', border: '1px solid var(--line)', boxShadow: 'none' }} onClick={() => onNav('create')}>
+              <Sparkles size={14} /> Crear personaje
+            </button>
+          </div>
+          <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleFileChange} />
         </div>
       </div>
     );
@@ -387,13 +476,44 @@ export default function HeadshotPro({ onNav }: Props) {
         </p>
       </section>
 
-      {/* Character chip */}
+      {/* Character chip + upload */}
       <div className="hp-char-row">
+        {customBaseFile && customBaseUrl ? (
+          <div className="hp-char-chip is-active hp-char-upload">
+            <span
+              className="hp-char-thumb"
+              style={{ backgroundImage: `url(${customBaseUrl})` }}
+            />
+            <span className="hp-char-name">Mi foto</span>
+            <button
+              className="hp-char-x"
+              onClick={clearCustomBase}
+              aria-label="Quitar mi foto"
+            >
+              <X size={11} />
+            </button>
+          </div>
+        ) : (
+          <button
+            className="hp-char-chip hp-char-upload-btn"
+            onClick={handleUploadClick}
+          >
+            <span className="hp-char-thumb hp-char-thumb-upload">
+              <Upload size={13} />
+            </span>
+            <span className="hp-char-name">Subir foto</span>
+          </button>
+        )}
         {characters.map(c => (
           <button
             key={c.id}
-            className={`hp-char-chip ${selectedCharId === c.id ? 'is-active' : ''}`}
-            onClick={() => { hapticLight(); setSelectedCharId(c.id); }}
+            className={`hp-char-chip ${selectedCharId === c.id && !customBaseFile ? 'is-active' : ''}`}
+            onClick={() => {
+              hapticLight();
+              setCustomBaseFile(null);
+              setCustomBaseUrl(null);
+              setSelectedCharId(c.id);
+            }}
           >
             <span
               className="hp-char-thumb"
@@ -402,6 +522,7 @@ export default function HeadshotPro({ onNav }: Props) {
             <span className="hp-char-name">{c.name}</span>
           </button>
         ))}
+        <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleFileChange} />
       </div>
 
       {/* Result canvas */}
@@ -690,6 +811,35 @@ const HEADSHOT_STYLES = `
 .hp-shell .hp-char-name {
   font-size: 12px; font-weight: 500;
   color: var(--ink-1);
+}
+.hp-shell .hp-char-upload-btn {
+  border-style: dashed !important;
+  border-color: var(--accent) !important;
+  color: var(--accent-deep);
+}
+.hp-shell .hp-char-upload-btn .hp-char-name { color: var(--accent-deep); font-weight: 600; }
+.hp-shell .hp-char-thumb-upload {
+  background-color: var(--paper) !important;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--accent);
+}
+.hp-shell .hp-char-upload {
+  position: relative;
+  padding-right: 32px;
+}
+.hp-shell .hp-char-x {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.18);
+  border: none;
+  color: var(--bg-card);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-family: inherit;
 }
 
 /* Canvas */

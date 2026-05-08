@@ -11,14 +11,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ChevronLeft, RefreshCw, Sparkles, Aperture, Download,
-  Edit3, Share2, Search, Lock, X, ChevronDown, Wand2,
+  Edit3, Share2, Search, Lock, X, ChevronDown, Wand2, Upload,
 } from 'lucide-react';
 import type { Page } from '../App';
 import { useCharacterStore } from '../stores/characterStore';
 import { useGalleryStore } from '../stores/galleryStore';
 import { useProfile } from '../contexts/ProfileContext';
 import { useToast } from '../contexts/ToastContext';
-import { hapticLight, hapticMedium, hapticSuccess, hapticError, sharePhoto } from '../services/nativeService';
+import { hapticLight, hapticMedium, hapticSuccess, hapticError, sharePhoto, takePhoto, isNativePlatform } from '../services/nativeService';
 import { SOUL_STYLES, SOUL_STYLE_CATEGORIES, type SoulStyle, type SoulStyleCategory } from '../data/soulStyles';
 
 // ─── Types ─────────────────────────────────────
@@ -97,6 +97,8 @@ export default function Reimaginar({ onNav }: Props) {
 
   // ─── State ───
   const [selectedCharId, setSelectedCharId] = useState<string | null>(null);
+  const [customBaseFile, setCustomBaseFile] = useState<File | null>(null);
+  const [customBaseUrl, setCustomBaseUrl] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>('featured');
   const [search, setSearch] = useState('');
   const [selectedStyleIds, setSelectedStyleIds] = useState<string[]>([]); // ordered, [0]=primary
@@ -107,6 +109,7 @@ export default function Reimaginar({ onNav }: Props) {
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
   const abortRef = useRef<AbortController | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isCreatorMode = profile?.contentMode === 'creator';
   const credits = profile?.creditsRemaining ?? 0;
@@ -114,10 +117,53 @@ export default function Reimaginar({ onNav }: Props) {
 
   // Default-select first character
   useEffect(() => {
-    if (!selectedCharId && characters.length > 0) {
+    if (!selectedCharId && !customBaseFile && characters.length > 0) {
       setSelectedCharId(characters[0].id);
     }
-  }, [characters, selectedCharId]);
+  }, [characters, selectedCharId, customBaseFile]);
+
+  // ─── Upload handler ───
+  const handleUploadClick = async () => {
+    hapticLight();
+    if (await isNativePlatform()) {
+      const photo = await takePhoto({ source: 'prompt', quality: 90 });
+      if (photo) {
+        setCustomBaseFile(photo.file);
+        setCustomBaseUrl(photo.dataUrl);
+        setSelectedCharId(null);
+      }
+    } else {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Solo imágenes (JPG, PNG, WEBP)');
+      return;
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      toast.error('Máximo 12 MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCustomBaseUrl(reader.result as string);
+      setCustomBaseFile(file);
+      setSelectedCharId(null);
+      hapticLight();
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearCustomBase = () => {
+    hapticLight();
+    setCustomBaseFile(null);
+    setCustomBaseUrl(null);
+    if (characters.length > 0) setSelectedCharId(characters[0].id);
+  };
 
   const selectedChar = useMemo(
     () => characters.find(c => c.id === selectedCharId) ?? null,
@@ -192,8 +238,8 @@ export default function Reimaginar({ onNav }: Props) {
 
   // ─── Generate ───
   const handleGenerate = async () => {
-    if (!selectedChar) {
-      toast.error('Selecciona un personaje primero');
+    if (!selectedChar && !customBaseFile) {
+      toast.error('Selecciona un personaje o sube una foto');
       hapticError();
       return;
     }
@@ -211,13 +257,13 @@ export default function Reimaginar({ onNav }: Props) {
     }
     hapticMedium();
 
-    const refUrls = [
+    const refUrls = selectedChar ? [
       ...(selectedChar.referencePhotoUrls ?? []),
       ...(selectedChar.modelImageUrls ?? []),
-    ].filter(u => typeof u === 'string' && u.startsWith('http')).slice(0, 4);
+    ].filter(u => typeof u === 'string' && u.startsWith('http')).slice(0, 4) : [];
 
-    if (refUrls.length === 0) {
-      toast.error('Este personaje no tiene fotos de referencia. Genera al menos una foto canon en Studio.');
+    if (refUrls.length === 0 && !customBaseFile) {
+      toast.error('Este personaje no tiene fotos de referencia. Genera al menos una foto canon en Studio o sube una foto.');
       return;
     }
 
@@ -237,32 +283,47 @@ export default function Reimaginar({ onNav }: Props) {
       const accentStyles = selectedStyles.slice(1);
       const customDirection = customPrompt.trim();
 
-      // Stylized vs photo detection — affects skin rendering rules
+      // Stylized vs photo detection — TWO sources:
+      // 1. Character's native renderStyle (anime/3D/illustration → must be preserved)
+      // 2. Selected styles that imply non-photo rendering (concept, glitch, cyanotype...)
+      const charRenderStyle = (selectedChar?.renderStyle || 'photorealistic').toLowerCase();
+      const charIsNonPhoto = !!selectedChar?.renderStyle && charRenderStyle !== 'photorealistic';
+
       const nonPhotoCategories = new Set(['concept', 'experimental']);
       const nonPhotoKeywords = /anime|pixel|cartoon|3d render|illustration|comic|manga|cel.shad|stylized|vaporwave|glitch|cyanotype|lenticular/i;
-      const isStylized = selectedStyles.some(s =>
+      const stylesImplyNonPhoto = selectedStyles.some(s =>
         nonPhotoCategories.has(s.category as any) ||
         nonPhotoKeywords.test(s.hint || '') ||
         nonPhotoKeywords.test(s.name),
       );
 
+      const isStylized = charIsNonPhoto || stylesImplyNonPhoto;
+
       const styleNames = selectedStyles.map(s => s.name).join(' + ') || 'editorial';
-      const skinRule = isStylized
-        ? `Render quality consistent with the ${styleNames} style. Sharp details, no AI artifacts.`
-        : 'Real human skin with visible pores, fine texture, micro-freckles, natural luminosity. NEVER plastic, airbrushed, or CGI-looking skin.';
+      const skinRule = charIsNonPhoto
+        ? `Maintain authentic ${charRenderStyle} rendering — do NOT convert to photorealism. The character stays in ${charRenderStyle} style with the new ${styleNames} aesthetic applied to outfit, setting, and mood.`
+        : isStylized
+          ? `Render quality consistent with the ${styleNames} style. Sharp details, no AI artifacts.`
+          : 'Real human skin with visible pores, fine texture, micro-freckles, natural luminosity. NEVER plastic, airbrushed, or CGI-looking skin.';
 
       const reimagineSpec: any = {
-        task: 'REIMAGINE — Generate a NEW photograph of the SAME person in a different aesthetic',
+        task: charIsNonPhoto
+          ? `REIMAGINE (${charRenderStyle}) — Generate a NEW image of the SAME ${charRenderStyle} character in a different aesthetic, preserving the ${charRenderStyle} rendering style`
+          : 'REIMAGINE — Generate a NEW photograph of the SAME person in a different aesthetic',
         identity: {
-          source: 'Reference Images (these define WHO the person is)',
+          source: 'Reference Images (these define WHO the character is)',
+          render_style: charIsNonPhoto ? charRenderStyle : 'photorealistic',
           preserve: [
             'face_features', 'bone_structure', 'eye_shape', 'eye_color',
             'lip_shape', 'jaw_line', 'skin_tone',
             'hair_style', 'hair_color', 'hair_length',
             'body_proportions', 'build', 'height',
             'distinguishing_features (tattoos, scars, moles)',
+            ...(charIsNonPhoto ? [`${charRenderStyle}_rendering_style (DO NOT convert to photorealism)`] : []),
           ],
-          rule: 'The person must be instantly recognizable as the SAME individual. Identity is sacred.',
+          rule: charIsNonPhoto
+            ? `The character must stay in ${charRenderStyle} rendering style — do NOT convert to photorealism. Same character, same render style, new aesthetic.`
+            : 'The person must be instantly recognizable as the SAME individual. Identity is sacred.',
         },
         creative_direction: {
           ...(customDirection ? { custom_user_direction: customDirection } : {}),
@@ -296,11 +357,20 @@ export default function Reimaginar({ onNav }: Props) {
 
       const jsonInstruction = `REIMAGINE SPECIFICATION:\n${JSON.stringify(reimagineSpec, null, 2)}`;
 
-      // Convert refs to File objects
-      const baseFile = await urlToFile(refUrls[0], 'reimagine-base.png');
-      const refFiles = await Promise.all(
-        refUrls.slice(1).map((url, i) => urlToFile(url, `reimagine-ref-${i}.png`)),
-      );
+      // Build base + refs (custom upload takes priority as base, char refs become identity refs)
+      let baseFile: File;
+      let refFiles: File[];
+      if (customBaseFile) {
+        baseFile = customBaseFile;
+        refFiles = refUrls.length > 0
+          ? await Promise.all(refUrls.slice(0, 3).map((url, i) => urlToFile(url, `reimagine-ref-${i}.png`)))
+          : [];
+      } else {
+        baseFile = await urlToFile(refUrls[0], 'reimagine-base.png');
+        refFiles = await Promise.all(
+          refUrls.slice(1).map((url, i) => urlToFile(url, `reimagine-ref-${i}.png`)),
+        );
+      }
 
       setProgress(15);
 
@@ -324,16 +394,19 @@ export default function Reimaginar({ onNav }: Props) {
         toast.info('Reintentando con motor alternativo…');
 
         // Flat instruction for Grok — works better with prose
-        const skinFlat = isStylized
-          ? `Render in authentic ${styleNames} style with sharp details.`
-          : 'Skin must look real — visible pores, natural texture, subtle imperfections. NO plastic/airbrushed skin.';
+        const skinFlat = charIsNonPhoto
+          ? `CRITICAL: keep the character in ${charRenderStyle} rendering style — do NOT convert to photorealism. Same ${charRenderStyle} character, new aesthetic.`
+          : isStylized
+            ? `Render in authentic ${styleNames} style with sharp details.`
+            : 'Skin must look real — visible pores, natural texture, subtle imperfections. NO plastic/airbrushed skin.';
         const primaryDesc = primaryStyle?.hint || primaryStyle?.name || customDirection || 'editorial fashion';
         const accentText = accentStyles.length > 0
           ? ` Setting and lighting incorporate elements from: ${accentStyles.map(s => s.name).join(', ')} (${accentStyles.map(s => s.hint || s.name).join('; ')}). But OUTFIT and core look come from primary style.`
           : '';
         const customText = customDirection ? ` User direction: ${customDirection}.` : '';
 
-        const flatInstruction = `Edit Figure 1: Generate a NEW photograph of this same person in a different aesthetic. PRIMARY STYLE: ${primaryStyle?.name || 'editorial'} — ${primaryDesc}.${accentText}${customText} CHANGE: pose, camera angle, framing, background, outfit. KEEP: face, bone structure, eye color, eye shape, lip shape, skin tone, hair style, hair color, body proportions. ${skinFlat} NO text, watermarks, logos.`;
+        const taskVerb = charIsNonPhoto ? `Generate a NEW ${charRenderStyle} image` : 'Generate a NEW photograph';
+        const flatInstruction = `Edit Figure 1: ${taskVerb} of this same character in a different aesthetic. PRIMARY STYLE: ${primaryStyle?.name || 'editorial'} — ${primaryDesc}.${accentText}${customText} CHANGE: pose, camera angle, framing, background, outfit. KEEP: face, bone structure, eye color, eye shape, lip shape, skin tone, hair style, hair color, body proportions${charIsNonPhoto ? `, AND the ${charRenderStyle} rendering style` : ''}. ${skinFlat} NO text, watermarks, logos.`;
 
         resultUrls = await editImageWithGrokFal(
           baseFile,
@@ -383,16 +456,16 @@ export default function Reimaginar({ onNav }: Props) {
       addItems([{
         id: crypto.randomUUID(),
         url,
-        prompt: promptDesc,
+        prompt: promptDesc + (customBaseFile ? ' · upload propio' : ''),
         model: 'nb2-reimaginar',
         timestamp: Date.now(),
         type: 'edit' as const,
-        characterId: selectedChar.id,
-        tags: ['reimaginar', ...selectedStyles.map(s => s.category)],
+        characterId: selectedChar?.id ?? undefined,
+        tags: ['reimaginar', ...selectedStyles.map(s => s.category), ...(customBaseFile ? ['custom-upload'] : [])],
         source: 'reimaginar' as any,
       }]);
 
-      incrementUsage(selectedChar.id);
+      if (selectedChar) incrementUsage(selectedChar.id);
       setResultUrl(url);
       setHistory(prev => [url, ...prev].slice(0, 4));
       toast.success('Reimaginar listo');
@@ -435,7 +508,7 @@ export default function Reimaginar({ onNav }: Props) {
   };
 
   // ─── Empty state ───
-  if (characters.length === 0) {
+  if (characters.length === 0 && !customBaseFile) {
     return (
       <div className="rm-shell">
         <style>{REIMAGINAR_STYLES}</style>
@@ -452,11 +525,17 @@ export default function Reimaginar({ onNav }: Props) {
         </div>
         <div className="rm-empty">
           <div className="rm-empty-icon"><Wand2 size={28} /></div>
-          <h2 className="rm-empty-title">Necesitas un <em>personaje</em> primero</h2>
-          <p className="rm-empty-sub">Crea tu modelo virtual antes de explorar 500+ estéticas editoriales.</p>
-          <button className="rm-empty-cta" onClick={() => onNav('create')}>
-            <Sparkles size={14} /> Crear personaje
-          </button>
+          <h2 className="rm-empty-title">Empieza con una <em>foto</em></h2>
+          <p className="rm-empty-sub">Sube una foto o crea un personaje para reimaginarlo en 500+ estéticas.</p>
+          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+            <button className="rm-empty-cta" onClick={handleUploadClick}>
+              <Upload size={14} /> Subir foto
+            </button>
+            <button className="rm-empty-cta" style={{ background: 'transparent', color: 'var(--ink-1)', border: '1px solid var(--line)', boxShadow: 'none' }} onClick={() => onNav('create')}>
+              <Sparkles size={14} /> Crear personaje
+            </button>
+          </div>
+          <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleFileChange} />
         </div>
       </div>
     );
@@ -491,13 +570,44 @@ export default function Reimaginar({ onNav }: Props) {
         </p>
       </section>
 
-      {/* Character chip row */}
+      {/* Character chip row + upload */}
       <div className="rm-char-row">
+        {customBaseFile && customBaseUrl ? (
+          <div className="rm-char-chip is-active rm-char-upload">
+            <span
+              className="rm-char-thumb"
+              style={{ backgroundImage: `url(${customBaseUrl})` }}
+            />
+            <span className="rm-char-name">Mi foto</span>
+            <button
+              className="rm-char-x"
+              onClick={clearCustomBase}
+              aria-label="Quitar mi foto"
+            >
+              <X size={11} />
+            </button>
+          </div>
+        ) : (
+          <button
+            className="rm-char-chip rm-char-upload-btn"
+            onClick={handleUploadClick}
+          >
+            <span className="rm-char-thumb rm-char-thumb-upload">
+              <Upload size={13} />
+            </span>
+            <span className="rm-char-name">Subir foto</span>
+          </button>
+        )}
         {characters.map(c => (
           <button
             key={c.id}
-            className={`rm-char-chip ${selectedCharId === c.id ? 'is-active' : ''}`}
-            onClick={() => { hapticLight(); setSelectedCharId(c.id); }}
+            className={`rm-char-chip ${selectedCharId === c.id && !customBaseFile ? 'is-active' : ''}`}
+            onClick={() => {
+              hapticLight();
+              setCustomBaseFile(null);
+              setCustomBaseUrl(null);
+              setSelectedCharId(c.id);
+            }}
           >
             <span
               className="rm-char-thumb"
@@ -506,6 +616,7 @@ export default function Reimaginar({ onNav }: Props) {
             <span className="rm-char-name">{c.name}</span>
           </button>
         ))}
+        <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleFileChange} />
       </div>
 
       {/* Result canvas */}
@@ -896,6 +1007,35 @@ const REIMAGINAR_STYLES = `
 }
 .rm-shell .rm-char-name {
   font-size: 12px; font-weight: 500; color: var(--ink-1);
+}
+.rm-shell .rm-char-upload-btn {
+  border-style: dashed !important;
+  border-color: var(--rose) !important;
+  color: var(--rose-deep);
+}
+.rm-shell .rm-char-upload-btn .rm-char-name { color: var(--rose-deep); font-weight: 600; }
+.rm-shell .rm-char-thumb-upload {
+  background-color: var(--paper) !important;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--rose);
+}
+.rm-shell .rm-char-upload {
+  position: relative;
+  padding-right: 32px;
+}
+.rm-shell .rm-char-x {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.18);
+  border: none;
+  color: var(--bg-card);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-family: inherit;
 }
 
 /* Canvas */
