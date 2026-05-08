@@ -17,11 +17,12 @@ import { hapticLight } from '../services/nativeService';
 
 const HeadshotPro = lazy(() => import('./HeadshotPro'));
 const Reimaginar = lazy(() => import('./Reimaginar'));
+const SesionDeFotos = lazy(() => import('./SesionDeFotos'));
 const CreatePersona = lazy(() => import('./UploadCharacter'));
 const Gallery = lazy(() => import('./Gallery'));
 const ProfilePage = lazy(() => import('../components/ProfilePage'));
 
-type MobilePage = 'home' | 'headshot' | 'reimaginar' | 'create' | 'gallery' | 'characters' | 'profile';
+type MobilePage = 'home' | 'headshot' | 'reimaginar' | 'sesion' | 'create' | 'gallery' | 'characters' | 'profile';
 
 interface AppEntry {
   id: MobilePage | 'soon';
@@ -49,10 +50,10 @@ const APPS: AppEntry[] = [
     accent: '#8B4566', isLive: true, isNew: true,
   },
   {
-    id: 'soon', name: 'Sesión de Fotos', tagline: 'Multi-foto coherente',
-    cost: '40 cr · 4-12 fotos',
+    id: 'sesion', name: 'Sesión de Fotos', tagline: 'Multi-foto coherente',
+    cost: '16-40 cr · 4-12 fotos',
     bg: 'https://images.unsplash.com/photo-1496440737103-cd596325d314?w=600&q=85',
-    accent: '#B0772D', isLive: false, comingSoon: 'Próxima',
+    accent: '#B0772D', isLive: true, isNew: true,
   },
   {
     id: 'soon', name: 'Recast', tagline: 'Reels filmicos',
@@ -281,6 +282,7 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
       pricing: 'profile',     // Profile screen has the upgrade CTA
       headshot: 'headshot',
       reimaginar: 'reimaginar',
+      sesion: 'sesion',
     };
     const target = map[p] ?? 'home';
     navigateMobile(target);
@@ -305,6 +307,12 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
         return (
           <Suspense fallback={<MobileLoader />}>
             <Reimaginar onNav={navigateFromSubApp} />
+          </Suspense>
+        );
+      case 'sesion':
+        return (
+          <Suspense fallback={<MobileLoader />}>
+            <SesionDeFotos onNav={navigateFromSubApp} />
           </Suspense>
         );
       case 'create':

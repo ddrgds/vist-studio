@@ -22,6 +22,7 @@ const AIEditor = lazy(() => import('./pages/AIEditorV2'));
 // ── Premium apps suite ──
 const HeadshotPro = lazy(() => import('./pages/HeadshotPro'));
 const Reimaginar = lazy(() => import('./pages/Reimaginar'));
+const SesionDeFotos = lazy(() => import('./pages/SesionDeFotos'));
 
 // ── Mobile-only shell (Capacitor native + ?mobile=1 in browser) ──
 const MobileApp = lazy(() => import('./pages/MobileApp'));
@@ -49,7 +50,7 @@ const ExportModal = lazy(() => import('./features/export/ExportModal'));
 // Re-import + add to pages map when rebuilding.
 const OnboardingWizard = lazy(() => import('./components/OnboardingWizard').then(m => ({ default: m.OnboardingWizard })));
 
-export type Page = 'create' | 'studio' | 'editor' | 'gallery' | 'characters' | 'pricing' | 'profile' | 'headshot' | 'reimaginar';
+export type Page = 'create' | 'studio' | 'editor' | 'gallery' | 'characters' | 'pricing' | 'profile' | 'headshot' | 'reimaginar' | 'sesion';
 
 function App() {
   return (
@@ -194,6 +195,7 @@ function AuthenticatedApp() {
     profile: <ProfilePage />,
     headshot: <HeadshotPro onNav={handleNav} />,
     reimaginar: <Reimaginar onNav={handleNav} />,
+    sesion: <SesionDeFotos onNav={handleNav} />,
   };
 
   return (

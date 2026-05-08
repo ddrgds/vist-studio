@@ -6,7 +6,7 @@ import { useCharacterStore } from '../stores/characterStore'
 import { useGalleryStore } from '../stores/galleryStore'
 import {
   Sparkles, Clapperboard, Images, Users,
-  CreditCard, PanelLeftClose, PanelLeftOpen, Wand2, Film, MessageCircle, Aperture, Wand,
+  CreditCard, PanelLeftClose, PanelLeftOpen, Wand2, Film, MessageCircle, Aperture, Wand, Camera,
 } from 'lucide-react'
 import { type LucideIcon } from 'lucide-react'
 
@@ -23,7 +23,8 @@ const navSections: { title?: string; items: { id: Page; label: string; Icon: Luc
     title: 'Apps premium',
     items: [
       { id: 'headshot', label: 'Headshot Pro', Icon: Aperture, sub: 'Retratos profesionales' },
-      { id: 'reimaginar', label: 'Reimaginar', Icon: Wand, sub: '500+ estéticas editoriales', isNew: true },
+      { id: 'reimaginar', label: 'Reimaginar', Icon: Wand, sub: '500+ estéticas editoriales' },
+      { id: 'sesion', label: 'Sesión de Fotos', Icon: Camera, sub: '4-12 fotos coherentes', isNew: true },
     ],
   },
 ]
