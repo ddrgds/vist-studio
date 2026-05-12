@@ -105,6 +105,9 @@ export default function Reimaginar({ onNav }: Props) {
   const [progress, setProgress] = useState(0);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
+  // Aspect ratio — 3:4 default (IG feed vertical) but user can pick reels (9:16),
+  // square (1:1), landscape (4:3), or banner (16:9) for different content surfaces.
+  const [aspectRatio, setAspectRatio] = useState<'3:4' | '1:1' | '4:3' | '9:16' | '16:9'>('3:4');
   const abortRef = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -342,7 +345,7 @@ export default function Reimaginar({ onNav }: Props) {
             blend_rule: 'Primary style dominates the OUTFIT and CORE LOOK. Accent styles ONLY contribute setting, environment, lighting, and mood. Do NOT generate a hybrid outfit — the wardrobe must come purely from primary style.',
           } : {}),
           composition: 'NEW pose, NEW camera angle, NEW framing — do not copy the original photo layout.',
-          aspect_ratio: '3:4',
+          aspect_ratio: aspectRatio,
         },
         rules: {
           must_change: ['pose', 'camera_angle', 'framing', 'background', 'outfit'],
@@ -390,7 +393,7 @@ export default function Reimaginar({ onNav }: Props) {
           jsonInstruction,
           refFiles,
           p => setProgress(Math.min(85, 15 + Math.round(p * 0.7))),
-          { resolution: '2K' },
+          { resolution: '2K', aspectRatio },
           abortRef.current.signal,
         );
         if (!resultUrls || resultUrls.length === 0) throw new Error('NB2 empty');
@@ -877,6 +880,27 @@ export default function Reimaginar({ onNav }: Props) {
           </div>
         </div>
       )}
+
+      {/* Aspect ratio strip — feed (3:4) / square (1:1) / reels (9:16) / banner (16:9) */}
+      <div className="rm-aspect-strip" role="radiogroup" aria-label="Formato de salida">
+        {(['3:4', '1:1', '4:3', '9:16', '16:9'] as const).map(ar => {
+          const dim = ar === '3:4' ? { w: 14, h: 18 } : ar === '1:1' ? { w: 16, h: 16 } : ar === '4:3' ? { w: 18, h: 14 } : ar === '9:16' ? { w: 11, h: 18 } : { w: 18, h: 10 };
+          return (
+            <button
+              key={ar}
+              type="button"
+              role="radio"
+              aria-checked={aspectRatio === ar}
+              className={`rm-aspect-pill ${aspectRatio === ar ? 'is-active' : ''}`}
+              onClick={() => { hapticLight(); setAspectRatio(ar); }}
+              disabled={generating}
+            >
+              <span className="rm-aspect-shape" style={{ width: dim.w, height: dim.h }} />
+              <span className="rm-aspect-label">{ar}</span>
+            </button>
+          );
+        })}
+      </div>
 
       {/* Floating CTA */}
       <div className="rm-cta-wrap">
@@ -1545,6 +1569,50 @@ const REIMAGINAR_STYLES = `
   cursor: pointer;
 }
 .rm-shell .rm-tray-pill.is-primary .rm-tray-pill-x { background: rgba(255,255,255,0.18); }
+
+/* Aspect ratio strip (formato salida) — sits above the floating CTA */
+.rm-shell .rm-aspect-strip {
+  position: fixed;
+  left: 50%; transform: translateX(-50%);
+  bottom: calc(72px + env(safe-area-inset-bottom));
+  width: calc(100% - 24px);
+  max-width: 456px;
+  display: flex; gap: 6px;
+  justify-content: center;
+  padding: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  z-index: 41;
+  box-shadow: 0 6px 20px rgba(31, 26, 20, 0.10);
+}
+.rm-shell .rm-aspect-pill {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  height: 30px;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--ink-2);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.rm-shell .rm-aspect-pill:active { transform: scale(0.94); }
+.rm-shell .rm-aspect-pill.is-active { background: var(--ink-0); color: var(--bg-card); }
+.rm-shell .rm-aspect-pill:disabled { opacity: 0.4; cursor: not-allowed; }
+.rm-shell .rm-aspect-shape {
+  display: inline-block;
+  background: currentColor;
+  border-radius: 1.5px;
+  opacity: 0.7;
+}
+.rm-shell .rm-aspect-label { font-size: 9px; }
 
 /* Floating CTA */
 .rm-shell .rm-cta-wrap {

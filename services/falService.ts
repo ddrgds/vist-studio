@@ -1591,7 +1591,7 @@ export const editWithNB2Fal = async (
   instruction: string,
   referenceImages: File[] = [],
   onProgress?: (percent: number) => void,
-  options?: { resolution?: string; seed?: number },
+  options?: { resolution?: string; seed?: number; aspectRatio?: string },
   abortSignal?: AbortSignal,
 ): Promise<string[]> => {
   if (abortSignal?.aborted) throw new Error('Cancelado');
@@ -1639,6 +1639,7 @@ export const editWithNB2Fal = async (
       resolution: options?.resolution || '1K',
       safety_tolerance: '6', // most permissive — respects body proportions
       output_format: 'jpeg',
+      ...(options?.aspectRatio && { aspect_ratio: options.aspectRatio }),
       ...(options?.seed !== undefined && { seed: options.seed }),
     },
     onQueueUpdate: (update: any) => {
