@@ -15,7 +15,7 @@
  * implementations stay in tree so we can revert quickly.
  */
 
-import { editImageWithSeedream5, editImageWithGrokFal, editWithFlux2Klein, editWithFlux2ProUrl } from './falService';
+import { editImageWithSeedream5, editImageWithGrokFal, editWithFlux2Klein, editWithFlux2ProUrl, editWithFlux2Max } from './falService';
 import { editWithWan27Pro } from './replicateService';
 
 /**
@@ -30,7 +30,10 @@ import { editWithWan27Pro } from './replicateService';
  *   - 'grok'        → Grok Quality (tight policy, kept for non-spicy)
  */
 export type FallbackEngine = 'flux2-klein' | 'flux2-pro' | 'wan' | 'seedream' | 'grok';
-export const FALLBACK_ENGINE: FallbackEngine = 'flux2-klein';
+// Switched to flux2-pro 2026-05-12 — identity 10/10 in benchmark (kkkk stylized
+// char) vs Wan's DashScope rejection. Cost: ~$0.10-0.11 for 2K 3:4 + 3 refs.
+// At 10cr retail ($0.24) = 56-66% margin. Klein kept available for Express tier.
+export const FALLBACK_ENGINE: FallbackEngine = 'flux2-pro';
 
 export interface EditFallbackParams {
   baseImage: File;
@@ -72,10 +75,11 @@ export async function editFallback(p: EditFallbackParams): Promise<string[]> {
   const refCount = p.referenceImages?.length ?? 0;
   const disciplinedInstruction = applyRefDiscipline(p.flatInstruction, refCount);
 
-  // Premium tier override — pin Flux 2 Pro regardless of FALLBACK_ENGINE default.
-  // Used by Reimaginar "Hero Premium" toggle and similar upsell paths.
+  // Premium tier override — pin Flux 2 Max (ultra hero) regardless of default.
+  // Used when caller is the Premium path (NB Pro primary failed → cascade to Max).
+  // Max gives top-tier ref-context awareness (extracts coquette ribbons, lace, etc).
   if (p.tier === 'premium') {
-    return editWithFlux2ProUrl(
+    return editWithFlux2Max(
       p.baseImage,
       disciplinedInstruction,
       p.referenceImages || [],

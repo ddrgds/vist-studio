@@ -1286,6 +1286,10 @@ export const editWithFlux2Klein = async (
       prompt: fluxPrompt,
       image_urls: validUrls,
       aspect_ratio: options?.aspectRatio || '3:4',
+      // Disable post-process moderation (default true returns black image on
+      // sleepwear / lingerie / spicy editorial keywords for stylized chars).
+      // Confirmed via OpenAPI schema 2026-05-12.
+      enable_safety_checker: false,
     },
     onQueueUpdate: (update: any) => {
       if (update.status === 'IN_PROGRESS' && onProgress) onProgress(Math.min(88, 40 + Math.random() * 45));
@@ -1297,6 +1301,100 @@ export const editWithFlux2Klein = async (
   const url = data?.images?.[0]?.url;
   if (!url) throw new Error(`Flux 2 Klein returned empty (got: ${JSON.stringify(data).slice(0, 200)})`);
 
+  if (onProgress) onProgress(100);
+  return [url];
+};
+
+/** Flux 2 Max Edit — ultra/hero tier. Multi-ref support up to 8, ~45-60s, ~$0.15.
+ *  Highest editing consistency in Flux 2 family. Best for hero shots with
+ *  rich ref-context extraction (extracts coquette ribbons, lace, accessories). */
+export const editWithFlux2Max = async (
+  baseImage: File,
+  instruction: string,
+  referenceImages: File[] = [],
+  onProgress?: (percent: number) => void,
+  options?: { aspectRatio?: string; seed?: number },
+  abortSignal?: AbortSignal,
+): Promise<string[]> => {
+  if (abortSignal?.aborted) throw new Error('Cancelado');
+  if (onProgress) onProgress(8);
+
+  const allImages = [baseImage, ...referenceImages.slice(0, 7)]; // Max accepts 8 total via API
+  const imageUrls = await Promise.all(allImages.map(f => uploadToFalStorage(f)));
+  const validUrls = imageUrls.filter(u => typeof u === 'string' && u.startsWith('http'));
+  if (validUrls.length === 0) throw new Error('Flux 2 Max: no valid image URLs after upload');
+
+  if (onProgress) onProgress(25);
+  const fluxPrompt = formatPromptForFlux2(instruction, referenceImages.length);
+
+  const result: any = await fal.subscribe('fal-ai/flux-2-max/edit', {
+    input: {
+      prompt: fluxPrompt,
+      image_urls: validUrls,
+      safety_tolerance: '5',
+      aspect_ratio: options?.aspectRatio || '3:4',
+      ...(options?.seed !== undefined && { seed: options.seed }),
+    },
+    onQueueUpdate: (update: any) => {
+      if (update.status === 'IN_PROGRESS' && onProgress) onProgress(Math.min(88, 40 + Math.random() * 45));
+    },
+    ...(abortSignal ? { signal: abortSignal } : {}),
+  });
+
+  const data = result?.data || result;
+  const url = data?.images?.[0]?.url;
+  if (!url) throw new Error(`Flux 2 Max returned empty (got: ${JSON.stringify(data).slice(0, 200)})`);
+  if (onProgress) onProgress(100);
+  return [url];
+};
+
+/** Nano Banana Pro Edit (Gemini 2.5 Pro Image) — premium tier primary engine.
+ *  Higher quality than NB2 (better realism, sharper text, tighter prompt adherence).
+ *  Same multi-ref + safety_tolerance: 6 most-permissive setup as NB2. */
+export const editWithNbProFal = async (
+  baseImage: File,
+  instruction: string,
+  referenceImages: File[] = [],
+  onProgress?: (percent: number) => void,
+  options?: { resolution?: string; seed?: number; aspectRatio?: string },
+  abortSignal?: AbortSignal,
+): Promise<string[]> => {
+  if (abortSignal?.aborted) throw new Error('Cancelado');
+  if (onProgress) onProgress(10);
+
+  const allImages = [baseImage, ...referenceImages.slice(0, 13)];
+  const imageUrls = await Promise.all(allImages.map(f => uploadToFalStorage(f)));
+  const validImageUrls = imageUrls.filter(u => typeof u === 'string' && u.startsWith('http'));
+  if (validImageUrls.length === 0) throw new Error('NB Pro Edit: no valid image URLs');
+
+  if (onProgress) onProgress(30);
+
+  const cleanInstruction = (instruction || '').trim() || 'Generate a professional photo of this person';
+  const wrappedPrompt = `[Professional virtual influencer content creation] ${cleanInstruction}`;
+
+  const result = await fal.subscribe('fal-ai/nano-banana-pro/edit', {
+    input: {
+      prompt: wrappedPrompt,
+      image_urls: validImageUrls,
+      num_images: 1,
+      resolution: options?.resolution || '2K',
+      safety_tolerance: '6', // most permissive
+      ...(options?.aspectRatio && { aspect_ratio: options.aspectRatio }),
+      ...(options?.seed !== undefined && { seed: options.seed }),
+    },
+    onQueueUpdate: (update: any) => {
+      if (update.status === 'IN_PROGRESS' && onProgress) onProgress(Math.min(88, 35 + Math.random() * 50));
+    },
+    ...(abortSignal ? { signal: abortSignal } : {}),
+  }).catch((err: any) => {
+    const detail = err?.body || err?.response?.body || err?.message || String(err);
+    console.error('[editWithNbProFal] fal returned error:', detail);
+    throw err;
+  });
+
+  const data: any = (result as any)?.data || result;
+  const url = data?.images?.[0]?.url;
+  if (!url) throw new Error('NB Pro Edit returned no images');
   if (onProgress) onProgress(100);
   return [url];
 };
@@ -1331,6 +1429,8 @@ export const editWithFlux2ProUrl = async (
       image_urls: validUrls,
       safety_tolerance: '5',
       aspect_ratio: options?.aspectRatio || '3:4',
+      // Pro doesn't expose enable_safety_checker but safety_tolerance: '5' is
+      // the most permissive setting on the legacy scale (1=strict, 5=loose).
       ...(options?.seed !== undefined && { seed: options.seed }),
     },
     onQueueUpdate: (update: any) => {

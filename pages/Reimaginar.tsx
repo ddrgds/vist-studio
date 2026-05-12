@@ -389,13 +389,15 @@ export default function Reimaginar({ onNav }: Props) {
 
       setProgress(15);
 
-      const { editWithNB2Fal } = await import('../services/falService');
+      const { editWithNB2Fal, editWithNbProFal } = await import('../services/falService');
       const { editFallback } = await import('../services/editFallback');
 
       let resultUrls: string[] = [];
 
       try {
-        resultUrls = await editWithNB2Fal(
+        // Premium tier: NB Pro (higher quality, +15cr cost). Default: NB2.
+        const primaryEdit = premiumTier ? editWithNbProFal : editWithNB2Fal;
+        resultUrls = await primaryEdit(
           baseFile,
           jsonInstruction,
           refFiles,
@@ -403,7 +405,7 @@ export default function Reimaginar({ onNav }: Props) {
           { resolution: '2K', aspectRatio },
           abortRef.current.signal,
         );
-        if (!resultUrls || resultUrls.length === 0) throw new Error('NB2 empty');
+        if (!resultUrls || resultUrls.length === 0) throw new Error(premiumTier ? 'NB Pro empty' : 'NB2 empty');
       } catch (nb2Err: any) {
         if (nb2Err?.name === 'AbortError') throw nb2Err;
         console.warn('NB2 rejected, using fallback:', nb2Err?.message);
@@ -920,11 +922,11 @@ export default function Reimaginar({ onNav }: Props) {
       >
         <span className="rm-premium-dot" />
         <span className="rm-premium-label">
-          {premiumTier ? 'Premium Hero · activo' : 'Premium Hero'}
+          {premiumTier ? 'Hero Pro · activo' : 'Hero Pro'}
         </span>
         <span className="rm-premium-cost">+{PREMIUM_EXTRA}cr</span>
         <span className="rm-premium-hint">
-          {premiumTier ? 'Captura detalle elite de las refs' : 'Mejor identity context · más lento'}
+          {premiumTier ? 'NB Pro + Flux 2 Max · máximo detalle' : 'Motor premium · captura ribbons + tattoos + accesorios'}
         </span>
       </button>
 
