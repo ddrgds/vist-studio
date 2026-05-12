@@ -1205,6 +1205,58 @@ export const editImageWithFlux2Pro = async (
 // Both return HTTP URL[] (not base64 data URIs) for use in editFallback chain.
 // ─────────────────────────────────────────────
 
+/**
+ * Reformat a generic edit prompt for Flux 2's @imageN syntax + remove negative
+ * phrasing Flux doesn't understand. Bench-validated against the playground
+ * result the user shared 2026-05-12 — this is the structure Flux Pro respects
+ * for top-tier ref preservation.
+ *
+ * Transformations:
+ *   - "Figure 1" / "Figure 2-3" → "@image1" / "@image2-@image3"
+ *   - Prepends @image refs preamble if missing
+ *   - Strips "NO X", "NEVER X", "Avoid:" clauses (Flux ignores them anyway)
+ *   - Collapses extra whitespace
+ */
+function formatPromptForFlux2(instruction: string, refCount: number): string {
+  if (!instruction || !instruction.trim()) {
+    return 'Generate a professional editorial photograph of this person.';
+  }
+  let prompt = instruction.trim();
+
+  // Strip "Edit Figure 1:" / "Edit @image1:" prefixes — the @image preamble
+  // we prepend takes over the ref-binding role.
+  prompt = prompt.replace(/^Edit\s+(?:Figure\s+\d+|@image\d+)\s*:\s*/i, '');
+
+  // Translate Figure N → @imageN (Flux's native ref syntax)
+  prompt = prompt.replace(/\bFigure\s+(\d+)/gi, '@image$1');
+  prompt = prompt.replace(/\bFigures\s+(\d+)\s*[-–]\s*(\d+)/gi, '@image$1-@image$2');
+  prompt = prompt.replace(/\bFigures\s+(\d+)\s*\+/gi, '@image$1+');
+
+  // Strip negative phrasing Flux doesn't support
+  prompt = prompt
+    .replace(/\bAvoid:\s*[^.]*\./gi, '')
+    .replace(/\bNO\s+(text|magazine|caption|watermark|logo|label|brand|airbrush|smoothing|CGI|porcelain|plastic)[^.,]*[.,]/gi, '')
+    .replace(/\bNEVER\s+\w[^.,]*[.,]/gi, '');
+
+  // Prepend @image preamble if the prompt has no @image references yet.
+  // Matches the exact playground structure user validated 2026-05-12.
+  if (!prompt.includes('@image')) {
+    const total = Math.max(1, refCount + 1); // base + refs
+    const refs: string[] = ['@image1 is the base reference of the subject'];
+    for (let i = 1; i < total; i++) {
+      const role = i === 1 ? 'additional identity reference (body angles)'
+                : i === 2 ? 'expression reference'
+                : `identity reference ${i}`;
+      refs.push(`@image${i + 1} is the ${role}`);
+    }
+    prompt = `${refs.join('. ')}. Generate a NEW editorial fashion photograph of this same person. Preserve face geometry from @image1, eye color and shape, hair color and length, skin tone with freckles, piercings, and small bow tattoos. ${prompt}`;
+  }
+
+  // Cleanup collapsed punctuation
+  prompt = prompt.replace(/\s{2,}/g, ' ').replace(/\s*\.\s*\./g, '.').replace(/,\s*,/g, ',').trim();
+  return prompt;
+}
+
 /** Flux 2 Klein 9B Edit — default fallback. Multi-ref support, ~4-10s, ~$0.05.
  *  Accepts up to boudoir/beach-wet content for stylized characters. */
 export const editWithFlux2Klein = async (
@@ -1226,11 +1278,12 @@ export const editWithFlux2Klein = async (
 
   if (onProgress) onProgress(25);
 
-  const cleanInstruction = (instruction || '').trim() || 'Generate a professional editorial photograph of this person';
+  // Reformat for Flux 2's @imageN syntax + strip negatives
+  const fluxPrompt = formatPromptForFlux2(instruction, referenceImages.length);
 
   const result: any = await fal.subscribe('fal-ai/flux-2/klein/9b/edit', {
     input: {
-      prompt: cleanInstruction,
+      prompt: fluxPrompt,
       image_urls: validUrls,
       aspect_ratio: options?.aspectRatio || '3:4',
     },
@@ -1268,11 +1321,13 @@ export const editWithFlux2ProUrl = async (
 
   if (onProgress) onProgress(25);
 
-  const cleanInstruction = (instruction || '').trim() || 'Generate a professional editorial photograph of this person';
+  // Reformat for Flux 2's @imageN syntax + strip negatives (matches the
+  // playground structure user shared 2026-05-12 that produced top results)
+  const fluxPrompt = formatPromptForFlux2(instruction, referenceImages.length);
 
   const result: any = await fal.subscribe('fal-ai/flux-2-pro/edit', {
     input: {
-      prompt: cleanInstruction,
+      prompt: fluxPrompt,
       image_urls: validUrls,
       safety_tolerance: '5',
       aspect_ratio: options?.aspectRatio || '3:4',
