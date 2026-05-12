@@ -15,26 +15,35 @@
  * implementations stay in tree so we can revert quickly.
  */
 
-import { editImageWithSeedream5, editImageWithGrokFal } from './falService';
+import { editImageWithSeedream5, editImageWithGrokFal, editWithFlux2Klein, editWithFlux2ProUrl } from './falService';
 import { editWithWan27Pro } from './replicateService';
 
 /**
- * Pick which engine handles the post-NB2 fallback. Bench-validated 2026-05-09:
- *   - 'wan'      → Wan 2.7 Image Pro Replicate (winner: identity + spicy literal)
- *   - 'seedream' → Seedream v5 Lite (cheaper, tones down spicy)
- *   - 'grok'     → Grok Quality (tighter policy, needs LLM rewriter)
+ * Pick which engine handles the post-NB2 fallback. Bench history:
+ *   - 'flux2-klein' → Flux 2 Klein 9B Edit (CURRENT — bench 2026-05-12)
+ *                     Grok-level identity, accepts stylized + spicy, 4-10s, ~$0.05
+ *   - 'flux2-pro'   → Flux 2 Pro Edit (PREMIUM TIER — per-call override)
+ *                     Extra context awareness (extracts ref styling), 28-31s, ~$0.20
+ *   - 'wan'         → Wan 2.7 Image Pro Replicate (deprecated for stylized chars
+ *                     via DashScope moderation; kept for non-stylized photoreal)
+ *   - 'seedream'    → Seedream v5 Lite (last resort, accepts everything)
+ *   - 'grok'        → Grok Quality (tight policy, kept for non-spicy)
  */
-export type FallbackEngine = 'wan' | 'seedream' | 'grok';
-export const FALLBACK_ENGINE: FallbackEngine = 'wan';
+export type FallbackEngine = 'flux2-klein' | 'flux2-pro' | 'wan' | 'seedream' | 'grok';
+export const FALLBACK_ENGINE: FallbackEngine = 'flux2-klein';
 
 export interface EditFallbackParams {
   baseImage: File;
-  /** Flat-prose instruction (works for both Seedream + Grok). */
+  /** Flat-prose instruction (works for all engines). */
   flatInstruction: string;
-  /** Identity reference images. Wan: 8 max. Seedream: 9 max. Grok: ignored. */
+  /** Identity reference images. Klein/Pro: 9 max. Wan: 8 max. Seedream: 9 max. Grok: ignored. */
   referenceImages?: File[];
   onProgress?: (percent: number) => void;
   abortSignal?: AbortSignal;
+  /** Aspect ratio passed through to engines that accept it (Klein/Pro). */
+  aspectRatio?: string;
+  /** Premium tier — overrides default to Flux 2 Pro for higher ref-context fidelity. */
+  tier?: 'standard' | 'premium';
 }
 
 /**
@@ -62,6 +71,42 @@ function applyRefDiscipline(instruction: string, refCount: number): string {
 export async function editFallback(p: EditFallbackParams): Promise<string[]> {
   const refCount = p.referenceImages?.length ?? 0;
   const disciplinedInstruction = applyRefDiscipline(p.flatInstruction, refCount);
+
+  // Premium tier override — pin Flux 2 Pro regardless of FALLBACK_ENGINE default.
+  // Used by Reimaginar "Hero Premium" toggle and similar upsell paths.
+  if (p.tier === 'premium') {
+    return editWithFlux2ProUrl(
+      p.baseImage,
+      disciplinedInstruction,
+      p.referenceImages || [],
+      p.onProgress,
+      { aspectRatio: p.aspectRatio },
+      p.abortSignal,
+    );
+  }
+
+  // Standard tier — uses configured FALLBACK_ENGINE.
+  if (FALLBACK_ENGINE === 'flux2-klein') {
+    return editWithFlux2Klein(
+      p.baseImage,
+      disciplinedInstruction,
+      p.referenceImages || [],
+      p.onProgress,
+      { aspectRatio: p.aspectRatio },
+      p.abortSignal,
+    );
+  }
+
+  if (FALLBACK_ENGINE === 'flux2-pro') {
+    return editWithFlux2ProUrl(
+      p.baseImage,
+      disciplinedInstruction,
+      p.referenceImages || [],
+      p.onProgress,
+      { aspectRatio: p.aspectRatio },
+      p.abortSignal,
+    );
+  }
 
   if (FALLBACK_ENGINE === 'wan') {
     // Wan 2.7 Pro Replicate — handles spicy + multi-ref + identity beautifully.
@@ -103,8 +148,10 @@ export async function editFallback(p: EditFallbackParams): Promise<string[]> {
 
 /** Friendly engine name for logs / future telemetry. */
 export const FALLBACK_ENGINE_NAME =
-  FALLBACK_ENGINE === 'wan'      ? 'wan-2.7-image-pro'
-  : FALLBACK_ENGINE === 'grok'   ? 'grok-imagine-quality'
+  FALLBACK_ENGINE === 'flux2-klein' ? 'flux-2-klein-9b-edit'
+  : FALLBACK_ENGINE === 'flux2-pro' ? 'flux-2-pro-edit'
+  : FALLBACK_ENGINE === 'wan'       ? 'wan-2.7-image-pro'
+  : FALLBACK_ENGINE === 'grok'      ? 'grok-imagine-quality'
   : 'seedream-v5-lite';
 
 /** @deprecated — kept for backward compatibility with old import paths. */

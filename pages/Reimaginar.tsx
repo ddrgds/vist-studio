@@ -55,6 +55,7 @@ const TABS: { id: TabId; label: string; sourceCategories: SoulStyleCategory[] }[
 ];
 
 const COST = 10;
+const PREMIUM_EXTRA = 15;   // +15cr when Premium tier toggle is active
 const MAX_SELECTED = 4; // 1 primary + up to 3 accents
 
 // Mobile-curated featured pool — gender-balanced mix of unisex / masculine /
@@ -108,12 +109,18 @@ export default function Reimaginar({ onNav }: Props) {
   // Aspect ratio — 3:4 default (IG feed vertical) but user can pick reels (9:16),
   // square (1:1), landscape (4:3), or banner (16:9) for different content surfaces.
   const [aspectRatio, setAspectRatio] = useState<'3:4' | '1:1' | '4:3' | '9:16' | '16:9'>('3:4');
+  // Premium tier — when on, routes to Flux 2 Pro Edit (better ref-context awareness,
+  // captures styling details like piercings/accessories/hair-bows from the refs).
+  // Costs +15cr. Identity already perfect on standard Klein, premium is for hero
+  // shots where every detail of the character aesthetic must come through.
+  const [premiumTier, setPremiumTier] = useState<boolean>(false);
   const abortRef = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isCreatorMode = profile?.contentMode === 'creator';
   const credits = profile?.creditsRemaining ?? 0;
-  const canAfford = credits >= COST;
+  const totalCost = COST + (premiumTier ? PREMIUM_EXTRA : 0);
+  const canAfford = credits >= totalCost;
 
   // Default-select first character
   useEffect(() => {
@@ -250,7 +257,7 @@ export default function Reimaginar({ onNav }: Props) {
     }
     if (generating) return;
     if (!canAfford) {
-      toast.error(`Necesitas ${COST} créditos. Tienes ${credits}.`);
+      toast.error(`Necesitas ${totalCost} créditos. Tienes ${credits}.`);
       hapticError();
       onNav('pricing');
       return;
@@ -267,7 +274,7 @@ export default function Reimaginar({ onNav }: Props) {
       return;
     }
 
-    const ok = await decrementCredits(COST);
+    const ok = await decrementCredits(totalCost);
     if (!ok) {
       toast.error('Créditos insuficientes');
       return;
@@ -438,6 +445,8 @@ export default function Reimaginar({ onNav }: Props) {
           referenceImages: refFiles,
           onProgress: p => setProgress(Math.min(85, 15 + Math.round(p * 0.7))),
           abortSignal: abortRef.current.signal,
+          aspectRatio,
+          tier: premiumTier ? 'premium' : 'standard',
         });
         if (!resultUrls || resultUrls.length === 0) throw new Error('Ambos motores fallaron');
       }
@@ -450,7 +459,7 @@ export default function Reimaginar({ onNav }: Props) {
         const mode = isCreatorMode ? 'creator' : 'standard';
         const safety = await checkImageSafety(resultUrls[0], mode);
         if (!safety.allowed && !safety.error) {
-          restoreCredits(COST);
+          restoreCredits(totalCost);
           toast.error('Imagen bloqueada por moderación. Tus créditos se restauraron.');
           setGenerating(false);
           setProgress(0);
@@ -494,7 +503,7 @@ export default function Reimaginar({ onNav }: Props) {
       toast.success('Reimaginar listo');
       hapticSuccess();
     } catch (err: any) {
-      restoreCredits(COST);
+      restoreCredits(totalCost);
       if (err?.name !== 'AbortError') {
         const msg = String(err?.message || err);
         const isModeration = /ValidationError|content_policy|no_media_generated|safety/i.test(msg);
@@ -902,6 +911,23 @@ export default function Reimaginar({ onNav }: Props) {
         })}
       </div>
 
+      {/* Premium tier toggle — Flux 2 Pro Edit (captures ref styling details, +15cr) */}
+      <button
+        type="button"
+        className={`rm-premium-toggle ${premiumTier ? 'is-active' : ''}`}
+        onClick={() => { hapticLight(); setPremiumTier(!premiumTier); }}
+        disabled={generating}
+      >
+        <span className="rm-premium-dot" />
+        <span className="rm-premium-label">
+          {premiumTier ? 'Premium Hero · activo' : 'Premium Hero'}
+        </span>
+        <span className="rm-premium-cost">+{PREMIUM_EXTRA}cr</span>
+        <span className="rm-premium-hint">
+          {premiumTier ? 'Captura detalle elite de las refs' : 'Mejor identity context · más lento'}
+        </span>
+      </button>
+
       {/* Floating CTA */}
       <div className="rm-cta-wrap">
         <div className="rm-cta-row">
@@ -918,8 +944,8 @@ export default function Reimaginar({ onNav }: Props) {
             onClick={handleGenerate}
             disabled={generating || !canAfford || (selectedStyleIds.length === 0 && !customPrompt.trim())}
           >
-            <span className="rm-cta-cost">{COST} cr</span>
-            <span className="rm-cta-label">{generating ? 'Generando…' : resultUrl ? 'Otra reimagen' : 'Reimaginar'}</span>
+            <span className="rm-cta-cost">{totalCost} cr</span>
+            <span className="rm-cta-label">{generating ? 'Generando…' : resultUrl ? 'Otra reimagen' : (premiumTier ? 'Reimaginar Premium' : 'Reimaginar')}</span>
             <span className="rm-cta-arrow">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M5 12h14M12 5l7 7-7 7" />
@@ -1570,11 +1596,11 @@ const REIMAGINAR_STYLES = `
 }
 .rm-shell .rm-tray-pill.is-primary .rm-tray-pill-x { background: rgba(255,255,255,0.18); }
 
-/* Aspect ratio strip (formato salida) — sits above the floating CTA */
+/* Aspect ratio strip (formato salida) — sits above the premium toggle and CTA */
 .rm-shell .rm-aspect-strip {
   position: fixed;
   left: 50%; transform: translateX(-50%);
-  bottom: calc(72px + env(safe-area-inset-bottom));
+  bottom: calc(170px + env(safe-area-inset-bottom));
   width: calc(100% - 24px);
   max-width: 456px;
   display: flex; gap: 6px;
@@ -1613,6 +1639,84 @@ const REIMAGINAR_STYLES = `
   opacity: 0.7;
 }
 .rm-shell .rm-aspect-label { font-size: 9px; }
+
+/* Premium tier toggle — sits between aspect strip and CTA */
+.rm-shell .rm-premium-toggle {
+  position: fixed;
+  left: 50%; transform: translateX(-50%);
+  bottom: calc(110px + env(safe-area-inset-bottom));
+  width: calc(100% - 24px);
+  max-width: 456px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  row-gap: 1px;
+  align-items: center;
+  padding: 8px 14px 9px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  cursor: pointer;
+  z-index: 42;
+  font-family: inherit;
+  box-shadow: 0 4px 14px rgba(31, 26, 20, 0.08);
+  transition: all 0.2s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.rm-shell .rm-premium-toggle:active { transform: translateX(-50%) scale(0.98); }
+.rm-shell .rm-premium-toggle.is-active {
+  background: linear-gradient(135deg, #1F1A14 0%, #2E2620 100%);
+  border-color: var(--gold);
+  color: #F5EBDB;
+}
+.rm-shell .rm-premium-toggle:disabled { opacity: 0.5; cursor: not-allowed; }
+.rm-shell .rm-premium-dot {
+  grid-row: 1 / span 2;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--line);
+  transition: background 0.2s var(--ease);
+}
+.rm-shell .rm-premium-toggle.is-active .rm-premium-dot {
+  background: var(--gold);
+  box-shadow: 0 0 6px rgba(212, 168, 95, 0.6);
+}
+.rm-shell .rm-premium-label {
+  grid-column: 2;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--ink-1);
+  text-align: left;
+}
+.rm-shell .rm-premium-toggle.is-active .rm-premium-label { color: #F5EBDB; }
+.rm-shell .rm-premium-cost {
+  grid-row: 1 / span 2;
+  grid-column: 3;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+}
+.rm-shell .rm-premium-toggle.is-active .rm-premium-cost {
+  background: rgba(212, 168, 95, 0.15);
+  color: var(--gold);
+  border-color: rgba(212, 168, 95, 0.5);
+}
+.rm-shell .rm-premium-hint {
+  grid-column: 2;
+  font-size: 10px;
+  color: var(--ink-3);
+  text-align: left;
+  line-height: 1.2;
+}
+.rm-shell .rm-premium-toggle.is-active .rm-premium-hint { color: rgba(245, 235, 219, 0.7); }
 
 /* Floating CTA */
 .rm-shell .rm-cta-wrap {

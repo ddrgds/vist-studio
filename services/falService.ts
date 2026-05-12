@@ -1197,6 +1197,102 @@ export const editImageWithFlux2Pro = async (
 };
 
 // ─────────────────────────────────────────────
+// FLUX.2 fallback chain (2026-05-12) — replaces Wan-Replicate as primary
+// fallback. Klein is the default (cheap, fast, Grok-level identity, accepts
+// most spicy content). Pro is the "premium" tier — slower + 4x cost but
+// captures extra ref context (styling details, accessories, aesthetic).
+//
+// Both return HTTP URL[] (not base64 data URIs) for use in editFallback chain.
+// ─────────────────────────────────────────────
+
+/** Flux 2 Klein 9B Edit — default fallback. Multi-ref support, ~4-10s, ~$0.05.
+ *  Accepts up to boudoir/beach-wet content for stylized characters. */
+export const editWithFlux2Klein = async (
+  baseImage: File,
+  instruction: string,
+  referenceImages: File[] = [],
+  onProgress?: (percent: number) => void,
+  options?: { aspectRatio?: string },
+  abortSignal?: AbortSignal,
+): Promise<string[]> => {
+  if (abortSignal?.aborted) throw new Error('Cancelado');
+  if (onProgress) onProgress(8);
+
+  // Klein supports up to 10 images total. Base first, then refs.
+  const allImages = [baseImage, ...referenceImages.slice(0, 9)];
+  const imageUrls = await Promise.all(allImages.map(f => uploadToFalStorage(f)));
+  const validUrls = imageUrls.filter(u => typeof u === 'string' && u.startsWith('http'));
+  if (validUrls.length === 0) throw new Error('Flux 2 Klein: no valid image URLs after upload');
+
+  if (onProgress) onProgress(25);
+
+  const cleanInstruction = (instruction || '').trim() || 'Generate a professional editorial photograph of this person';
+
+  const result: any = await fal.subscribe('fal-ai/flux-2/klein/9b/edit', {
+    input: {
+      prompt: cleanInstruction,
+      image_urls: validUrls,
+      aspect_ratio: options?.aspectRatio || '3:4',
+    },
+    onQueueUpdate: (update: any) => {
+      if (update.status === 'IN_PROGRESS' && onProgress) onProgress(Math.min(88, 40 + Math.random() * 45));
+    },
+    ...(abortSignal ? { signal: abortSignal } : {}),
+  });
+
+  const data = result?.data || result;
+  const url = data?.images?.[0]?.url;
+  if (!url) throw new Error(`Flux 2 Klein returned empty (got: ${JSON.stringify(data).slice(0, 200)})`);
+
+  if (onProgress) onProgress(100);
+  return [url];
+};
+
+/** Flux 2 Pro Edit — premium tier. Multi-ref support, ~28-31s, ~$0.20.
+ *  Captures extra ref context (accessories, hair styling, aesthetic details). */
+export const editWithFlux2ProUrl = async (
+  baseImage: File,
+  instruction: string,
+  referenceImages: File[] = [],
+  onProgress?: (percent: number) => void,
+  options?: { aspectRatio?: string; seed?: number },
+  abortSignal?: AbortSignal,
+): Promise<string[]> => {
+  if (abortSignal?.aborted) throw new Error('Cancelado');
+  if (onProgress) onProgress(8);
+
+  const allImages = [baseImage, ...referenceImages.slice(0, 9)];
+  const imageUrls = await Promise.all(allImages.map(f => uploadToFalStorage(f)));
+  const validUrls = imageUrls.filter(u => typeof u === 'string' && u.startsWith('http'));
+  if (validUrls.length === 0) throw new Error('Flux 2 Pro: no valid image URLs after upload');
+
+  if (onProgress) onProgress(25);
+
+  const cleanInstruction = (instruction || '').trim() || 'Generate a professional editorial photograph of this person';
+
+  const result: any = await fal.subscribe('fal-ai/flux-2-pro/edit', {
+    input: {
+      prompt: cleanInstruction,
+      image_urls: validUrls,
+      safety_tolerance: '5',
+      aspect_ratio: options?.aspectRatio || '3:4',
+      ...(options?.seed !== undefined && { seed: options.seed }),
+    },
+    onQueueUpdate: (update: any) => {
+      if (update.status === 'IN_PROGRESS' && onProgress) onProgress(Math.min(88, 40 + Math.random() * 45));
+    },
+    ...(abortSignal ? { signal: abortSignal } : {}),
+  });
+
+  const data = result?.data || result;
+  const url = data?.images?.[0]?.url;
+  if (!url) throw new Error(`Flux 2 Pro returned empty (got: ${JSON.stringify(data).slice(0, 200)})`);
+
+  if (onProgress) onProgress(100);
+  return [url];
+};
+
+// ─────────────────────────────────────────────
 // PuLID v2 — face-locked photo-realistic identity generation
 // Accepts a face reference image via face_image_url
 // ─────────────────────────────────────────────
