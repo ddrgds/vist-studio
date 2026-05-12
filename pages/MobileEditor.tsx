@@ -26,7 +26,7 @@ import { useCharacterStore } from '../stores/characterStore';
 import { usePipelineStore } from '../stores/pipelineStore';
 import { hapticLight, hapticMedium, hapticSuccess, hapticError } from '../services/nativeService';
 import type { AppMood } from '../components/apps/_shared';
-import { urlToFile, useAppUpload } from '../components/apps/_shared';
+import { urlToFile, useAppUpload, HeroProSwitch, HERO_PRO_EXTRA_COST } from '../components/apps/_shared';
 
 const ATELIER_MOOD: AppMood = {
   bg0: '#F5EBDB',
@@ -270,6 +270,8 @@ export default function MobileEditor({ onNav }: Props) {
   // characterId, we track it so the physical anchor (character.characteristics)
   // is injected automatically into every generation. User can detach via UI chip.
   const [linkedCharacterId, setLinkedCharacterId] = useState<string | null>(null);
+  // Hero Pro tier — when on, routes to NB Pro primary + Flux 2 Max fallback (+15cr)
+  const [premiumTier, setPremiumTier] = useState<boolean>(false);
 
   const upload = useAppUpload({
     onError: (msg) => toast.error(msg),
@@ -725,17 +727,19 @@ export default function MobileEditor({ onNav }: Props) {
           setBaseFile(file);
         }
         if (!file) throw new Error('No base file');
-        const { editWithNB2Fal } = await import('../services/falService');
+        const { editWithNB2Fal, editWithNbProFal } = await import('../services/falService');
         const { editFallback } = await import('../services/editFallback');
         let resultUrls: string[] = [];
         try {
-          resultUrls = await editWithNB2Fal(
+          // Premium tier on → NB Pro; off → NB2
+          const primaryEdit = premiumTier ? editWithNbProFal : editWithNB2Fal;
+          resultUrls = await primaryEdit(
             file, eff.prompt, [],
             p => setProgress(Math.min(80, 10 + Math.round(p * 0.7))),
             { resolution: '2K' },
             abortRef.current.signal,
           );
-          if (!resultUrls || resultUrls.length === 0) throw new Error('NB2 empty');
+          if (!resultUrls || resultUrls.length === 0) throw new Error('Primary empty');
         } catch (nb2Err: any) {
           if (nb2Err?.name === 'AbortError') throw nb2Err;
           toast.info('Reintentando con motor alternativo…');
@@ -745,6 +749,7 @@ export default function MobileEditor({ onNav }: Props) {
             referenceImages: [],
             onProgress: p => setProgress(Math.min(85, 15 + Math.round(p * 0.7))),
             abortSignal: abortRef.current.signal,
+            tier: premiumTier ? 'premium' : 'standard',
           });
           if (!resultUrls || resultUrls.length === 0) throw new Error('Ambos motores fallaron');
         }
@@ -875,12 +880,14 @@ export default function MobileEditor({ onNav }: Props) {
         );
         resultUrls = [out];
       } else {
-        // NB2 first → fallback to Seedream (passes refs for multi-ref tools)
-        const { editWithNB2Fal } = await import('../services/falService');
+        // NB2/NB Pro first → fallback to Flux 2 Pro/Max via editFallback
+        const { editWithNB2Fal, editWithNbProFal } = await import('../services/falService');
         const { editFallback } = await import('../services/editFallback');
 
         try {
-          resultUrls = await editWithNB2Fal(
+          // Premium tier routes to NB Pro instead of NB2
+          const primaryEdit = premiumTier ? editWithNbProFal : editWithNB2Fal;
+          resultUrls = await primaryEdit(
             file,
             promptPair!.nb2,
             refs,
@@ -888,15 +895,16 @@ export default function MobileEditor({ onNav }: Props) {
             { resolution: '2K' },
             abortRef.current.signal,
           );
-          if (!resultUrls || resultUrls.length === 0) throw new Error('NB2 empty');
+          if (!resultUrls || resultUrls.length === 0) throw new Error('Primary empty');
         } catch (nb2Err: any) {
           if (nb2Err?.name === 'AbortError') throw nb2Err;
-          console.warn('NB2 rejected, fallback:', nb2Err?.message);
+          console.warn('Primary rejected, fallback:', nb2Err?.message);
           toast.info('Reintentando con motor alternativo…');
           resultUrls = await editFallback({
             baseImage: file,
             flatInstruction: promptPair!.fallback,
             referenceImages: refs,
+            tier: premiumTier ? 'premium' : 'standard',
             onProgress: p => setProgress(Math.min(85, 15 + Math.round(p * 0.7))),
             abortSignal: abortRef.current.signal,
           });
@@ -1193,6 +1201,12 @@ export default function MobileEditor({ onNav }: Props) {
         >
           <ChevronLeft size={18} />
         </button>
+        <HeroProSwitch
+          active={premiumTier}
+          disabled={generating}
+          onChange={setPremiumTier}
+          extraCost={HERO_PRO_EXTRA_COST}
+        />
         <div className="me-credits">
           <span className="me-credits-dot" />
           {credits}

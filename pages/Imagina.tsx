@@ -95,6 +95,14 @@ export default function Imagina({ onNav }: Props) {
   const [selectedInteractions, setSelectedInteractions] = useState<Set<string>>(new Set(['hands-hair']));
   const [count, setCount] = useState<Count>(3);
   const [results, setResults] = useState<Array<{ url: string | null; status: 'pending' | 'generating' | 'done' | 'failed' }>>([]);
+  // Ref mirror of results — needed because handleGenerate captures `results`
+  // from closure at render time, missing updates from concurrent setResults calls.
+  const resultsRef = useRef<Array<{ url: string | null; status: 'pending' | 'generating' | 'done' | 'failed' }>>([]);
+  // Selection state for the result phase — user picks which variations to save.
+  // Default: all selected. Empty Set means "save all" semantics in this UX.
+  const [savedIdx, setSavedIdx] = useState<Set<number>>(new Set());
+  // Track which results were already saved to gallery so user can't double-save.
+  const [savedToGallery, setSavedToGallery] = useState(false);
   const [showGalleryPicker, setShowGalleryPicker] = useState(false);
   const [pickingId, setPickingId] = useState<string | null>(null);
 
@@ -252,7 +260,12 @@ Return as a single paragraph in technical English prose, ~150 words. NO bullet p
 
     abortRef.current = new AbortController();
     setPhase('generating');
-    setResults(Array.from({ length: count }, () => ({ url: null, status: 'pending' })));
+    const initial = Array.from({ length: count }, () => ({ url: null, status: 'pending' as const }));
+    setResults(initial);
+    resultsRef.current = initial;
+    // Pre-select all slots; user can deselect in result phase before saving
+    setSavedIdx(new Set(Array.from({ length: count }, (_, i) => i)));
+    setSavedToGallery(false);
     hapticMedium();
 
     // Build per-slot variation specs
@@ -301,24 +314,55 @@ Return as a single paragraph in technical English prose, ~150 words. NO bullet p
     startNext();
     await done;
 
-    const successUrls = results.filter(r => r.status === 'done' && r.url).map(r => r.url!);
-    if (successUrls.length === 0) {
+    // Read from ref (handleGenerate closure can't see latest setResults updates)
+    const successCount = resultsRef.current.filter(r => r.status === 'done' && r.url).length;
+    if (successCount === 0) {
       toast.error('No se pudo generar ninguna variación');
       restoreCredits(cost);
-    } else {
-      // Save to gallery
-      addItems(successUrls.map(url => ({
-        id: crypto.randomUUID(),
-        url,
-        type: 'edit' as const,
-        model: 'imagina-nb2',
-        timestamp: Date.now(),
-        prompt: `Imagina · variación`,
-        characterId: sourceCharacterId ?? undefined,
-      })));
-      hapticSuccess();
+      setPhase('result');
+      return;
     }
+    // Pre-select only successful slots for the save action
+    const successSlots = new Set<number>();
+    resultsRef.current.forEach((r, i) => { if (r.status === 'done' && r.url) successSlots.add(i); });
+    setSavedIdx(successSlots);
+    hapticSuccess();
     setPhase('result');
+  };
+
+  // Manual commit — user picks which variations to save to gallery
+  const commitToGallery = () => {
+    if (savedToGallery) return; // double-save guard
+    const urls = resultsRef.current
+      .map((r, i) => ({ r, i }))
+      .filter(({ r, i }) => savedIdx.has(i) && r.status === 'done' && r.url)
+      .map(({ r }) => r.url!);
+    if (urls.length === 0) {
+      toast.error('Selecciona al menos una variación para guardar');
+      return;
+    }
+    addItems(urls.map(url => ({
+      id: crypto.randomUUID(),
+      url,
+      type: 'edit' as const,
+      model: 'imagina-nb2',
+      timestamp: Date.now(),
+      prompt: `Imagina · variación`,
+      characterId: sourceCharacterId ?? undefined,
+    })));
+    setSavedToGallery(true);
+    hapticSuccess();
+    toast.success(`${urls.length} foto${urls.length === 1 ? '' : 's'} guardada${urls.length === 1 ? '' : 's'} en Galería`);
+  };
+
+  const toggleSlot = (idx: number) => {
+    hapticLight();
+    setSavedIdx(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
   };
 
   const generateOne = async (
@@ -329,7 +373,11 @@ Return as a single paragraph in technical English prose, ~150 words. NO bullet p
     editNB2: any,
     editFb: any,
   ) => {
-    setResults(prev => prev.map((s, i) => i === idx ? { ...s, status: 'generating' } : s));
+    setResults(prev => {
+      const next = prev.map((s, i) => i === idx ? { ...s, status: 'generating' as const } : s);
+      resultsRef.current = next;
+      return next;
+    });
 
     const spec = {
       task: 'IMAGINA — Generate a NEW photograph that preserves the scene/outfit/lighting of Figure 1 but with a different pose and interaction',
@@ -365,13 +413,21 @@ Return as a single paragraph in technical English prose, ~150 words. NO bullet p
         abortRef.current?.signal,
       );
       if (r && r.length > 0) {
-        setResults(prev => prev.map((s, i) => i === idx ? { url: r[0], status: 'done' } : s));
+        setResults(prev => {
+          const next = prev.map((s, i) => i === idx ? { url: r[0], status: 'done' as const } : s);
+          resultsRef.current = next;
+          return next;
+        });
         return;
       }
       throw new Error('NB2 empty');
     } catch (err: any) {
       if (err?.name === 'AbortError') {
-        setResults(prev => prev.map((s, i) => i === idx ? { ...s, status: 'failed' } : s));
+        setResults(prev => {
+        const next = prev.map((s, i) => i === idx ? { ...s, status: 'failed' as const } : s);
+        resultsRef.current = next;
+        return next;
+      });
         return;
       }
       // Fallback to Seedream/Grok via editFallback
@@ -384,11 +440,19 @@ Return as a single paragraph in technical English prose, ~150 words. NO bullet p
           abortSignal: abortRef.current?.signal,
         });
         if (r && r.length > 0) {
-          setResults(prev => prev.map((s, i) => i === idx ? { url: r[0], status: 'done' } : s));
+          setResults(prev => {
+          const next = prev.map((s, i) => i === idx ? { url: r[0], status: 'done' as const } : s);
+          resultsRef.current = next;
+          return next;
+        });
           return;
         }
       } catch { /* fall through */ }
-      setResults(prev => prev.map((s, i) => i === idx ? { ...s, status: 'failed' } : s));
+      setResults(prev => {
+        const next = prev.map((s, i) => i === idx ? { ...s, status: 'failed' as const } : s);
+        resultsRef.current = next;
+        return next;
+      });
     }
   };
 
@@ -661,6 +725,7 @@ Return as a single paragraph in technical English prose, ~150 words. NO bullet p
   // ════════════════════════════════════════════════
   if (phase === 'result') {
     const successCount = results.filter(r => r.status === 'done').length;
+    const selectedCount = savedIdx.size;
     return (
       <div className="im-shell">
         <style>{IM_STYLES}</style>
@@ -668,16 +733,37 @@ Return as a single paragraph in technical English prose, ~150 words. NO bullet p
 
         <section className="im-section">
           <div className="im-field-head">
-            <span className="im-eyebrow">{successCount}/{count} variaciones · guardadas en Galería</span>
+            <span className="im-eyebrow">
+              {savedToGallery
+                ? `${selectedCount} guardadas en Galería ✓`
+                : `${successCount}/${count} listas · tap para elegir cuáles guardar`}
+            </span>
           </div>
           <div className="im-result-grid">
-            {results.map((r, i) => (
-              <div key={i} className={`im-result-slot is-${r.status}`}>
-                {r.status === 'done' && r.url
-                  ? <img src={r.url} alt="" />
-                  : <div className="im-slot-fail"><X size={14} /></div>}
-              </div>
-            ))}
+            {results.map((r, i) => {
+              const isSelected = savedIdx.has(i);
+              const isDone = r.status === 'done' && r.url;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  className={`im-result-slot is-${r.status} ${isSelected ? 'is-selected' : ''} ${savedToGallery ? 'is-locked' : ''}`}
+                  onClick={() => { if (isDone && !savedToGallery) toggleSlot(i); }}
+                  disabled={!isDone || savedToGallery}
+                  aria-pressed={isSelected}
+                  aria-label={`Variación ${i + 1} — ${isSelected ? 'seleccionada' : 'no seleccionada'}`}
+                >
+                  {isDone
+                    ? <img src={r.url!} alt="" />
+                    : <div className="im-slot-fail"><X size={14} /></div>}
+                  {isDone && (
+                    <span className="im-slot-check">
+                      {isSelected ? <Check size={14} strokeWidth={3} /> : null}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </section>
 
@@ -686,6 +772,22 @@ Return as a single paragraph in technical English prose, ~150 words. NO bullet p
             <RefreshCw size={14} />
             Otra foto
           </button>
+          {!savedToGallery && successCount > 0 && (
+            <button
+              className="im-cta im-cta-primary"
+              onClick={commitToGallery}
+              disabled={selectedCount === 0}
+            >
+              <Check size={14} />
+              Guardar {selectedCount} de {successCount}
+            </button>
+          )}
+          {savedToGallery && (
+            <button className="im-cta im-cta-primary is-done" disabled>
+              <Check size={14} />
+              Guardado en Galería
+            </button>
+          )}
         </div>
       </div>
     );
@@ -953,6 +1055,14 @@ const IM_STYLES = `
   color: var(--im-ink-1);
   border: 1px solid var(--im-line);
 }
+.im-shell .im-cta-primary {
+  background: var(--im-ink-0);
+  color: var(--im-bg-card);
+}
+.im-shell .im-cta-primary.is-done {
+  background: var(--im-gold);
+  color: var(--im-ink-0);
+}
 
 /* Generating overlay */
 .im-shell .im-gen-bg {
@@ -1023,10 +1133,37 @@ const IM_STYLES = `
   border-radius: 12px;
   overflow: hidden;
   background: var(--im-paper);
-  border: 1px solid var(--im-line);
+  border: 2px solid var(--im-line);
   position: relative;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.18s var(--im-ease), transform 0.1s ease;
 }
+.im-shell .im-result-slot:active:not(:disabled) { transform: scale(0.97); }
+.im-shell .im-result-slot:disabled { cursor: default; opacity: 0.55; }
+.im-shell .im-result-slot.is-selected { border-color: var(--im-gold); }
+.im-shell .im-result-slot.is-selected img { filter: brightness(1.02) saturate(1.05); }
+.im-shell .im-result-slot.is-locked { cursor: default; }
 .im-shell .im-result-slot img { width: 100%; height: 100%; object-fit: cover; }
+.im-shell .im-slot-check {
+  position: absolute;
+  top: 8px; right: 8px;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: rgba(252, 248, 240, 0.85);
+  backdrop-filter: blur(6px);
+  border: 1.5px solid var(--im-line);
+  display: flex; align-items: center; justify-content: center;
+  color: transparent;
+  transition: background 0.18s var(--im-ease), color 0.18s var(--im-ease), border-color 0.18s var(--im-ease);
+}
+.im-shell .im-result-slot.is-selected .im-slot-check {
+  background: var(--im-gold);
+  border-color: var(--im-gold);
+  color: var(--im-ink-0);
+}
 .im-shell .im-slot-loader,
 .im-shell .im-slot-fail {
   display: flex; align-items: center; justify-content: center;
