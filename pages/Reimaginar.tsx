@@ -588,6 +588,17 @@ export default function Reimaginar({ onNav }: Props) {
         <span className="rm-title-mono">
           <span className="rm-title-dot" /> Reimaginar · Editorial
         </span>
+        <button
+          type="button"
+          className={`rm-hero-switch ${premiumTier ? 'is-active' : ''}`}
+          onClick={() => { hapticLight(); setPremiumTier(!premiumTier); }}
+          disabled={generating}
+          title={`Hero Pro · +${PREMIUM_EXTRA}cr`}
+          aria-label={`Hero Pro ${premiumTier ? 'activado' : 'desactivado'}`}
+        >
+          <span className="rm-hero-switch-label">Hero</span>
+          <span className="rm-hero-switch-track"><span className="rm-hero-switch-thumb" /></span>
+        </button>
         <span className="rm-credits">
           <span className="rm-credits-dot" />{credits}
         </span>
@@ -913,23 +924,6 @@ export default function Reimaginar({ onNav }: Props) {
         })}
       </div>
 
-      {/* Premium tier toggle — Flux 2 Pro Edit (captures ref styling details, +15cr) */}
-      <button
-        type="button"
-        className={`rm-premium-toggle ${premiumTier ? 'is-active' : ''}`}
-        onClick={() => { hapticLight(); setPremiumTier(!premiumTier); }}
-        disabled={generating}
-      >
-        <span className="rm-premium-dot" />
-        <span className="rm-premium-label">
-          {premiumTier ? 'Hero Pro · activo' : 'Hero Pro'}
-        </span>
-        <span className="rm-premium-cost">+{PREMIUM_EXTRA}cr</span>
-        <span className="rm-premium-hint">
-          {premiumTier ? 'NB Pro + Flux 2 Max · máximo detalle' : 'Motor premium · captura ribbons + tattoos + accesorios'}
-        </span>
-      </button>
-
       {/* Floating CTA */}
       <div className="rm-cta-wrap">
         <div className="rm-cta-row">
@@ -987,7 +981,7 @@ const REIMAGINAR_STYLES = `
   color: var(--ink-0);
   font-family: 'DM Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
-  padding-bottom: calc(230px + env(safe-area-inset-bottom));
+  padding-bottom: calc(180px + env(safe-area-inset-bottom));
   background-image:
     radial-gradient(circle at 20% 10%, rgba(31,26,20,0.025) 1px, transparent 1px),
     radial-gradient(circle at 80% 60%, rgba(31,26,20,0.02) 1px, transparent 1px);
@@ -1644,82 +1638,57 @@ const REIMAGINAR_STYLES = `
 }
 .rm-shell .rm-aspect-label { font-size: 9px; }
 
-/* Premium tier toggle — sits between aspect strip and CTA, compact single-line */
-.rm-shell .rm-premium-toggle {
-  position: fixed;
-  left: 50%; transform: translateX(-50%);
-  bottom: calc(102px + env(safe-area-inset-bottom));
-  width: calc(100% - 24px);
-  max-width: 456px;
-  display: flex;
+/* Hero Pro switch in topbar — tiny iOS-style toggle next to credits */
+.rm-shell .rm-hero-switch {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 12px 7px 10px;
-  background: rgba(252, 248, 240, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  gap: 6px;
+  padding: 4px 6px 4px 9px;
+  background: transparent;
   border: 1px solid var(--line);
   border-radius: 999px;
   cursor: pointer;
-  z-index: 42;
   font-family: inherit;
-  box-shadow: 0 4px 14px rgba(31, 26, 20, 0.08);
   transition: all 0.2s var(--ease);
   -webkit-tap-highlight-color: transparent;
 }
-.rm-shell .rm-premium-toggle:active { transform: translateX(-50%) scale(0.98); }
-.rm-shell .rm-premium-toggle.is-active {
-  background: linear-gradient(135deg, #1F1A14 0%, #2E2620 100%);
-  border-color: var(--gold);
-  color: #F5EBDB;
-}
-.rm-shell .rm-premium-toggle:disabled { opacity: 0.5; cursor: not-allowed; }
-.rm-shell .rm-premium-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--line);
-  flex-shrink: 0;
-  transition: background 0.2s var(--ease);
-}
-.rm-shell .rm-premium-toggle.is-active .rm-premium-dot {
-  background: var(--gold);
-  box-shadow: 0 0 6px rgba(212, 168, 95, 0.6);
-}
-.rm-shell .rm-premium-label {
-  flex: 1;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--ink-1);
-  text-align: left;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.rm-shell .rm-premium-toggle.is-active {
-  background: rgba(31, 26, 20, 0.92);
+.rm-shell .rm-hero-switch:active { transform: scale(0.96); }
+.rm-shell .rm-hero-switch:disabled { opacity: 0.45; cursor: not-allowed; }
+.rm-shell .rm-hero-switch.is-active {
+  background: rgba(212, 168, 95, 0.12);
   border-color: var(--gold);
 }
-.rm-shell .rm-premium-toggle.is-active .rm-premium-label { color: #F5EBDB; }
-.rm-shell .rm-premium-cost {
+.rm-shell .rm-hero-switch-label {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
   font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: var(--paper);
+  letter-spacing: 0.06em;
   color: var(--ink-2);
-  border: 1px solid var(--line);
+  text-transform: uppercase;
+  transition: color 0.2s var(--ease);
+}
+.rm-shell .rm-hero-switch.is-active .rm-hero-switch-label { color: var(--gold); }
+.rm-shell .rm-hero-switch-track {
+  width: 22px; height: 13px;
+  border-radius: 999px;
+  background: var(--line);
+  position: relative;
+  transition: background 0.2s var(--ease);
   flex-shrink: 0;
 }
-.rm-shell .rm-premium-toggle.is-active .rm-premium-cost {
-  background: rgba(212, 168, 95, 0.18);
-  color: var(--gold);
-  border-color: rgba(212, 168, 95, 0.5);
+.rm-shell .rm-hero-switch.is-active .rm-hero-switch-track { background: var(--gold); }
+.rm-shell .rm-hero-switch-thumb {
+  position: absolute;
+  top: 1px; left: 1px;
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  transition: transform 0.2s var(--ease);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
 }
-/* Hint hidden in compact mode — info already in label + active state */
-.rm-shell .rm-premium-hint { display: none; }
+.rm-shell .rm-hero-switch.is-active .rm-hero-switch-thumb {
+  transform: translateX(9px);
+}
 
 /* Floating CTA */
 .rm-shell .rm-cta-wrap {

@@ -1252,6 +1252,12 @@ function formatPromptForFlux2(instruction: string, refCount: number): string {
     prompt = `${refs.join('. ')}. Generate a NEW editorial fashion photograph of this same person. Preserve face geometry from @image1, eye color and shape, hair color and length, skin tone with freckles, piercings, and small bow tattoos. ${prompt}`;
   }
 
+  // Append anatomy guard — Flux 2 occasionally generates extra limbs/fingers
+  // on complex poses. Positive phrasing works better than negatives for Flux.
+  if (!/anatomically correct/i.test(prompt)) {
+    prompt += ' Anatomically correct human body: exactly two arms with two hands, five fingers per hand, two legs with two feet, no duplicated limbs, no extra appendages, natural human proportions throughout.';
+  }
+
   // Cleanup collapsed punctuation
   prompt = prompt.replace(/\s{2,}/g, ' ').replace(/\s*\.\s*\./g, '.').replace(/,\s*,/g, ',').trim();
   return prompt;
