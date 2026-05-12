@@ -55,15 +55,62 @@ const SCENARIOS: ScenarioPreset[] = [
   { id: 'rooftop',name: 'Rooftop sunset', meta: 'Exterior · sunset',  description: 'rooftop terrace at golden hour, city skyline in background, warm sunset light, contemporary outdoor setting', img: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=400&q=85' },
 ];
 
-const OUTFITS: { id: string; name: string; emoji: string; description: string }[] = [
-  { id: 'slip-dress',   name: 'Slip dress seda',  emoji: '⌬', description: 'silk slip dress, neutral or champagne tone, elegant minimal styling' },
-  { id: 'lingerie',     name: 'Lencería editorial', emoji: '◐', description: 'editorial lingerie set, lace details, elegant and tasteful' },
-  { id: 'oversized',    name: 'Camisa oversized', emoji: '▷', description: 'oversized white button-down shirt, casual sophisticated styling' },
-  { id: 'robe',         name: 'Robe satin',       emoji: '▲', description: 'silk satin robe, neutral tone, loungewear elegance' },
-  { id: 'bikini',       name: 'Bikini minimal',   emoji: '◑', description: 'minimal triangle bikini, natural tone, beach styling' },
-  { id: 'trench',       name: 'Trench coat',      emoji: '▽', description: 'classic trench coat, beige or camel, timeless styling' },
-  { id: 'sweater',      name: 'Knit oversized',   emoji: '◇', description: 'oversized chunky knit sweater, cream or oat tone, cozy lifestyle' },
-  { id: 'bodysuit',     name: 'Bodysuit',         emoji: '▢', description: 'fitted black bodysuit, sleek minimal styling' },
+type OutfitCat = 'editorial' | 'casual' | 'sensual' | 'sport' | 'fantasy';
+
+const OUTFITS: { id: string; name: string; emoji: string; cat: OutfitCat; description: string }[] = [
+  // ── Editorial / minimalista ──
+  { id: 'slip-dress',   name: 'Slip dress',       emoji: '⌬', cat: 'editorial', description: 'silk slip dress, midi length, elegant minimal styling' },
+  { id: 'oversized',    name: 'Camisa oversized', emoji: '▷', cat: 'casual',    description: 'oversized button-down shirt, slightly open, casual sophisticated styling' },
+  { id: 'trench',       name: 'Trench coat',      emoji: '▽', cat: 'editorial', description: 'classic trench coat, belted at waist, timeless tailored styling' },
+  { id: 'tailored-suit', name: 'Suit sastre',     emoji: '◫', cat: 'editorial', description: 'tailored two-piece suit, structured blazer, wide-leg trousers, power dressing' },
+  { id: 'maxi-dress',   name: 'Maxi dress',       emoji: '✦', cat: 'editorial', description: 'flowy maxi dress, ankle length, soft silhouette, romantic editorial' },
+  { id: 'leather-jacket',name: 'Leather jacket',  emoji: '◣', cat: 'editorial', description: 'cropped leather biker jacket over fitted top, edgy editorial styling' },
+  // ── Casual / lifestyle ──
+  { id: 'sweater',      name: 'Knit oversized',   emoji: '◇', cat: 'casual',    description: 'oversized chunky knit sweater, cozy lifestyle vibe' },
+  { id: 'denim-casual', name: 'Denim look',       emoji: '▥', cat: 'casual',    description: 'fitted denim jeans with crop top, classic casual lifestyle' },
+  { id: 'tank-shorts',  name: 'Tank + shorts',    emoji: '▭', cat: 'casual',    description: 'ribbed tank top with high-waisted denim shorts, relaxed casual styling' },
+  { id: 'graphic-tee',  name: 'Graphic tee',      emoji: '✣', cat: 'casual',    description: 'fitted graphic vintage tee with high-waisted bottoms, streetwear styling' },
+  { id: 'crop-cardi',   name: 'Cardigan crop',    emoji: '◈', cat: 'casual',    description: 'cropped knit cardigan with bralette underneath, soft layered styling' },
+  // ── Sensual editorial (gateado por Modo Creator en otro flow) ──
+  { id: 'lingerie',     name: 'Lingerie set',     emoji: '◐', cat: 'sensual',   description: 'matching lingerie set, refined and tasteful boudoir styling' },
+  { id: 'robe',         name: 'Robe',             emoji: '▲', cat: 'sensual',   description: 'satin robe loosely tied, loungewear elegance' },
+  { id: 'bikini',       name: 'Bikini',           emoji: '◑', cat: 'sensual',   description: 'minimal triangle bikini, beach styling' },
+  { id: 'bodysuit',     name: 'Bodysuit',         emoji: '▢', cat: 'sensual',   description: 'fitted bodysuit, sleek minimal silhouette' },
+  { id: 'mesh-top',     name: 'Mesh layer',       emoji: '◍', cat: 'sensual',   description: 'sheer mesh long-sleeve over bralette and high-waisted bottoms, club editorial' },
+  { id: 'corset-top',   name: 'Corset top',       emoji: '◬', cat: 'sensual',   description: 'structured corset top with wide-leg trousers, editorial party styling' },
+  // ── Sport ──
+  { id: 'activewear',   name: 'Activewear',       emoji: '▸', cat: 'sport',     description: 'athletic sports bra with matching leggings, performance fit, lifestyle athleisure' },
+  { id: 'yoga-set',     name: 'Yoga set',         emoji: '◊', cat: 'sport',     description: 'fitted yoga top and high-waist leggings in matching tone, soft athletic styling' },
+  { id: 'tennis',       name: 'Tennis look',      emoji: '◔', cat: 'sport',     description: 'pleated tennis skirt with fitted polo or crop top, retro sport-luxe styling' },
+  // ── Fantasy ──
+  { id: 'cyber-goddess',name: 'Cyber goddess',    emoji: '◭', cat: 'fantasy',   description: 'futuristic metallic bodysuit with iridescent panels, cyber editorial mood' },
+  { id: 'mermaid',      name: 'Mermaid ethereal', emoji: '⏃', cat: 'fantasy',   description: 'flowy iridescent gown with scale-textured detailing, ethereal underwater mood' },
+];
+
+// Outfit color palette — when selected, the prompt is enriched so the outfit
+// reads in those exact tones. Empty by default = let the chip description decide.
+type OutfitPalette = { id: string; label: string; swatches: string[]; promptText: string };
+const OUTFIT_PALETTES: OutfitPalette[] = [
+  { id: 'neutral',   label: 'Neutros',     swatches: ['#F2EBDD', '#D4B998', '#A78866', '#5A4734', '#1F1812'],
+    promptText: 'outfit in neutral palette: warm cream, sand, camel, soft brown tones' },
+  { id: 'mono-black', label: 'Negro total', swatches: ['#000000', '#1A1A1A', '#2E2A2A', '#1F1A14'],
+    promptText: 'outfit in monochromatic black palette, sleek and elevated' },
+  { id: 'mono-white', label: 'Blanco total', swatches: ['#FFFFFF', '#F8F4EF', '#EDE6D9', '#D9CFBC'],
+    promptText: 'outfit in monochromatic white palette: pure white, cream, eggshell tones' },
+  { id: 'earthy',    label: 'Tierras',     swatches: ['#8E5640', '#C9785C', '#D9A878', '#6B4E32'],
+    promptText: 'outfit in earthy palette: terracotta, sienna, warm clay, burnt sienna tones' },
+  { id: 'oceanic',   label: 'Oceánicos',   swatches: ['#1E3A5F', '#4A6B8A', '#7FA9C9', '#C7DCE9'],
+    promptText: 'outfit in oceanic blue palette: navy, slate blue, sky, pale aqua tones' },
+  { id: 'rose-blush',label: 'Rosados',     swatches: ['#F4D6CC', '#E8A89A', '#C7806E', '#8E4F40'],
+    promptText: 'outfit in rose-blush palette: dusty pink, blush, mauve, terracotta-rose tones' },
+  { id: 'forest',    label: 'Bosque',      swatches: ['#1F3D2E', '#3D6B4E', '#6B8E5C', '#A8B891'],
+    promptText: 'outfit in forest palette: deep emerald, sage, olive, moss tones' },
+  { id: 'sunset',    label: 'Atardecer',   swatches: ['#E85A4F', '#F4A261', '#E9C46A', '#D88C5A'],
+    promptText: 'outfit in sunset palette: coral, golden amber, sand, peach tones' },
+  { id: 'pastel-dream',label: 'Pasteles',  swatches: ['#F7C7D8', '#C7E4F2', '#E2D6F4', '#F2E8C9'],
+    promptText: 'outfit in pastel dream palette: soft baby pink, sky pastel, lavender, butter yellow tones' },
+  { id: 'cyber',     label: 'Cyber',       swatches: ['#FF00C8', '#00E0FF', '#7B00FF', '#0A0014'],
+    promptText: 'outfit in cyber palette: neon magenta, cyan, electric purple over deep black, futuristic mood' },
 ];
 
 const POSES: PosePreset[] = [
@@ -128,6 +175,11 @@ export default function SesionDeFotos({ onNav }: Props) {
   const [photoCount, setPhotoCount] = useState<PhotoCount>(6);
   const [selectedScenario, setSelectedScenario] = useState<string>('hotel');
   const [selectedOutfits, setSelectedOutfits] = useState<Set<string>>(new Set(['slip-dress']));
+  // Outfit color palette — optional. When set, enriches the outfit prompt with
+  // specific color guidance so multi-outfit sessions stay visually consistent.
+  const [selectedPalette, setSelectedPalette] = useState<string | null>(null);
+  // Filter chip categoría
+  const [outfitCatFilter, setOutfitCatFilter] = useState<OutfitCat | 'all'>('all');
   const [selectedPoses, setSelectedPoses] = useState<Set<string>>(new Set(['sitting', 'mirror', 'looking-away', 'window']));
   const [selectedLighting, setSelectedLighting] = useState<string>('natural');
   const [generating, setGenerating] = useState(false);
@@ -201,11 +253,11 @@ export default function SesionDeFotos({ onNav }: Props) {
     hapticLight();
     setSelectedOutfits(prev => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        if (next.size > 1) next.delete(id);
-      } else {
-        next.add(id);
-      }
+      // Allow deselecting ALL chips — useful when user provides an outfit
+      // photo reference and wants ONLY that ref to drive wardrobe (avoiding
+      // chip text descriptions that NB2 may reject for being too explicit).
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
@@ -371,8 +423,11 @@ export default function SesionDeFotos({ onNav }: Props) {
       hapticError();
       return;
     }
-    if (selectedOutfits.size === 0) {
-      toast.error('Elige al menos un outfit');
+    // Outfit chips are optional WHEN the user supplies an outfit photo ref —
+    // the ref alone drives wardrobe and chip descriptions would override it.
+    // Require at least one of (chip selected OR outfit ref uploaded).
+    if (selectedOutfits.size === 0 && !outfitRefFile) {
+      toast.error('Elige un outfit o sube una foto de referencia de outfit');
       hapticError();
       return;
     }
@@ -431,15 +486,32 @@ export default function SesionDeFotos({ onNav }: Props) {
     const outfitList = Array.from(selectedOutfits).map(id => OUTFITS.find(o => o.id === id)!).filter(Boolean);
     const scenario = SCENARIOS.find(s => s.id === selectedScenario)!;
     const lighting = LIGHTING.find(l => l.id === selectedLighting)!;
+    const paletteClause = selectedPalette
+      ? OUTFIT_PALETTES.find(p => p.id === selectedPalette)?.promptText ?? ''
+      : '';
 
     const isPhotoreal = !selectedChar?.renderStyle || selectedChar.renderStyle.toLowerCase() === 'photorealistic';
     const renderStyle = (selectedChar?.renderStyle || 'photorealistic').toLowerCase();
 
-    // Per-photo specs
+    // Per-photo specs. When no chip is selected, we fall back to a neutral
+    // placeholder description and rely on the uploaded outfit reference image
+    // (figureMap.outfit) to drive wardrobe. The placeholder avoids contradicting
+    // the photo ref the way explicit chip text would.
+    const outfitFallback = {
+      id: 'ref-only',
+      name: 'Outfit referencia',
+      cat: 'editorial' as OutfitCat,
+      description: 'wear the exact outfit shown in the outfit reference image — match fabric, color, cut, and styling literally',
+      emoji: '◇',
+    };
     const photoSpecs = Array.from({ length: photoCount }, (_, i) => {
       const pose = poseList[i % poseList.length];
-      const outfit = outfitList[i % outfitList.length];
-      return { index: i, pose, outfit };
+      const outfit = outfitList.length > 0 ? outfitList[i % outfitList.length] : outfitFallback;
+      // Append palette to outfit description if user chose one
+      const outfitDescWithPalette = paletteClause
+        ? `${outfit.description}. ${paletteClause}`
+        : outfit.description;
+      return { index: i, pose, outfit: { ...outfit, description: outfitDescWithPalette } };
     });
 
     // Concurrency-limited execution
@@ -819,16 +891,68 @@ export default function SesionDeFotos({ onNav }: Props) {
         <div className="ss-field">
           <div className="ss-field-head">
             <span className="ss-field-name"><span className="ss-field-num">04</span>Outfit</span>
-            <span className="ss-field-hint">Multi · alterna entre tomas</span>
+            <span className="ss-field-hint">
+              {selectedOutfits.size === 0
+                ? (outfitRefFile ? 'Usa solo la foto de referencia' : 'Opcional · o sube foto ref')
+                : `${selectedOutfits.size} elegido${selectedOutfits.size === 1 ? '' : 's'}`}
+            </span>
           </div>
+
+          {/* Categoría filter */}
+          <div className="ss-outfit-cats">
+            {(['all', 'editorial', 'casual', 'sensual', 'sport', 'fantasy'] as const).map(c => (
+              <button
+                key={c}
+                type="button"
+                className={`ss-cat-pill ${outfitCatFilter === c ? 'is-active' : ''}`}
+                onClick={() => { hapticLight(); setOutfitCatFilter(c); }}
+              >
+                {c === 'all' ? 'Todos' : c === 'editorial' ? 'Editorial' : c === 'casual' ? 'Casual' : c === 'sensual' ? 'Sensual' : c === 'sport' ? 'Sport' : 'Fantasy'}
+              </button>
+            ))}
+          </div>
+
           <div className="ss-chips-row">
-            {OUTFITS.map(o => (
+            {OUTFITS.filter(o => outfitCatFilter === 'all' || o.cat === outfitCatFilter).map(o => (
               <button
                 key={o.id}
                 className={`ss-chip ${selectedOutfits.has(o.id) ? 'is-active' : ''}`}
                 onClick={() => toggleOutfit(o.id)}
               >
                 <span className="ss-chip-icon">{o.emoji}</span>{o.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Palette of outfit colors — keeps wardrobe consistent across photos */}
+          <div className="ss-palette-head">
+            <span className="ss-palette-title">Paleta de outfit</span>
+            <span className="ss-palette-sub">Opcional · mantiene colores consistentes</span>
+          </div>
+          <div className="ss-palette-row">
+            <button
+              type="button"
+              className={`ss-palette-tile is-none ${selectedPalette === null ? 'is-active' : ''}`}
+              onClick={() => { hapticLight(); setSelectedPalette(null); }}
+              aria-label="Sin paleta específica"
+            >
+              <span className="ss-palette-x">×</span>
+              <span className="ss-palette-label">Libre</span>
+            </button>
+            {OUTFIT_PALETTES.map(p => (
+              <button
+                key={p.id}
+                type="button"
+                className={`ss-palette-tile ${selectedPalette === p.id ? 'is-active' : ''}`}
+                onClick={() => { hapticLight(); setSelectedPalette(p.id === selectedPalette ? null : p.id); }}
+                aria-label={p.label}
+              >
+                <div className="ss-palette-swatches">
+                  {p.swatches.map((sw, i) => (
+                    <span key={i} className="ss-palette-sw" style={{ background: sw }} />
+                  ))}
+                </div>
+                <span className="ss-palette-label">{p.label}</span>
               </button>
             ))}
           </div>
@@ -1487,6 +1611,30 @@ const SESION_STYLES = `
   z-index: 2;
 }
 
+/* Outfit category filter pills */
+.ss-shell .ss-outfit-cats {
+  display: flex; gap: 5px; flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.ss-shell .ss-cat-pill {
+  padding: 5px 11px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.ss-shell .ss-cat-pill:active { transform: scale(0.94); }
+.ss-shell .ss-cat-pill.is-active {
+  background: var(--ink-0); border-color: var(--ink-0); color: var(--bg-card);
+}
+
 /* Chip multi-select (outfit) */
 .ss-shell .ss-chips-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .ss-shell .ss-chip {
@@ -1505,6 +1653,73 @@ const SESION_STYLES = `
 .ss-shell .ss-chip:active { transform: scale(0.94); }
 .ss-shell .ss-chip.is-active { background: var(--ink-0); border-color: var(--ink-0); color: var(--bg-card); }
 .ss-shell .ss-chip-icon { font-size: 14px; line-height: 1; }
+
+/* Outfit color palette */
+.ss-shell .ss-palette-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-top: 14px; margin-bottom: 6px;
+}
+.ss-shell .ss-palette-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-1);
+}
+.ss-shell .ss-palette-sub {
+  font-size: 10px;
+  color: var(--ink-3);
+}
+.ss-shell .ss-palette-row {
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.ss-shell .ss-palette-tile {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 5px 8px 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+  min-width: 56px;
+}
+.ss-shell .ss-palette-tile:active { transform: scale(0.94); }
+.ss-shell .ss-palette-tile.is-active {
+  border-color: var(--ink-0);
+  background: var(--ink-0);
+}
+.ss-shell .ss-palette-tile.is-active .ss-palette-label { color: var(--bg-card); }
+.ss-shell .ss-palette-tile.is-active .ss-palette-x { color: var(--bg-card); }
+.ss-shell .ss-palette-swatches {
+  display: flex; gap: 1px;
+  width: 44px; height: 14px;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.ss-shell .ss-palette-sw {
+  flex: 1;
+  height: 100%;
+}
+.ss-shell .ss-palette-label {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--ink-2);
+  transition: color 0.2s var(--ease);
+}
+.ss-shell .ss-palette-tile.is-none {
+  justify-content: center;
+  min-width: 44px;
+}
+.ss-shell .ss-palette-x {
+  font-size: 14px;
+  height: 14px;
+  line-height: 14px;
+  color: var(--ink-2);
+}
 
 /* Pose grid */
 .ss-shell .ss-pose-grid {
