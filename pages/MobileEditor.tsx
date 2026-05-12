@@ -619,9 +619,12 @@ export default function MobileEditor({ onNav }: Props) {
     // All other tools — curated English prose works for both engines.
     // We append the physical anchor inline so proportions/skin/face stay
     // consistent even when the user uses preset tools (relight, style, etc).
+    // sanitizeAnchor strips multi-engine bloat from old-format characters —
+    // without it the prompt can exceed Wan's limit and trigger a 3s reject.
     const flat = buildPrompt();
     if (!flat) return null;
-    const anchor = linkedCharacter?.characteristics?.trim();
+    const { sanitizeAnchor } = await import('../services/promptBuilder');
+    const anchor = sanitizeAnchor(linkedCharacter?.characteristics ?? '');
     const flatWithAnchor = anchor
       ? `${flat} The subject is described as: ${anchor}. These physical traits are absolute and override any reference ambiguity.`
       : flat;

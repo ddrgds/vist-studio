@@ -20,7 +20,7 @@ import { useProfile } from '../contexts/ProfileContext';
 import { useToast } from '../contexts/ToastContext';
 import { hapticLight, hapticMedium, hapticSuccess, hapticError, sharePhoto, takePhoto, isNativePlatform } from '../services/nativeService';
 import { SOUL_STYLES, SOUL_STYLE_CATEGORIES, type SoulStyle, type SoulStyleCategory } from '../data/soulStyles';
-import { identityProse, NO_TEXT_RULE, NEVER_ADD_TEXT, PHOTOREAL_SKIN, renderStyleSkin, withPhysicalAnchor } from '../services/promptBuilder';
+import { identityProse, NO_TEXT_RULE, NEVER_ADD_TEXT, PHOTOREAL_SKIN, renderStyleSkin, withPhysicalAnchor, sanitizeAnchor } from '../services/promptBuilder';
 import { urlToFile } from '../components/apps/_shared/urlToFile';
 
 // ─── Types ─────────────────────────────────────
@@ -420,9 +420,12 @@ export default function Reimaginar({ onNav }: Props) {
           customUploadOnly: !!customBaseFile && refFiles.length === 0,
         });
         // Inject physical anchor for the flat-prose fallback engines too.
-        // Seedream/Grok respect inline "described as" clauses with high priority.
-        const anchorText = selectedChar?.characteristics?.trim()
-          ? ` The subject is described as: ${selectedChar.characteristics.trim()}. These physical traits are absolute and override any reference ambiguity.`
+        // sanitizeAnchor strips multi-engine bloat (FLAT/WAN/GROK + JSON spec)
+        // — without it Wan rejects in ~3s when characteristics is the old
+        // multi-engine format (>3000 chars contradictory descriptions).
+        const cleanAnchor = sanitizeAnchor(selectedChar?.characteristics ?? '');
+        const anchorText = cleanAnchor
+          ? ` The subject is described as: ${cleanAnchor}. These physical traits are absolute and override any reference ambiguity.`
           : '';
         const flatInstruction = `Edit Figure 1: ${taskVerb} of this same character in a different aesthetic. ${idProse}${anchorText} PRIMARY STYLE: ${primaryStyle?.name || 'editorial'} — ${primaryDesc}.${accentText}${customText} CHANGE: pose, camera angle, framing, background, outfit. ${skinFlat} ${NO_TEXT_RULE}`;
 

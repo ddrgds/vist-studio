@@ -149,6 +149,64 @@ export function detectRenderStyle(char: CharacterLike | null): { isPhotoreal: bo
   return { isPhotoreal, renderStyle, charIsNonPhoto: !isPhotoreal };
 }
 
+// ─── Anchor sanitizer ──────────────────────────────────────────────────
+//
+// Old characters (pre 2026-05-12) have `characteristics` stored as a
+// multi-engine block: CHARACTER SPECIFICATION { JSON } + FLAT DESCRIPTION:
+// + WAN DESCRIPTION: + GROK DESCRIPTION:. Injecting that raw into a single
+// engine's prompt creates contradictions (e.g. FLAT says "balanced hips"
+// but GROK says "extreme hourglass cinched waist") and blows past Wan's
+// prompt length limit (~3500+ chars), causing Wan to fail at validation
+// in ~3s with no useful error.
+//
+// This helper extracts the engine-appropriate section, strips JSON spec,
+// label tags, and geometry markers, returning clean comma-separated prose
+// ~400-700 chars suitable for any engine.
+
+export type AnchorEngine = 'wan' | 'grok' | 'nb2' | 'default';
+
+export function sanitizeAnchor(rawAnchor: string, engine: AnchorEngine = 'default'): string {
+  if (!rawAnchor) return '';
+  let desc = rawAnchor.trim();
+
+  // Detect multi-engine format by presence of section labels
+  const hasMultiEngine = /(FLAT|WAN|GROK)\s+DESCRIPTION:/i.test(desc);
+
+  if (hasMultiEngine) {
+    // Engine-specific extraction with smart fallback chain
+    const extract = (label: string): string | null => {
+      const rx = new RegExp(`${label}\\s+DESCRIPTION:\\s*([\\s\\S]+?)(?=\\n[A-Z]+\\s+DESCRIPTION:|$)`, 'i');
+      const m = desc.match(rx);
+      return m ? m[1].trim() : null;
+    };
+    let picked: string | null = null;
+    if (engine === 'wan') picked = extract('WAN') || extract('FLAT') || extract('GROK');
+    else if (engine === 'grok') picked = extract('GROK') || extract('FLAT') || extract('WAN');
+    else picked = extract('FLAT') || extract('WAN') || extract('GROK');
+    if (picked) desc = picked;
+  }
+
+  // Strip JSON blocks (CHARACTER SPECIFICATION: { ... }) — handles nested braces
+  desc = desc.replace(/CHARACTER SPECIFICATION:\s*\{[\s\S]*?\}\s*(?=\n|$)/gi, '');
+  // Strip leftover section labels in case engine match landed on FLAT but other labels remain
+  desc = desc.replace(/(FLAT|WAN|GROK)\s+DESCRIPTION:\s*/gi, '');
+  // Strip geometry markers and BODY PROPORTION prefix
+  desc = desc.replace(/\[GEOMETRY\]\s*[^,:]*:\s*/gi, '');
+  desc = desc.replace(/BODY PROPORTION:\s*/gi, '');
+  // Collapse runs of commas/periods and whitespace
+  desc = desc.replace(/\s*,\s*/g, ', ').replace(/,{2,}/g, ',').replace(/\.\s*\./g, '.').replace(/\s{2,}/g, ' ').trim();
+  desc = desc.replace(/^[,.\s]+|[,.\s]+$/g, '');
+
+  // Hard cap at 1000 chars — anything longer is noise that breaks Wan validation
+  if (desc.length > 1000) {
+    const truncated = desc.slice(0, 1000);
+    const lastComma = truncated.lastIndexOf(',');
+    desc = (lastComma > 800 ? truncated.slice(0, lastComma) : truncated).trim() + '.';
+  }
+
+  return desc;
+}
+
 // ─── Engine-aware edit prompt pair (NB2 JSON + Seedream/Grok prose) ────
 
 /**
@@ -286,8 +344,12 @@ export async function buildEditPromptPair(opts: EditPromptOptions): Promise<Edit
     : PHOTOREAL_SKIN;
 
   // ── Physical anchor — concat permanent characteristics + optional per-gen reinforcement ──
+  // sanitizeAnchor strips multi-engine bloat (FLAT/WAN/GROK blocks + JSON spec)
+  // before injection — old characters' raw `characteristics` would otherwise
+  // blow past Wan's prompt limit and create contradictions across engines.
   const anchorParts: string[] = [];
-  if (opts.physicalAnchor?.trim()) anchorParts.push(opts.physicalAnchor.trim());
+  const sanitized = sanitizeAnchor(opts.physicalAnchor ?? '');
+  if (sanitized) anchorParts.push(sanitized);
   if (opts.physicalReinforcement?.trim()) anchorParts.push(`Per-shot reinforcement: ${opts.physicalReinforcement.trim()}`);
   const fullAnchor = anchorParts.join(' ');
 
@@ -380,7 +442,11 @@ export function withPhysicalAnchor<T extends Record<string, unknown>>(
   input: PhysicalAnchorInput,
 ): T {
   const parts: string[] = [];
-  if (input.characteristics?.trim()) parts.push(input.characteristics.trim());
+  // Sanitize: strips multi-engine FLAT/WAN/GROK blocks + JSON spec + geometry
+  // markers. Old characters store ~3500-char multi-engine anchors that break
+  // Wan validation (3s fail) and contradict themselves across engine sections.
+  const sanitized = sanitizeAnchor(input.characteristics ?? '');
+  if (sanitized) parts.push(sanitized);
   if (input.reinforcement?.trim()) parts.push(`Per-shot reinforcement: ${input.reinforcement.trim()}`);
   if (parts.length === 0) return spec;
 
