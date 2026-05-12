@@ -28,7 +28,7 @@ interface Props {
 }
 
 type AspectRatio = '3:4' | '1:1' | '4:3' | '9:16' | '16:9';
-type PhotoCount = 4 | 6 | 9 | 12;
+type PhotoCount = 1 | 4 | 6 | 9 | 12;
 
 interface ScenarioPreset {
   id: string;
@@ -87,6 +87,7 @@ const LIGHTING = [
 ];
 
 const COST_BY_COUNT: Record<PhotoCount, number> = {
+  1:  6,   // single shot — no bulk discount, full NB2 1K price
   4:  16,
   6:  22,
   9:  32,
@@ -134,6 +135,40 @@ export default function SesionDeFotos({ onNav }: Props) {
   const [openLightboxIdx, setOpenLightboxIdx] = useState<number | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ─── Optional reference uploads — override the corresponding preset ───
+  // When a user attaches one, it passes to the model as Figure 2/3/4 (multi-ref)
+  // and overrides the chip-based scenario/outfit/pose for that aspect.
+  const [outfitRefFile, setOutfitRefFile] = useState<File | null>(null);
+  const [outfitRefUrl, setOutfitRefUrl] = useState<string | null>(null);
+  const [sceneRefFile, setSceneRefFile] = useState<File | null>(null);
+  const [sceneRefUrl, setSceneRefUrl] = useState<string | null>(null);
+  const [poseRefFile, setPoseRefFile] = useState<File | null>(null);
+  const [poseRefUrl, setPoseRefUrl] = useState<string | null>(null);
+  const outfitInputRef = useRef<HTMLInputElement>(null);
+  const sceneInputRef = useRef<HTMLInputElement>(null);
+  const poseInputRef = useRef<HTMLInputElement>(null);
+
+  const handleRefUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setFile: (f: File | null) => void,
+    setUrl: (u: string | null) => void,
+    label: string,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast.error(`${label}: solo imágenes`); e.target.value = ''; return; }
+    if (file.size > 12 * 1024 * 1024) { toast.error(`${label}: máximo 12 MB`); e.target.value = ''; return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setUrl(reader.result as string);
+      setFile(file);
+      hapticLight();
+      toast.success(`${label} cargada`);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
   // Default to first character
   useEffect(() => {
@@ -237,6 +272,7 @@ export default function SesionDeFotos({ onNav }: Props) {
     isPhotoreal: boolean,
     renderStyle: string,
     abortSignal: AbortSignal,
+    figureMap?: { outfit?: number; scene?: number; pose?: number },
   ): Promise<string | null> => {
     const charRenderTag = isPhotoreal ? 'photorealistic' : renderStyle;
 
@@ -258,10 +294,16 @@ export default function SesionDeFotos({ onNav }: Props) {
           : `Same ${charRenderTag} character. DO NOT convert to photorealism.`,
       },
       session: {
-        scenario: scenarioDesc,
-        outfit: outfitDesc,
+        scenario: figureMap?.scene
+          ? `${scenarioDesc}. PRIMARY scene reference: Figure ${figureMap.scene} (use this image as the literal background/environment)`
+          : scenarioDesc,
+        outfit: figureMap?.outfit
+          ? `${outfitDesc}. PRIMARY outfit reference: Figure ${figureMap.outfit} (the subject MUST wear the exact garment shown in this image — match fabric, color, fit, details)`
+          : outfitDesc,
         lighting: lightingDesc,
-        pose: poseDesc,
+        pose: figureMap?.pose
+          ? `${poseDesc}. PRIMARY pose reference: Figure ${figureMap.pose} (the subject MUST match the body posture and gesture shown in this image)`
+          : poseDesc,
         framing: 'medium shot to half body, varies subtly per pose',
       },
       rules: {
@@ -376,6 +418,14 @@ export default function SesionDeFotos({ onNav }: Props) {
       refFiles = await Promise.all(refUrls.slice(1).map((url, i) => urlToFile(url, `session-ref-${i}.png`)));
     }
 
+    // Track which Figure index is which uploaded reference (for spec mapping)
+    // Character refs come first, then optional uploads in fixed order: outfit, scene, pose.
+    // NB2 supports up to 14 refs. We cap character refs to leave room.
+    const figureMap: { outfit?: number; scene?: number; pose?: number } = {};
+    if (outfitRefFile) { refFiles.push(outfitRefFile); figureMap.outfit = refFiles.length + 1; }  // +1 because Figure 1 is base
+    if (sceneRefFile)  { refFiles.push(sceneRefFile);  figureMap.scene  = refFiles.length + 1; }
+    if (poseRefFile)   { refFiles.push(poseRefFile);   figureMap.pose   = refFiles.length + 1; }
+
     // Build pose distribution: cycle through selected poses to fill N slots
     const poseList = Array.from(selectedPoses).map(id => POSES.find(p => p.id === id)!).filter(Boolean);
     const outfitList = Array.from(selectedOutfits).map(id => OUTFITS.find(o => o.id === id)!).filter(Boolean);
@@ -419,6 +469,7 @@ export default function SesionDeFotos({ onNav }: Props) {
           lighting.description,
           isPhotoreal, renderStyle,
           abortSignal,
+          figureMap,
         )
           .then(url => {
             setSlots(prev => prev.map((s, i) => i === spec.index
@@ -723,7 +774,7 @@ export default function SesionDeFotos({ onNav }: Props) {
             <span className="ss-field-hint">{cost} créditos</span>
           </div>
           <div className="ss-count-row">
-            {([4, 6, 9, 12] as PhotoCount[]).map(n => (
+            {([1, 4, 6, 9, 12] as PhotoCount[]).map(n => (
               <button
                 key={n}
                 className={`ss-count-pill ${photoCount === n ? 'is-active' : ''}`}
@@ -823,6 +874,73 @@ export default function SesionDeFotos({ onNav }: Props) {
                 <span>{l.name}</span>
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Referencias opcionales — outfit / escenario / pose desde foto.
+            Cuando se sube una imagen, sobreescribe el preset de chips de esa fase. */}
+        <div className="ss-field">
+          <div className="ss-field-head">
+            <span className="ss-field-name"><span className="ss-field-num">07</span>Referencias (opcional)</span>
+            <span className="ss-field-hint">Sube una foto y se usa como ref absoluta</span>
+          </div>
+          <div className="ss-ref-row">
+            {/* Outfit */}
+            <input ref={outfitInputRef} type="file" accept="image/*" hidden
+                   onChange={e => handleRefUpload(e, setOutfitRefFile, setOutfitRefUrl, 'Outfit')} />
+            {outfitRefUrl ? (
+              <div className="ss-ref-card">
+                <img src={outfitRefUrl} alt="Outfit" />
+                <span className="ss-ref-label">Outfit</span>
+                <button className="ss-ref-clear" onClick={() => { setOutfitRefFile(null); setOutfitRefUrl(null); hapticLight(); }}>
+                  <X size={11} />
+                </button>
+              </div>
+            ) : (
+              <button className="ss-ref-slot" onClick={() => { hapticLight(); outfitInputRef.current?.click(); }}>
+                <span className="ss-ref-emoji">👗</span>
+                <strong>Outfit</strong>
+                <small>Foto de la prenda</small>
+              </button>
+            )}
+
+            {/* Escenario */}
+            <input ref={sceneInputRef} type="file" accept="image/*" hidden
+                   onChange={e => handleRefUpload(e, setSceneRefFile, setSceneRefUrl, 'Escenario')} />
+            {sceneRefUrl ? (
+              <div className="ss-ref-card">
+                <img src={sceneRefUrl} alt="Escenario" />
+                <span className="ss-ref-label">Escenario</span>
+                <button className="ss-ref-clear" onClick={() => { setSceneRefFile(null); setSceneRefUrl(null); hapticLight(); }}>
+                  <X size={11} />
+                </button>
+              </div>
+            ) : (
+              <button className="ss-ref-slot" onClick={() => { hapticLight(); sceneInputRef.current?.click(); }}>
+                <span className="ss-ref-emoji">🌅</span>
+                <strong>Escenario</strong>
+                <small>Foto del lugar</small>
+              </button>
+            )}
+
+            {/* Pose */}
+            <input ref={poseInputRef} type="file" accept="image/*" hidden
+                   onChange={e => handleRefUpload(e, setPoseRefFile, setPoseRefUrl, 'Pose')} />
+            {poseRefUrl ? (
+              <div className="ss-ref-card">
+                <img src={poseRefUrl} alt="Pose" />
+                <span className="ss-ref-label">Pose</span>
+                <button className="ss-ref-clear" onClick={() => { setPoseRefFile(null); setPoseRefUrl(null); hapticLight(); }}>
+                  <X size={11} />
+                </button>
+              </div>
+            ) : (
+              <button className="ss-ref-slot" onClick={() => { hapticLight(); poseInputRef.current?.click(); }}>
+                <span className="ss-ref-emoji">🧍</span>
+                <strong>Pose</strong>
+                <small>Foto de referencia</small>
+              </button>
+            )}
           </div>
         </div>
       </section>
@@ -1458,6 +1576,67 @@ const SESION_STYLES = `
 }
 .ss-shell .ss-light-cell:active { transform: scale(0.94); }
 .ss-shell .ss-light-cell.is-active { background: var(--ink-0); color: var(--bg-card); border-color: var(--ink-0); }
+
+/* Reference uploads row (outfit / escenario / pose) */
+.ss-shell .ss-ref-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.ss-shell .ss-ref-slot {
+  display: flex; flex-direction: column;
+  align-items: flex-start; gap: 2px;
+  padding: 12px 10px;
+  background: var(--bg-card);
+  border: 1.5px dashed var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.ss-shell .ss-ref-slot:active { transform: scale(0.96); border-color: var(--ink-0); }
+.ss-shell .ss-ref-emoji { font-size: 20px; line-height: 1; margin-bottom: 4px; }
+.ss-shell .ss-ref-slot strong { font-size: 12px; font-weight: 600; color: var(--ink-0); }
+.ss-shell .ss-ref-slot small { font-size: 10px; color: var(--ink-3); }
+.ss-shell .ss-ref-card {
+  position: relative;
+  aspect-ratio: 3/4;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1.5px solid var(--ink-0);
+  background: var(--paper);
+}
+.ss-shell .ss-ref-card img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.ss-shell .ss-ref-label {
+  position: absolute;
+  top: 6px; left: 6px;
+  padding: 3px 8px;
+  background: rgba(20, 16, 14, 0.78);
+  color: var(--bg-card);
+  border-radius: 999px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.ss-shell .ss-ref-clear {
+  position: absolute;
+  top: 6px; right: 6px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: rgba(20, 16, 14, 0.75);
+  border: none;
+  color: var(--bg-card);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
 
 /* Lightbox */
 .ss-shell .ss-lightbox {

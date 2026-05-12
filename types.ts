@@ -248,6 +248,12 @@ export interface SavedCharacter {
   renderStyle?: string;
   soulStyleId?: string;
   personalityTraits?: string[];
+  // Voice (ElevenLabs) — assigned via Personajes detail or CrearPersonaje
+  voiceId?: string;
+  voiceName?: string;
+  voiceSource?: 'cloned' | 'library' | 'shared';
+  voicePreviewUrl?: string;
+  voiceCreatedAt?: number;
 }
 
 export interface BatchOutfitItem {

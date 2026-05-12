@@ -1615,7 +1615,21 @@ export const editWithNB2Fal = async (
   // Wrap instruction with safety intent context. Defensive: if instruction is
   // empty (which would 422 fal), fall back to a generic edit instruction.
   const cleanInstruction = (instruction || '').trim() || 'Generate a professional photo of this person';
-  const wrappedPrompt = `[Professional virtual influencer content creation] ${cleanInstruction}`;
+
+  // ── Reference discipline guard (fix 2026-05-12) ──
+  // When refs are passed AND the instruction does NOT explicitly request to change
+  // outfit/face/scene, Wan/NB2 tend to majority-vote the refs' outfit over the
+  // base. Force the model to treat Figure 1 (base) as the source of truth for
+  // outfit/pose/scene UNLESS the instruction overrides those.
+  const hasRefs = referenceImages.length > 0;
+  const wantsOutfitChange = /\b(outfit|garment|clothing|tryon|try-on|wear|wardrobe|prenda|ropa)\b/i.test(cleanInstruction);
+  const wantsFaceChange = /\b(face\s*swap|faceswap|swap.*face|reemplaz.*rostro|cambio de rostro)\b/i.test(cleanInstruction);
+  const wantsSceneChange = /\b(scene|background|fondo|escenario|location|composite)\b/i.test(cleanInstruction);
+  const refDiscipline = hasRefs && !wantsOutfitChange && !wantsFaceChange && !wantsSceneChange
+    ? ` REFERENCE DISCIPLINE: Figure 1 is the AUTHORITATIVE source of outfit, pose, scene, lighting, and composition — keep all of those EXACTLY as they appear in Figure 1. Figures 2+ are IDENTITY-ONLY (face geometry, skin texture, body proportions). Do NOT copy the outfit, pose, background, or composition from the references into the output.`
+    : '';
+
+  const wrappedPrompt = `[Professional virtual influencer content creation] ${cleanInstruction}${refDiscipline}`;
 
   const result = await fal.subscribe(FalModel.NanoBanana2Edit, {
     input: {

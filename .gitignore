@@ -70,6 +70,20 @@ stitch-v2.html
 comparison-input/
 comparison-output/
 
+# Benchmark + test output dirs (large image outputs)
+bench-*/
+flux-*/
+flux2*/
+mega-*/
+seedream-*/
+wan27-*/
+
+# Dev-only mockup files in public/ (kept locally for design iteration)
+public/demo_*.html
+public/mockup_*.html
+public/generate_overlays.html
+public/overlays/
+
 # Capacitor native build outputs (commit project files, ignore build artifacts)
 android/.gradle/
 android/app/build/

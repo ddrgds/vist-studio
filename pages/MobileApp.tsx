@@ -19,10 +19,15 @@ const HeadshotPro = lazy(() => import('./HeadshotPro'));
 const Reimaginar = lazy(() => import('./Reimaginar'));
 const SesionDeFotos = lazy(() => import('./SesionDeFotos'));
 const CrearPersonaje = lazy(() => import('./CrearPersonaje'));
-const Gallery = lazy(() => import('./Gallery'));
-const ProfilePage = lazy(() => import('../components/ProfilePage'));
+const Personajes = lazy(() => import('./Personajes'));
+const MobileEditor = lazy(() => import('./MobileEditor'));
+const MobileGallery = lazy(() => import('./MobileGallery'));
+const MobileProfile = lazy(() => import('./MobileProfile'));
+const Recast = lazy(() => import('./Recast'));
+const Imagina = lazy(() => import('./Imagina'));
+const MobileOnboarding = lazy(() => import('./MobileOnboarding'));
 
-type MobilePage = 'home' | 'headshot' | 'reimaginar' | 'sesion' | 'create' | 'gallery' | 'characters' | 'profile';
+type MobilePage = 'home' | 'headshot' | 'reimaginar' | 'sesion' | 'editor' | 'recast' | 'imagina' | 'create' | 'gallery' | 'characters' | 'profile';
 
 interface AppEntry {
   id: MobilePage | 'soon';
@@ -56,10 +61,22 @@ const APPS: AppEntry[] = [
     accent: '#B0772D', isLive: true, isNew: true,
   },
   {
-    id: 'soon', name: 'Recast', tagline: 'Reels filmicos',
-    cost: '40 cr · 2m',
+    id: 'editor', name: 'Editor IA', tagline: 'Reluz, estilo, piel, AI Edit',
+    cost: '6-13 cr · por edición',
+    bg: 'https://images.unsplash.com/photo-1554080353-a576cf803bda?w=600&q=85',
+    accent: '#C9785C', isLive: true, isNew: true,
+  },
+  {
+    id: 'recast', name: 'Recast', tagline: 'Grábate tú, aparece tu modelo',
+    cost: '60-230 cr · 5-10s',
     bg: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=85',
-    accent: '#E8A04C', isLive: false, comingSoon: 'Pronto',
+    accent: '#B0542D', isLive: true, isNew: true,
+  },
+  {
+    id: 'imagina', name: 'Imagina', tagline: 'Variaciones de una foto que amas',
+    cost: '6-32 cr · 1-9 fotos',
+    bg: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=600&q=85',
+    accent: '#C9785C', isLive: true, isNew: true,
   },
 ];
 
@@ -179,41 +196,6 @@ function MobileHome({ onNav }: { onNav: (p: MobilePage) => void }) {
   );
 }
 
-// ─── Characters list (minimal) ─────────────────
-
-function MobileCharacters({ onNav }: { onNav: (p: MobilePage) => void }) {
-  const characters = useCharacterStore(s => s.characters);
-  return (
-    <div className="m-list-page">
-      <div className="m-list-header">
-        <h1 className="m-list-title">Personajes</h1>
-        <button className="m-list-add" onClick={() => onNav('create')}>
-          <Sparkles size={14} /> Nuevo
-        </button>
-      </div>
-      {characters.length === 0 ? (
-        <div className="m-list-empty">
-          <p>No hay personajes todavía.</p>
-          <button className="m-empty-cta" onClick={() => onNav('create')}>Crear primero</button>
-        </div>
-      ) : (
-        <div className="m-char-grid">
-          {characters.map(c => (
-            <div key={c.id} className="m-char-card">
-              <div
-                className="m-char-thumb"
-                style={c.thumbnail ? { backgroundImage: `url(${c.thumbnail})` } : undefined}
-              />
-              <div className="m-char-name">{c.name}</div>
-              <div className="m-char-meta">{(c.usageCount || 0)} usos</div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ─── Bottom nav ────────────────────────────────
 
 function MobileBottomNav({ active, onNav }: { active: MobilePage; onNav: (p: MobilePage) => void }) {
@@ -244,6 +226,38 @@ function MobileBottomNav({ active, onNav }: { active: MobilePage; onNav: (p: Mob
 export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }) {
   const [page, setPage] = useState<MobilePage>('home');
   const [transitioning, setTransitioning] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  const characters = useCharacterStore(s => s.characters);
+  const charactersLoading = useCharacterStore(s => s.isLoading);
+
+  // Onboarding gate — only show for users who:
+  //   1. Haven't completed/skipped it yet (localStorage flag), AND
+  //   2. Have ZERO characters (account is genuinely empty)
+  //
+  // Wait for characterStore to finish hydrating from cloud/IndexedDB before
+  // deciding — otherwise we'd flash onboarding to returning users for a moment.
+  // If the user already has 1+ characters and never saw onboarding (cleared
+  // localStorage, new device), auto-mark as completed so they don't see it.
+  useEffect(() => {
+    if (charactersLoading) return;
+
+    let completed = false;
+    try { completed = localStorage.getItem('vist_onboarding_completed') === 'true'; } catch { /* ignore */ }
+
+    if (completed) return;
+
+    if (characters.length > 0) {
+      // Returning user without the localStorage flag (e.g. new device, cleared
+      // storage). They already created characters elsewhere — don't pitch them.
+      try { localStorage.setItem('vist_onboarding_completed', 'true'); } catch { /* ignore */ }
+      return;
+    }
+
+    // True empty account — show after splash settles
+    const t = setTimeout(() => setShowOnboarding(true), 400);
+    return () => clearTimeout(t);
+  }, [charactersLoading, characters.length]);
 
   // Initialize native UI bits on mount (status bar, splash hide, etc)
   useEffect(() => {
@@ -285,7 +299,7 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
   const navigateFromSubApp = (p: Page) => {
     const map: Partial<Record<Page, MobilePage>> = {
       studio: 'home',         // back from app
-      editor: 'home',         // no editor in mobile shell yet
+      editor: 'editor',
       gallery: 'gallery',
       characters: 'characters',
       create: 'create',
@@ -294,6 +308,8 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
       headshot: 'headshot',
       reimaginar: 'reimaginar',
       sesion: 'sesion',
+      recast: 'recast',
+      imagina: 'imagina',
     };
     const target = map[p] ?? 'home';
     navigateMobile(target);
@@ -326,6 +342,24 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
             <SesionDeFotos onNav={navigateFromSubApp} />
           </Suspense>
         );
+      case 'editor':
+        return (
+          <Suspense fallback={<MobileLoader />}>
+            <MobileEditor onNav={navigateFromSubApp} />
+          </Suspense>
+        );
+      case 'recast':
+        return (
+          <Suspense fallback={<MobileLoader />}>
+            <Recast onNav={navigateFromSubApp} />
+          </Suspense>
+        );
+      case 'imagina':
+        return (
+          <Suspense fallback={<MobileLoader />}>
+            <Imagina onNav={navigateFromSubApp} />
+          </Suspense>
+        );
       case 'create':
         return (
           <Suspense fallback={<MobileLoader />}>
@@ -335,25 +369,19 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
       case 'gallery':
         return (
           <Suspense fallback={<MobileLoader />}>
-            <Gallery onNav={navigateFromSubApp} onEditImage={() => {}} onExportImage={() => {}} />
+            <MobileGallery onNav={navigateFromSubApp} />
           </Suspense>
         );
       case 'characters':
-        return <MobileCharacters onNav={navigateMobile} />;
+        return (
+          <Suspense fallback={<MobileLoader />}>
+            <Personajes onNav={navigateFromSubApp} />
+          </Suspense>
+        );
       case 'profile':
         return (
           <Suspense fallback={<MobileLoader />}>
-            <div className="m-profile-wrap">
-              <button
-                className="m-profile-back"
-                onClick={() => navigateMobile('home')}
-                aria-label="Volver"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>
-                <span>Volver</span>
-              </button>
-              <ProfilePage />
-            </div>
+            <MobileProfile onNav={navigateFromSubApp} />
           </Suspense>
         );
       default:
@@ -373,7 +401,19 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
       >
         {renderActive()}
       </div>
-      {showBottomNav && <MobileBottomNav active={page} onNav={navigateMobile} />}
+      {showBottomNav && !showOnboarding && <MobileBottomNav active={page} onNav={navigateMobile} />}
+
+      {showOnboarding && (
+        <Suspense fallback={null}>
+          <MobileOnboarding
+            onClose={() => setShowOnboarding(false)}
+            onLaunch={(target) => {
+              setShowOnboarding(false);
+              navigateFromSubApp(target);
+            }}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

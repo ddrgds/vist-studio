@@ -187,6 +187,54 @@ export async function generateLipSync(
 }
 
 // ─────────────────────────────────────────────
+// Recast — character replacement (Wan 2.2 Animate Replace)
+// Thin wrapper for the mobile Recast app. The input video and character
+// image both go to fal.storage; the model swaps the person in the video
+// with the character while keeping background, lighting, and camera intact.
+// ─────────────────────────────────────────────
+
+export interface RecastParams {
+  /** User-recorded video where the AI character will replace the person */
+  sourceVideo: File;
+  /** Character reference image (clean portrait or full body) */
+  characterImage: File;
+  /** Output resolution. Cost: 480p $0.04/s · 580p $0.06/s · 720p $0.08/s */
+  resolution?: '480p' | '580p' | '720p';
+  /** Video quality preset — higher = slower */
+  quality?: 'low' | 'medium' | 'high' | 'maximum';
+  /** Use turbo mode for ~30% faster generation at slight quality cost */
+  useTurbo?: boolean;
+  abortSignal?: AbortSignal;
+}
+
+export async function recastVideoWithWan(
+  params: RecastParams,
+  onProgress?: (progress: VideoProgress) => void,
+): Promise<VideoResult> {
+  const [videoUrl, imageUrl] = await Promise.all([
+    uploadFile(params.sourceVideo),
+    uploadFile(params.characterImage),
+  ]);
+
+  const result = await fal.subscribe('fal-ai/wan/v2.2-14b/animate/replace', {
+    input: {
+      video_url: videoUrl,
+      image_url: imageUrl,
+      resolution: params.resolution ?? '480p',
+      video_quality: params.quality ?? 'high',
+      use_turbo: params.useTurbo ?? false,
+      num_inference_steps: 20,
+    },
+    timeout: 600000, // 10 min — Wan can be slow
+    onQueueUpdate: buildQueueHandler(onProgress),
+    ...(params.abortSignal ? { signal: params.abortSignal } : {}),
+  });
+
+  const data = unwrap(result);
+  return { videoUrl: data.video?.url };
+}
+
+// ─────────────────────────────────────────────
 // Shared queue update handler
 // ─────────────────────────────────────────────
 

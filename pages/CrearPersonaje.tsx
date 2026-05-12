@@ -24,14 +24,14 @@ import {
   AppTopBar, AppHero, AppFloatingCTA, type AppMood,
 } from '../components/apps/_shared';
 import {
-  GENDERS, AGE_RANGES,
+  GENDERS, AGE_RANGES, ETHNICITIES,
   HAIR_STYLES, HAIR_COLORS,
   SKIN_TONES, SKIN_TEXTURES, SKIN_DETAILS, MAKEUP_STYLES,
   EYE_COLORS, EYE_SHAPES,
   NOSE_TYPES, LIP_SHAPES, FACE_SHAPES, JAWLINES, EYEBROWS,
   BODY_TYPES, HEIGHTS, MUSCULATURE,
   BUST_SIZES, WAIST_SIZES, HIP_SIZES, LEG_PROPORTIONS,
-  FASHION_STYLES, ACCESSORIES,
+  FASHION_STYLES, ACCESSORIES, COLOR_PALETTES,
 } from '../data/characterChips';
 
 // Glutes options — characterChips doesn't export a dedicated array, so we
@@ -45,6 +45,7 @@ const GLUTES_OPTIONS: { label: string; prompt: string }[] = [
 ];
 import { SOUL_STYLES, type SoulStyle } from '../data/soulStyles';
 import type { SavedCharacter } from '../stores/characterStore';
+import { usePipelineStore } from '../stores/pipelineStore';
 
 const ATELIER_MOOD: AppMood = {
   bg0: '#F5EBDB',
@@ -85,7 +86,13 @@ const PERSONALITY = [
   'Soft', 'Bold', 'Editorial', 'Casual',
 ];
 
-const COST_AI = 12;       // 4 reference photos (initial generation)
+// Variant count tiers — bulk discount on 4 (3 cr/photo) vs single (4 cr/photo)
+const VARIANT_OPTIONS: { count: 1 | 2 | 4; cost: number; label: string; tagline: string }[] = [
+  { count: 1, cost: 4,  label: 'Solo 1', tagline: 'Test rápido' },
+  { count: 2, cost: 7,  label: '2 variantes', tagline: 'Comparar' },
+  { count: 4, cost: 12, label: '4 variantes', tagline: 'Full set' },
+];
+
 const COST_FULL_SHEET = 18; // additional cost for face + body + expressions sheets
 
 // Curated subset of SOUL_STYLES — only the most useful for character creation
@@ -115,6 +122,7 @@ async function urlToBlob(url: string): Promise<Blob> {
 interface CharSpec {
   gender?: string;
   age?: string;
+  ethnicity?: string;
   renderStyle: string;
   // Face
   faceShape?: string;
@@ -148,33 +156,128 @@ interface CharSpec {
   fashionStyle?: string;
   accessories: string[];
   soulStyleId?: string;
+  colorPalette?: string;  // brand signature palette
   // Free direction
   freePrompt: string;
+  // Shot type — how the base reference photos look (editorial / casual / etc)
+  shotType?: ShotTypeId;
 }
 
+// ─── Shot Types — how the wizard's base photos are framed/lit/dressed ───
+
+type ShotTypeId = 'editorial' | 'mirror-selfie' | 'beach-editorial' | 'studio-cover' | 'lifestyle-candid';
+
+interface ShotTypeDef {
+  id: ShotTypeId;
+  label: string;
+  emoji: string;
+  hint: string;
+  shotPrompt: string;
+}
+
+const SHOT_TYPES: ShotTypeDef[] = [
+  {
+    id: 'editorial',
+    label: 'Editorial',
+    emoji: '📸',
+    hint: 'Default — referencia limpia para luego editar',
+    shotPrompt:
+      'Editorial character reference portrait. Front-facing, full upper body composition with hands and waist visible to show body proportions. Clean neutral studio backdrop. Even soft daylight, soft falloff. Sharp focus on the eyes. 85mm lens, shallow depth of field. Professional photography, documentary realism. Subject wears a well-fitted neutral outfit (cream knit top, fitted denim or simple skirt) that shows body proportions clearly without distracting from identity.',
+  },
+  {
+    id: 'mirror-selfie',
+    label: 'Mirror Selfie',
+    emoji: '🪞',
+    hint: 'Casual cuarto, iPhone visible, LED rim, vibe IG',
+    shotPrompt:
+      'iPhone front camera mirror selfie in a softly lit bedroom. Subject stands holding a recent iPhone Pro (3-camera array visible) in one hand pointing at a full-length wall mirror. Bedroom background with unmade white bed, light curtains, ambient mess. Warm tungsten + soft pink-purple LED Govee strip rim light on the back wall (gradient pink to purple to teal). iPhone-camera photography aesthetic: very slight HDR, mid-contrast, natural skin tones, casual social-media composition, NOT editorial. Outfit: minimal — fitted crop top + bikini bottoms, or sports bra + boy shorts, bare midriff fully visible.',
+  },
+  {
+    id: 'beach-editorial',
+    label: 'Beach Editorial',
+    emoji: '🏖️',
+    hint: 'Playa golden hour, agua, bikini editorial',
+    shotPrompt:
+      'Beach editorial photograph. Subject emerging from the ocean at golden hour, wet skin glistening with water droplets, hair slightly wet and tousled. Sunset side lighting, warm rim, magazine editorial photography. Outfit: minimal high-cut white bikini or string bikini. Bold confident pose, looking at camera or off-frame. 85mm lens, shallow depth, sand and ocean softly out of focus. NO commercial logos visible.',
+  },
+  {
+    id: 'studio-cover',
+    label: 'Studio Cover',
+    emoji: '✨',
+    hint: 'Magazine cover, gradient backdrop, beauty light',
+    shotPrompt:
+      'Studio magazine cover photograph. Subject against a smooth gradient backdrop (cream-to-mauve or warm peach). Beauty dish key light from above-front, gentle fill, subtle hair rim. Outfit: high fashion piece (silk slip dress, fitted blazer, structured bodysuit) that emphasizes the body silhouette. Confident editorial pose. 105mm lens, shallow depth, refined commercial finish.',
+  },
+  {
+    id: 'lifestyle-candid',
+    label: 'Lifestyle Candid',
+    emoji: '☀️',
+    hint: 'Café, calle, ropa casual de día',
+    shotPrompt:
+      'Lifestyle candid photograph in a real-world location (sunlit café, city street, sunny rooftop). Natural daylight, environmental context softly out of focus behind. Subject in casual everyday outfit (well-fitted denim jeans + cropped tee, or sundress, or athleisure set). Relaxed natural pose mid-motion or sitting. Documentary photography style, not posed.',
+  },
+];
+
+/**
+ * Resolves a Spanish chip LABEL → English technical promptText.
+ * Falls back to the label itself if no chip matches (so manual entries survive).
+ */
+function chipPrompt(opts: { label?: string; chips: { label: string; promptText: string }[] }): string | undefined {
+  if (!opts.label) return undefined;
+  const hit = opts.chips.find(c => c.label === opts.label);
+  return hit?.promptText || opts.label;
+}
+
+/**
+ * buildDescription — the PHYSICAL ANCHOR that ends up in character.characteristics.
+ *
+ * This is the text that gets injected into EVERY future generation (Reimaginar,
+ * Editor, Studio) to lock in proportions, skin texture, face geometry. Quality
+ * here = quality of every future render.
+ *
+ * Strategy:
+ *   1. Compose rich technical English prose from the wizard's chip promptText
+ *      (not just raw Spanish labels — that loses 90% of the signal).
+ *   2. Add ALWAYS-ON realism clauses for photorealistic characters: skin texture
+ *      (pores, vellus, vascularity, undertone), soft tissue physics, anti-CGI
+ *      guards, NO text overlays.
+ *   3. Derive silhouette physics from picks (waist-to-hip ratio strength,
+ *      lordosis when glutes are projected, bust gravity when large bust).
+ */
 function buildDescription(s: CharSpec): string {
   const parts: string[] = [];
+  const isPhoto = s.renderStyle === 'photorealistic';
+
+  // ── Identity opener ──
   if (s.gender) parts.push(s.gender);
   if (s.age) parts.push(`${s.age} años`);
+  if (s.ethnicity) parts.push(`${s.ethnicity} ethnicity`);
   parts.push(`${s.renderStyle} render style`);
 
-  // Face
+  // ── Face geometry — use rich promptText, not labels ──
   const face: string[] = [];
-  if (s.faceShape) face.push(`face shape: ${s.faceShape}`);
-  if (s.noseType) face.push(`nose: ${s.noseType}`);
-  if (s.lipShape) face.push(`lips: ${s.lipShape}`);
-  if (s.jawline) face.push(`jaw: ${s.jawline}`);
-  if (s.eyebrow) face.push(`eyebrows: ${s.eyebrow}`);
-  if (s.eyeShape) face.push(`eye shape: ${s.eyeShape}`);
-  if (s.eyeColor) face.push(`eye color: ${s.eyeColor}`);
+  const faceShapePrompt = chipPrompt({ label: s.faceShape, chips: FACE_SHAPES });
+  const nosePrompt = chipPrompt({ label: s.noseType, chips: NOSE_TYPES });
+  const lipsPrompt = chipPrompt({ label: s.lipShape, chips: LIP_SHAPES });
+  const jawPrompt = chipPrompt({ label: s.jawline, chips: JAWLINES });
+  const eyebrowPrompt = chipPrompt({ label: s.eyebrow, chips: EYEBROWS });
+  const eyeShapePrompt = chipPrompt({ label: s.eyeShape, chips: EYE_SHAPES });
+  const eyeColorPrompt = chipPrompt({ label: s.eyeColor, chips: EYE_COLORS });
+  if (faceShapePrompt) face.push(faceShapePrompt);
+  if (nosePrompt) face.push(nosePrompt);
+  if (lipsPrompt) face.push(lipsPrompt);
+  if (jawPrompt) face.push(jawPrompt);
+  if (eyebrowPrompt) face.push(eyebrowPrompt);
+  if (eyeShapePrompt) face.push(eyeShapePrompt);
+  if (eyeColorPrompt) face.push(eyeColorPrompt);
   if (face.length > 0) parts.push(face.join(', '));
 
-  // Hair
+  // ── Hair ──
   if (s.hairStyle && s.hairColor) parts.push(`${s.hairStyle} ${s.hairColor} hair`);
   else if (s.hairStyle) parts.push(`${s.hairStyle} hair`);
   else if (s.hairColor) parts.push(`${s.hairColor} hair`);
 
-  // Skin
+  // ── Skin tone + makeup ──
   const skin: string[] = [];
   if (s.skinTone) skin.push(`${s.skinTone} skin tone`);
   if (s.skinTexture) skin.push(s.skinTexture);
@@ -182,29 +285,64 @@ function buildDescription(s: CharSpec): string {
   if (skin.length > 0) parts.push(skin.join(', '));
   if (s.makeup) parts.push(`makeup: ${s.makeup}`);
 
-  // Body
-  if (s.bodyType.length > 0) parts.push(`body: ${s.bodyType.join(' / ').toLowerCase()}`);
-  if (s.height) parts.push(`height: ${s.height}`);
-  if (s.musculature) parts.push(`musculature: ${s.musculature}`);
-  if (s.bust) parts.push(`bust: ${s.bust}`);
-  if (s.waist) parts.push(`waist: ${s.waist}`);
-  if (s.hips) parts.push(`hips: ${s.hips}`);
-  if (s.glutes) parts.push(`glutes: ${s.glutes}`);
-  if (s.legs) parts.push(`legs: ${s.legs}`);
+  // ── Body proportions — rich prompts from chip data ──
+  if (s.bodyType.length > 0) {
+    const bodyPrompts = s.bodyType
+      .map(label => chipPrompt({ label, chips: BODY_TYPES }))
+      .filter(Boolean);
+    if (bodyPrompts.length > 0) parts.push(bodyPrompts.join(', '));
+  }
+  const heightPrompt = chipPrompt({ label: s.height, chips: HEIGHTS });
+  const musclePrompt = chipPrompt({ label: s.musculature, chips: MUSCULATURE });
+  const bustPrompt = chipPrompt({ label: s.bust, chips: BUST_SIZES });
+  const waistPrompt = chipPrompt({ label: s.waist, chips: WAIST_SIZES });
+  const hipsPrompt = chipPrompt({ label: s.hips, chips: HIP_SIZES });
+  const glutesPrompt = chipPrompt({
+    label: s.glutes,
+    chips: GLUTES_OPTIONS.map(g => ({ label: g.label, promptText: g.prompt })),
+  });
+  const legsPrompt = chipPrompt({ label: s.legs, chips: LEG_PROPORTIONS });
+  if (heightPrompt) parts.push(heightPrompt);
+  if (musclePrompt) parts.push(musclePrompt);
+  if (bustPrompt) parts.push(bustPrompt);
+  if (waistPrompt) parts.push(waistPrompt);
+  if (hipsPrompt) parts.push(hipsPrompt);
+  if (glutesPrompt) parts.push(glutesPrompt);
+  if (legsPrompt) parts.push(legsPrompt);
+
+  // ── Render-quality baseline (ONLY for photoreal — render directive, NOT
+  // about body/skin properties). Tells the model to render photographically,
+  // not as CGI/doll. Says NOTHING about pores, vellus, bust gravity, etc.
+  // Those come from the user's chip picks (SKIN_TEXTURE, BUST_SIZES, etc).
+  if (isPhoto) {
+    parts.push('High-fidelity photographic realism, no plastic CGI look, no doll-like waxy texture, no surreal smoothing or airbrush effect');
+  }
 
   // Vibe
   if (s.personality.length > 0) parts.push(`vibe: ${s.personality.join(', ').toLowerCase()}`);
 
-  // Look (style + accessories + soul preset)
-  if (s.fashionStyle) parts.push(`fashion style: ${s.fashionStyle}`);
+  // Look (style + accessories + soul preset + color palette)
+  if (s.fashionStyle) {
+    const fashionPrompt = chipPrompt({ label: s.fashionStyle, chips: FASHION_STYLES });
+    parts.push(`fashion style: ${fashionPrompt || s.fashionStyle}`);
+  }
   if (s.accessories.length > 0) parts.push(`accessories: ${s.accessories.join(', ').toLowerCase()}`);
   if (s.soulStyleId) {
     const soul = SOUL_STYLES.find(x => x.id === s.soulStyleId);
     if (soul) parts.push(`aesthetic preset: ${soul.name} (${soul.hint || soul.name})`);
   }
+  // Brand signature color palette — governs outfits, lighting, props, makeup
+  if (s.colorPalette) {
+    const palPrompt = chipPrompt({ label: s.colorPalette, chips: COLOR_PALETTES });
+    if (palPrompt) parts.push(palPrompt);
+  }
 
   // Free
   if (s.freePrompt.trim()) parts.push(s.freePrompt.trim());
+
+  // Anti-text-overlay guard — Wan 2.7 sometimes adds magazine titles when the
+  // anchor describes editorial / fashion contexts. Reinforces NO text.
+  parts.push('Absolutely NO text overlays, NO magazine titles, NO captions, NO watermarks, NO logos visible anywhere in the image');
 
   return parts.filter(Boolean).join('. ');
 }
@@ -230,6 +368,7 @@ export default function CrearPersonaje({ onNav }: Props) {
   // ─── Path A — form state ───
   const [gender, setGender] = useState<string>('');
   const [age, setAge] = useState<string>('');
+  const [ethnicity, setEthnicity] = useState<string>('');
   // Face
   const [faceShape, setFaceShape] = useState<string>('');
   const [noseType, setNoseType] = useState<string>('');
@@ -258,6 +397,11 @@ export default function CrearPersonaje({ onNav }: Props) {
   // Vibe
   const [personalityTraits, setPersonalityTraits] = useState<string[]>([]);
   const [freePrompt, setFreePrompt] = useState<string>('');
+  // Shot type — how the wizard's base photos are framed/dressed/lit.
+  // Default 'editorial' for clean ref shots that can be edited later.
+  const [shotType, setShotType] = useState<ShotTypeId>('editorial');
+  // Brand color palette — signature look across all future generations
+  const [colorPalette, setColorPalette] = useState<string>('');
   const [showFreePrompt, setShowFreePrompt] = useState(false);
   // Look
   const [fashionStyle, setFashionStyle] = useState<string>('');
@@ -267,13 +411,38 @@ export default function CrearPersonaje({ onNav }: Props) {
   // Accordion state — which detailed sections are open
   const [openAccordion, setOpenAccordion] = useState<'face' | 'hair' | 'skin' | 'body' | 'look' | null>(null);
 
+  // ─── Consume onboarding prefill on mount (one-shot) ───
+  // If user just finished mobile onboarding, jump straight into ai-form with
+  // their name seeded. Focus is currently informational only.
+  useEffect(() => {
+    const prefill = usePipelineStore.getState().onboardingPrefill;
+    if (!prefill) return;
+    if (prefill.name) setName(prefill.name);
+    // Auto-skip mode select if onboarding indicated AI flow
+    setMode('ai-form');
+    // Clear so a back-out + return doesn't re-seed
+    usePipelineStore.getState().setOnboardingPrefill(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ─── Path A — full sheet pipeline state ───
   const [withFullSheet, setWithFullSheet] = useState(false);
   const [generatingSheet, setGeneratingSheet] = useState(false);
   const [sheetStep, setSheetStep] = useState<'face' | 'body' | 'expressions' | null>(null);
+  // Once sheets are generated, they live here — user reviews before saving
+  const [generatedSheets, setGeneratedSheets] = useState<{ type: 'face' | 'body' | 'expressions'; url: string }[]>([]);
+
+  // ─── Lightbox state — tap a thumbnail to view full size ───
+  const [lightbox, setLightbox] = useState<
+    | { kind: 'preview'; url: string; idx: number }
+    | { kind: 'sheet'; url: string; idx: number; label: string }
+    | null
+  >(null);
 
   // ─── Path A — engine selection ───
   const [engine, setEngine] = useState<Engine>('nb2');
+  const [numVariants, setNumVariants] = useState<1 | 2 | 4>(4);
+  const currentCost = VARIANT_OPTIONS.find(v => v.count === numVariants)?.cost ?? 12;
 
   // ─── Path A — generation + preview ───
   const [generating, setGenerating] = useState(false);
@@ -366,7 +535,7 @@ export default function CrearPersonaje({ onNav }: Props) {
 
   // ─── Build CharSpec from current form state ───
   const buildSpec = (): CharSpec => ({
-    gender, age, renderStyle: RENDER_STYLES.find(r => r.id === renderStyle)?.name || 'photorealistic',
+    gender, age, ethnicity, renderStyle: RENDER_STYLES.find(r => r.id === renderStyle)?.name || 'photorealistic',
     faceShape, noseType, lipShape, jawline, eyebrow, eyeShape, eyeColor,
     hairStyle, hairColor,
     skinTone, skinTexture, skinDetail, makeup,
@@ -374,7 +543,9 @@ export default function CrearPersonaje({ onNav }: Props) {
     bust, waist, hips, glutes, legs,
     personality: personalityTraits,
     fashionStyle, accessories, soulStyleId,
+    colorPalette,
     freePrompt,
+    shotType,
   });
 
   // ─── Path A — Generate (called on initial gen + regenerate + refine) ───
@@ -386,9 +557,23 @@ export default function CrearPersonaje({ onNav }: Props) {
     const renderStyleLabel = RENDER_STYLES.find(r => r.id === renderStyle)?.name || 'Photorealistic';
     const isPhoto = renderStyle === 'photorealistic';
 
-    const prompt = isPhoto
-      ? `Editorial character reference sheet. ${description}. Front-facing portrait, clean neutral studio backdrop, even soft lighting, sharp focus on eyes, natural skin texture with visible pores, professional photography. NO text, NO labels, NO watermarks.`
-      : `Character reference sheet in ${renderStyleLabel} style. ${description}. Front-facing portrait, clean neutral background, consistent ${renderStyleLabel.toLowerCase()} rendering. NO text, NO labels, NO watermarks.`;
+    // Wrapper structure (binding the anchor as ABSOLUTE PHYSICAL TRUTH):
+    //   1. SUBJECT block — the full chip-driven description, prefixed so the
+    //      model treats it as ground truth (not vibes).
+    //   2. SHOT block — neutral framing/lighting/camera that doesn't compete
+    //      with the subject description.
+    //   3. RULES block — NO text guard + identity reinforcement.
+    // Pick SHOT block from user-selected shot type (or editorial default)
+    const shotDef = SHOT_TYPES.find(s => s.id === spec.shotType) ?? SHOT_TYPES[0];
+    const shotBlock = isPhoto
+      ? shotDef.shotPrompt
+      : `Character reference portrait in ${renderStyleLabel} style. Front-facing, clean neutral background, consistent ${renderStyleLabel.toLowerCase()} rendering.`;
+
+    const prompt = `SUBJECT (absolute physical truth — reproduce literally): ${description}.
+
+SHOT: ${shotBlock}
+
+RULES: The SUBJECT description above is non-negotiable — every body proportion, skin texture detail, and face geometry must be visibly reproduced in the image. NO text, NO labels, NO watermarks, NO magazine titles, NO commercial logos anywhere in the frame.`;
 
     const fal = await import('../services/falService');
 
@@ -398,7 +583,7 @@ export default function CrearPersonaje({ onNav }: Props) {
       lighting: 'soft natural daylight',
       aspectRatio: '3:4',
       imageSize: '2K',
-      numberOfImages: 4,
+      numberOfImages: numVariants,
       realistic: isPhoto,
     };
 
@@ -422,15 +607,15 @@ export default function CrearPersonaje({ onNav }: Props) {
   };
 
   const handleGenerateInitial = async () => {
-    if (!name.trim()) { toast.error('Escribí un nombre'); hapticError(); return; }
-    if (!gender) { toast.error('Elegí género'); hapticError(); return; }
-    if (credits < COST_AI) {
-      toast.error(`Necesitas ${COST_AI} créditos. Tienes ${credits}.`);
+    if (!name.trim()) { toast.error('Escribe un nombre'); hapticError(); return; }
+    if (!gender) { toast.error('Elige un género'); hapticError(); return; }
+    if (credits < currentCost) {
+      toast.error(`Necesitas ${currentCost} créditos. Tienes ${credits}.`);
       hapticError(); onNav('pricing'); return;
     }
     hapticMedium();
 
-    const ok = await decrementCredits(COST_AI);
+    const ok = await decrementCredits(currentCost);
     if (!ok) { toast.error('Créditos insuficientes'); return; }
 
     setGenerating(true);
@@ -440,12 +625,12 @@ export default function CrearPersonaje({ onNav }: Props) {
     try {
       const results = await generatePhotos();
       setProgress(100);
-      setPreviewUrls(results.slice(0, 4));
+      setPreviewUrls(results.slice(0, numVariants));
       setSelectedPreviewIdx(0);
       setMode('ai-preview');
       hapticSuccess();
     } catch (err: any) {
-      restoreCredits(COST_AI);
+      restoreCredits(currentCost);
       if (err?.name !== 'AbortError') {
         toast.error(`Error: ${String(err?.message || err).slice(0, 120)}`);
         hapticError();
@@ -458,12 +643,12 @@ export default function CrearPersonaje({ onNav }: Props) {
   };
 
   const handleRegenerate = async () => {
-    if (credits < COST_AI) {
-      toast.error(`Necesitas ${COST_AI} créditos.`);
+    if (credits < currentCost) {
+      toast.error(`Necesitas ${currentCost} créditos.`);
       hapticError(); onNav('pricing'); return;
     }
     hapticMedium();
-    const ok = await decrementCredits(COST_AI);
+    const ok = await decrementCredits(currentCost);
     if (!ok) return;
     setGenerating(true);
     setProgress(5);
@@ -471,11 +656,11 @@ export default function CrearPersonaje({ onNav }: Props) {
     try {
       const results = await generatePhotos();
       setProgress(100);
-      setPreviewUrls(results.slice(0, 4));
+      setPreviewUrls(results.slice(0, numVariants));
       setSelectedPreviewIdx(0);
       hapticSuccess();
     } catch (err: any) {
-      restoreCredits(COST_AI);
+      restoreCredits(currentCost);
       if (err?.name !== 'AbortError') {
         toast.error(`Error: ${String(err?.message || err).slice(0, 120)}`);
         hapticError();
@@ -489,9 +674,9 @@ export default function CrearPersonaje({ onNav }: Props) {
 
   const handleRefine = async () => {
     if (!refineText.trim()) { toast.error('Escribí qué cambiar'); return; }
-    if (credits < COST_AI) { toast.error(`Necesitas ${COST_AI} créditos.`); return; }
+    if (credits < currentCost) { toast.error(`Necesitas ${currentCost} créditos.`); return; }
     hapticMedium();
-    const ok = await decrementCredits(COST_AI);
+    const ok = await decrementCredits(currentCost);
     if (!ok) return;
 
     setRefining(true);
@@ -500,14 +685,14 @@ export default function CrearPersonaje({ onNav }: Props) {
     try {
       const results = await generatePhotos(refineText);
       setProgress(100);
-      setPreviewUrls(results.slice(0, 4));
+      setPreviewUrls(results.slice(0, numVariants));
       setSelectedPreviewIdx(0);
       setRefineText('');
       setShowRefine(false);
       toast.success('Refinado aplicado');
       hapticSuccess();
     } catch (err: any) {
-      restoreCredits(COST_AI);
+      restoreCredits(currentCost);
       if (err?.name !== 'AbortError') {
         toast.error(`Error: ${String(err?.message || err).slice(0, 120)}`);
         hapticError();
@@ -519,20 +704,13 @@ export default function CrearPersonaje({ onNav }: Props) {
     }
   };
 
+  // ─── Approve handler — branches into save-now vs generate-sheets-first ───
   const handleApprove = async () => {
     if (previewUrls.length === 0) return;
     hapticMedium();
 
-    // Reorder so the user-selected photo is at position 0 (= thumbnail)
-    const orderedUrls = [
-      previewUrls[selectedPreviewIdx],
-      ...previewUrls.filter((_, i) => i !== selectedPreviewIdx),
-    ];
-
-    let allUrls: string[] = orderedUrls;
-
-    // Optional: run character sheet pipeline (face / body / expressions)
     if (withFullSheet) {
+      // Run sheet pipeline first; user reviews sheets before final save.
       if (credits < COST_FULL_SHEET) {
         toast.error(`Necesitas ${COST_FULL_SHEET} créditos extra para ficha completa.`);
         hapticError();
@@ -541,9 +719,14 @@ export default function CrearPersonaje({ onNav }: Props) {
       const ok = await decrementCredits(COST_FULL_SHEET);
       if (!ok) return;
 
+      const orderedUrls = [
+        previewUrls[selectedPreviewIdx],
+        ...previewUrls.filter((_, i) => i !== selectedPreviewIdx),
+      ];
+
       setGeneratingSheet(true);
       const physicalTraits = buildSpec().bodyType.join(', ');
-      const sheetUrls: string[] = [];
+      const newSheets: { type: 'face' | 'body' | 'expressions'; url: string }[] = [];
       try {
         const { generateCharacterSheet } = await import('../services/toolEngines');
         const types: Array<'face' | 'body' | 'expressions'> = ['face', 'body', 'expressions'];
@@ -551,17 +734,19 @@ export default function CrearPersonaje({ onNav }: Props) {
           setSheetStep(type);
           try {
             const url = await generateCharacterSheet(orderedUrls[0], type, physicalTraits);
-            sheetUrls.push(url);
+            newSheets.push({ type, url });
           } catch (sheetErr: any) {
             console.warn(`Sheet ${type} failed:`, sheetErr?.message);
-            // Restore proportional credits for the failed sheet
             restoreCredits(Math.round(COST_FULL_SHEET / 3));
-            toast.info(`Ficha ${type} falló — continuando sin ese ángulo`);
+            toast.info(`Ficha ${type} falló — continuando con las demás`);
           }
         }
-        allUrls = [...orderedUrls, ...sheetUrls];
-        if (sheetUrls.length > 0) {
-          toast.success(`Ficha completa generada · ${sheetUrls.length}/3 sheets`);
+        setGeneratedSheets(newSheets);
+        if (newSheets.length > 0) {
+          toast.success(`Ficha completa lista · revisá antes de guardar`);
+          hapticSuccess();
+        } else {
+          toast.error('Ninguna sheet pudo generarse — guardando solo las 4 fotos');
         }
       } catch (err: any) {
         restoreCredits(COST_FULL_SHEET);
@@ -570,10 +755,39 @@ export default function CrearPersonaje({ onNav }: Props) {
         setGeneratingSheet(false);
         setSheetStep(null);
       }
+      // Stay in preview mode — user now reviews sheets and taps "Guardar todas"
+      return;
     }
 
+    // No sheet pipeline — save directly with the 4 portraits
+    await finalSave([]);
+  };
+
+  // ─── Final save — uses portraits + (optional) approved sheets ───
+  const finalSave = async (sheetsToInclude: { type: 'face' | 'body' | 'expressions'; url: string }[]) => {
     try {
-      // Convert all final URLs to blobs for storage
+      const selectedPortrait = previewUrls[selectedPreviewIdx];
+      const otherPortraits = previewUrls.filter((_, i) => i !== selectedPreviewIdx);
+
+      // CRITICAL ordering for apps' slice(0, 4) ref selection:
+      //   [0] thumbnail (user-selected portrait — visual cover)
+      //   [1] face sheet      — best face identity ref (4 angles in one)
+      //   [2] body sheet      — best body proportions ref (4 angles + activewear)
+      //   [3] expressions     — best variation ref (9 expressions)
+      //   [4-6] other portraits as extras
+      // This guarantees apps reading first 4 refs get the densest identity info.
+      const facesheet  = sheetsToInclude.find(s => s.type === 'face')?.url;
+      const bodysheet  = sheetsToInclude.find(s => s.type === 'body')?.url;
+      const exprsheet  = sheetsToInclude.find(s => s.type === 'expressions')?.url;
+
+      const allUrls = [
+        selectedPortrait,
+        ...(facesheet ? [facesheet] : []),
+        ...(bodysheet ? [bodysheet] : []),
+        ...(exprsheet ? [exprsheet] : []),
+        ...otherPortraits,
+      ];
+
       const blobs = await Promise.all(allUrls.map(url => urlToBlob(url)));
 
       const description = buildDescription(buildSpec());
@@ -604,9 +818,16 @@ export default function CrearPersonaje({ onNav }: Props) {
     }
   };
 
+  // Remove a single generated sheet (user didn't like it)
+  const removeSheet = (idx: number) => {
+    hapticLight();
+    setGeneratedSheets(prev => prev.filter((_, i) => i !== idx));
+  };
+
   const handleDiscardPreview = () => {
     hapticLight();
     setPreviewUrls([]);
+    setGeneratedSheets([]);
     setMode('ai-form');
   };
 
@@ -630,9 +851,9 @@ export default function CrearPersonaje({ onNav }: Props) {
             <div className="cp-mode-icon"><Wand2 size={22} /></div>
             <div className="cp-mode-text">
               <h3>Crear con <em>IA</em></h3>
-              <p>Diseña rasgos detallados — generamos 4 fotos y vos elegís.</p>
+              <p>Diseña rasgos detallados — generamos 4 fotos y eliges.</p>
             </div>
-            <div className="cp-mode-meta">{COST_AI} cr</div>
+            <div className="cp-mode-meta">desde 4 cr</div>
             <ChevronRight size={18} className="cp-mode-arrow" />
           </button>
 
@@ -773,7 +994,7 @@ export default function CrearPersonaje({ onNav }: Props) {
               <button
                 key={url + i}
                 className={`cp-preview-tile ${selectedPreviewIdx === i ? 'is-selected' : ''}`}
-                onClick={() => { hapticLight(); setSelectedPreviewIdx(i); }}
+                onClick={() => { hapticLight(); setLightbox({ kind: 'preview', url, idx: i }); }}
               >
                 <img src={url} alt={`Variante ${i + 1}`} />
                 <span className="cp-preview-num">{String(i + 1).padStart(2, '0')}</span>
@@ -785,7 +1006,7 @@ export default function CrearPersonaje({ onNav }: Props) {
           </div>
           <div className="cp-preview-info">
             <Sparkles size={11} />
-            <span>Foto seleccionada será la portada. Las 4 se guardan como referencias.</span>
+            <span>Tap una foto para verla grande · la seleccionada será la portada</span>
           </div>
         </section>
 
@@ -793,7 +1014,7 @@ export default function CrearPersonaje({ onNav }: Props) {
         <section className="cp-section">
           <button className="cp-toggle-btn" onClick={() => { hapticLight(); setShowRefine(v => !v); }}>
             <Wand2 size={14} />
-            <span>Refinar con palabras{credits >= COST_AI ? ` (${COST_AI} cr)` : ''}</span>
+            <span>Refinar con palabras{credits >= currentCost ? ` (${currentCost} cr)` : ''}</span>
             <ChevronDown size={14} className={showRefine ? 'cp-rotate' : ''} />
           </button>
           {showRefine && (
@@ -810,28 +1031,61 @@ export default function CrearPersonaje({ onNav }: Props) {
           )}
         </section>
 
-        {/* Full sheet toggle */}
-        <section className="cp-section">
-          <button
-            className={`cp-sheet-toggle ${withFullSheet ? 'is-on' : ''}`}
-            onClick={() => { hapticLight(); setWithFullSheet(v => !v); }}
-            disabled={generatingSheet}
-          >
-            <div className="cp-sheet-checkbox">
-              {withFullSheet && <Check size={11} />}
+        {/* Full sheet toggle (or generated sheets gallery) */}
+        {generatedSheets.length === 0 ? (
+          <section className="cp-section">
+            <button
+              className={`cp-sheet-toggle ${withFullSheet ? 'is-on' : ''}`}
+              onClick={() => { hapticLight(); setWithFullSheet(v => !v); }}
+              disabled={generatingSheet}
+            >
+              <div className="cp-sheet-checkbox">
+                {withFullSheet && <Check size={11} />}
+              </div>
+              <div className="cp-sheet-content">
+                <strong>Ampliar ficha completa</strong>
+                <small>Genera 3 hojas extra (rostro · cuerpo · expresiones) — máxima identidad en las apps. <strong>+{COST_FULL_SHEET} cr</strong></small>
+              </div>
+            </button>
+          </section>
+        ) : (
+          <section className="cp-section">
+            <div className="cp-field-head">
+              <span className="cp-field-name">Ficha generada</span>
+              <span className="cp-field-hint">{generatedSheets.length}/3 sheets · tap X para descartar</span>
             </div>
-            <div className="cp-sheet-content">
-              <strong>Ampliar ficha completa</strong>
-              <small>Genera 3 hojas extra (rostro · cuerpo · expresiones) — máxima identidad en las apps. <strong>+{COST_FULL_SHEET} cr</strong></small>
+            <div className="cp-sheets-gallery">
+              {generatedSheets.map((s, i) => {
+                const label =
+                  s.type === 'face' ? 'Rostro · 4 ángulos' :
+                  s.type === 'body' ? 'Cuerpo · 4 ángulos' :
+                  'Expresiones · 9 facial';
+                return (
+                  <div key={s.url + i} className="cp-sheet-item">
+                    <div className="cp-sheet-label">{label}</div>
+                    <div className="cp-sheet-img-wrap">
+                      <button
+                        className="cp-sheet-img-btn"
+                        onClick={() => { hapticLight(); setLightbox({ kind: 'sheet', url: s.url, idx: i, label }); }}
+                      >
+                        <img src={s.url} alt={s.type} className="cp-sheet-img cp-fade-in" />
+                      </button>
+                      <button className="cp-sheet-x" onClick={() => removeSheet(i)} aria-label="Descartar">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </button>
-        </section>
+          </section>
+        )}
 
         {/* Engine mini-selector for regenerate */}
         <section className="cp-section">
           <div className="cp-field-head">
             <span className="cp-field-name">Motor</span>
-            <span className="cp-field-hint">Cambialo si querés probar otro estilo</span>
+            <span className="cp-field-hint">Cámbialo si quieres probar otro estilo</span>
           </div>
           <div className="cp-engine-pills">
             {ENGINES.map(e => (
@@ -849,9 +1103,9 @@ export default function CrearPersonaje({ onNav }: Props) {
         {/* Action row */}
         <section className="cp-section">
           <div className="cp-preview-actions">
-            <button className="cp-action-ghost" onClick={handleRegenerate} disabled={generating || refining || credits < COST_AI}>
+            <button className="cp-action-ghost" onClick={handleRegenerate} disabled={generating || refining || credits < currentCost}>
               <RefreshCw size={14} />
-              Regenerar con {ENGINES.find(e => e.id === engine)?.name} ({COST_AI} cr)
+              Regenerar con {ENGINES.find(e => e.id === engine)?.name} ({currentCost} cr)
             </button>
           </div>
         </section>
@@ -860,10 +1114,65 @@ export default function CrearPersonaje({ onNav }: Props) {
           secondaryIcon={<X size={16} />}
           secondaryAriaLabel="Descartar"
           onSecondary={handleDiscardPreview}
-          primaryCost={withFullSheet ? `${COST_FULL_SHEET} cr · ficha completa` : `Foto ${selectedPreviewIdx + 1} de portada`}
-          primaryLabel={withFullSheet ? 'Aprobar + ampliar ficha' : 'Aprobar y guardar'}
-          onPrimary={handleApprove}
-          primaryDisabled={generating || refining || generatingSheet || previewUrls.length === 0 || (withFullSheet && credits < COST_FULL_SHEET)} />
+          primaryCost={
+            generatedSheets.length > 0
+              ? `${4 + generatedSheets.length} referencias`
+              : withFullSheet
+                ? `${COST_FULL_SHEET} cr · ficha completa`
+                : `Foto ${selectedPreviewIdx + 1} de portada`
+          }
+          primaryLabel={
+            generatedSheets.length > 0
+              ? 'Guardar todo'
+              : withFullSheet
+                ? 'Generar ficha + revisar'
+                : 'Aprobar y guardar'
+          }
+          onPrimary={generatedSheets.length > 0 ? () => finalSave(generatedSheets) : handleApprove}
+          primaryDisabled={generating || refining || generatingSheet || previewUrls.length === 0 || (withFullSheet && generatedSheets.length === 0 && credits < COST_FULL_SHEET)} />
+
+        {/* Lightbox — fullscreen view of any tile */}
+        {lightbox && (
+          <div className="cp-lightbox" onClick={() => setLightbox(null)}>
+            <img src={lightbox.url} alt="Vista completa" className="cp-lightbox-img" />
+            <div className="cp-lightbox-actions" onClick={e => e.stopPropagation()}>
+              {lightbox.kind === 'preview' ? (
+                <>
+                  <button
+                    className={`cp-lb-btn ${selectedPreviewIdx === lightbox.idx ? 'is-on' : ''}`}
+                    onClick={() => {
+                      hapticLight();
+                      setSelectedPreviewIdx(lightbox.idx);
+                      setLightbox(null);
+                    }}
+                  >
+                    <Check size={14} />
+                    {selectedPreviewIdx === lightbox.idx ? 'Es la portada' : 'Usar como portada'}
+                  </button>
+                  <button className="cp-lb-btn" onClick={() => setLightbox(null)}>
+                    Volver
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="cp-lb-label">{lightbox.label}</span>
+                  <button
+                    className="cp-lb-btn cp-lb-btn-danger"
+                    onClick={() => { removeSheet(lightbox.idx); setLightbox(null); }}
+                  >
+                    <X size={14} /> Descartar
+                  </button>
+                  <button className="cp-lb-btn" onClick={() => setLightbox(null)}>
+                    Volver
+                  </button>
+                </>
+              )}
+            </div>
+            <button className="cp-lightbox-close" onClick={() => setLightbox(null)} aria-label="Cerrar">
+              <X size={18} />
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -934,6 +1243,15 @@ export default function CrearPersonaje({ onNav }: Props) {
             {AGE_RANGES.slice(0, 6).map(a => (
               <button key={a.id} className={`cp-chip ${age === a.label ? 'is-active' : ''}`}
                 onClick={() => { hapticLight(); setAge(a.label); }}>{a.label}</button>
+            ))}
+          </div>
+        </div>
+        <div className="cp-dropdown-wrap" style={{ marginTop: 12 }}>
+          <label>Etnia / Origen</label>
+          <div className="cp-chips">
+            {ETHNICITIES.map(e => (
+              <button key={e.id} className={`cp-chip ${ethnicity === e.label ? 'is-active' : ''}`}
+                onClick={() => { hapticLight(); setEthnicity(ethnicity === e.label ? '' : e.label); }}>{e.label}</button>
             ))}
           </div>
         </div>
@@ -1074,10 +1392,31 @@ export default function CrearPersonaje({ onNav }: Props) {
         </div>
       </section>
 
-      {/* 05 Personalidad */}
+      {/* 05 Variant count */}
       <section className="cp-section">
         <div className="cp-field-head">
-          <span className="cp-field-name"><span className="cp-field-num">05</span>Personalidad / Vibe</span>
+          <span className="cp-field-name"><span className="cp-field-num">05</span>Cantidad</span>
+          <span className="cp-field-hint">Más variantes = más opciones, más costo</span>
+        </div>
+        <div className="cp-variant-grid">
+          {VARIANT_OPTIONS.map(v => (
+            <button
+              key={v.count}
+              className={`cp-variant-tile ${numVariants === v.count ? 'is-active' : ''}`}
+              onClick={() => { hapticLight(); setNumVariants(v.count); }}
+            >
+              <div className="cp-variant-num">{v.count}</div>
+              <div className="cp-variant-label">{v.label}</div>
+              <div className="cp-variant-meta">{v.cost} cr · {v.tagline}</div>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* 06 Personalidad */}
+      <section className="cp-section">
+        <div className="cp-field-head">
+          <span className="cp-field-name"><span className="cp-field-num">06</span>Personalidad / Vibe</span>
           <span className="cp-field-hint">Multi-select</span>
         </div>
         <div className="cp-chips">
@@ -1088,51 +1427,142 @@ export default function CrearPersonaje({ onNav }: Props) {
         </div>
       </section>
 
-      {/* 06 Nombre */}
+      {/* 07 Nombre */}
       <section className="cp-section">
         <div className="cp-field-head">
-          <span className="cp-field-name"><span className="cp-field-num">06</span>Nombre</span>
+          <span className="cp-field-name"><span className="cp-field-num">07</span>Nombre</span>
           <span className="cp-field-hint">Requerido</span>
         </div>
         <input className="cp-input" placeholder="Sofia, Luna, Diego…" value={name} onChange={e => setName(e.target.value)} maxLength={32} />
       </section>
 
-      {/* 07 Free prompt */}
+      {/* 08 Refuerzo opcional — texto técnico permanente que se inyecta en TODOS los prompts */}
       <section className="cp-section">
         <button className="cp-toggle-btn" onClick={() => { hapticLight(); setShowFreePrompt(v => !v); }}>
           <Wand2 size={14} />
-          <span>Dirección libre (opcional)</span>
+          <span>Refuerzo permanente (opcional)</span>
           <ChevronDown size={14} className={showFreePrompt ? 'cp-rotate' : ''} />
         </button>
         {showFreePrompt && (
-          <div className="cp-prompt-box">
-            <textarea className="cp-textarea" value={freePrompt} onChange={e => setFreePrompt(e.target.value)}
-              placeholder="Ej: con tatuaje pequeño en muñeca, expresión seria pero con sonrisa sutil, vibe Wong Kar-wai..." rows={3} maxLength={400} />
-            <div className="cp-prompt-meta">{freePrompt.length} / 400</div>
-          </div>
+          <>
+            <div className="cp-prompt-box">
+              <textarea
+                className="cp-textarea"
+                value={freePrompt}
+                onChange={e => setFreePrompt(e.target.value)}
+                placeholder="Detalles técnicos que quieres que el modelo respete SIEMPRE (proporciones extra, texturas específicas, anti-features...)"
+                rows={4}
+                maxLength={500}
+              />
+              <div className="cp-prompt-meta">{freePrompt.length} / 500</div>
+            </div>
+            <div className="cp-shot-hint" style={{ marginTop: 8 }}>
+              Texto que se concatena al anchor del personaje y se inyecta en cada generación (Studio, Reimaginar, Editor). Tap un ejemplo para agregarlo:
+            </div>
+            <div className="cp-reinforce-chips">
+              {[
+                'Deep vertical linea alba (ab crack), but NO horizontal six-pack blocks visible',
+                'Natural soft tissue gravity on bust — no surgical or perky-fake projection',
+                'Very fine vellus facial and body hair, translucent dermis',
+                'Realistic skin compression at joints (wrists, knees, elbows)',
+                'Matte-to-semi-matte skin reflection, no glossy plastic finish',
+                'Tight taut midriff skin, defined oblique lines flanking abdomen',
+                'Iris with subtle gold flecks and natural reflection in pupil',
+                'Tatuaje pequeño en muñeca interna',
+                'Asymmetric subtle smile, slight head tilt confidence',
+                'Pronounced lordosis curve, defined rear projection from side view',
+              ].map(ex => (
+                <button
+                  key={ex}
+                  className="cp-reinforce-chip"
+                  onClick={() => {
+                    hapticLight();
+                    const sep = freePrompt.trim().length > 0 ? '. ' : '';
+                    const next = `${freePrompt.trim()}${sep}${ex}`.slice(0, 500);
+                    setFreePrompt(next);
+                  }}
+                >
+                  + {ex.length > 60 ? ex.slice(0, 57) + '…' : ex}
+                </button>
+              ))}
+            </div>
+          </>
         )}
+      </section>
+
+      {/* Brand color palette — firma visual del personaje en todas las generaciones */}
+      <section className="cp-section">
+        <div className="cp-section-head">
+          <h3 className="cp-section-title">Paleta de colores (firma)</h3>
+          <p className="cp-section-hint">
+            Tonos que dominan outfits, luces ambiente, props, maquillaje. Define tu marca visual.
+            Opcional pero recomendado para consistencia.
+          </p>
+        </div>
+        <div className="cp-palette-grid">
+          {COLOR_PALETTES.map(p => (
+            <button
+              key={p.id}
+              className={`cp-palette-tile ${colorPalette === p.label ? 'is-on' : ''}`}
+              onClick={() => { hapticLight(); setColorPalette(colorPalette === p.label ? '' : p.label); }}
+            >
+              <div className="cp-palette-swatches">
+                {p.colors.map((c, i) => (
+                  <span key={i} className="cp-palette-swatch" style={{ background: c }} />
+                ))}
+              </div>
+              <strong>{p.label}</strong>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Shot Type — cómo se ven las fotos base que se generan al crear */}
+      <section className="cp-section">
+        <div className="cp-section-head">
+          <h3 className="cp-section-title">Estética de la sesión base</h3>
+          <p className="cp-section-hint">
+            Cómo se ven las primeras fotos del personaje. Después puedes generar
+            cualquier escenario desde Sesión de Fotos o el Editor.
+          </p>
+        </div>
+        <div className="cp-shot-grid">
+          {SHOT_TYPES.map(s => (
+            <button
+              key={s.id}
+              className={`cp-shot-tile ${shotType === s.id ? 'is-on' : ''}`}
+              onClick={() => { hapticLight(); setShotType(s.id); }}
+            >
+              <span className="cp-shot-emoji">{s.emoji}</span>
+              <strong>{s.label}</strong>
+              <small>{s.hint}</small>
+            </button>
+          ))}
+        </div>
       </section>
 
       <AppFloatingCTA mood={ATELIER_MOOD}
         secondaryIcon={<RefreshCw size={16} />}
         secondaryAriaLabel="Reset"
         onSecondary={() => {
-          setName(''); setGender(''); setAge('');
+          setName(''); setGender(''); setAge(''); setEthnicity('');
           setFaceShape(''); setNoseType(''); setLipShape(''); setJawline(''); setEyebrow(''); setEyeShape(''); setEyeColor('');
           setHairStyle(''); setHairColor('');
           setSkinTone(''); setSkinTexture(''); setSkinDetail(''); setMakeup('');
           setBodyType([]); setHeight(''); setMusculature('');
           setBust(''); setWaist(''); setHips(''); setGlutes(''); setLegs('');
           setPersonalityTraits([]); setFreePrompt(''); setShowFreePrompt(false);
+          setShotType('editorial');
+          setColorPalette('');
           setFashionStyle(''); setAccessories([]); setSoulStyleId('');
-          setEngine('nb2');
+          setEngine('nb2'); setNumVariants(4);
           setOpenAccordion(null);
         }}
         secondaryDisabled={generating}
-        primaryCost={`${COST_AI} cr · 4 fotos`}
+        primaryCost={`${currentCost} cr · ${numVariants} foto${numVariants === 1 ? '' : 's'}`}
         primaryLabel={generating ? 'Generando…' : 'Generar preview'}
         onPrimary={handleGenerateInitial}
-        primaryDisabled={generating || credits < COST_AI || !name.trim() || !gender} />
+        primaryDisabled={generating || credits < currentCost || !name.trim() || !gender} />
     </div>
   );
 }
@@ -1471,6 +1901,134 @@ const CREAR_STYLES = `
   font-size: 9px; letter-spacing: 0.1em; color: var(--ink-3);
 }
 
+/* Shot type — section header + 5-tile grid */
+.cp-shell .cp-section-head { margin-bottom: 10px; }
+.cp-shell .cp-section-title {
+  font-family: 'Instrument Serif', 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 400;
+  margin: 0 0 4px;
+  color: var(--ink-0);
+}
+.cp-shell .cp-section-hint {
+  font-size: 11px;
+  color: var(--ink-2);
+  margin: 0;
+  line-height: 1.4;
+}
+.cp-shell .cp-shot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.cp-shell .cp-shot-tile {
+  display: flex; flex-direction: column;
+  align-items: flex-start; gap: 2px;
+  padding: 12px 13px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.2s ease;
+}
+.cp-shell .cp-shot-tile.is-on {
+  background: var(--ink-0);
+  border-color: var(--ink-0);
+  color: var(--bg-card);
+}
+.cp-shell .cp-shot-emoji {
+  font-size: 18px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.cp-shell .cp-shot-tile strong {
+  font-size: 12px;
+  font-weight: 600;
+}
+.cp-shell .cp-shot-tile small {
+  font-size: 10px;
+  color: var(--ink-3);
+  line-height: 1.35;
+}
+.cp-shell .cp-shot-tile.is-on small {
+  color: rgba(255, 252, 245, 0.6);
+}
+
+/* Reinforcement chips — click-to-append examples for the freePrompt textarea */
+.cp-shell .cp-shot-hint {
+  font-size: 11px;
+  color: var(--ink-2);
+  line-height: 1.45;
+  margin-bottom: 8px;
+}
+.cp-shell .cp-reinforce-chips {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-top: 8px;
+}
+.cp-shell .cp-reinforce-chip {
+  padding: 6px 11px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 11px;
+  color: var(--ink-1);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  max-width: 100%;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+.cp-shell .cp-reinforce-chip:active { background: var(--paper); }
+
+/* Color palette grid — multi-swatch visual tiles */
+.cp-shell .cp-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.cp-shell .cp-palette-tile {
+  display: flex; flex-direction: column;
+  align-items: flex-start; gap: 8px;
+  padding: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.cp-shell .cp-palette-tile.is-on {
+  background: var(--ink-0);
+  border-color: var(--ink-0);
+  color: var(--bg-card);
+}
+.cp-shell .cp-palette-tile:active { transform: scale(0.97); }
+.cp-shell .cp-palette-swatches {
+  display: flex;
+  width: 100%;
+  height: 28px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px var(--line);
+}
+.cp-shell .cp-palette-tile.is-on .cp-palette-swatches {
+  box-shadow: 0 0 0 1px rgba(255, 252, 245, 0.15);
+}
+.cp-shell .cp-palette-swatch {
+  flex: 1;
+  display: block;
+}
+.cp-shell .cp-palette-tile strong {
+  font-size: 12px;
+  font-weight: 600;
+}
+
 /* Refine row */
 .cp-shell .cp-refine-row {
   display: flex; justify-content: space-between; align-items: center;
@@ -1684,6 +2242,150 @@ const CREAR_STYLES = `
   font-size: 11px;
 }
 
+/* Sheets gallery (after generation, before save) */
+.cp-shell .cp-sheets-gallery {
+  display: flex; flex-direction: column; gap: 12px;
+}
+.cp-shell .cp-sheet-item {
+  display: flex; flex-direction: column; gap: 6px;
+}
+.cp-shell .cp-sheet-label {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+  font-weight: 500;
+}
+.cp-shell .cp-sheet-img-wrap {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--paper);
+  border: 1px solid var(--line);
+}
+.cp-shell .cp-sheet-img {
+  width: 100%; height: auto;
+  display: block;
+  max-height: 320px;
+  object-fit: cover;
+}
+.cp-shell .cp-fade-in {
+  animation: cp-fade-in 380ms var(--ease) both;
+}
+@keyframes cp-fade-in {
+  from { opacity: 0; transform: scale(1.02); filter: blur(2px); }
+  to   { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+.cp-shell .cp-sheet-x {
+  position: absolute;
+  top: 8px; right: 8px;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: rgba(20, 16, 14, 0.7);
+  backdrop-filter: blur(6px);
+  border: none;
+  color: #FFFCF5;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: transform 0.3s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+  z-index: 2;
+}
+.cp-shell .cp-sheet-x:active { transform: scale(0.92); }
+.cp-shell .cp-sheet-img-btn {
+  display: block; width: 100%;
+  background: transparent; border: none; padding: 0;
+  cursor: pointer; font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.cp-shell .cp-sheet-img-btn:active img { transform: scale(0.99); }
+.cp-shell .cp-sheet-img-btn img { transition: transform 0.2s var(--ease); }
+
+/* Lightbox — fullscreen view */
+.cp-shell .cp-lightbox {
+  position: fixed; inset: 0;
+  background: rgba(20, 16, 14, 0.96);
+  backdrop-filter: blur(10px);
+  z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  animation: cp-lb-fade 200ms ease-out;
+}
+@keyframes cp-lb-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.cp-shell .cp-lightbox-img {
+  max-width: 100%;
+  max-height: 70vh;
+  border-radius: 12px;
+  object-fit: contain;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  animation: cp-lb-img-in 280ms var(--ease);
+}
+@keyframes cp-lb-img-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+.cp-shell .cp-lightbox-actions {
+  position: fixed;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  left: 50%; transform: translateX(-50%);
+  display: flex; gap: 8px; flex-wrap: wrap;
+  justify-content: center;
+  max-width: calc(100% - 32px);
+}
+.cp-shell .cp-lb-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 16px;
+  background: rgba(255, 252, 245, 0.94);
+  backdrop-filter: blur(8px);
+  border: none;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 12px; font-weight: 600;
+  color: var(--ink-0);
+  cursor: pointer;
+  transition: transform 0.3s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.cp-shell .cp-lb-btn:active { transform: scale(0.96); }
+.cp-shell .cp-lb-btn.is-on {
+  background: var(--accent);
+  color: #FFFCF5;
+}
+.cp-shell .cp-lb-btn-danger {
+  background: rgba(185, 84, 74, 0.95);
+  color: #FFFCF5;
+}
+.cp-shell .cp-lb-label {
+  display: inline-flex; align-items: center;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  border-radius: 999px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 252, 245, 0.92);
+}
+.cp-shell .cp-lightbox-close {
+  position: fixed;
+  top: max(20px, env(safe-area-inset-top));
+  right: 20px;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 252, 245, 0.16);
+  backdrop-filter: blur(8px);
+  border: none;
+  color: #FFFCF5;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.cp-shell .cp-lightbox-close:active { transform: scale(0.92); }
+
 /* Engine selector — main grid */
 .cp-shell .cp-engine-grid {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
@@ -1719,6 +2421,47 @@ const CREAR_STYLES = `
   text-transform: uppercase;
   color: var(--ink-3);
   line-height: 1.3;
+}
+
+/* Variant count grid */
+.cp-shell .cp-variant-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+}
+.cp-shell .cp-variant-tile {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 12px 8px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer; font-family: inherit;
+  text-align: center;
+  transition: all 0.3s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.cp-shell .cp-variant-tile:active { transform: scale(0.96); }
+.cp-shell .cp-variant-tile.is-active {
+  border-color: var(--accent);
+  background: var(--paper);
+}
+.cp-shell .cp-variant-num {
+  font-family: 'Instrument Serif', 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--ink-0);
+}
+.cp-shell .cp-variant-tile.is-active .cp-variant-num { color: var(--accent-deep); }
+.cp-shell .cp-variant-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-1);
+}
+.cp-shell .cp-variant-meta {
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
 }
 
 /* Engine pills (mini, in preview) */

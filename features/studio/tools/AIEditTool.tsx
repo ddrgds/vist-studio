@@ -7,13 +7,7 @@ import { getModel } from '../../../models/registry';
 import { useProfile } from '../../../contexts/ProfileContext';
 import { useToast } from '../../../contexts/ToastContext';
 import { useGalleryStore, type GalleryItem } from '../../../stores/galleryStore';
-
-/** Convert a data URL or blob URL to a File object */
-async function urlToFile(url: string, name: string): Promise<File> {
-  const res = await fetch(url);
-  const blob = await res.blob();
-  return new File([blob], name, { type: blob.type || 'image/png' });
-}
+import { urlToFile } from '../../../components/apps/_shared/urlToFile';
 
 interface AIEditToolProps {
   placeholder?: string;

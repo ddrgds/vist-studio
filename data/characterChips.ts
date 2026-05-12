@@ -512,6 +512,49 @@ export const SKIN_TEXTURES: ChipOption[] = [
   { id: 'shadow',      label: 'Sombra',    emoji: '🌑', promptText: 'shadow made flesh, dark wisps, non-euclidean form' },
 ]
 
+// ─── Color Palette ───────────────────────────────────────────────────
+// Signature brand palette per character — gets baked into the anchor so
+// outfits, ambient lighting, props, and makeup all converge toward the
+// same color family across every future generation. Each entry has a
+// `colors` array of 5 hex swatches rendered as small visual pills in the UI.
+
+export interface PaletteOption extends ChipOption {
+  colors: string[];  // 5 hex swatches shown as a mini palette
+}
+
+export const COLOR_PALETTES: PaletteOption[] = [
+  { id: 'sunset-glow', label: 'Sunset Glow', emoji: '🌇',
+    colors: ['#FFD8A8', '#F5A07A', '#E07F58', '#C95F4A', '#8F3F39'],
+    promptText: 'signature color palette: warm peach, coral, cream and gold tones reflected in outfit accents, ambient lighting, makeup highlights and prop selection' },
+  { id: 'warm-earth', label: 'Warm Earth', emoji: '🌾',
+    colors: ['#F0E0C6', '#D9B280', '#C9785C', '#A55A3F', '#6E3C28'],
+    promptText: 'signature color palette: terracotta, cream, sand, ochre and burnt sienna earth tones present in clothing, environment, and lighting warmth' },
+  { id: 'cool-pastel', label: 'Cool Pastel', emoji: '🌷',
+    colors: ['#FCE8EE', '#D5C5E5', '#C8BAD8', '#A8C8E0', '#B5DBC0'],
+    promptText: 'signature color palette: soft lavender, baby blue, mint, blush pink pastel hues guiding wardrobe, ambient color, makeup, and background' },
+  { id: 'neon-street', label: 'Neon Street', emoji: '🎆',
+    colors: ['#FF2D95', '#FF6BFF', '#1FE0FF', '#FFEB3B', '#7C4DFF'],
+    promptText: 'signature color palette: hot neon pink, electric cyan, vivid yellow, magenta street-vibrant hues — used in LED rim lighting, accent garments, accessories' },
+  { id: 'editorial-mono', label: 'Editorial Mono', emoji: '⚫',
+    colors: ['#FFFFFF', '#D0D0D0', '#808080', '#404040', '#1A1A1A'],
+    promptText: 'signature color palette: pure black, white, and graphite gray — monochrome editorial aesthetic with high contrast, minimal color saturation overall' },
+  { id: 'cyber-chrome', label: 'Cyber Chrome', emoji: '🪩',
+    colors: ['#E8EEF5', '#A6B3C0', '#5A7080', '#3D70D8', '#0D1A2E'],
+    promptText: 'signature color palette: liquid silver, electric blue, cool chrome, glass-black — metallic futuristic finish on garments, accessories, and ambient reflections' },
+  { id: 'beach-coastal', label: 'Coastal Breeze', emoji: '🐚',
+    colors: ['#F5EDDC', '#D9C8A8', '#9CC4D6', '#7AA0B5', '#E8A89A'],
+    promptText: 'signature color palette: soft seafoam, dune beige, sky blue, coral pink — coastal beach grandmother aesthetic, linen textures' },
+  { id: 'rose-blush', label: 'Rosé Blush', emoji: '🌸',
+    colors: ['#F8E1D8', '#F0BCC8', '#E59A9A', '#C97A8E', '#8E4A5E'],
+    promptText: 'signature color palette: rosé pink, dusty blush, champagne cream, soft mauve — romantic feminine tones across wardrobe and props' },
+  { id: 'bohemio-tribal', label: 'Bohemio Tribal', emoji: '🪶',
+    colors: ['#E8C892', '#D89148', '#A86840', '#5A7B70', '#2E4842'],
+    promptText: 'signature color palette: burnt orange, deep teal, mustard yellow, ochre, warm brown — bohemian tribal earth-warm tones in textiles and beaded jewelry' },
+  { id: 'gothic-noir', label: 'Gothic Noir', emoji: '🦇',
+    colors: ['#8A2A3A', '#5A1A2A', '#2A1B2E', '#0F0F12', '#B0A8A0'],
+    promptText: 'signature color palette: deep oxblood red, midnight purple, jet black, antique silver — gothic dramatic dark moody palette across outfit and lighting' },
+];
+
 // ─── Genders ─────────────────────────────────────────────────────────
 export const GENDERS: ChipOption[] = [
   { id: 'female',       label: 'Femenino',        emoji: '♀️', promptText: 'female' },
@@ -555,6 +598,13 @@ export const PERSONALITY_TRAITS: ChipOption[] = [
 
 // ─── Fashion Styles ──────────────────────────────────────────────────
 export const FASHION_STYLES: ChipOption[] = [
+  // ── Casual / lounge (new for IG aesthetic reproduction) ──
+  { id: 'bedroom-lounge', label: 'Bedroom Lounge', emoji: '🛏️', promptText: 'minimal bedroom loungewear, fitted ribbed sports bra or crop top paired with low-rise boy shorts or bike shorts, bare midriff fully visible, no makeup or barely-there natural look, casual social-media aesthetic' },
+  { id: 'cozy-knit',      label: 'Cozy Knit',      emoji: '☕', promptText: 'oversized cream chunky knit sweater paired with bike shorts or tiny shorts, slightly tousled bedhead hair, weekend cozy aesthetic, fall winter vibe' },
+  // ── Fantastical / dramatic (new) ──
+  { id: 'mermaid-ethereal', label: 'Mermaid Ethereal', emoji: '🧜', promptText: 'pearl-encrusted iridescent bodice with scaled metallic skirt, shell jewelry, wet-hair texture, oceanic dreamscape priestess of the sea, otherworldly ethereal beauty' },
+  { id: 'cyber-goddess',  label: 'Cyber Goddess',  emoji: '🌌', promptText: 'chrome metallic bodysuit with LED accents, holographic translucent overlays, futuristic neo-deity warrior priestess look, glowing reactive accessories, sci-fi divine aesthetic' },
+  // ── Existing ──
   { id: 'streetwear',    label: 'Streetwear',     emoji: '👟', promptText: 'urban streetwear fashion' },
   { id: 'high-fashion',  label: 'Alta moda',      emoji: '👗', promptText: 'high fashion editorial Vogue outfit' },
   { id: 'bohemian',      label: 'Bohemio',        emoji: '🌻', promptText: 'bohemian free-spirited flowing clothing' },

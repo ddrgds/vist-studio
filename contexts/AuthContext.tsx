@@ -60,6 +60,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const handleSignOut = async () => {
+    // Drop URL→File cache so the next user doesn't see anything from this session
+    try {
+      const { clearUrlToFileCache } = await import('../components/apps/_shared/urlToFile');
+      clearUrlToFileCache();
+    } catch { /* non-critical */ }
     await supabaseSignOut();
   };
 

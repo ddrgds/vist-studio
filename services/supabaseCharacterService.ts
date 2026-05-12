@@ -53,7 +53,7 @@ export const uploadCharacterToCloud = async (
   const referencePhotoUrls = modelImageUrls.length > 0 ? modelImageUrls : (char.referencePhotoUrls ?? []);
 
   // Upsert metadata row (no blobs — URLs only)
-  const { error } = await supabase.from('characters').upsert({
+  const row: Record<string, unknown> = {
     id: char.id,
     user_id: userId,
     name: char.name,
@@ -72,7 +72,32 @@ export const uploadCharacterToCloud = async (
     reference_photo_urls: referencePhotoUrls,
     // DB: ALTER TABLE characters ADD COLUMN IF NOT EXISTS render_style text;
     render_style: char.renderStyle ?? null,
-  });
+  };
+
+  // Add voice columns conditionally — caller's migration 004 may not be applied
+  if (char.voiceId !== undefined || char.voiceName !== undefined) {
+    Object.assign(row, {
+      voice_id: char.voiceId ?? null,
+      voice_name: char.voiceName ?? null,
+      voice_source: char.voiceSource ?? null,
+      voice_preview_url: char.voicePreviewUrl ?? null,
+      voice_created_at: char.voiceCreatedAt ? new Date(char.voiceCreatedAt).toISOString() : null,
+    });
+  }
+
+  let { error } = await supabase.from('characters').upsert(row);
+
+  // Retry without voice columns if migration 004 wasn't applied
+  if (error && /column.*voice_.*does not exist|42703|PGRST204/i.test(`${error.message} ${(error as any).code ?? ''}`)) {
+    console.warn('[saveCharacter] Voice columns missing — retrying without. Run migration 004_character_voice.sql.');
+    const fallbackRow = { ...row };
+    delete (fallbackRow as any).voice_id;
+    delete (fallbackRow as any).voice_name;
+    delete (fallbackRow as any).voice_source;
+    delete (fallbackRow as any).voice_preview_url;
+    delete (fallbackRow as any).voice_created_at;
+    ({ error } = await supabase.from('characters').upsert(fallbackRow));
+  }
 
   if (error) throw new Error(`characters upsert failed: ${error.message}`);
 
@@ -91,24 +116,52 @@ export const updateCharacterInCloud = async (
   char: SavedCharacter,
   userId: string,
 ): Promise<void> => {
-  const { error } = await supabase
+  const baseUpdate: Record<string, unknown> = {
+    name: char.name,
+    thumbnail: char.thumbnail,
+    outfit_description: char.outfitDescription,
+    characteristics: char.characteristics,
+    accessory: char.accessory,
+    lora_url: char.loraUrl ?? null,
+    lora_training_status: char.loraTrainingStatus ?? 'idle',
+    lora_trained_at: char.loraTrainedAt ?? null,
+    updated_at: char.updatedAt,
+    usage_count: char.usageCount,
+    reference_photo_urls: char.referencePhotoUrls ?? [],
+    render_style: char.renderStyle ?? null,
+  };
+  // Only include voice fields if the caller is setting them (migration 004 may not be applied)
+  if (char.voiceId !== undefined || char.voiceName !== undefined) {
+    Object.assign(baseUpdate, {
+      voice_id: char.voiceId ?? null,
+      voice_name: char.voiceName ?? null,
+      voice_source: char.voiceSource ?? null,
+      voice_preview_url: char.voicePreviewUrl ?? null,
+      voice_created_at: char.voiceCreatedAt ? new Date(char.voiceCreatedAt).toISOString() : null,
+    });
+  }
+
+  let { error } = await supabase
     .from('characters')
-    .update({
-      name: char.name,
-      thumbnail: char.thumbnail,
-      outfit_description: char.outfitDescription,
-      characteristics: char.characteristics,
-      accessory: char.accessory,
-      lora_url: char.loraUrl ?? null,
-      lora_training_status: char.loraTrainingStatus ?? 'idle',
-      lora_trained_at: char.loraTrainedAt ?? null,
-      updated_at: char.updatedAt,
-      usage_count: char.usageCount,
-      reference_photo_urls: char.referencePhotoUrls ?? [],
-      render_style: char.renderStyle ?? null,
-    })
+    .update(baseUpdate)
     .eq('id', char.id)
     .eq('user_id', userId);
+
+  // Retry without voice columns if migration 004 wasn't applied
+  if (error && /column.*voice_.*does not exist|42703|PGRST204/i.test(`${error.message} ${(error as any).code ?? ''}`)) {
+    console.warn('[updateCharacter] Voice columns missing — retrying without. Run migration 004_character_voice.sql.');
+    const fallback = { ...baseUpdate };
+    delete (fallback as any).voice_id;
+    delete (fallback as any).voice_name;
+    delete (fallback as any).voice_source;
+    delete (fallback as any).voice_preview_url;
+    delete (fallback as any).voice_created_at;
+    ({ error } = await supabase
+      .from('characters')
+      .update(fallback)
+      .eq('id', char.id)
+      .eq('user_id', userId));
+  }
 
   if (error) throw new Error(`characters update failed: ${error.message}`);
 };
@@ -120,18 +173,37 @@ export const updateCharacterInCloud = async (
 /**
  * Loads all characters from Supabase — returns URLs only, no blob downloads.
  * Blobs are fetched lazily at generation time from modelImageUrls.
+ *
+ * Defensive: tries with voice columns first. If they don't exist yet
+ * (migration 004 not applied), retries without them so existing users
+ * don't lose access to their characters until they run the migration.
  */
+const CORE_COLUMNS = 'id, name, model_image_urls, characteristics, accessory, created_at, updated_at, usage_count, reference_photo_urls, render_style';
+const VOICE_COLUMNS = 'voice_id, voice_name, voice_source, voice_preview_url, voice_created_at';
+
 export const loadCharactersFromCloud = async (userId: string): Promise<SavedCharacter[]> => {
-  const { data, error } = await supabase
+  // Attempt full query first (typed as any since the column set varies on retry)
+  let res: { data: any; error: any } = await supabase
     .from('characters')
-    .select('id, name, model_image_urls, characteristics, accessory, created_at, updated_at, usage_count, reference_photo_urls, render_style')
+    .select(`${CORE_COLUMNS}, ${VOICE_COLUMNS}`)
     .eq('user_id', userId)
     .order('updated_at', { ascending: false })
     .limit(20);
 
-  if (error) throw new Error(`loadCharactersFromCloud failed: ${error.message}`);
+  // If voice columns don't exist (PGRST204 / 42703), fall back to core columns
+  if (res.error && /column.*voice_.*does not exist|42703|PGRST204/i.test(`${res.error.message} ${res.error.code ?? ''}`)) {
+    console.warn('[loadCharactersFromCloud] Voice columns missing — falling back. Run migration 004_character_voice.sql to enable voice features.');
+    res = await supabase
+      .from('characters')
+      .select(CORE_COLUMNS)
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false })
+      .limit(20);
+  }
 
-  const rows = (data ?? []) as Record<string, unknown>[];
+  if (res.error) throw new Error(`loadCharactersFromCloud failed: ${res.error.message}`);
+
+  const rows = (res.data ?? []) as Record<string, unknown>[];
 
   return rows.map((row) => ({
     id: row.id as string,
@@ -148,6 +220,11 @@ export const loadCharactersFromCloud = async (userId: string): Promise<SavedChar
     usageCount: (row.usage_count as number) ?? 0,
     referencePhotoUrls: (row.reference_photo_urls as string[]) ?? [],
     renderStyle: (row.render_style as string) ?? undefined,
+    voiceId: (row.voice_id as string) ?? undefined,
+    voiceName: (row.voice_name as string) ?? undefined,
+    voiceSource: (row.voice_source as 'cloned' | 'library' | 'shared') ?? undefined,
+    voicePreviewUrl: (row.voice_preview_url as string) ?? undefined,
+    voiceCreatedAt: row.voice_created_at ? new Date(row.voice_created_at as string).getTime() : undefined,
   } satisfies SavedCharacter));
 };
 

@@ -13,6 +13,7 @@ import { ENGINE_METADATA, FEATURE_ENGINES, AIProvider, AspectRatio, CREDIT_COSTS
 import type { SheetType } from '../services/toolEngines'
 import { SOUL_STYLES, SOUL_STYLE_CATEGORIES } from '../data/soulStyles'
 import type { SoulStyleCategory } from '../data/soulStyles'
+import { urlToFile } from '../components/apps/_shared/urlToFile'
 import { useNavigationStore } from '../stores/navigationStore'
 import { usePipelineStore } from '../stores/pipelineStore'
 import { PipelineCTA } from '../components/PipelineCTA'
@@ -111,11 +112,7 @@ const TOOL_TO_FEATURE: Record<string, string> = {
   'dazz': 'relight',
 }
 
-async function urlToFile(url: string, filename = 'character.png'): Promise<File> {
-  const res = await fetch(url)
-  const blob = await res.blob()
-  return new File([blob], filename, { type: blob.type || 'image/png' })
-}
+// urlToFile imported from shared (LRU-cached)
 
 /** Default edit — NB2 → Grok cascade. */
 /**
@@ -131,7 +128,16 @@ async function urlToFile(url: string, filename = 'character.png'): Promise<File>
 const NB2_SENSITIVE_ES = /\b(lencer[ií]a|sensual|seductor\w*|provocativ\w*|pecho|busto|seno|escote|sost[eé]n|cama|s[áa]banas?|[íi]ntim\w*|reclinad\w*|acostad\w*|tumbad\w*|desnud\w*|bikini|ba[ñn]ador|swimsuit|trasero|culo|nalga|muslo|gl[úu]teo|cadera|cuerpo|piel|escotad\w*|ajustad\w*|ce[ñn]id\w*|transparent\w*|encaje|seda|sat[eé]n|boudoir)\b/i;
 
 async function editImageWithAI(
-  opts: { baseImage: File; referenceImage?: File | null; instruction: string; imageSize?: string; aspectRatio?: string; model?: string },
+  opts: {
+    baseImage: File;
+    referenceImage?: File | null;
+    instruction: string;
+    imageSize?: string;
+    aspectRatio?: string;
+    model?: string;
+    /** Permanent character description — appended to instruction as physical anchor */
+    physicalAnchor?: string;
+  },
   onProgress?: (p: number) => void,
   abortSignal?: AbortSignal,
 ): Promise<string[]> {
@@ -148,6 +154,13 @@ async function editImageWithAI(
     const { translateForNB2 } = await import('../services/promptCompiler');
     instruction = await translateForNB2(opts.instruction);
     if (onProgress) onProgress(15); // translation done, starting NB2
+  }
+
+  // Inject physical anchor — the character's permanent description (body
+  // proportions, skin texture, face geometry). Restores fidelity that
+  // references alone lose across creative edits.
+  if (opts.physicalAnchor?.trim()) {
+    instruction = `${instruction}\n\nSUBJECT PHYSICAL ANCHOR (absolute, overrides reference ambiguity): ${opts.physicalAnchor.trim()}`;
   }
 
   // Standard cascade: NB2 → Grok fallback. NB2 with English vocab usually succeeds
@@ -171,9 +184,16 @@ const routeEdit = async (
   abortSignal?: AbortSignal,
   referenceImage?: File | null,
   bypassCompiler?: boolean,
+  /** Permanent character description — appended so EVERY engine receives the anchor */
+  physicalAnchor?: string,
 ): Promise<string[]> => {
   const eng = ENGINE_METADATA.find(e => e.key === engineKey)
   const fal = await import('../services/falService');
+  // Inject anchor universally — every downstream engine (Qwen, Seedream, FluxKontext,
+  // Grok, GPT, NB2) receives this single concatenated instruction.
+  if (physicalAnchor?.trim()) {
+    instruction = `${instruction}\n\nSUBJECT PHYSICAL ANCHOR (absolute, overrides reference ambiguity): ${physicalAnchor.trim()}`;
+  }
   if (engineKey === 'fal:qwen-edit') {
     return fal.editImageWithQwen(file, instruction, onProgress, abortSignal)
   }
@@ -549,7 +569,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
             resultUrls = results
           } else {
             // Standard single-ref path
-            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
+            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0] ?? undefined, instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, physicalAnchor: currentChar?.characteristics }, (p) => setProgress(p))
             if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
             resultUrls = results
           }
@@ -603,7 +623,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           : `Change background/scene to: ${sceneDesc}. Keep person identical. Match lighting and color grading.`
         const charRefs = await getCharRefFiles()
         try {
-          const results = await editImageWithAI({ baseImage: inputFile, referenceImage: sceneFile ?? charRefs[0] ?? undefined, instruction: jsonSceneInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
+          const results = await editImageWithAI({ baseImage: inputFile, referenceImage: sceneFile ?? charRefs[0] ?? undefined, instruction: jsonSceneInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, physicalAnchor: currentChar?.characteristics }, (p) => setProgress(p))
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {
@@ -617,7 +637,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         const charRefs = await getCharRefFiles()
         if (charRefs.length > 0) {
           try {
-            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0], instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
+            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: charRefs[0], instruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, physicalAnchor: currentChar?.characteristics }, (p) => setProgress(p))
             if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
             resultUrls = results
           } catch {
@@ -652,7 +672,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         // rules can suppress skin texture changes. The override tells the model
         // skin texture is the EXPLICIT target of this edit.
         const instruction = `SKIN TEXTURE RETOUCH (overrides preservation rule for skin only): ${skinInstruction} Apply this skin texture change visibly across all visible skin areas (face, neck, arms, hands). Do not alter the face shape, features, expression, hair, outfit, pose, or background.`
-        resultUrls = await routeEdit(selectedEngine, inputFile!, instruction, (p) => setProgress(p))
+        resultUrls = await routeEdit(selectedEngine, inputFile!, instruction, (p) => setProgress(p), undefined, undefined, undefined, currentChar?.characteristics)
       } else if (activeTool === 'faceswap' && faceSwapFile) {
         const faceInstruction = `Replace the face of the person in the base image with the face from the reference image. Keep hair, body, pose, clothing, and background exactly the same. Only change facial features.`
         try {
@@ -676,7 +696,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           const tryonInstruction = `TRY-ON SPECIFICATION:\n${JSON.stringify(tryonSpec, null, 2)}`
           const tryonFlatInstruction = 'Replace ONLY the clothing. IMAGE 1 is the PERSON (keep everything). IMAGE 2 is the GARMENT ONLY (extract clothing, IGNORE the model wearing it). Same face, body, pose, background.'
           try {
-            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: garmentFile, instruction: tryonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
+            const results = await editImageWithAI({ baseImage: inputFile!, referenceImage: garmentFile, instruction: tryonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, physicalAnchor: currentChar?.characteristics }, (p) => setProgress(p))
             if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
             resultUrls = results
           } catch (nb2Err) {
@@ -687,7 +707,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
           // Prompt-only try-on (outfit chip selected, no reference image)
           const chipInstruction = `OUTFIT CHANGE: Replace ONLY the clothing on this person. Dress them in: ${outfitChip}. Keep the EXACT same face, hair, skin tone, body shape, pose, and background. ONLY change the clothing.`
           try {
-            const results = await editImageWithAI({ baseImage: inputFile!, instruction: chipInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
+            const results = await editImageWithAI({ baseImage: inputFile!, instruction: chipInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, physicalAnchor: currentChar?.characteristics }, (p) => setProgress(p))
             if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
             resultUrls = results
           } catch (nb2Err) {
@@ -784,7 +804,7 @@ export function AIEditorV2({ onNav }: { onNav?: (page: string) => void }) {
         const flatInstruction = `Edit Figure 1: Generate a NEW photograph of this same person in a different aesthetic. PRIMARY STYLE: ${primaryStyle?.name || 'editorial'} — ${primaryDesc}.${accentText}${customText} CHANGE: pose, camera angle, framing, background, outfit. KEEP EXACTLY: the person's face, bone structure, eye color, eye shape, lip shape, skin tone, hair style, hair color, body proportions${reimagineIdentityRefs.length > 0 ? ' from Figure 1 and Figure 2 (identity references)' : ''}. ${skinFlat} NO text, watermarks, logos, brand names. Aspect ratio: ${outputOpts.aspectRatio}.`
 
         try {
-          const results = await editImageWithAI({ baseImage: reimagineBase, referenceImage: reimagineIdentityRefs[0] ?? undefined, instruction: jsonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio }, (p) => setProgress(p))
+          const results = await editImageWithAI({ baseImage: reimagineBase, referenceImage: reimagineIdentityRefs[0] ?? undefined, instruction: jsonInstruction, imageSize: outputOpts.imageSize as any, aspectRatio: outputOpts.aspectRatio, physicalAnchor: currentChar?.characteristics }, (p) => setProgress(p))
           if (!results || results.filter(Boolean).length === 0) throw new Error('NB2 returned empty')
           resultUrls = results
         } catch (nb2Err) {

@@ -34,6 +34,14 @@ export interface SavedCharacter {
   referencePhotoUrls?: string[]
   // Cloud URLs for model images — populated when loaded from Supabase (no blob download)
   modelImageUrls?: string[]
+  // Voice (ElevenLabs) — assigned via Crear Personaje / Personajes detail.
+  // voiceId is the ElevenLabs identifier; voiceSource tells us how it got there
+  // so we can show the right "edit" affordance.
+  voiceId?: string
+  voiceName?: string
+  voiceSource?: 'cloned' | 'library' | 'shared'
+  voicePreviewUrl?: string
+  voiceCreatedAt?: number
 }
 
 interface CharacterState {

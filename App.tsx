@@ -23,6 +23,8 @@ const AIEditor = lazy(() => import('./pages/AIEditorV2'));
 const HeadshotPro = lazy(() => import('./pages/HeadshotPro'));
 const Reimaginar = lazy(() => import('./pages/Reimaginar'));
 const SesionDeFotos = lazy(() => import('./pages/SesionDeFotos'));
+const Recast = lazy(() => import('./pages/Recast'));
+const Imagina = lazy(() => import('./pages/Imagina'));
 
 // ── Mobile-only shell (Capacitor native + ?mobile=1 in browser) ──
 const MobileApp = lazy(() => import('./pages/MobileApp'));
@@ -50,7 +52,7 @@ const ExportModal = lazy(() => import('./features/export/ExportModal'));
 // Re-import + add to pages map when rebuilding.
 const OnboardingWizard = lazy(() => import('./components/OnboardingWizard').then(m => ({ default: m.OnboardingWizard })));
 
-export type Page = 'create' | 'studio' | 'editor' | 'gallery' | 'characters' | 'pricing' | 'profile' | 'headshot' | 'reimaginar' | 'sesion';
+export type Page = 'create' | 'studio' | 'editor' | 'gallery' | 'characters' | 'pricing' | 'profile' | 'headshot' | 'reimaginar' | 'sesion' | 'recast' | 'imagina';
 
 function App() {
   return (
@@ -196,6 +198,8 @@ function AuthenticatedApp() {
     headshot: <HeadshotPro onNav={handleNav} />,
     reimaginar: <Reimaginar onNav={handleNav} />,
     sesion: <SesionDeFotos onNav={handleNav} />,
+    recast: <Recast onNav={handleNav} />,
+    imagina: <Imagina onNav={handleNav} />,
   };
 
   return (

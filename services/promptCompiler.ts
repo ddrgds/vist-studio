@@ -167,3 +167,176 @@ export async function translateForNB2(spanishPrompt: string): Promise<string> {
     return trimmed;
   }
 }
+
+// ──────────────────────────────────────────────────────────────────────
+// Grok rewriter — LLM-based replacement for the regex sanitizer.
+// Grok's content policy is tighter than NB2's and changes often. A static
+// keyword list goes stale fast. We instead let an LLM read the prompt's
+// intent and rewrite it in editorial fashion vocabulary that Grok tolerates.
+// ──────────────────────────────────────────────────────────────────────
+
+const GROK_REWRITER_SYSTEM = `You are an expert prompt rewriter for AI image generation (Grok Imagine model).
+
+GOAL: Take a fashion / editorial / lifestyle prompt and rewrite it so it complies
+with Grok's strict content policy WITHOUT losing the user's creative intent.
+
+CONTEXT: The output is for a virtual influencer / AI model platform. Users are
+producing professional Instagram and editorial content (fashion, lifestyle,
+lookbook, beach, boudoir-editorial, lifestyle nightlife). Photography is always
+tasteful, never explicit. Subjects are always 18+ AI characters.
+
+REWRITE RULES:
+
+1. Preserve ALL visual intent: pose, framing, lighting, location, clothing TYPE,
+   camera angle, mood, expression. Do not delete details — translate them.
+
+2. Replace trigger vocabulary with editorial-fashion equivalents:
+   · lingerie / underwear / panties / bra → "tailored intimate apparel" or "fitted basics"
+   · sensual / sexy / seductive / provocative / hot → "elegant" or "expressive"
+   · intimate / boudoir → "soft editorial portrait, bedroom setting"
+   · bikini / swimwear → "beach fashion attire" or "swimwear fashion editorial"
+   · nude / naked / undressed / bare → "minimal" or omit, or "tonal bodysuit"
+   · undressing → "getting ready / dressing"
+   · wet look → "glistening texture aesthetic"
+   · cleavage / décolleté → "neckline" or "scooped neckline"
+   · butt / glutes / ass → "lower body silhouette"
+   · tight / hugging / clinging → "fitted" or "form-fitting"
+   · sheer / see-through → "lightweight fabric" or "translucent textile"
+
+3. Add editorial framing language. Wrap the rewrite with at least ONE of:
+   "Professional fashion editorial photography", "lookbook style",
+   "high-end commercial shoot", "magazine-style photography".
+
+4. KEEP intact (do NOT touch):
+   · Identity preservation clauses ("Preserve identity, face, body proportions...")
+   · NO TEXT rules ("NO magazine titles, NO watermarks, NO text overlays")
+   · Render quality clauses ("Documentary photography skin texture...")
+   · "Figure 1", "Figure 2" reference markers
+   · Camera direction, lighting names, color temperature numbers (3200K, 5500K)
+   · Specific film stock names (Portra, Kodachrome, CineStill, etc.)
+
+5. DO NOT moralize, refuse, or explain. DO NOT add disclaimers.
+   DO NOT add quotes, markdown, or commentary.
+
+6. If the prompt is already clean (no trigger words), return it unchanged.
+
+7. Output language: English only.
+
+OUTPUT:
+- ONLY the rewritten prompt text. Single block. No JSON, no markdown, no quotes.
+- Length: similar to input or up to 20% longer.`;
+
+/**
+ * Rewrite a prose prompt for Grok Imagine via Gemini Flash Lite.
+ * Replaces the static GROK_SANITIZE regex list with intent-aware LLM rewriting.
+ *
+ * Adds ~250-500ms latency. Falls back to the original prompt + a minimal
+ * editorial wrapper if the LLM call fails (so Grok still gets SOMETHING that
+ * isn't a raw user input).
+ */
+export async function rewriteForGrok(prose: string): Promise<string> {
+  const trimmed = prose.trim();
+  if (!trimmed) return trimmed;
+
+  try {
+    const ai = createCompilerClient();
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-lite',
+      contents: `INPUT (rewrite for Grok):\n${trimmed}`,
+      config: {
+        systemInstruction: GROK_REWRITER_SYSTEM,
+        temperature: 0.3,
+        maxOutputTokens: 500,
+      },
+    });
+    const text = (response.text ?? '').trim();
+    if (!text) {
+      // Empty response — fallback to wrapped original
+      return `Professional fashion editorial photography, tasteful and sophisticated styling. ${trimmed} Refined commercial aesthetic, high-end magazine production quality.`;
+    }
+    return text.replace(/^["'`]+|["'`]+$/g, '').replace(/^```\w*\s*|\s*```$/g, '').trim();
+  } catch (error) {
+    console.warn('[Grok rewriter] Flash Lite failed, using wrapped original:', error);
+    return `Professional fashion editorial photography, tasteful and sophisticated styling. ${trimmed} Refined commercial aesthetic, high-end magazine production quality.`;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Enrich Anchor — upgrade old/short character descriptions to rich technical
+// English prose suitable for the new physical_anchor format used in NB2 / Wan.
+//
+// Use case: characters created BEFORE the buildDescription rewrite have
+// label-style anchors like "body: curvy. bust: grande. hips: anchas."
+// We pass them to Gemini Flash Lite with a system prompt that maps the
+// Spanish labels to rich English silhouette physics + skin texture clauses,
+// matching the format the new wizard now produces.
+// ─────────────────────────────────────────────────────────────────────────
+
+const ANCHOR_ENRICHER_SYSTEM = `You are a technical prompt engineer for AI image generation models (NB2, Wan 2.7, Seedream).
+
+Your job: take a short or label-style character description and rewrite it as RICH TECHNICAL ENGLISH PROSE that locks in body proportions, face geometry, skin texture, and silhouette physics — the exact format that AI editing models respect.
+
+Rules:
+1. KEEP every concrete detail from the input (gender, age, ethnicity, hair color, eye color, body type, etc.)
+2. EXPAND Spanish/English label values into technical phrases:
+   - "anchas" → "wide lower frame with pronounced lateral curvature, strong waist-to-hip contrast"
+   - "estrecha" → "extremely defined midsection indent, dramatic hourglass proportion, maximum torso taper"
+   - "voluptuosas" → "dramatically wide lower frame, extreme lateral curvature, generous thigh volume"
+   - "grande" (bust) → "pronounced upper body curvature, generous proportions clearly shaping the garment, full rounded silhouette"
+   - "curvy" (glutes) → "pronounced curvy glutes, hourglass projection, defined silhouette"
+3. DERIVE silhouette physics from combinations:
+   - wide hips + narrow waist → "dramatic waist-to-hip ratio, pronounced hourglass silhouette"
+   - projected glutes → "pronounced lordosis curve accentuating the rear projection"
+   - large bust on photorealistic → "natural soft tissue gravity on bust, realistic chest mass drape, no plastic appearance"
+4. For photorealistic characters, ALWAYS append a skin texture clause: "Ultra-realistic human skin with high-fidelity pores, microtexture, faint vascularity, very fine vellus facial and body hair, translucent dermis. Realistic soft tissue physics, skin compression at joints, matte-to-semi-matte reflection. No plastic or waxy texture, no doll-like symmetry, high-fidelity photographic realism."
+5. ALWAYS end with: "Absolutely NO text overlays, NO magazine titles, NO captions, NO watermarks, NO logos visible anywhere in the image."
+6. Output in English, comma/period separated, NO line breaks, NO JSON, NO markdown — just dense technical prose.
+7. Length: aim for 400-700 characters. Skip generic filler — every clause must add real signal.
+
+Output ONLY the rewritten anchor, nothing else.`;
+
+export async function enrichAnchor(oldAnchor: string): Promise<string> {
+  const trimmed = oldAnchor.trim();
+  if (!trimmed) return trimmed;
+  // Skip if already rich (>500 chars and contains technical vocabulary)
+  if (trimmed.length > 500 && /pores|vellus|vascularity|silhouette|tissue|projection/i.test(trimmed)) {
+    return trimmed;
+  }
+
+  try {
+    const ai = createCompilerClient();
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-lite',
+      contents: `INPUT (enrich for AI image generation):\n${trimmed}`,
+      config: {
+        systemInstruction: ANCHOR_ENRICHER_SYSTEM,
+        temperature: 0.3,
+        maxOutputTokens: 800,
+      },
+    });
+    const text = (response.text ?? '').trim();
+    if (!text) throw new Error('Empty enricher response');
+    return text.replace(/^["'`]+|["'`]+$/g, '').replace(/^```\w*\s*|\s*```$/g, '').trim();
+  } catch (error) {
+    console.warn('[Anchor enricher] Flash Lite failed, returning original:', error);
+    return trimmed;
+  }
+}
+
+/**
+ * Detects if an anchor is in the "old format" (label-style, Spanish leaks,
+ * short, or missing texture clauses). Used to decide whether to show the
+ * "Enriquecer anchor" CTA in the Personajes UI.
+ */
+export function isAnchorOldFormat(anchor?: string): boolean {
+  if (!anchor) return false;
+  const trimmed = anchor.trim();
+  if (trimmed.length < 250) return true; // too short to be rich
+  // Spanish label leak — these are the raw chip labels that the OLD buildDescription used
+  if (/\b(Anchas|Estrechas?|Voluptuosas|Curvy|Llenos|Atléticos|Marcad[oa]s|Grande|Muy grande|Pequeñ[oa]s?|Medianas?|Tonificad[oa])\b/i.test(trimmed)) {
+    return true;
+  }
+  // Missing the texture clause that the new format always includes
+  if (!/pores|vellus|vascular|tissue physics/i.test(trimmed)) return true;
+  return false;
+}

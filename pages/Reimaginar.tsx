@@ -20,7 +20,8 @@ import { useProfile } from '../contexts/ProfileContext';
 import { useToast } from '../contexts/ToastContext';
 import { hapticLight, hapticMedium, hapticSuccess, hapticError, sharePhoto, takePhoto, isNativePlatform } from '../services/nativeService';
 import { SOUL_STYLES, SOUL_STYLE_CATEGORIES, type SoulStyle, type SoulStyleCategory } from '../data/soulStyles';
-import { identityProse, NO_TEXT_RULE, NEVER_ADD_TEXT, PHOTOREAL_SKIN, renderStyleSkin } from '../services/promptBuilder';
+import { identityProse, NO_TEXT_RULE, NEVER_ADD_TEXT, PHOTOREAL_SKIN, renderStyleSkin, withPhysicalAnchor } from '../services/promptBuilder';
+import { urlToFile } from '../components/apps/_shared/urlToFile';
 
 // ─── Types ─────────────────────────────────────
 
@@ -76,12 +77,7 @@ const MOBILE_FEATURED_IDS = [
 ];
 
 // ─── Helpers ────────────────────────────────────
-
-async function urlToFile(url: string, filename = 'character.png'): Promise<File> {
-  const res = await fetch(url);
-  const blob = await res.blob();
-  return new File([blob], filename, { type: blob.type || 'image/png' });
-}
+// urlToFile imported from shared (LRU-cached)
 
 function styleEmoji(s: SoulStyle): string {
   return s.icon || SOUL_STYLE_CATEGORIES[s.category]?.icon || '✨';
@@ -356,7 +352,15 @@ export default function Reimaginar({ onNav }: Props) {
         },
       };
 
-      const jsonInstruction = `REIMAGINE SPECIFICATION:\n${JSON.stringify(reimagineSpec, null, 2)}`;
+      // Inject physical anchor from character.characteristics (the permanent
+      // body/face/skin description set during creation). This is CRITICAL —
+      // references alone lose proportions like waist-to-hip, glúteo, busto,
+      // skin texture across creative reimagines. Anchor restores fidelity.
+      const anchoredSpec = withPhysicalAnchor(reimagineSpec, {
+        characteristics: selectedChar?.characteristics,
+      });
+
+      const jsonInstruction = `REIMAGINE SPECIFICATION:\n${JSON.stringify(anchoredSpec, null, 2)}`;
 
       // Build base + refs (custom upload takes priority as base, char refs become identity refs)
       let baseFile: File;
@@ -415,7 +419,12 @@ export default function Reimaginar({ onNav }: Props) {
           renderStyle: charIsNonPhoto ? charRenderStyle : undefined,
           customUploadOnly: !!customBaseFile && refFiles.length === 0,
         });
-        const flatInstruction = `Edit Figure 1: ${taskVerb} of this same character in a different aesthetic. ${idProse} PRIMARY STYLE: ${primaryStyle?.name || 'editorial'} — ${primaryDesc}.${accentText}${customText} CHANGE: pose, camera angle, framing, background, outfit. ${skinFlat} ${NO_TEXT_RULE}`;
+        // Inject physical anchor for the flat-prose fallback engines too.
+        // Seedream/Grok respect inline "described as" clauses with high priority.
+        const anchorText = selectedChar?.characteristics?.trim()
+          ? ` The subject is described as: ${selectedChar.characteristics.trim()}. These physical traits are absolute and override any reference ambiguity.`
+          : '';
+        const flatInstruction = `Edit Figure 1: ${taskVerb} of this same character in a different aesthetic. ${idProse}${anchorText} PRIMARY STYLE: ${primaryStyle?.name || 'editorial'} — ${primaryDesc}.${accentText}${customText} CHANGE: pose, camera angle, framing, background, outfit. ${skinFlat} ${NO_TEXT_RULE}`;
 
         resultUrls = await editFallback({
           baseImage: baseFile,

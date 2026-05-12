@@ -59,6 +59,19 @@ export default defineConfig(({ mode }) => {
               });
             },
           },
+          '/elevenlabs-api': {
+            target: 'https://api.elevenlabs.io',
+            changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/elevenlabs-api/, ''),
+            secure: true,
+            configure: (proxy) => {
+              proxy.on('proxyReq', (proxyReq) => {
+                proxyReq.setHeader('xi-api-key', env.ELEVENLABS_API_KEY || '');
+                proxyReq.removeHeader('origin');
+                proxyReq.removeHeader('authorization');
+              });
+            },
+          },
           '/gemini-api': {
             target: 'https://generativelanguage.googleapis.com',
             changeOrigin: true,
@@ -124,18 +137,6 @@ export default defineConfig(({ mode }) => {
                 proxyReq.setHeader('Authorization', `Bearer ${env.DASHSCOPE_API_KEY || ''}`);
                 proxyReq.setHeader('X-DashScope-Async', 'enable');
                 proxyReq.setHeader('X-DashScope-OssResourceResolve', 'enable');
-                proxyReq.removeHeader('origin');
-              });
-            },
-          },
-          '/elevenlabs-api': {
-            target: 'https://api.elevenlabs.io',
-            changeOrigin: true,
-            rewrite: (path) => path.replace(/^\/elevenlabs-api/, ''),
-            secure: true,
-            configure: (proxy) => {
-              proxy.on('proxyReq', (proxyReq) => {
-                proxyReq.setHeader('xi-api-key', env.ELEVENLABS_API_KEY || '');
                 proxyReq.removeHeader('origin');
               });
             },

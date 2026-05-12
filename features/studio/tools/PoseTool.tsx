@@ -7,6 +7,7 @@ import { useToast } from '../../../contexts/ToastContext';
 import Chip from '../../../ui/Chip';
 import Button from '../../../ui/Button';
 import SectionLabel from '../../../ui/SectionLabel';
+import { urlToFile } from '../../../components/apps/_shared/urlToFile';
 
 const POSES = [
   'Standing straight, arms at sides',
@@ -20,12 +21,6 @@ const POSES = [
   'Sitting on a chair, relaxed',
   'Dynamic action pose',
 ];
-
-async function urlToFile(url: string, name: string): Promise<File> {
-  const res = await fetch(url);
-  const blob = await res.blob();
-  return new File([blob], name, { type: blob.type || 'image/png' });
-}
 
 const PoseTool: React.FC = () => {
   const [selectedPose, setSelectedPose] = useState('');

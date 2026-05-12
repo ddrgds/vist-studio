@@ -600,6 +600,62 @@ export async function editWithPruna(
 }
 
 // ─────────────────────────────────────────────
+// Wan 2.7 Image Pro — multi-ref edit (up to 9 imgs, 2K)
+// Selected as primary fallback on 2026-05-09 after benchmark vs Seedream/
+// NB2/NB Pro/Grok/GPT Image 2/Flux variants on a real Luna character —
+// the only engine that BOTH passes spicy AND preserves identity literally.
+// ─────────────────────────────────────────────
+export async function editWithWan27Pro(
+  baseImage: File,
+  prompt: string,
+  referenceImages: File[] = [],
+  onProgress?: (p: number) => void,
+  abortSignal?: AbortSignal,
+): Promise<string[]> {
+  onProgress?.(8);
+
+  // Convert all files to data URIs (Replicate accepts these inline up to ~25MB).
+  // Cap total at 9 (model max). Order: base first, then refs.
+  const allFiles = [baseImage, ...referenceImages].slice(0, 9);
+  const imageUris = await Promise.all(allFiles.map(fileToDataUri));
+
+  onProgress?.(20);
+
+  const output = await replicate.run('wan-video/wan-2.7-image-pro' as `${string}/${string}`, {
+    input: {
+      prompt,
+      images: imageUris,
+      size: '2K',
+      num_outputs: 1,
+    },
+    ...(abortSignal ? { signal: abortSignal } : {}),
+  });
+
+  onProgress?.(95);
+
+  // Replicate output is typically string[] for this model
+  const raw = output as any;
+  const extractUrl = (v: any): string | undefined => {
+    if (!v) return undefined;
+    if (typeof v === 'string') return v || undefined;
+    if (typeof v?.url === 'function') return String(v.url());
+    if (v instanceof URL) return v.toString();
+    const s = String(v);
+    return s && s !== '[object Object]' ? s : undefined;
+  };
+
+  let url: string | undefined;
+  if (Array.isArray(raw)) url = extractUrl(raw[0]);
+  else if (raw?.output) url = extractUrl(Array.isArray(raw.output) ? raw.output[0] : raw.output);
+  else url = extractUrl(raw);
+
+  if (!url) throw new Error(`Wan 2.7 Pro returned empty output (got: ${JSON.stringify(raw).slice(0, 200)})`);
+
+  onProgress?.(100);
+  return [url];
+}
+
+// ─────────────────────────────────────────────
 // FLUX 2 Pro — generation via Replicate
 // ─────────────────────────────────────────────
 export async function generateWithFlux2Pro(
