@@ -39,6 +39,48 @@ import { AppTopBar, urlToFile, type AppMood } from '../components/apps/_shared';
 import { generateImageToVideo, type VideoProgress } from '../services/falVideoService';
 import { VideoEngine } from '../types';
 
+// Seedance 2.0 only accepts JPEG / PNG / WebP. Some character photos come
+// back from the CDN as octet-stream, or are HEIC/AVIF/GIF — those would
+// trigger the "imagen no válida" error. This normalizes anything the browser
+// can decode to JPEG with matching .jpg extension, and caps at 2048px on the
+// longer edge so we don't blow Seedance's 30MB limit on Hi-DPI exports.
+async function ensureValidImageFile(file: File): Promise<File> {
+  const ALLOWED = ['image/jpeg', 'image/png', 'image/webp'];
+  const MAX_EDGE = 2048;
+  const MAX_BYTES = 25 * 1024 * 1024;
+
+  // Fast path: already a valid format AND within size limit AND filename matches.
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  const extMatch =
+    (file.type === 'image/jpeg' && (ext === 'jpg' || ext === 'jpeg')) ||
+    (file.type === 'image/png'  && ext === 'png') ||
+    (file.type === 'image/webp' && ext === 'webp');
+  if (ALLOWED.includes(file.type) && extMatch && file.size <= MAX_BYTES) {
+    return file;
+  }
+
+  // Re-encode via canvas. Works for HEIC on iOS Safari, AVIF, GIF first frame,
+  // octet-stream, and anything else the browser can decode as an image.
+  const bitmap = await createImageBitmap(file).catch(() => null);
+  if (!bitmap) {
+    throw new Error('Formato de imagen no soportado por el navegador');
+  }
+  const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+  const w = Math.round(bitmap.width * scale);
+  const h = Math.round(bitmap.height * scale);
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas no disponible');
+  ctx.drawImage(bitmap, 0, 0, w, h);
+
+  const blob: Blob | null = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.92));
+  if (!blob) throw new Error('No se pudo recodificar la imagen');
+  const safeName = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+  return new File([blob], safeName, { type: 'image/jpeg' });
+}
+
 const REELS_MOOD: AppMood = {
   bg0:        '#F5EBDB',
   bgCard:     '#FFFCF5',
@@ -149,38 +191,43 @@ export default function Reels({ onNav }: Props) {
     }
     try {
       hapticLight();
-      const file = await urlToFile(url, `reel-character-${selectedCharacter.id.slice(0, 8)}.jpg`);
+      // Seedance 2.0 validates by MIME type — JPEG/PNG/WebP only. urlToFile
+      // names the file 'character.png' by default which can mislead the
+      // uploader. We name it generically and normalize the type below.
+      const rawFile = await urlToFile(url, `reel-character-${selectedCharacter.id.slice(0, 8)}.jpg`);
+      const file = await ensureValidImageFile(rawFile);
       setCharacterImageFile(file);
       setCharacterImageUrl(url);
       setPhase('configure');
-    } catch {
-      toast.error('No se pudo cargar la foto');
+    } catch (err: any) {
+      console.error('[Reels] photo load error:', err);
+      toast.error(`No se pudo cargar la foto: ${String(err?.message ?? err).slice(0, 80)}`);
     }
   };
 
-  const handleCharImgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      toast.error('Solo imágenes');
-      e.target.value = '';
-      return;
-    }
-    if (file.size > 12 * 1024 * 1024) {
-      toast.error('Máximo 12 MB');
-      e.target.value = '';
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setCharacterId(null);
-      setCharacterImageFile(file);
-      setCharacterImageUrl(reader.result as string);
-      hapticLight();
-      setPhase('configure');
-    };
-    reader.readAsDataURL(file);
+  const handleCharImgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.files?.[0];
     e.target.value = '';
+    if (!raw) return;
+    if (raw.size > 25 * 1024 * 1024) {
+      toast.error('Máximo 25 MB');
+      return;
+    }
+    try {
+      const file = await ensureValidImageFile(raw);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setCharacterId(null);
+        setCharacterImageFile(file);
+        setCharacterImageUrl(reader.result as string);
+        hapticLight();
+        setPhase('configure');
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      console.error('[Reels] upload error:', err);
+      toast.error(`Imagen inválida: ${String(err?.message ?? err).slice(0, 80)}`);
+    }
   };
 
   // ─── Generate ────────────────────────────────────
@@ -237,12 +284,16 @@ export default function Reels({ onNav }: Props) {
         characterId: characterId ?? undefined,
       }]);
     } catch (err: any) {
-      const msg = String(err?.message || err);
+      // Surface the real fal error body when present — fal wraps validation
+      // errors in err.body.detail rather than err.message.
+      const body = err?.body ?? err?.response?.body;
+      const detail = body?.detail || body?.message || err?.message || String(err);
+      const msg = typeof detail === 'string' ? detail : JSON.stringify(detail);
       if (msg.toLowerCase().includes('abort')) {
         toast.info('Generación cancelada');
       } else {
-        console.error('Reel generation error:', err);
-        toast.error(`No se pudo generar: ${msg.slice(0, 90)}`);
+        console.error('[Reels] generation error:', err, 'body:', body);
+        toast.error(`No se pudo generar: ${msg.slice(0, 120)}`);
         hapticError();
       }
       restoreCredits(cost);

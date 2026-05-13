@@ -79,13 +79,26 @@ export async function generateImageToVideo(
     };
     if (endImageUrl) seedanceInput.end_image_url = endImageUrl;
 
-    const result = await fal.subscribe(modelId, {
-      input: seedanceInput,
-      timeout: 300000,
-      onQueueUpdate: buildQueueHandler(onProgress),
-    });
-    const data = unwrap(result);
-    return { videoUrl: data.video?.url, duration: data.duration };
+    try {
+      const result = await fal.subscribe(modelId, {
+        input: seedanceInput,
+        timeout: 300000,
+        onQueueUpdate: buildQueueHandler(onProgress),
+      });
+      const data = unwrap(result);
+      return { videoUrl: data.video?.url, duration: data.duration };
+    } catch (err: any) {
+      // Log the exact payload Seedance rejected so we can debug
+      // "imagen no válida" / 422 / format errors from the network tab.
+      console.error('[Seedance] error body:', err?.body ?? err?.response?.body ?? err);
+      console.error('[Seedance] payload sent:', {
+        ...seedanceInput,
+        image_url: typeof seedanceInput.image_url === 'string'
+          ? `${seedanceInput.image_url.slice(0, 80)}…`
+          : seedanceInput.image_url,
+      });
+      throw err;
+    }
   }
 
   // Kling family — original schema.
