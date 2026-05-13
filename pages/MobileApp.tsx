@@ -44,53 +44,56 @@ interface AppEntry {
   comingSoon?: string;
 }
 
+// Custom-generated thumbnails (Flux 2 Pro, 2026-05-13) live in
+// public/app-thumbs/. They replace the generic Unsplash stock photos and
+// communicate each app's function in a unified warm cream/clay palette.
 const APPS: AppEntry[] = [
   {
     id: 'headshot', name: 'Headshot Pro', tagline: 'Retratos profesionales',
     cost: '10 cr · 30s',
-    bg: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&q=85',
+    bg: '/app-thumbs/headshot.jpg',
     accent: '#C9785C', isLive: true, isNew: true,
   },
   {
     id: 'reimaginar', name: 'Reimaginar', tagline: '500+ estéticas',
     cost: '10 cr · 20s',
-    bg: 'https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=600&q=85',
+    bg: '/app-thumbs/reimaginar.jpg',
     accent: '#8B4566', isLive: true, isNew: true,
   },
   {
     id: 'sesion', name: 'Sesión de Fotos', tagline: 'Multi-foto coherente',
     cost: '16-40 cr · 4-12 fotos',
-    bg: 'https://images.unsplash.com/photo-1496440737103-cd596325d314?w=600&q=85',
+    bg: '/app-thumbs/sesion.jpg',
     accent: '#B0772D', isLive: true, isNew: true,
   },
   {
     id: 'editor', name: 'Editor IA', tagline: 'Reluz, estilo, piel, AI Edit',
     cost: '6-13 cr · por edición',
-    bg: 'https://images.unsplash.com/photo-1554080353-a576cf803bda?w=600&q=85',
+    bg: '/app-thumbs/editor.jpg',
     accent: '#C9785C', isLive: true, isNew: true,
   },
   {
     id: 'recast', name: 'Recast', tagline: 'Grábate tú, aparece tu modelo',
     cost: '60-230 cr · 5-10s',
-    bg: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=85',
+    bg: '/app-thumbs/recast.jpg',
     accent: '#B0542D', isLive: true, isNew: true,
   },
   {
     id: 'reels', name: 'Reels', tagline: 'Una foto → reel vertical 1080p',
     cost: '145-290 cr · 5-10s',
-    bg: 'https://images.unsplash.com/photo-1605723517503-3cadb5818a0c?w=600&q=85',
+    bg: '/app-thumbs/reels.jpg',
     accent: '#D85478', isLive: true, isNew: true,
   },
   {
     id: 'videoedit', name: 'Editar Video', tagline: 'Cambia fondo, outfit, color en un video',
     cost: '145 cr · 3-60s',
-    bg: 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=600&q=85',
+    bg: '/app-thumbs/videoedit.jpg',
     accent: '#9C6D2A', isLive: true, isNew: true,
   },
   {
     id: 'imagina', name: 'Imagina', tagline: 'Variaciones de una foto que amas',
     cost: '6-32 cr · 1-9 fotos',
-    bg: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=600&q=85',
+    bg: '/app-thumbs/imagina.jpg',
     accent: '#C9785C', isLive: true, isNew: true,
   },
 ];
