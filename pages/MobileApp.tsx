@@ -8,7 +8,7 @@
  * Detection: Capacitor.isNativePlatform() OR ?mobile=1 in URL (for browser testing).
  */
 import React, { lazy, Suspense, useEffect, useState } from 'react';
-import { Aperture, Home, Images, User, Sparkles, Wand2, Lock } from 'lucide-react';
+import { Aperture, Home, Images, User, Sparkles, Lock } from 'lucide-react';
 import type { Page } from '../App';
 import { useCharacterStore } from '../stores/characterStore';
 import { useGalleryStore } from '../stores/galleryStore';
@@ -217,9 +217,10 @@ function MobileHome({ onNav }: { onNav: (p: MobilePage) => void }) {
 // ─── Bottom nav ────────────────────────────────
 
 function MobileBottomNav({ active, onNav }: { active: MobilePage; onNav: (p: MobilePage) => void }) {
+  // 3 items only — the previous "Apps" item went to headshot which was
+  // semantically wrong (apps are accessed from the Home grid, not a list).
   const items: { id: MobilePage; label: string; Icon: typeof Home }[] = [
     { id: 'home', label: 'Inicio', Icon: Home },
-    { id: 'headshot', label: 'Apps', Icon: Wand2 },
     { id: 'gallery', label: 'Galería', Icon: Images },
     { id: 'characters', label: 'Personajes', Icon: User },
   ];
@@ -338,7 +339,9 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
 
   // Sub-apps render the bottom nav themselves not — hide MobileBottomNav
   // when in a deep sub-app to avoid CTA collision.
-  const showBottomNav = page === 'home' || page === 'characters';
+  // Show on hub pages — sub-apps have their own back button + CTA bar so
+  // they don't need (and would conflict with) the global nav.
+  const showBottomNav = page === 'home' || page === 'gallery' || page === 'characters' || page === 'profile';
 
   const renderActive = () => {
     switch (page) {
