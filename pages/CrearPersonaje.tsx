@@ -453,6 +453,10 @@ export default function CrearPersonaje({ onNav }: Props) {
   const [refining, setRefining] = useState(false);
   const [refineText, setRefineText] = useState('');
   const [showRefine, setShowRefine] = useState(false);
+  // Saving state for the final `finalSave` flow — gives the CTA button a
+  // disabled+spinner state while urls→blobs and addCharacter run, so users
+  // don't double-tap or assume the app froze.
+  const [saving, setSaving] = useState(false);
 
   const credits = profile?.creditsRemaining ?? 0;
 
@@ -507,7 +511,7 @@ export default function CrearPersonaje({ onNav }: Props) {
   };
 
   const handleSaveFromPhotos = async () => {
-    if (!name.trim()) { toast.error('Escribí un nombre'); hapticError(); return; }
+    if (!name.trim()) { toast.error('Escribe un nombre'); hapticError(); return; }
     if (uploadedFiles.length < 1) { toast.error('Sube al menos 1 foto'); hapticError(); return; }
     hapticMedium();
 
@@ -673,7 +677,7 @@ RULES: The SUBJECT description above is non-negotiable — every body proportion
   };
 
   const handleRefine = async () => {
-    if (!refineText.trim()) { toast.error('Escribí qué cambiar'); return; }
+    if (!refineText.trim()) { toast.error('Escribe qué cambiar'); return; }
     if (credits < currentCost) { toast.error(`Necesitas ${currentCost} créditos.`); return; }
     hapticMedium();
     const ok = await decrementCredits(currentCost);
@@ -765,6 +769,8 @@ RULES: The SUBJECT description above is non-negotiable — every body proportion
 
   // ─── Final save — uses portraits + (optional) approved sheets ───
   const finalSave = async (sheetsToInclude: { type: 'face' | 'body' | 'expressions'; url: string }[]) => {
+    if (saving) return; // guard against double-tap
+    setSaving(true);
     try {
       const selectedPortrait = previewUrls[selectedPreviewIdx];
       const otherPortraits = previewUrls.filter((_, i) => i !== selectedPreviewIdx);
@@ -815,6 +821,8 @@ RULES: The SUBJECT description above is non-negotiable — every body proportion
     } catch (err: any) {
       toast.error(`Error guardando: ${String(err?.message || err).slice(0, 100)}`);
       hapticError();
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -1122,14 +1130,16 @@ RULES: The SUBJECT description above is non-negotiable — every body proportion
                 : `Foto ${selectedPreviewIdx + 1} de portada`
           }
           primaryLabel={
-            generatedSheets.length > 0
-              ? 'Guardar todo'
-              : withFullSheet
-                ? 'Generar ficha + revisar'
-                : 'Aprobar y guardar'
+            saving
+              ? 'Guardando…'
+              : generatedSheets.length > 0
+                ? 'Guardar todo'
+                : withFullSheet
+                  ? 'Generar ficha + revisar'
+                  : 'Aprobar y guardar'
           }
           onPrimary={generatedSheets.length > 0 ? () => finalSave(generatedSheets) : handleApprove}
-          primaryDisabled={generating || refining || generatingSheet || previewUrls.length === 0 || (withFullSheet && generatedSheets.length === 0 && credits < COST_FULL_SHEET)} />
+          primaryDisabled={saving || generating || refining || generatingSheet || previewUrls.length === 0 || (withFullSheet && generatedSheets.length === 0 && credits < COST_FULL_SHEET)} />
 
         {/* Lightbox — fullscreen view of any tile */}
         {lightbox && (

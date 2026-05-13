@@ -10,7 +10,7 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ChevronLeft, RefreshCw, Sparkles, Aperture, Download,
+  RefreshCw, Sparkles, Aperture, Download,
   Edit3, Share2, Search, Lock, X, ChevronDown, Wand2, Upload,
 } from 'lucide-react';
 import type { Page } from '../App';
@@ -22,6 +22,22 @@ import { hapticLight, hapticMedium, hapticSuccess, hapticError, sharePhoto, take
 import { SOUL_STYLES, SOUL_STYLE_CATEGORIES, type SoulStyle, type SoulStyleCategory } from '../data/soulStyles';
 import { identityProse, NO_TEXT_RULE, NEVER_ADD_TEXT, PHOTOREAL_SKIN, renderStyleSkin, withPhysicalAnchor, sanitizeAnchor } from '../services/promptBuilder';
 import { urlToFile } from '../components/apps/_shared/urlToFile';
+import { AppTopBar, type AppMood } from '../components/apps/_shared';
+
+// Mood: editorial cream + dusty rose + champagne — matches existing palette
+const LIGHT_MOOD: AppMood = {
+  bg0: '#F4EDE0',
+  bgCard: '#FFFCF5',
+  paper: '#F2E5D0',
+  ink0: '#1F1A14',
+  ink1: '#3D332A',
+  ink2: '#6F5E4C',
+  ink3: '#A8957D',
+  line: 'rgba(31, 26, 20, 0.10)',
+  accent: '#8B4566',
+  accentDeep: '#6B3450',
+  gold: '#D4A85F',
+};
 
 // ─── Types ─────────────────────────────────────
 
@@ -647,17 +663,12 @@ export default function Reimaginar({ onNav }: Props) {
     return (
       <div className="rm-shell">
         <style>{REIMAGINAR_STYLES}</style>
-        <div className="rm-topbar">
-          <button className="rm-back" onClick={() => onNav('studio')} aria-label="Volver">
-            <ChevronLeft size={18} />
-          </button>
-          <span className="rm-title-mono">
-            <span className="rm-title-dot" /> Reimaginar · Editorial
-          </span>
-          <span className="rm-credits">
-            <span className="rm-credits-dot" />{credits}
-          </span>
-        </div>
+        <AppTopBar
+          mood={LIGHT_MOOD}
+          title="Reimaginar"
+          credits={credits}
+          onBack={() => onNav('studio')}
+        />
         <div className="rm-empty">
           <div className="rm-empty-icon"><Wand2 size={28} /></div>
           <h2 className="rm-empty-title">Empieza con una <em>foto</em></h2>
@@ -682,28 +693,30 @@ export default function Reimaginar({ onNav }: Props) {
       <style>{REIMAGINAR_STYLES}</style>
 
       {/* Top bar */}
-      <div className="rm-topbar">
-        <button className="rm-back" onClick={() => onNav('studio')} aria-label="Volver">
-          <ChevronLeft size={18} />
-        </button>
-        <span className="rm-title-mono">
-          <span className="rm-title-dot" /> Reimaginar · Editorial
-        </span>
-        <button
-          type="button"
-          className={`rm-hero-switch ${premiumTier ? 'is-active' : ''}`}
-          onClick={() => { hapticLight(); setPremiumTier(!premiumTier); }}
-          disabled={generating}
-          title={`Hero Pro · +${PREMIUM_EXTRA}cr`}
-          aria-label={`Hero Pro ${premiumTier ? 'activado' : 'desactivado'}`}
-        >
-          <span className="rm-hero-switch-label">Hero</span>
-          <span className="rm-hero-switch-track"><span className="rm-hero-switch-thumb" /></span>
-        </button>
-        <span className="rm-credits">
-          <span className="rm-credits-dot" />{credits}
-        </span>
-      </div>
+      <AppTopBar
+        mood={LIGHT_MOOD}
+        title="Reimaginar"
+        credits={credits}
+        onBack={() => onNav('studio')}
+        rightSlot={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              type="button"
+              className={`rm-hero-switch ${premiumTier ? 'is-active' : ''}`}
+              onClick={() => { hapticLight(); setPremiumTier(!premiumTier); }}
+              disabled={generating}
+              title={`Hero Pro · +${PREMIUM_EXTRA}cr`}
+              aria-label={`Hero Pro ${premiumTier ? 'activado' : 'desactivado'}`}
+            >
+              <span className="rm-hero-switch-label">Hero</span>
+              <span className="rm-hero-switch-track"><span className="rm-hero-switch-thumb" /></span>
+            </button>
+            <span className="rm-credits">
+              <span className="rm-credits-dot" />{credits}
+            </span>
+          </div>
+        }
+      />
 
       {/* Hero */}
       <section className="rm-hero">
@@ -842,7 +855,12 @@ export default function Reimaginar({ onNav }: Props) {
           onChange={e => setSearch(e.target.value)}
         />
         {search && (
-          <button className="rm-search-clear" onClick={() => setSearch('')} aria-label="Limpiar búsqueda">
+          <button
+            type="button"
+            className="rm-search-clear"
+            onClick={() => { setSearch(''); hapticLight(); }}
+            aria-label="Limpiar búsqueda"
+          >
             <X size={14} />
           </button>
         )}
@@ -886,12 +904,14 @@ export default function Reimaginar({ onNav }: Props) {
           <div className="rm-featured-row">
             {featuredStyles.map(s => {
               const isSelected = selectedStyleIds.includes(s.id);
+              const isPrimary = isSelected && selectedStyleIds[0] === s.id;
               return (
                 <button
                   key={s.id}
                   className={`rm-featured-card ${isSelected ? 'is-active' : ''}`}
                   onClick={() => toggleStyle(s)}
                 >
+                  {isPrimary && <span className="rm-primary-pill">PRIMARY</span>}
                   <div className="rm-featured-emoji">{styleEmoji(s)}</div>
                   <div className="rm-featured-name">{s.name}</div>
                   <div className="rm-featured-meta">{SOUL_STYLE_CATEGORIES[s.category]?.label || s.category}</div>
@@ -924,6 +944,7 @@ export default function Reimaginar({ onNav }: Props) {
           <div className="rm-style-grid">
             {visibleStyles.map(s => {
               const isSelected = selectedStyleIds.includes(s.id);
+              const isPrimary = isSelected && selectedStyleIds[0] === s.id;
               const isLocked = s.category === 'spicy' && !isCreatorMode;
               return (
                 <button
@@ -932,6 +953,7 @@ export default function Reimaginar({ onNav }: Props) {
                   onClick={() => toggleStyle(s)}
                   disabled={isLocked}
                 >
+                  {isPrimary && <span className="rm-primary-pill">PRIMARY</span>}
                   {isLocked && (
                     <div className="rm-style-lock">
                       <Lock size={10} />
@@ -1128,35 +1150,7 @@ const REIMAGINAR_STYLES = `
   position: relative;
 }
 
-/* Top bar */
-.rm-shell .rm-topbar {
-  position: sticky; top: 0; z-index: 30;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 20px 10px;
-  background: linear-gradient(180deg, var(--bg-0) 0%, var(--bg-0) 80%, transparent 100%);
-  backdrop-filter: blur(8px);
-}
-.rm-shell .rm-back {
-  width: 36px; height: 36px;
-  border-radius: 50%;
-  background: var(--bg-card);
-  border: 1px solid var(--line);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; color: var(--ink-1);
-  transition: transform 0.3s var(--ease);
-}
-.rm-shell .rm-back:active { transform: scale(0.92); }
-.rm-shell .rm-title-mono {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px; letter-spacing: 0.22em;
-  text-transform: uppercase; color: var(--ink-2);
-  display: flex; align-items: center; gap: 8px;
-}
-.rm-shell .rm-title-dot {
-  width: 6px; height: 6px;
-  background: var(--rose);
-  border-radius: 50%;
-}
+/* Top bar — migrated to shared AppTopBar. Credits pill kept (still used in rightSlot). */
 .rm-shell .rm-credits {
   display: flex; align-items: center; gap: 6px;
   padding: 6px 11px;
@@ -1395,19 +1389,18 @@ const REIMAGINAR_STYLES = `
   outline: none;
   background: transparent;
   padding: 12px;
+  padding-right: 32px;
   font-family: inherit;
   font-size: 13px;
   color: var(--ink-0);
 }
 .rm-shell .rm-search-input::placeholder { color: var(--ink-3); }
-.rm-shell .rm-search-clear {
-  background: transparent;
-  border: none;
-  color: var(--ink-3);
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
+.rm-search-clear {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  background: transparent; border: none; padding: 4px; cursor: pointer;
+  color: var(--ink-3); display: inline-flex; align-items: center; justify-content: center;
 }
+.rm-search-clear:active { transform: translateY(-50%) scale(0.9); }
 
 /* Tabs (sticky) */
 .rm-shell .rm-tabs {
@@ -1609,6 +1602,14 @@ const REIMAGINAR_STYLES = `
   border-radius: 50%;
   background: var(--rose);
   display: flex; align-items: center; justify-content: center;
+}
+.rm-primary-pill {
+  position: absolute; top: 8px; left: 8px;
+  background: var(--rose); color: white;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px; letter-spacing: 0.14em;
+  padding: 3px 7px; border-radius: 4px;
+  z-index: 2;
 }
 
 .rm-shell .rm-empty-search {

@@ -510,16 +510,15 @@ export default function Reels({ onNav }: Props) {
           </div>
 
           {characterPhotos.length === 0 ? (
-            <div className="rl-empty-chars">
-              <div className="rl-empty-chars-icon"><Sparkles size={22} /></div>
-              <strong>Sin fotos guardadas</strong>
-              <small>Genera fotos del personaje primero, o sube una.</small>
+            <div className="rl-empty-photos">
+              <Sparkles size={22} />
+              <strong>Este personaje no tiene fotos todavía</strong>
+              <small>Genera algunas en Headshot Pro o Reimaginar y vuelve.</small>
               <button
-                className="rl-empty-alt"
-                onClick={() => { hapticLight(); charImgInputRef.current?.click(); }}
+                className="rl-empty-cta"
+                onClick={() => { hapticLight(); onNav('headshot' as Page); }}
               >
-                <Upload size={12} />
-                Subir foto
+                Ir a Headshot Pro
               </button>
             </div>
           ) : (
@@ -846,6 +845,23 @@ const rlStyles = (m: AppMood) => `
   align-items: center;
   gap: 6px;
   margin-top: 4px;
+}
+.rl-empty-photos {
+  background: ${m.bgCard};
+  border: 1px solid ${m.line};
+  border-radius: 14px;
+  padding: 28px 20px;
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  color: ${m.ink2};
+}
+.rl-empty-photos strong { color: ${m.ink0}; font-size: 14px; }
+.rl-empty-photos small { font-size: 12px; }
+.rl-empty-photos .rl-empty-cta {
+  margin-top: 10px;
+  background: ${m.accent}; color: white; border: none;
+  padding: 10px 18px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; cursor: pointer;
 }
 .rl-char-grid {
   display: grid;

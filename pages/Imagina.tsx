@@ -105,12 +105,26 @@ export default function Imagina({ onNav }: Props) {
   const [savedToGallery, setSavedToGallery] = useState(false);
   const [showGalleryPicker, setShowGalleryPicker] = useState(false);
   const [pickingId, setPickingId] = useState<string | null>(null);
+  const [showCancel, setShowCancel] = useState(false);
 
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const cost = COST_BY_COUNT[count];
   const linkedCharacter = sourceCharacterId ? characters.find(c => c.id === sourceCharacterId) : null;
+
+  // ─── Analyzing phase: show cancel button after 5s + bail after 30s ──
+  useEffect(() => {
+    if (phase !== 'analyzing') { setShowCancel(false); return; }
+    const tCancel = setTimeout(() => setShowCancel(true), 5000);
+    const tTimeout = setTimeout(() => {
+      // Bail to configure phase with fallback description
+      toast.info('Análisis muy lento, continuando sin contexto');
+      setExtractedDesc('');
+      setPhase('configure');
+    }, 30000);
+    return () => { clearTimeout(tCancel); clearTimeout(tTimeout); };
+  }, [phase]);
 
   // Filter: only image items, no sheets, has URL
   const pickableItems = useMemo(
@@ -478,7 +492,7 @@ Return as a single paragraph in technical English prose, ~150 words. NO bullet p
     return (
       <div className="im-shell">
         <style>{IM_STYLES}</style>
-        <AppTopBar mood={ATELIER_MOOD} title="Imagina · Atelier" credits={credits} onBack={() => onNav('home' as Page)} />
+        <AppTopBar mood={ATELIER_MOOD} title="Imagina · Atelier" credits={credits} onBack={() => onNav('studio' as Page)} />
 
         <section className="im-hero">
           <div className="im-hero-eyebrow">Variaciones de una foto</div>
@@ -592,6 +606,11 @@ Return as a single paragraph in technical English prose, ~150 words. NO bullet p
           <h2>Analizando la foto</h2>
           <p>Gemini Vision extrae outfit, locación y luz...</p>
           <div className="im-gen-bars"><span /><span /><span /><span /><span /></div>
+          {showCancel && (
+            <button className="im-cancel-btn" onClick={() => { hapticLight(); setPhase('pick-source'); }}>
+              Cancelar
+            </button>
+          )}
         </div>
       </div>
     );
@@ -621,12 +640,14 @@ Return as a single paragraph in technical English prose, ~150 words. NO bullet p
         </section>
 
         {/* Extracted description preview */}
-        <section className="im-section">
-          <div className="im-field-head">
-            <span className="im-eyebrow">Lo que la IA detectó</span>
-          </div>
-          <div className="im-extract">{extractedDesc}</div>
-        </section>
+        {extractedDesc && (
+          <section className="im-section">
+            <div className="im-extracted">
+              <small className="im-extracted-label">Escena detectada</small>
+              <p>{extractedDesc}</p>
+            </div>
+          </section>
+        )}
 
         {/* Pose multi-select */}
         <section className="im-section">
@@ -734,7 +755,7 @@ Return as a single paragraph in technical English prose, ~150 words. NO bullet p
     return (
       <div className="im-shell">
         <style>{IM_STYLES}</style>
-        <AppTopBar mood={ATELIER_MOOD} title="Imagina · Resultados" credits={credits} onBack={() => onNav('home' as Page)} />
+        <AppTopBar mood={ATELIER_MOOD} title="Imagina · Resultados" credits={credits} onBack={() => onNav('studio' as Page)} />
 
         <section className="im-section">
           <div className="im-field-head">
@@ -973,6 +994,16 @@ const IM_STYLES = `
   max-height: 140px;
   overflow-y: auto;
 }
+.im-shell .im-extracted {
+  background: var(--im-bg-card); border: 1px solid var(--im-line);
+  border-radius: 10px; padding: 10px 12px; margin-bottom: 12px;
+}
+.im-shell .im-extracted-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--im-ink-3); display: block; margin-bottom: 4px;
+}
+.im-shell .im-extracted p { font-size: 13px; color: var(--im-ink-1); line-height: 1.4; margin: 0; }
 
 /* Pose / interaction chips */
 .im-shell .im-chip-grid {
@@ -1125,6 +1156,21 @@ const IM_STYLES = `
 .im-shell .im-gen-bars span:nth-child(3) { animation-delay: 0.3s; }
 .im-shell .im-gen-bars span:nth-child(4) { animation-delay: 0.45s; background: var(--im-gold); }
 .im-shell .im-gen-bars span:nth-child(5) { animation-delay: 0.6s; }
+.im-shell .im-cancel-btn {
+  margin-top: 28px;
+  padding: 10px 24px;
+  background: transparent;
+  color: rgba(255, 252, 245, 0.85);
+  border: 1px solid rgba(255, 252, 245, 0.25);
+  border-radius: 999px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.im-shell .im-cancel-btn:active { opacity: 0.6; }
 
 /* Result grid */
 .im-shell .im-result-grid {

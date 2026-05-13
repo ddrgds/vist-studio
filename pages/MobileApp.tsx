@@ -143,7 +143,7 @@ function MobileHome({ onNav }: { onNav: (p: MobilePage) => void }) {
         <div className="m-hero-eyebrow">App de la semana</div>
         <h1 className="m-hero-title">Tu primer<br /><em>retrato pro.</em></h1>
         <p className="m-hero-sub">Editorial, corporativo, beauty. En 30 segundos.</p>
-        <button className="m-hero-cta" onClick={() => onNav('headshot')}>
+        <button className="m-hero-cta" onClick={() => { hapticLight(); onNav('headshot'); }}>
           <Aperture size={14} />
           Probar Headshot Pro
         </button>
@@ -156,7 +156,7 @@ function MobileHome({ onNav }: { onNav: (p: MobilePage) => void }) {
             <span className="m-eyebrow">Empieza aquí</span>
             <h2 className="m-section-title">Construye tu <em>modelo</em></h2>
           </div>
-          <button className="m-foundation-hero" onClick={() => onNav('create')}>
+          <button className="m-foundation-hero" onClick={() => { hapticLight(); onNav('create'); }}>
             <div className="m-foundation-bg" style={{ backgroundImage: 'url(/app-thumbs/create.jpg)' }} />
             <div className="m-foundation-tag">
               <span className="m-foundation-step">1</span>
@@ -665,7 +665,8 @@ const MOBILE_STYLES = `
 .m-shell .m-hero-cta {
   margin-top: 16px;
   display: inline-flex; align-items: center; gap: 8px;
-  padding: 11px 18px;
+  /* iOS HIG min tap target 44px — padding tuned so total height clears that. */
+  padding: 13px 20px;
   background: var(--ink-0);
   color: var(--bg-card);
   border: none;
@@ -951,7 +952,7 @@ const MOBILE_STYLES = `
 .m-shell .m-bottom-nav {
   flex-shrink: 0;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   background: rgba(250, 246, 238, 0.94);
   backdrop-filter: blur(20px);
   border-top: 1px solid var(--line);

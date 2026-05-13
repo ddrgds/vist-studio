@@ -674,6 +674,13 @@ export default function Recast({ onNav }: Props) {
             </span>
             {photos.length > 0 && <small>{photos.length} foto{photos.length === 1 ? '' : 's'}</small>}
           </div>
+          <button
+            type="button"
+            className="rc-section-alt"
+            onClick={() => { hapticLight(); setPhase('pick-character'); }}
+          >
+            Cambiar personaje
+          </button>
 
           {photos.length === 0 ? (
             <div className="rc-empty-chars">
@@ -762,33 +769,10 @@ export default function Recast({ onNav }: Props) {
           </div>
         </section>
 
-        {/* Resolution */}
-        <section className="rc-section">
-          <div className="rc-section-head">
-            <span className="rc-eyebrow">Calidad</span>
-          </div>
-          <div className="rc-tier-row">
-            <button
-              className={`rc-tier ${resolution === '480p' ? 'is-active' : ''}`}
-              onClick={() => { hapticLight(); setResolution('480p'); }}
-            >
-              <div className="rc-tier-name">Estándar</div>
-              <div className="rc-tier-sub">480p · ideal para reels</div>
-              <div className="rc-tier-cost">{billableSeconds * COST_PER_SEC['480p']} cr</div>
-            </button>
-            <button
-              className={`rc-tier ${resolution === '720p' ? 'is-active' : ''}`}
-              onClick={() => { hapticLight(); setResolution('720p'); }}
-            >
-              <div className="rc-tier-name rc-tier-pro">
-                <Crown size={11} />
-                HD
-              </div>
-              <div className="rc-tier-sub">720p · más nitidez</div>
-              <div className="rc-tier-cost">{billableSeconds * COST_PER_SEC['720p']} cr</div>
-            </button>
-          </div>
-        </section>
+        {/* Resolution tier toggle hidden 2026-05-13 — Kling 3 motion-control
+            doesn't accept a resolution param, so both buckets produced the
+            same output at the same cost. Re-enable when we wire Express
+            (Wan VACE) vs Pro (Kling 3) tier toggle with real differentiation. */}
 
         {/* Cost breakdown */}
         <section className="rc-section">
@@ -799,7 +783,7 @@ export default function Recast({ onNav }: Props) {
             </div>
             <div className="rc-cost-row">
               <span>Tarifa</span>
-              <span>{COST_PER_SEC[resolution]} cr/s · {resolution}</span>
+              <span>{COST_PER_SEC[resolution]} cr/s</span>
             </div>
             <div className="rc-cost-divider" />
             <div className="rc-cost-row rc-cost-total">
@@ -1019,6 +1003,14 @@ const RC_STYLES = `
   font-size: 11px;
   color: var(--rc-ink-3);
 }
+.rc-shell .rc-section-alt {
+  background: transparent; border: none;
+  color: var(--rc-accent); font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  cursor: pointer; padding: 6px 0;
+}
+.rc-shell .rc-section-alt:active { opacity: 0.6; }
 
 /* Pick cards */
 .rc-shell .rc-pick-cards {

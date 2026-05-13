@@ -315,7 +315,7 @@ export default function MobileEditor({ onNav }: Props) {
   );
 
   // ── Top tab — editor mode ────────────────────────
-  const [editorTab, setEditorTab] = useState<'basic' | 'effects' | 'ai'>('ai');
+  const [editorTab, setEditorTab] = useState<'basic' | 'effects' | 'ai'>('basic');
 
   // ── Modo Básico (free, client-side canvas) ───────
   const [basicFilterId, setBasicFilterId] = useState<string>('none');
@@ -1560,7 +1560,9 @@ export default function MobileEditor({ onNav }: Props) {
                     onChange={e => setFreeaiText(e.target.value)}
                     placeholder="Ej: ponela en una playa al atardecer · cambiale el cabello a rubio · sumale lentes de sol..."
                     rows={4}
+                    maxLength={300}
                   />
+                  <div className="me-textarea-counter">{freeaiText.length} / 300</div>
                   <input ref={freeaiRefInputRef} type="file" accept="image/*" hidden
                          onChange={e => handleRefUpload(e, setFreeaiRefFile, setFreeaiRefUrl)} />
                   {freeaiRefUrl ? (
@@ -1638,7 +1640,10 @@ export default function MobileEditor({ onNav }: Props) {
 
               {activeTool === 'realskin' && (
                 <>
-                  <label className="me-label">Intensidad de realismo</label>
+                  <div className="me-slider-row">
+                    <label className="me-label">Intensidad de realismo</label>
+                    <span className="me-slider-value">{realskinIntensity}%</span>
+                  </div>
                   <div className="me-realskin">
                     <div className="me-realskin-row">
                       <input
@@ -1677,7 +1682,10 @@ export default function MobileEditor({ onNav }: Props) {
 
               {activeTool === 'enhance' && (
                 <>
-                  <label className="me-label">Nivel de retoque</label>
+                  <div className="me-slider-row">
+                    <label className="me-label">Nivel de retoque</label>
+                    <span className="me-slider-value">{enhanceIntensity}%</span>
+                  </div>
                   <div className="me-realskin">
                     <div className="me-realskin-row">
                       <input
@@ -2427,6 +2435,7 @@ const EDITOR_STYLES = `
 .me-sheet-body {
   flex: 1; min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   padding: 0 14px 14px;
   display: flex; flex-direction: column; gap: 14px;
@@ -2840,6 +2849,19 @@ const EDITOR_STYLES = `
   color: rgba(245,235,219,0.50);
   padding-top: 6px;
 }
+.me-slider-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px;
+}
+.me-slider-row .me-label { padding-top: 0; }
+.me-slider-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px; font-weight: 600;
+  color: rgba(245,235,219,0.78);
+  text-align: right;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
 .me-textarea {
   width: 100%;
   padding: 11px 13px;
@@ -2856,6 +2878,14 @@ const EDITOR_STYLES = `
 }
 .me-textarea:focus { border-color: ${ATELIER_MOOD.accent}; }
 .me-textarea::placeholder { color: rgba(245,235,219,0.35); }
+.me-textarea-counter {
+  align-self: flex-end;
+  margin-top: -4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: rgba(245,235,219,0.45);
+  font-variant-numeric: tabular-nums;
+}
 
 .me-chips {
   display: flex; flex-wrap: wrap; gap: 6px;

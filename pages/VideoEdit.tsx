@@ -162,8 +162,14 @@ export default function VideoEdit({ onNav }: Props) {
   // ─── Pick template helper ────────────────────────
   const pickTemplate = (t: EditTemplate) => {
     hapticLight();
-    setTemplateId(t.id);
-    setPrompt(t.prompt);
+    // Toggle: if already selected, clear; else select
+    if (templateId === t.id) {
+      setTemplateId(null);
+      setPrompt('');
+    } else {
+      setTemplateId(t.id);
+      setPrompt(t.prompt);
+    }
   };
 
   // ─── Source video handlers ───────────────────────
@@ -537,6 +543,22 @@ export default function VideoEdit({ onNav }: Props) {
               >
                 <span className="ve-tpl-icon">{t.icon}</span>
                 <span className="ve-tpl-label">{t.label}</span>
+                {templateId === t.id && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Quitar plantilla"
+                    className="ve-tpl-clear"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setTemplateId(null);
+                      setPrompt('');
+                      hapticLight();
+                    }}
+                  >
+                    <X size={11} />
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -804,6 +826,15 @@ const veStyles = (m: AppMood) => `
 .ve-tpl-label { font-size: 13px; color: ${m.ink1}; font-weight: 500; }
 .ve-tpl-on { background: ${m.accent}; border-color: ${m.accent}; }
 .ve-tpl-on .ve-tpl-label { color: #FFFFFF; }
+.ve-tpl-clear {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  margin-left: 4px;
+  cursor: pointer;
+}
+.ve-tpl-clear:active { transform: scale(0.85); }
 .ve-prompt {
   width: 100%; background: ${m.bgCard}; border: 1px solid ${m.line};
   color: ${m.ink0}; border-radius: 14px;

@@ -545,7 +545,7 @@ export default function HeadshotPro({ onNav }: Props) {
               className={`hp-style-card ${selectedStyle === s.id ? 'is-active' : ''}`}
               onClick={() => { hapticLight(); setSelectedStyle(s.id); }}
             >
-              <div className="hp-style-img" style={{ backgroundImage: `url(${s.img})` }} />
+              <div className="hp-style-img" role="img" aria-label={s.name} style={{ backgroundImage: `url(${s.img})` }} />
               <div className="hp-style-overlay">
                 <div className="hp-style-name">{s.name}</div>
                 <div className="hp-style-meta">{s.tagline}</div>
@@ -589,6 +589,7 @@ export default function HeadshotPro({ onNav }: Props) {
           <h3 className="hp-section-title"><em>Expresión</em></h3>
           <span className="hp-section-hint">Multi-select</span>
         </div>
+        <small className="hp-section-hint">Elige una o más · puedes combinar varias</small>
         <div className="hp-chip-row">
           {EXPRESSIONS.map(e => (
             <button
@@ -790,6 +791,7 @@ const HEADSHOT_STYLES = `
   background: var(--bg-card);
   border: 1px solid var(--line);
   aspect-ratio: 4/5;
+  min-height: 220px;
   box-shadow: 0 16px 32px -16px rgba(31, 26, 20, 0.18);
   display: flex;
   align-items: center;
@@ -930,6 +932,7 @@ const HEADSHOT_STYLES = `
   font-style: italic;
   margin-left: auto;
 }
+.hp-section-hint { font-size: 11px; color: var(--ink-3); display: block; margin-top: -8px; margin-bottom: 10px; }
 
 /* Style grid */
 .hp-shell .hp-style-grid {

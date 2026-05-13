@@ -10,10 +10,11 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ChevronLeft, RefreshCw, Sparkles, Check, X,
+  RefreshCw, Sparkles, Check, X,
   Download, Share2, Upload, Camera,
 } from 'lucide-react';
 import type { Page } from '../App';
+import { AppTopBar, type AppMood } from '../components/apps/_shared';
 import { useCharacterStore } from '../stores/characterStore';
 import { useGalleryStore } from '../stores/galleryStore';
 import { useProfile } from '../contexts/ProfileContext';
@@ -29,6 +30,21 @@ interface Props {
 
 type AspectRatio = '3:4' | '1:1' | '4:3' | '9:16' | '16:9';
 type PhotoCount = 1 | 4 | 6 | 9 | 12;
+
+// Light mood — mirrors the --bg-0/--ink/--copper palette used by .ss-shell below.
+const LIGHT_MOOD: AppMood = {
+  bg0: '#EFE5D2',
+  bgCard: '#FDF7E8',
+  paper: '#F2E8D2',
+  ink0: '#1A1410',
+  ink1: '#2E2A24',
+  ink2: '#5E5447',
+  ink3: '#998E7C',
+  line: 'rgba(26, 20, 16, 0.10)',
+  accent: '#B0772D',
+  accentDeep: '#855317',
+  gold: '#C9A76A',
+};
 
 interface ScenarioPreset {
   id: string;
@@ -675,13 +691,12 @@ export default function SesionDeFotos({ onNav }: Props) {
     return (
       <div className="ss-shell">
         <style>{SESION_STYLES}</style>
-        <div className="ss-topbar">
-          <button className="ss-back" onClick={() => onNav('studio')} aria-label="Volver">
-            <ChevronLeft size={18} />
-          </button>
-          <span className="ss-title-mono"><span className="ss-title-dot" /> Sesión · Studio</span>
-          <span className="ss-credits"><span className="ss-credits-dot" />{credits}</span>
-        </div>
+        <AppTopBar
+          mood={LIGHT_MOOD}
+          title="Sesión · Fotos"
+          credits={credits}
+          onBack={() => onNav('studio')}
+        />
         <div className="ss-empty">
           <div className="ss-empty-icon"><Camera size={28} /></div>
           <h2 className="ss-empty-title">Empieza con una <em>foto</em></h2>
@@ -708,13 +723,12 @@ export default function SesionDeFotos({ onNav }: Props) {
       <style>{SESION_STYLES}</style>
 
       {/* Top bar */}
-      <div className="ss-topbar">
-        <button className="ss-back" onClick={() => onNav('studio')} aria-label="Volver">
-          <ChevronLeft size={18} />
-        </button>
-        <span className="ss-title-mono"><span className="ss-title-dot" /> Sesión · Studio</span>
-        <span className="ss-credits"><span className="ss-credits-dot" />{credits}</span>
-      </div>
+      <AppTopBar
+        mood={LIGHT_MOOD}
+        title="Sesión · Fotos"
+        credits={credits}
+        onBack={() => onNav('studio')}
+      />
 
       {/* Hero */}
       <section className="ss-hero">
@@ -836,7 +850,7 @@ export default function SesionDeFotos({ onNav }: Props) {
                   <span className="ss-stat"><span className="ss-stat-dot is-reject" />{rejectedCount} reject</span>
                   <span className="ss-stat"><span className="ss-stat-dot is-pending" />{completedCount - keptCount - rejectedCount} pending</span>
                 </div>
-                <span className="ss-proof-tip">Tap una para abrir · long-press para acciones</span>
+                <span className="ss-proof-tip">Tap para abrir</span>
               </div>
             )}
           </div>
@@ -1201,43 +1215,7 @@ const SESION_STYLES = `
   position: relative;
 }
 
-/* Top bar */
-.ss-shell .ss-topbar {
-  position: sticky; top: 0; z-index: 30;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 20px 10px;
-  background: linear-gradient(180deg, var(--bg-0) 0%, var(--bg-0) 80%, transparent 100%);
-  backdrop-filter: blur(8px);
-}
-.ss-shell .ss-back {
-  width: 36px; height: 36px;
-  border-radius: 50%;
-  background: var(--bg-card);
-  border: 1px solid var(--line);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; color: var(--ink-1);
-  transition: transform 0.3s var(--ease);
-  -webkit-tap-highlight-color: transparent;
-}
-.ss-shell .ss-back:active { transform: scale(0.92); }
-.ss-shell .ss-title-mono {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px; letter-spacing: 0.22em;
-  text-transform: uppercase; color: var(--ink-2);
-  display: flex; align-items: center; gap: 8px;
-}
-.ss-shell .ss-title-dot { width: 6px; height: 6px; background: var(--copper); border-radius: 50%; }
-.ss-shell .ss-credits {
-  display: flex; align-items: center; gap: 6px;
-  padding: 6px 11px;
-  background: var(--bg-card);
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  font-size: 11px;
-  font-family: 'JetBrains Mono', monospace;
-  color: var(--ink-0); font-weight: 500;
-}
-.ss-shell .ss-credits-dot { width: 5px; height: 5px; background: var(--gold); border-radius: 50%; }
+/* Top bar — provided by AppTopBar shared component */
 
 /* Hero */
 .ss-shell .ss-hero { padding: 6px 20px 0; }
