@@ -14,7 +14,9 @@
  *     4. generating            — fullscreen loader, queue + log tail
  *     5. result                — vertical video player + share / save / regen
  *
- * Mood: Neon Reels (deep purple + brand pink/violet) — TikTok at night vibe.
+ * Mood: Sand + Rosé — warm light palette consistent with the rest of the
+ * VIST mobile app suite (Headshot, Reimaginar, Sesión, Recast, Imagina),
+ * differentiated by a coral/rosé accent vs the clay accents in the other apps.
  *
  * Cost: Seedance 2.0
  *   - 480p · 5s  ≈  60 cr
@@ -38,17 +40,17 @@ import { generateImageToVideo, type VideoProgress } from '../services/falVideoSe
 import { VideoEngine } from '../types';
 
 const REELS_MOOD: AppMood = {
-  bg0:        '#0F0820',
-  bgCard:     '#1A1133',
-  paper:      '#2A1955',
-  ink0:       '#FFFFFF',
-  ink1:       '#E0D5F5',
-  ink2:       '#B0A0D0',
-  ink3:       '#7060A0',
-  line:       'rgba(255,255,255,0.10)',
-  accent:     '#FF6B9D',
-  accentDeep: '#D04880',
-  gold:       '#A78BFA',
+  bg0:        '#F5EBDB',
+  bgCard:     '#FFFCF5',
+  paper:      '#F4DEC8',
+  ink0:       '#1F1A14',
+  ink1:       '#3D332A',
+  ink2:       '#6F5E4C',
+  ink3:       '#A8957D',
+  line:       'rgba(31,26,20,0.10)',
+  accent:     '#D85478',
+  accentDeep: '#A8385A',
+  gold:       '#E8A04C',
 };
 
 interface Props {
@@ -644,8 +646,8 @@ const RL_STYLES = `
   min-height: 100vh;
   background: ${REELS_MOOD.bg0};
   background-image:
-    radial-gradient(80% 60% at 50% 0%, rgba(167,139,250,0.18), transparent 70%),
-    radial-gradient(60% 40% at 50% 100%, rgba(255,107,157,0.12), transparent 70%);
+    radial-gradient(80% 60% at 50% 0%, rgba(216,84,120,0.10), transparent 70%),
+    radial-gradient(60% 40% at 50% 100%, rgba(232,160,76,0.08), transparent 70%);
   color: ${REELS_MOOD.ink0};
   padding-bottom: 120px;
   font-family: 'DM Sans', system-ui, sans-serif;
@@ -960,7 +962,7 @@ const RL_STYLES = `
   align-items: center;
   justify-content: center;
   gap: 7px;
-  box-shadow: 0 8px 24px rgba(255,107,157,0.3);
+  box-shadow: 0 6px 20px rgba(216,84,120,0.22);
 }
 .rl-cta-go:disabled {
   opacity: 0.45;
@@ -986,7 +988,7 @@ const RL_STYLES = `
   color: white;
   margin-bottom: 24px;
   animation: rl-pulse 2s ease-in-out infinite;
-  box-shadow: 0 0 60px rgba(255,107,157,0.5);
+  box-shadow: 0 8px 30px rgba(216,84,120,0.25);
 }
 @keyframes rl-pulse {
   0%, 100% { transform: scale(1); }
@@ -1039,7 +1041,8 @@ const RL_STYLES = `
   position: relative;
   aspect-ratio: 9 / 16;
   max-height: 62vh;
-  background: black;
+  background: ${REELS_MOOD.paper};
+  border: 1px solid ${REELS_MOOD.line};
   border-radius: 18px;
   overflow: hidden;
 }

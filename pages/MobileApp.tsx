@@ -78,7 +78,7 @@ const APPS: AppEntry[] = [
     id: 'reels', name: 'Reels', tagline: 'Una foto → reel vertical 9:16',
     cost: '48-272 cr · 4-8s',
     bg: 'https://images.unsplash.com/photo-1605723517503-3cadb5818a0c?w=600&q=85',
-    accent: '#FF6B9D', isLive: true, isNew: true,
+    accent: '#D85478', isLive: true, isNew: true,
   },
   {
     id: 'imagina', name: 'Imagina', tagline: 'Variaciones de una foto que amas',
