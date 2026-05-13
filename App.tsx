@@ -29,14 +29,112 @@ const Imagina = lazy(() => import('./pages/Imagina'));
 // ── Mobile-only shell (Capacitor native + ?mobile=1 in browser) ──
 const MobileApp = lazy(() => import('./pages/MobileApp'));
 
-/** Detect Capacitor native platform OR forced mobile via URL flag */
+/** Detect Capacitor native, forced ?mobile=1, or a real mobile device.
+ *  Auto-mobile rules: touch + narrow viewport OR mobile user-agent. */
 function isMobileShell(): boolean {
   if (typeof window === 'undefined') return false;
-  // Allow forcing mobile mode in browser via ?mobile=1 for testing
   if (window.location.search.includes('mobile=1')) return true;
-  // Capacitor injects window.Capacitor when running in native shell
   const cap = (window as any).Capacitor;
-  return Boolean(cap?.isNativePlatform?.());
+  if (cap?.isNativePlatform?.()) return true;
+  // Touch device with narrow viewport — covers phones in portrait/landscape
+  if ('ontouchstart' in window && window.innerWidth <= 900) return true;
+  // UA fallback for iPads-lying-about-viewport and Android tablets
+  return /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent || '',
+  );
+}
+
+/** Desktop testers persist access via ?desktop=1 → localStorage flag. */
+function isDesktopTester(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    if (window.location.search.includes('desktop=1')) {
+      localStorage.setItem('vist_desktop_access', '1');
+      return true;
+    }
+    return localStorage.getItem('vist_desktop_access') === '1';
+  } catch {
+    return false;
+  }
+}
+
+/** "VIST is mobile-only" gate shown to desktop visitors without tester flag. */
+function MobileOnlyGate() {
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      background: '#F5EBDB',
+      color: '#1F1A14',
+      fontFamily: "'DM Sans', -apple-system, system-ui, sans-serif",
+      padding: '32px 24px',
+      textAlign: 'center',
+    }}>
+      <div style={{
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 11,
+        letterSpacing: '0.18em',
+        textTransform: 'uppercase',
+        color: '#C9785C',
+        marginBottom: 18,
+      }}>
+        VIST · Mobile First
+      </div>
+      <h1 style={{
+        fontFamily: "'Instrument Serif', serif",
+        fontSize: 'clamp(34px, 5vw, 52px)',
+        lineHeight: 1.1,
+        fontWeight: 400,
+        margin: 0,
+        maxWidth: 560,
+        letterSpacing: '-0.01em',
+      }}>
+        VIST está hecho para tu <em style={{ color: '#8E5640' }}>teléfono</em>.
+      </h1>
+      <p style={{
+        fontSize: 15,
+        lineHeight: 1.6,
+        color: '#6F5E4C',
+        maxWidth: 460,
+        margin: '20px 0 32px',
+      }}>
+        La app está optimizada para móvil. Abre esta misma URL desde tu celular para empezar.
+      </p>
+      <div style={{
+        background: '#FFFCF5',
+        border: '1.5px solid rgba(31,26,20,0.10)',
+        borderRadius: 12,
+        padding: '14px 22px',
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 13,
+        color: '#1F1A14',
+        userSelect: 'all',
+      }}>
+        {typeof window !== 'undefined' ? window.location.origin : 'vist-studio.pages.dev'}
+      </div>
+      <button
+        type="button"
+        onClick={() => {
+          try { localStorage.setItem('vist_desktop_access', '1'); } catch {}
+          window.location.search = '?desktop=1';
+        }}
+        style={{
+          marginTop: 48,
+          background: 'transparent',
+          border: 'none',
+          color: '#A8957D',
+          fontSize: 11,
+          fontFamily: "'JetBrains Mono', monospace",
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          cursor: 'pointer',
+          padding: 8,
+        }}
+      >
+        soy tester · entrar en escritorio
+      </button>
+    </div>
+  );
 }
 
 // ── Auth ──
@@ -71,6 +169,13 @@ function App() {
 function AppLayout() {
   const { user, authLoading } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
+
+  // Gate desktop visitors first — applies to landing, auth, and authenticated app.
+  // Mobile visitors and testers (?desktop=1 / Capacitor / ?mobile=1) bypass this.
+  const onMobile = isMobileShell();
+  if (!onMobile && !isDesktopTester()) {
+    return <MobileOnlyGate />;
+  }
 
   if (authLoading) {
     return (
@@ -116,7 +221,7 @@ function AppLayout() {
     );
   }
 
-  // Native platform (Capacitor) OR forced via ?mobile=1 → render mobile-only shell
+  // Native platform (Capacitor) OR forced via ?mobile=1 OR detected mobile device.
   if (isMobileShell()) {
     return (
       <Suspense fallback={
@@ -128,6 +233,13 @@ function AppLayout() {
         <StoreHydrator />
       </Suspense>
     );
+  }
+
+  // Desktop visitor without tester flag → mobile-only gate.
+  // Web está "oculta" del público: la app oficial es móvil. Testers/team
+  // pueden entrar con ?desktop=1 (persiste en localStorage).
+  if (!isDesktopTester()) {
+    return <MobileOnlyGate />;
   }
 
   return <AuthenticatedApp />;
