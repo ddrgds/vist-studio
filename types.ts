@@ -988,8 +988,12 @@ export const FEATURE_ENGINES: Record<string, { default: string; keys: string[] }
   },
   // ── Video ──
   'video:image-to-video': {
-    default: VideoEngine.Seedance2,
-    keys: [VideoEngine.Seedance2, VideoEngine.Kling26Standard, VideoEngine.Kling26Pro, VideoEngine.Kling3Pro],
+    // Default switched from Seedance 2.0 to Kling 2.6 Standard 2026-05-13.
+    // Seedance has ByteDance-level content moderation that rejects most
+    // sensual/lingerie reels (the bulk of the LATAM influencer use case).
+    // Kling 2.6 Standard is same credit cost, more permissive policy.
+    default: VideoEngine.Kling26Standard,
+    keys: [VideoEngine.Kling26Standard, VideoEngine.Kling26Pro, VideoEngine.Kling3Pro, VideoEngine.Seedance2],
   },
   'video:motion-control': {
     default: VideoEngine.Kling26MotionPro,

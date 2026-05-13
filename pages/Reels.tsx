@@ -1,11 +1,15 @@
 /**
- * Reels — Image-to-Video reel composer (Seedance 2.0 via fal.ai).
+ * Reels — Image-to-Video reel composer (Kling 2.6 Standard via fal.ai).
  *
  *   Concept: the user picks a character, then a specific photo of that
- *   character (an outfit/look). They describe what should happen ("baila
- *   sensualmente moviendo las caderas") and Seedance animates it into a
- *   vertical 9:16 short clip with synced audio. Perfect for IG/TikTok
- *   reels.
+ *   character (an outfit/look). They pick a template (or write a custom
+ *   prompt) and Kling animates it into a vertical 9:16 short clip with
+ *   synced audio. Perfect for IG/TikTok reels.
+ *
+ *   Engine swapped from Seedance 2.0 → Kling 2.6 Standard on 2026-05-13.
+ *   Seedance's ByteDance content moderation rejected most sensual content
+ *   (the bulk of our LATAM influencer use case); Kling is more permissive
+ *   at the same credit cost (86 cr/5s).
  *
  *   Phases:
  *     1. pick-character        — choose saved character or upload portrait
@@ -73,16 +77,58 @@ interface Props {
 }
 
 type Phase = 'pick-character' | 'pick-character-photo' | 'configure' | 'generating' | 'result';
-type Resolution = '480p' | '720p' | '1080p';
-type Duration = '4' | '5' | '8';
+type Duration = '5' | '10';
 
-// Cost in credits. Base for 5s; linear scaling per second.
-// Aligned with CREDIT_COSTS[Seedance2] = 86 (5s at 720p).
-const COST_PER_SEC: Record<Resolution, number> = {
-  '480p':  12,   // ~$0.04/s
-  '720p':  20,   // ~$0.06/s (default)
-  '1080p': 34,   // ~$0.10/s
-};
+// Cost in credits for Kling 2.6 Standard via fal: ~$0.06/s, 65% margin.
+// 5s = 86 cr, 10s = 172 cr. Matches CREDIT_COSTS[Kling26Standard].
+const COST_PER_SEC = 17;
+
+// ─── Prompt templates ──────────────────────────────────
+// Curated set of action prompts optimized for Kling 2.6 Standard, written
+// in Spanish for the LATAM target audience. Each template = a one-tap
+// recipe for the most-asked reel formats on IG/TikTok.
+//
+// To add/edit: keep prompts short ("subject + action + vibe"), avoid
+// scaffolding scaffolding language (no "Edit using the input images:" etc.
+// — Kling handles the source image natively).
+interface ReelTemplate {
+  id: string;
+  icon: string;
+  label: string;
+  prompt: string;
+  duration: Duration;
+}
+
+const TEMPLATES: ReelTemplate[] = [
+  { id: 'mirror-selfie', icon: '🪞', label: 'Selfie en el espejo',
+    prompt: 'sostiene el teléfono frente al espejo, gira lentamente las caderas, mira a la cámara con confianza', duration: '5' },
+  { id: 'walk-to-cam', icon: '🚶‍♀️', label: 'Camina hacia cámara',
+    prompt: 'camina lentamente hacia la cámara mirando hacia los lados, sonríe al final', duration: '5' },
+  { id: 'hair-flip', icon: '💁‍♀️', label: 'Hair flip slow-mo',
+    prompt: 'mueve el pelo hacia atrás con una mano, en cámara lenta, expresión seductora', duration: '5' },
+  { id: 'sit-glance', icon: '☕', label: 'Sentada · mirada',
+    prompt: 'sentada, da un sorbo a una bebida, levanta la mirada hacia la cámara, sonríe sutil', duration: '5' },
+  { id: 'outfit-reveal', icon: '✨', label: 'Outfit reveal',
+    prompt: 'da una vuelta completa mostrando el outfit, termina mirando a cámara con una pose', duration: '5' },
+  { id: 'sunset-pose', icon: '🌅', label: 'Sunset golden hour',
+    prompt: 'mueve suavemente el pelo con la mano, mira al horizonte y luego a la cámara, luz dorada', duration: '5' },
+  { id: 'wink', icon: '😉', label: 'Guiño coqueto',
+    prompt: 'mira a la cámara con una sonrisa pícara, guiña un ojo, ladea la cabeza', duration: '5' },
+  { id: 'dance-hips', icon: '💃', label: 'Baile · caderas',
+    prompt: 'mueve las caderas al ritmo, sonríe, mantiene contacto visual con la cámara', duration: '5' },
+  { id: 'pout-blow', icon: '💋', label: 'Beso al aire',
+    prompt: 'manda un beso al aire con la mano, sonríe, expresión sensual', duration: '5' },
+  { id: 'lay-stretch', icon: '🛏️', label: 'Cama · estirada',
+    prompt: 'recostada se estira lentamente, gira la cabeza hacia la cámara y sonríe', duration: '5' },
+  { id: 'mirror-twirl', icon: '🌀', label: 'Vuelta frente al espejo',
+    prompt: 'frente al espejo da una vuelta sobre sí misma, sostiene el teléfono, sonríe coqueta', duration: '5' },
+  { id: 'lip-bite', icon: '👄', label: 'Mordida de labio',
+    prompt: 'mira fijo a la cámara, se muerde el labio inferior sutilmente, expresión intensa', duration: '5' },
+  { id: 'hands-hair', icon: '🙆‍♀️', label: 'Manos en el pelo',
+    prompt: 'levanta ambas manos al pelo, lo mueve hacia atrás, ladea la cabeza hacia la cámara', duration: '5' },
+  { id: 'sit-cross', icon: '🦵', label: 'Cruza piernas',
+    prompt: 'sentada cruza una pierna sobre la otra lentamente, mira a la cámara con una sonrisa', duration: '5' },
+];
 
 export default function Reels({ onNav }: Props) {
   const { profile, decrementCredits, restoreCredits } = useProfile();
@@ -105,8 +151,8 @@ export default function Reels({ onNav }: Props) {
 
   // Config
   const [prompt, setPrompt] = useState('');
-  const [resolution, setResolution] = useState<Resolution>('720p');
   const [duration, setDuration] = useState<Duration>('5');
+  const [templateId, setTemplateId] = useState<string | null>(null);
 
   // Generation
   const [progress, setProgress] = useState<VideoProgress | null>(null);
@@ -149,7 +195,15 @@ export default function Reels({ onNav }: Props) {
   }, [selectedCharacter, galleryItems]);
 
   // ─── Compute cost ────────────────────────────────
-  const cost = Math.round(parseInt(duration, 10) * COST_PER_SEC[resolution]);
+  const cost = parseInt(duration, 10) * COST_PER_SEC;
+
+  // ─── Pick template helper ────────────────────────
+  const pickTemplate = (t: ReelTemplate) => {
+    hapticLight();
+    setTemplateId(t.id);
+    setPrompt(t.prompt);
+    setDuration(t.duration);
+  };
 
   // ─── Character pickers ──────────────────────────
   const pickCharacter = (c: SavedCharacter) => {
@@ -235,15 +289,13 @@ export default function Reels({ onNav }: Props) {
           mode: 'image-to-video',
           baseImage: characterImageFile,
           prompt: finalPrompt,
-          engine: VideoEngine.Seedance2,
-          duration: duration === '8' ? '10' : duration as '5',
-          aspectRatio: '9:16',
-          resolution,
+          engine: VideoEngine.Kling26Standard,
+          duration,
         },
         prog => setProgress(prog),
       );
 
-      if (!result.videoUrl) throw new Error('Seedance no devolvió URL del video');
+      if (!result.videoUrl) throw new Error('Kling no devolvió URL del video');
 
       setResultUrl(result.videoUrl);
       setPhase('result');
@@ -254,9 +306,9 @@ export default function Reels({ onNav }: Props) {
         id: crypto.randomUUID(),
         url: result.videoUrl,
         type: 'video',
-        model: 'seedance-2.0',
+        model: 'kling-v2.6-standard-image-to-video',
         timestamp: Date.now(),
-        prompt: `Reel · ${selectedCharacter?.name ?? 'custom'} · ${duration}s · ${resolution} · ${finalPrompt.slice(0, 60)}`,
+        prompt: `Reel · ${selectedCharacter?.name ?? 'custom'} · ${duration}s · ${finalPrompt.slice(0, 60)}`,
         characterId: characterId ?? undefined,
       }]);
     } catch (err: any) {
@@ -293,8 +345,8 @@ export default function Reels({ onNav }: Props) {
     setCharacterImageFile(null);
     setCharacterImageUrl(null);
     setPrompt('');
-    setResolution('720p');
     setDuration('5');
+    setTemplateId(null);
     setResultUrl(null);
     setPhase('pick-character');
     hapticLight();
@@ -515,15 +567,28 @@ export default function Reels({ onNav }: Props) {
 
         <section className="rl-section">
           <div className="rl-section-head">
-            <span className="rl-eyebrow">Paso 3 · La acción</span>
-            <small>Describí qué pasa en el reel</small>
+            <span className="rl-eyebrow">Paso 3 · Plantilla</span>
+            <small>Tocá una para empezar, o escribí abajo</small>
+          </div>
+
+          <div className="rl-tpl-scroll">
+            {TEMPLATES.map(t => (
+              <button
+                key={t.id}
+                className={`rl-tpl-card ${templateId === t.id ? 'rl-tpl-on' : ''}`}
+                onClick={() => pickTemplate(t)}
+              >
+                <span className="rl-tpl-icon">{t.icon}</span>
+                <span className="rl-tpl-label">{t.label}</span>
+              </button>
+            ))}
           </div>
 
           <textarea
             className="rl-prompt"
-            placeholder="Ej: camina hacia la cámara con confianza, mueve el pelo, sonríe sutil"
+            placeholder="O escribí tu propia acción: camina hacia la cámara con confianza, mueve el pelo, sonríe sutil…"
             value={prompt}
-            onChange={e => setPrompt(e.target.value)}
+            onChange={e => { setPrompt(e.target.value); setTemplateId(null); }}
             rows={3}
             maxLength={400}
           />
@@ -531,7 +596,7 @@ export default function Reels({ onNav }: Props) {
           <div className="rl-config-row">
             <div className="rl-config-label">Duración</div>
             <div className="rl-pills">
-              {(['4', '5', '8'] as Duration[]).map(d => (
+              {(['5', '10'] as Duration[]).map(d => (
                 <button
                   key={d}
                   className={`rl-pill ${duration === d ? 'rl-pill-on' : ''}`}
@@ -542,27 +607,12 @@ export default function Reels({ onNav }: Props) {
               ))}
             </div>
           </div>
-
-          <div className="rl-config-row">
-            <div className="rl-config-label">Resolución</div>
-            <div className="rl-pills">
-              {(['480p', '720p', '1080p'] as Resolution[]).map(r => (
-                <button
-                  key={r}
-                  className={`rl-pill ${resolution === r ? 'rl-pill-on' : ''}`}
-                  onClick={() => { hapticLight(); setResolution(r); }}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-          </div>
         </section>
 
         <div className="rl-cta-bar">
           <div className="rl-cta-cost">
             <strong>{cost} cr</strong>
-            <small>{duration}s · {resolution} · 9:16</small>
+            <small>{duration}s · 9:16 · audio</small>
           </div>
           <button
             className="rl-cta-go"
@@ -896,6 +946,46 @@ const rlStyles = (m: AppMood) => `
   align-items: center;
   gap: 5px;
 }
+.rl-tpl-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin: 0 -22px 14px;
+  padding: 4px 22px 8px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.rl-tpl-scroll::-webkit-scrollbar { display: none; }
+.rl-tpl-card {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  background: ${m.bgCard};
+  border: 1.5px solid ${m.line};
+  border-radius: 14px;
+  padding: 11px 16px;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.2s, background 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  white-space: nowrap;
+}
+.rl-tpl-card:active { transform: scale(0.97); }
+.rl-tpl-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+.rl-tpl-label {
+  font-size: 13px;
+  color: ${m.ink1};
+  font-weight: 500;
+}
+.rl-tpl-on {
+  background: ${m.accent};
+  border-color: ${m.accent};
+}
+.rl-tpl-on .rl-tpl-label { color: #FFFFFF; }
 .rl-prompt {
   width: 100%;
   background: ${m.bgCard};
