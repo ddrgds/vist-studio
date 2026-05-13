@@ -38,8 +38,9 @@ import { hapticLight, hapticMedium, hapticSuccess, hapticError, sharePhoto } fro
 import { AppTopBar, urlToFile, ensureValidImageFile, type AppMood } from '../components/apps/_shared';
 import { generateImageToVideo, type VideoProgress } from '../services/falVideoService';
 import { VideoEngine } from '../types';
+import { useColorScheme } from '../hooks/useColorScheme';
 
-const REELS_MOOD: AppMood = {
+const LIGHT_MOOD: AppMood = {
   bg0:        '#F5EBDB',
   bgCard:     '#FFFCF5',
   paper:      '#F4DEC8',
@@ -51,6 +52,20 @@ const REELS_MOOD: AppMood = {
   accent:     '#D85478',
   accentDeep: '#A8385A',
   gold:       '#E8A04C',
+};
+
+const DARK_MOOD: AppMood = {
+  bg0:        '#161018',
+  bgCard:     '#1F1820',
+  paper:      '#2A1F2A',
+  ink0:       '#F4ECEC',
+  ink1:       '#D8C8D0',
+  ink2:       '#9B8B95',
+  ink3:       '#6A5A63',
+  line:       'rgba(255,255,255,0.08)',
+  accent:     '#F08498',
+  accentDeep: '#C45770',
+  gold:       '#E8B070',
 };
 
 interface Props {
@@ -74,6 +89,9 @@ export default function Reels({ onNav }: Props) {
   const addItems = useGalleryStore(s => s.addItems);
   const characters = useCharacterStore(s => s.characters);
   const toast = useToast();
+
+  const scheme = useColorScheme();
+  const MOOD = scheme === 'dark' ? DARK_MOOD : LIGHT_MOOD;
 
   const credits = profile?.creditsRemaining ?? 0;
 
@@ -326,9 +344,9 @@ export default function Reels({ onNav }: Props) {
   if (phase === 'pick-character') {
     return (
       <div className="rl-shell">
-        <style>{RL_STYLES}</style>
+        <style>{rlStyles(MOOD)}</style>
         <AppTopBar
-          mood={REELS_MOOD}
+          mood={MOOD}
           title="Reels · Neón"
           credits={credits}
           onBack={() => onNav('home' as Page)}
@@ -417,9 +435,9 @@ export default function Reels({ onNav }: Props) {
   if (phase === 'pick-character-photo' && selectedCharacter) {
     return (
       <div className="rl-shell">
-        <style>{RL_STYLES}</style>
+        <style>{rlStyles(MOOD)}</style>
         <AppTopBar
-          mood={REELS_MOOD}
+          mood={MOOD}
           title="Reels · Neón"
           credits={credits}
           onBack={() => setPhase('pick-character')}
@@ -478,9 +496,9 @@ export default function Reels({ onNav }: Props) {
   if (phase === 'configure' && characterImageUrl) {
     return (
       <div className="rl-shell">
-        <style>{RL_STYLES}</style>
+        <style>{rlStyles(MOOD)}</style>
         <AppTopBar
-          mood={REELS_MOOD}
+          mood={MOOD}
           title="Reels · Neón"
           credits={credits}
           onBack={() => { resetAll(); }}
@@ -565,7 +583,7 @@ export default function Reels({ onNav }: Props) {
   if (phase === 'generating') {
     return (
       <div className="rl-shell">
-        <style>{RL_STYLES}</style>
+        <style>{rlStyles(MOOD)}</style>
         <div className="rl-gen-shell">
           <div className="rl-gen-orb">
             <Sparkles size={28} />
@@ -599,9 +617,9 @@ export default function Reels({ onNav }: Props) {
   if (phase === 'result' && resultUrl) {
     return (
       <div className="rl-shell">
-        <style>{RL_STYLES}</style>
+        <style>{rlStyles(MOOD)}</style>
         <AppTopBar
-          mood={REELS_MOOD}
+          mood={MOOD}
           title="Reels · Neón"
           credits={credits}
           onBack={resetAll}
@@ -648,16 +666,16 @@ export default function Reels({ onNav }: Props) {
 }
 
 // ═══════════════════════════════════════════════
-// Styles — Neon Reels mood
+// Styles — driven by the active mood (light or dark)
 // ═══════════════════════════════════════════════
-const RL_STYLES = `
+const rlStyles = (m: AppMood) => `
 .rl-shell {
   min-height: 100vh;
-  background: ${REELS_MOOD.bg0};
+  background: ${m.bg0};
   background-image:
     radial-gradient(80% 60% at 50% 0%, rgba(216,84,120,0.10), transparent 70%),
     radial-gradient(60% 40% at 50% 100%, rgba(232,160,76,0.08), transparent 70%);
-  color: ${REELS_MOOD.ink0};
+  color: ${m.ink0};
   padding-bottom: 120px;
   font-family: 'DM Sans', system-ui, sans-serif;
 }
@@ -670,7 +688,7 @@ const RL_STYLES = `
   font-size: 10px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: ${REELS_MOOD.accent};
+  color: ${m.accent};
   margin-bottom: 14px;
 }
 .rl-hero-title {
@@ -680,11 +698,11 @@ const RL_STYLES = `
   font-weight: 400;
   margin: 0 0 14px;
   letter-spacing: -0.01em;
-  color: ${REELS_MOOD.ink0};
+  color: ${m.ink0};
 }
 .rl-hero-title em {
   font-style: italic;
-  background: linear-gradient(135deg, ${REELS_MOOD.accent}, ${REELS_MOOD.gold});
+  background: linear-gradient(135deg, ${m.accent}, ${m.gold});
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -692,7 +710,7 @@ const RL_STYLES = `
 .rl-hero-sub {
   font-size: 14px;
   line-height: 1.55;
-  color: ${REELS_MOOD.ink1};
+  color: ${m.ink1};
   margin: 0;
   max-width: 420px;
 }
@@ -711,15 +729,15 @@ const RL_STYLES = `
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: ${REELS_MOOD.gold};
+  color: ${m.gold};
 }
 .rl-section-head small {
   font-size: 11px;
-  color: ${REELS_MOOD.ink2};
+  color: ${m.ink2};
 }
 .rl-empty-chars {
-  background: ${REELS_MOOD.bgCard};
-  border: 1px solid ${REELS_MOOD.line};
+  background: ${m.bgCard};
+  border: 1px solid ${m.line};
   border-radius: 16px;
   padding: 26px 20px;
   text-align: center;
@@ -732,24 +750,24 @@ const RL_STYLES = `
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: ${REELS_MOOD.paper};
+  background: ${m.paper};
   display: grid;
   place-items: center;
-  color: ${REELS_MOOD.accent};
+  color: ${m.accent};
   margin-bottom: 6px;
 }
 .rl-empty-chars strong {
   font-size: 15px;
-  color: ${REELS_MOOD.ink0};
+  color: ${m.ink0};
 }
 .rl-empty-chars small {
   font-size: 12px;
-  color: ${REELS_MOOD.ink2};
+  color: ${m.ink2};
   margin-bottom: 12px;
 }
 .rl-empty-cta {
   margin-top: 4px;
-  background: linear-gradient(135deg, ${REELS_MOOD.accent}, ${REELS_MOOD.accentDeep});
+  background: linear-gradient(135deg, ${m.accent}, ${m.accentDeep});
   color: white;
   border: none;
   padding: 11px 22px;
@@ -760,8 +778,8 @@ const RL_STYLES = `
 }
 .rl-empty-alt {
   background: transparent;
-  border: 1px solid ${REELS_MOOD.line};
-  color: ${REELS_MOOD.ink1};
+  border: 1px solid ${m.line};
+  color: ${m.ink1};
   padding: 9px 14px;
   border-radius: 100px;
   font-size: 11px;
@@ -777,8 +795,8 @@ const RL_STYLES = `
   gap: 12px;
 }
 .rl-char-card {
-  background: ${REELS_MOOD.bgCard};
-  border: 1px solid ${REELS_MOOD.line};
+  background: ${m.bgCard};
+  border: 1px solid ${m.line};
   border-radius: 16px;
   padding: 12px;
   display: flex;
@@ -790,24 +808,24 @@ const RL_STYLES = `
   text-align: left;
 }
 .rl-char-card:active { transform: scale(0.97); }
-.rl-char-card:hover { border-color: ${REELS_MOOD.accent}; }
+.rl-char-card:hover { border-color: ${m.accent}; }
 .rl-char-thumb {
   width: 100%;
   aspect-ratio: 1 / 1;
-  background-color: ${REELS_MOOD.paper};
+  background-color: ${m.paper};
   background-size: cover;
   background-position: center;
   border-radius: 12px;
   margin-bottom: 6px;
   display: grid;
   place-items: center;
-  color: ${REELS_MOOD.ink3};
+  color: ${m.ink3};
 }
-.rl-char-card strong { font-size: 14px; color: ${REELS_MOOD.ink0}; }
-.rl-char-card small { font-size: 11px; color: ${REELS_MOOD.ink2}; }
+.rl-char-card strong { font-size: 14px; color: ${m.ink0}; }
+.rl-char-card small { font-size: 11px; color: ${m.ink2}; }
 .rl-char-upload {
   border-style: dashed;
-  border-color: ${REELS_MOOD.line};
+  border-color: ${m.line};
 }
 .rl-photo-grid {
   display: grid;
@@ -817,8 +835,8 @@ const RL_STYLES = `
 .rl-photo-card {
   position: relative;
   aspect-ratio: 3 / 4;
-  background: ${REELS_MOOD.bgCard};
-  border: 1px solid ${REELS_MOOD.line};
+  background: ${m.bgCard};
+  border: 1px solid ${m.line};
   border-radius: 12px;
   overflow: hidden;
   padding: 0;
@@ -851,8 +869,8 @@ const RL_STYLES = `
   margin: 16px 22px 0;
   aspect-ratio: 9 / 16;
   max-height: 56vh;
-  background: ${REELS_MOOD.bgCard};
-  border: 1px solid ${REELS_MOOD.line};
+  background: ${m.bgCard};
+  border: 1px solid ${m.line};
   border-radius: 18px;
   overflow: hidden;
 }
@@ -880,9 +898,9 @@ const RL_STYLES = `
 }
 .rl-prompt {
   width: 100%;
-  background: ${REELS_MOOD.bgCard};
-  border: 1px solid ${REELS_MOOD.line};
-  color: ${REELS_MOOD.ink0};
+  background: ${m.bgCard};
+  border: 1px solid ${m.line};
+  color: ${m.ink0};
   border-radius: 14px;
   padding: 14px 16px;
   font-size: 15px;
@@ -891,8 +909,8 @@ const RL_STYLES = `
   outline: none;
   line-height: 1.5;
 }
-.rl-prompt::placeholder { color: ${REELS_MOOD.ink3}; }
-.rl-prompt:focus { border-color: ${REELS_MOOD.accent}; }
+.rl-prompt::placeholder { color: ${m.ink3}; }
+.rl-prompt:focus { border-color: ${m.accent}; }
 .rl-config-row {
   margin-top: 18px;
   display: flex;
@@ -902,20 +920,20 @@ const RL_STYLES = `
 }
 .rl-config-label {
   font-size: 13px;
-  color: ${REELS_MOOD.ink1};
+  color: ${m.ink1};
   font-weight: 500;
 }
 .rl-pills {
   display: inline-flex;
-  background: ${REELS_MOOD.bgCard};
-  border: 1px solid ${REELS_MOOD.line};
+  background: ${m.bgCard};
+  border: 1px solid ${m.line};
   border-radius: 100px;
   padding: 3px;
   gap: 2px;
 }
 .rl-pill {
   background: transparent;
-  color: ${REELS_MOOD.ink2};
+  color: ${m.ink2};
   border: none;
   padding: 7px 14px;
   border-radius: 100px;
@@ -925,7 +943,7 @@ const RL_STYLES = `
   font-family: 'JetBrains Mono', monospace;
 }
 .rl-pill-on {
-  background: linear-gradient(135deg, ${REELS_MOOD.accent}, ${REELS_MOOD.accentDeep});
+  background: linear-gradient(135deg, ${m.accent}, ${m.accentDeep});
   color: white;
 }
 .rl-cta-bar {
@@ -934,7 +952,7 @@ const RL_STYLES = `
   left: 0;
   right: 0;
   padding: 14px 22px calc(14px + env(safe-area-inset-bottom, 0px));
-  background: linear-gradient(180deg, transparent, ${REELS_MOOD.bg0} 30%);
+  background: linear-gradient(180deg, transparent, ${m.bg0} 30%);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -948,18 +966,18 @@ const RL_STYLES = `
 .rl-cta-cost strong {
   font-size: 18px;
   font-family: 'JetBrains Mono', monospace;
-  color: ${REELS_MOOD.ink0};
+  color: ${m.ink0};
 }
 .rl-cta-cost small {
   font-size: 10px;
-  color: ${REELS_MOOD.ink2};
+  color: ${m.ink2};
   font-family: 'JetBrains Mono', monospace;
   letter-spacing: 0.04em;
 }
 .rl-cta-go {
   flex: 1;
   max-width: 220px;
-  background: linear-gradient(135deg, ${REELS_MOOD.accent}, ${REELS_MOOD.gold});
+  background: linear-gradient(135deg, ${m.accent}, ${m.gold});
   color: white;
   border: none;
   padding: 14px 22px;
@@ -991,7 +1009,7 @@ const RL_STYLES = `
   width: 88px;
   height: 88px;
   border-radius: 50%;
-  background: linear-gradient(135deg, ${REELS_MOOD.accent}, ${REELS_MOOD.gold});
+  background: linear-gradient(135deg, ${m.accent}, ${m.gold});
   display: grid;
   place-items: center;
   color: white;
@@ -1008,17 +1026,17 @@ const RL_STYLES = `
   font-size: 26px;
   font-weight: 400;
   margin: 0 0 8px;
-  color: ${REELS_MOOD.ink0};
+  color: ${m.ink0};
 }
 .rl-gen-sub {
   font-size: 13px;
-  color: ${REELS_MOOD.ink2};
+  color: ${m.ink2};
   margin: 0 0 24px;
   font-family: 'JetBrains Mono', monospace;
 }
 .rl-gen-logs {
-  background: ${REELS_MOOD.bgCard};
-  border: 1px solid ${REELS_MOOD.line};
+  background: ${m.bgCard};
+  border: 1px solid ${m.line};
   border-radius: 10px;
   padding: 10px 14px;
   margin: 0 0 24px;
@@ -1030,13 +1048,13 @@ const RL_STYLES = `
 .rl-gen-logs small {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
-  color: ${REELS_MOOD.ink2};
+  color: ${m.ink2};
   text-align: left;
 }
 .rl-gen-cancel {
   background: transparent;
-  border: 1px solid ${REELS_MOOD.line};
-  color: ${REELS_MOOD.ink2};
+  border: 1px solid ${m.line};
+  color: ${m.ink2};
   padding: 10px 22px;
   border-radius: 100px;
   font-size: 12px;
@@ -1050,8 +1068,8 @@ const RL_STYLES = `
   position: relative;
   aspect-ratio: 9 / 16;
   max-height: 62vh;
-  background: ${REELS_MOOD.paper};
-  border: 1px solid ${REELS_MOOD.line};
+  background: ${m.paper};
+  border: 1px solid ${m.line};
   border-radius: 18px;
   overflow: hidden;
 }
@@ -1081,7 +1099,7 @@ const RL_STYLES = `
 }
 .rl-action {
   flex: 1;
-  background: linear-gradient(135deg, ${REELS_MOOD.accent}, ${REELS_MOOD.accentDeep});
+  background: linear-gradient(135deg, ${m.accent}, ${m.accentDeep});
   color: white;
   border: none;
   padding: 12px 18px;
@@ -1096,8 +1114,8 @@ const RL_STYLES = `
 }
 .rl-action-ghost {
   background: transparent;
-  border: 1px solid ${REELS_MOOD.line};
-  color: ${REELS_MOOD.ink1};
+  border: 1px solid ${m.line};
+  color: ${m.ink1};
 }
 .rl-result-newcta {
   margin: 16px 22px 0;
@@ -1106,7 +1124,7 @@ const RL_STYLES = `
 .rl-result-newcta button {
   background: transparent;
   border: none;
-  color: ${REELS_MOOD.ink3};
+  color: ${m.ink3};
   font-size: 12px;
   cursor: pointer;
   display: inline-flex;

@@ -38,8 +38,9 @@ import { useToast } from '../contexts/ToastContext';
 import { hapticLight, hapticMedium, hapticSuccess, hapticError, sharePhoto } from '../services/nativeService';
 import { AppTopBar, urlToFile, ensureValidImageFile, type AppMood } from '../components/apps/_shared';
 import { recastVideo, type VideoProgress } from '../services/falVideoService';
+import { useColorScheme } from '../hooks/useColorScheme';
 
-const REELS_MOOD: AppMood = {
+const LIGHT_MOOD: AppMood = {
   bg0: '#F5E8D4',
   bgCard: '#FFFAEC',
   paper: '#F3DEB5',
@@ -50,6 +51,23 @@ const REELS_MOOD: AppMood = {
   line: 'rgba(31, 26, 20, 0.10)',
   accent: '#B0542D',
   accentDeep: '#8E3C20',
+  gold: '#E8A04C',
+};
+
+// Matches the @media (prefers-color-scheme: dark) overrides on .rc-shell.
+// Passed to <AppTopBar> when the OS is in dark mode so the topbar's inline
+// CSS variables stay in sync with the rest of the page.
+const DARK_MOOD: AppMood = {
+  bg0: '#161210',
+  bgCard: '#1F1A14',
+  paper: '#2A2218',
+  ink0: '#FAF0DC',
+  ink1: '#E0D2BD',
+  ink2: '#B0997C',
+  ink3: '#806A56',
+  line: 'rgba(255,250,236,0.10)',
+  accent: '#D67A50',
+  accentDeep: '#B0542D',
   gold: '#E8A04C',
 };
 
@@ -79,6 +97,9 @@ export default function Recast({ onNav }: Props) {
   const addItems = useGalleryStore(s => s.addItems);
   const characters = useCharacterStore(s => s.characters);
   const toast = useToast();
+
+  const scheme = useColorScheme();
+  const MOOD = scheme === 'dark' ? DARK_MOOD : LIGHT_MOOD;
 
   const credits = profile?.creditsRemaining ?? 0;
 
@@ -373,7 +394,7 @@ export default function Recast({ onNav }: Props) {
       <div className="rc-shell">
         <style>{RC_STYLES}</style>
         <AppTopBar
-          mood={REELS_MOOD}
+          mood={MOOD}
           title="Recast · Clay"
           credits={credits}
           onBack={() => onNav('home' as Page)}
@@ -476,7 +497,7 @@ export default function Recast({ onNav }: Props) {
       <div className="rc-shell">
         <style>{RC_STYLES}</style>
         <AppTopBar
-          mood={REELS_MOOD}
+          mood={MOOD}
           title="Recast · Clay"
           credits={credits}
           onBack={() => onNav('home' as Page)}
@@ -851,7 +872,7 @@ export default function Recast({ onNav }: Props) {
       <div className="rc-shell rc-shell-dark">
         <style>{RC_STYLES}</style>
         <AppTopBar
-          mood={REELS_MOOD}
+          mood={MOOD}
           title="Recast · Clay"
           credits={credits}
           onBack={() => onNav('home' as Page)}
@@ -937,6 +958,25 @@ const RC_STYLES = `
 .rc-shell-dark {
   background: #0E0B08;
   color: #FFFAEC;
+}
+
+/* Auto dark mode — follow OS preference. The light .rc-shell-dark class
+ * above stays for explicit phases (generating overlay) that want dark
+ * regardless of theme. */
+@media (prefers-color-scheme: dark) {
+  .rc-shell {
+    --rc-bg-0: #161210;
+    --rc-bg-card: #1F1A14;
+    --rc-paper: #2A2218;
+    --rc-ink-0: #FAF0DC;
+    --rc-ink-1: #E0D2BD;
+    --rc-ink-2: #B0997C;
+    --rc-ink-3: #806A56;
+    --rc-line: rgba(255,250,236,0.10);
+    --rc-accent: #D67A50;
+    --rc-accent-deep: #B0542D;
+    --rc-gold: #E8A04C;
+  }
 }
 
 /* Hero */
