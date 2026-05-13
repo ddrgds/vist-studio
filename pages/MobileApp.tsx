@@ -25,11 +25,12 @@ const MobileGallery = lazy(() => import('./MobileGallery'));
 const MobileProfile = lazy(() => import('./MobileProfile'));
 const Recast = lazy(() => import('./Recast'));
 const Reels = lazy(() => import('./Reels'));
+const VideoEdit = lazy(() => import('./VideoEdit'));
 const Imagina = lazy(() => import('./Imagina'));
 const MobileOnboarding = lazy(() => import('./MobileOnboarding'));
 const PricingPage = lazy(() => import('../components/PricingPage'));
 
-type MobilePage = 'home' | 'headshot' | 'reimaginar' | 'sesion' | 'editor' | 'recast' | 'reels' | 'imagina' | 'create' | 'gallery' | 'characters' | 'profile' | 'pricing';
+type MobilePage = 'home' | 'headshot' | 'reimaginar' | 'sesion' | 'editor' | 'recast' | 'reels' | 'videoedit' | 'imagina' | 'create' | 'gallery' | 'characters' | 'profile' | 'pricing';
 
 interface AppEntry {
   id: MobilePage | 'soon';
@@ -79,6 +80,12 @@ const APPS: AppEntry[] = [
     cost: '145-290 cr · 5-10s',
     bg: 'https://images.unsplash.com/photo-1605723517503-3cadb5818a0c?w=600&q=85',
     accent: '#D85478', isLive: true, isNew: true,
+  },
+  {
+    id: 'videoedit', name: 'Editar Video', tagline: 'Cambia fondo, outfit, color en un video',
+    cost: '145 cr · 3-60s',
+    bg: 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=600&q=85',
+    accent: '#9C6D2A', isLive: true, isNew: true,
   },
   {
     id: 'imagina', name: 'Imagina', tagline: 'Variaciones de una foto que amas',
@@ -318,6 +325,7 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
       sesion: 'sesion',
       recast: 'recast',
       reels: 'reels',
+      videoedit: 'videoedit',
       imagina: 'imagina',
     };
     const target = map[p] ?? 'home';
@@ -367,6 +375,12 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
         return (
           <Suspense fallback={<MobileLoader />}>
             <Reels onNav={navigateFromSubApp} />
+          </Suspense>
+        );
+      case 'videoedit':
+        return (
+          <Suspense fallback={<MobileLoader />}>
+            <VideoEdit onNav={navigateFromSubApp} />
           </Suspense>
         );
       case 'imagina':

@@ -14,6 +14,8 @@ fal.config({ proxyUrl: '/fal-api' });
 // ─────────────────────────────────────────────
 
 const VIDEO_MODEL_IDS: Record<string, string> = {
+  // Video Edit (modify existing video)
+  [VideoEngine.HappyHorseEdit]: 'alibaba/happy-horse/video-edit',
   // Image-to-Video / Reference-to-Video
   [VideoEngine.HappyHorse]: 'alibaba/happy-horse/reference-to-video',
   [VideoEngine.Seedance2]: 'bytedance/seedance-2.0/image-to-video',
@@ -342,6 +344,68 @@ export async function recastVideoWithWan(
   onProgress?: (progress: VideoProgress) => void,
 ): Promise<VideoResult> {
   return recastVideo({ ...params, engine: 'wan' }, onProgress);
+}
+
+// ─────────────────────────────────────────────
+// Video Edit — Happy Horse (Alibaba)
+// Modify an existing video via natural-language prompt. Up to 5 reference
+// images can be passed and referenced in the prompt as @Image1...@Image5
+// (e.g. "Cambia su lencería por @Image1"). Permissive when safety checker
+// is disabled — works for sensual edits the user uploads or generates.
+// ─────────────────────────────────────────────
+
+export interface VideoEditParams {
+  /** Source video to edit (3-60s, MP4/MOV, max 100MB). */
+  sourceVideo: File;
+  /** Natural-language edit instruction. Max 2500 chars. */
+  prompt: string;
+  /** Optional reference images (max 5). Referenced in prompt as @Image1…@Image5. */
+  referenceImages?: File[];
+  /** Output resolution. Default '1080p'. */
+  resolution?: '720p' | '1080p';
+  /** 'auto' lets the model decide whether to keep original sound; 'origin' forces keep. */
+  audioSetting?: 'auto' | 'origin';
+  /** When true, fal applies content moderation. Default false for our use case. */
+  enableSafetyChecker?: boolean;
+  abortSignal?: AbortSignal;
+}
+
+export async function editVideoWithHappyHorse(
+  params: VideoEditParams,
+  onProgress?: (progress: VideoProgress) => void,
+): Promise<VideoResult> {
+  const videoUrl = await uploadFile(params.sourceVideo);
+  const refUrls = params.referenceImages?.length
+    ? await Promise.all(params.referenceImages.slice(0, 5).map(uploadFile))
+    : [];
+
+  const input: Record<string, any> = {
+    video_url: videoUrl,
+    prompt: params.prompt,
+    resolution: params.resolution ?? '1080p',
+    audio_setting: params.audioSetting ?? 'auto',
+    enable_safety_checker: params.enableSafetyChecker ?? false,
+  };
+  if (refUrls.length) input.reference_image_urls = refUrls;
+
+  try {
+    const result = await fal.subscribe('alibaba/happy-horse/video-edit', {
+      input,
+      timeout: 600000,
+      onQueueUpdate: buildQueueHandler(onProgress),
+      ...(params.abortSignal ? { signal: params.abortSignal } : {}),
+    });
+    const data = unwrap(result);
+    return { videoUrl: data.video?.url };
+  } catch (err: any) {
+    console.error('[HappyHorseEdit] error body:', err?.body ?? err?.response?.body ?? err);
+    console.error('[HappyHorseEdit] payload sent:', {
+      ...input,
+      video_url: `${videoUrl.slice(0, 60)}…`,
+      reference_image_urls: input.reference_image_urls?.map((u: string) => `${u.slice(0, 60)}…`),
+    });
+    throw err;
+  }
 }
 
 // ─────────────────────────────────────────────

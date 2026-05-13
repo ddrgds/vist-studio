@@ -150,7 +150,7 @@ const ExportModal = lazy(() => import('./features/export/ExportModal'));
 // Re-import + add to pages map when rebuilding.
 const OnboardingWizard = lazy(() => import('./components/OnboardingWizard').then(m => ({ default: m.OnboardingWizard })));
 
-export type Page = 'create' | 'studio' | 'editor' | 'gallery' | 'characters' | 'pricing' | 'profile' | 'headshot' | 'reimaginar' | 'sesion' | 'recast' | 'imagina' | 'reels';
+export type Page = 'create' | 'studio' | 'editor' | 'gallery' | 'characters' | 'pricing' | 'profile' | 'headshot' | 'reimaginar' | 'sesion' | 'recast' | 'imagina' | 'reels' | 'videoedit';
 
 function App() {
   return (

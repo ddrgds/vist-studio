@@ -105,6 +105,8 @@ export interface PoseModificationParams {
 
 // ─── Video Engines ──────────────────────────────────────────────────────────
 export enum VideoEngine {
+  // Video Edit (modify an existing video)
+  HappyHorseEdit = 'happy-horse-edit',
   // Image-to-Video / Reference-to-Video
   HappyHorse = 'happy-horse',
   Seedance2 = 'seedance-2.0',
@@ -123,7 +125,7 @@ export enum VideoEngine {
   KlingAvatarPro = 'kling-avatar-v2-pro',
 }
 
-export type VideoMode = 'image-to-video' | 'motion-control' | 'lip-sync';
+export type VideoMode = 'image-to-video' | 'motion-control' | 'lip-sync' | 'video-edit';
 
 export interface VideoParams {
   mode: VideoMode;
@@ -444,6 +446,8 @@ export const HIGGSFIELD_MODEL_LABELS: Record<HiggsfieldModel, { name: string; de
 };
 
 export const VIDEO_ENGINE_LABELS: Record<VideoEngine, { name: string; icon: string; description: string; mode: VideoMode }> = {
+  // Video Edit
+  [VideoEngine.HappyHorseEdit]: { name: 'Happy Horse Edit', icon: '🪄', description: 'Editar video existente con prompt + refs', mode: 'video-edit' },
   // Image-to-Video / Reference-to-Video
   [VideoEngine.HappyHorse]: { name: 'Happy Horse', icon: '🐎', description: 'Multi-referencia, 1080p vertical, permisivo', mode: 'image-to-video' },
   [VideoEngine.Seedance2]: { name: 'Seedance 2.0', icon: '🎞️', description: 'Vertical-native reels, audio sincronizado, 4-15s', mode: 'image-to-video' },
@@ -546,6 +550,8 @@ export const CREDIT_COSTS: Record<string, number> = {
   'upscale-recraft': 9,
   'upscale-aura':    3,
   'expand':          14,
+  // ── Video — Video Edit ──
+  [VideoEngine.HappyHorseEdit]:       145,
   // ── Video — Image-to-Video ──
   [VideoEngine.HappyHorse]:           145,
   [VideoEngine.Seedance2]:             86,
