@@ -185,16 +185,28 @@ export async function sharePhoto(opts: {
   // Web Share API (iOS Safari, Chrome Android with files)
   if (typeof navigator !== 'undefined' && typeof (navigator as any).share === 'function') {
     try {
-      const response = await fetch(opts.url);
-      const blob = await response.blob();
-      const file = new File(
-        [blob],
-        opts.filename || `vist-${Date.now()}.jpg`,
-        { type: blob.type || 'image/jpeg' },
-      );
-      // Some browsers only support text+url, some support files
+      // Try to attach the file blob — gives the user "Save Image" → Photos
+      // on iOS, plus full sharing to apps that accept files.
+      // If the fetch fails (CORS, network), keep going with URL-only share —
+      // iOS still shows the share sheet which includes "Add to Photos" via
+      // the "Save Image" option when sharing a URL.
+      let file: File | null = null;
+      try {
+        const response = await fetch(opts.url);
+        const blob = await response.blob();
+        if (blob && blob.size > 0) {
+          file = new File(
+            [blob],
+            opts.filename || `vist-${Date.now()}.jpg`,
+            { type: blob.type || 'image/jpeg' },
+          );
+        }
+      } catch (fetchErr) {
+        console.warn('Web Share: file fetch failed, falling back to URL-only', fetchErr);
+      }
+
       const shareData: any = { title: opts.title, text: opts.text };
-      if ((navigator as any).canShare?.({ files: [file] })) {
+      if (file && (navigator as any).canShare?.({ files: [file] })) {
         shareData.files = [file];
       } else {
         shareData.url = opts.url;
@@ -202,12 +214,34 @@ export async function sharePhoto(opts: {
       await (navigator as any).share(shareData);
       return true;
     } catch (err: any) {
-      if (err?.name !== 'AbortError') console.warn('Web Share failed:', err);
-      return false;
+      if (err?.name === 'AbortError') return false; // user cancelled
+      console.warn('Web Share failed:', err);
+      // fall through to iOS new-tab fallback below
     }
   }
 
-  return false; // No share available
+  // iOS web fallback: open in new tab. From there the user can long-press
+  // the image → "Add to Photos" which lands it in the Photos gallery.
+  // We avoid <a download> on iOS because Safari saves those to Files
+  // (not Photos), which is the wrong destination for our use case.
+  if (isIOSWeb()) {
+    try {
+      window.open(opts.url, '_blank', 'noopener,noreferrer');
+      return true;
+    } catch {
+      /* ignore */
+    }
+  }
+
+  return false; // No share available — caller may fall back to <a download>
+}
+
+/** True on iOS Safari (not Capacitor native). Used to special-case the
+ *  Photos-vs-Files behavior on Safari downloads. */
+function isIOSWeb(): boolean {
+  if (typeof navigator === 'undefined' || typeof window === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  return /iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────
