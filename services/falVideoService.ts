@@ -15,6 +15,7 @@ fal.config({ proxyUrl: '/fal-api' });
 
 const VIDEO_MODEL_IDS: Record<string, string> = {
   // Image-to-Video
+  [VideoEngine.Seedance2]: 'bytedance/seedance-2.0/image-to-video',
   [VideoEngine.Kling26Standard]: 'fal-ai/kling-video/v2.6/standard/image-to-video',
   [VideoEngine.Kling26Pro]: 'fal-ai/kling-video/v2.6/pro/image-to-video',
   [VideoEngine.Kling3Pro]: 'fal-ai/kling-video/v3/pro/image-to-video',
@@ -64,7 +65,30 @@ export async function generateImageToVideo(
   const imageUrl = await uploadFile(params.baseImage);
   const endImageUrl = params.endImage ? await uploadFile(params.endImage) : undefined;
 
-  // Build input based on engine version
+  // Seedance 2.0 uses a different input schema — image_url (not start_image_url),
+  // explicit aspect_ratio + resolution, no negative_prompt, no shot_type.
+  // Defaults tuned for reels: 9:16 vertical, 720p, 5s, audio on.
+  if (params.engine === VideoEngine.Seedance2) {
+    const seedanceInput: Record<string, any> = {
+      image_url: imageUrl,
+      prompt: params.prompt || 'Animate this character naturally',
+      duration: params.duration || '5',
+      aspect_ratio: params.aspectRatio || '9:16',
+      resolution: params.resolution || '720p',
+      generate_audio: true,
+    };
+    if (endImageUrl) seedanceInput.end_image_url = endImageUrl;
+
+    const result = await fal.subscribe(modelId, {
+      input: seedanceInput,
+      timeout: 300000,
+      onQueueUpdate: buildQueueHandler(onProgress),
+    });
+    const data = unwrap(result);
+    return { videoUrl: data.video?.url, duration: data.duration };
+  }
+
+  // Kling family — original schema.
   const isV3 = params.engine === VideoEngine.Kling3Pro;
   const input: Record<string, any> = {
     start_image_url: imageUrl,
@@ -80,17 +104,7 @@ export async function generateImageToVideo(
   const result = await fal.subscribe(modelId, {
     input,
     timeout: 300000, // 5 min
-    onQueueUpdate: (update) => {
-      if (!onProgress) return;
-      if (update.status === 'IN_QUEUE') {
-        onProgress({ status: 'IN_QUEUE', queuePosition: (update as any).queue_position });
-      } else if (update.status === 'IN_PROGRESS') {
-        onProgress({
-          status: 'IN_PROGRESS',
-          logs: (update as any).logs?.map((l: any) => l.message) ?? [],
-        });
-      }
-    },
+    onQueueUpdate: buildQueueHandler(onProgress),
   });
 
   const data = unwrap(result);
@@ -187,35 +201,71 @@ export async function generateLipSync(
 }
 
 // ─────────────────────────────────────────────
-// Recast — character replacement (Wan 2.2 Animate Replace)
-// Thin wrapper for the mobile Recast app. The input video and character
-// image both go to fal.storage; the model swaps the person in the video
-// with the character while keeping background, lighting, and camera intact.
+// Recast — character replacement in video.
+// Two engines:
+//   - 'kling3' (DEFAULT 2026-05-13) → Kling 3 Pro Motion Control. Better
+//     identity preservation frame-to-frame, sharper output, more expensive.
+//   - 'wan'    → Wan 2.2 Animate Replace. Cheaper Express tier, occasional
+//     identity flicker on fast motion. Kept as fallback / budget option.
+// Input video and character image both go to fal.storage; the model swaps
+// the person in the video with the character while keeping background,
+// lighting, and camera intact.
 // ─────────────────────────────────────────────
+
+export type RecastEngine = 'kling3' | 'wan';
 
 export interface RecastParams {
   /** User-recorded video where the AI character will replace the person */
   sourceVideo: File;
   /** Character reference image (clean portrait or full body) */
   characterImage: File;
+  /** Which engine to use. Defaults to 'kling3' for best identity preservation. */
+  engine?: RecastEngine;
   /** Output resolution. Cost: 480p $0.04/s · 580p $0.06/s · 720p $0.08/s */
   resolution?: '480p' | '580p' | '720p';
-  /** Video quality preset — higher = slower */
+  /** Optional prompt — Kling 3 only; refines motion intent. */
+  prompt?: string;
+  /** Character orientation — Kling 3 only. 'video' = follow source video. */
+  characterOrientation?: 'image' | 'video';
+  /** Wan-specific: quality preset (low / medium / high / maximum). */
   quality?: 'low' | 'medium' | 'high' | 'maximum';
-  /** Use turbo mode for ~30% faster generation at slight quality cost */
+  /** Wan-specific: 30% faster generation at slight quality cost. */
   useTurbo?: boolean;
   abortSignal?: AbortSignal;
 }
 
-export async function recastVideoWithWan(
+/**
+ * Recast — character replacement in a source video.
+ * Dispatches to Kling 3 Pro Motion (default) or Wan 2.2 Animate Replace.
+ */
+export async function recastVideo(
   params: RecastParams,
   onProgress?: (progress: VideoProgress) => void,
 ): Promise<VideoResult> {
+  const engine: RecastEngine = params.engine ?? 'kling3';
   const [videoUrl, imageUrl] = await Promise.all([
     uploadFile(params.sourceVideo),
     uploadFile(params.characterImage),
   ]);
 
+  if (engine === 'kling3') {
+    const result = await fal.subscribe('fal-ai/kling-video/v3/pro/motion-control', {
+      input: {
+        image_url: imageUrl,
+        video_url: videoUrl,
+        prompt: params.prompt ?? '',
+        character_orientation: params.characterOrientation ?? 'video',
+        keep_original_sound: true,
+      },
+      timeout: 600000,
+      onQueueUpdate: buildQueueHandler(onProgress),
+      ...(params.abortSignal ? { signal: params.abortSignal } : {}),
+    });
+    const data = unwrap(result);
+    return { videoUrl: data.video?.url };
+  }
+
+  // Wan 2.2 Animate Replace — Express tier.
   const result = await fal.subscribe('fal-ai/wan/v2.2-14b/animate/replace', {
     input: {
       video_url: videoUrl,
@@ -225,13 +275,20 @@ export async function recastVideoWithWan(
       use_turbo: params.useTurbo ?? false,
       num_inference_steps: 20,
     },
-    timeout: 600000, // 10 min — Wan can be slow
+    timeout: 600000,
     onQueueUpdate: buildQueueHandler(onProgress),
     ...(params.abortSignal ? { signal: params.abortSignal } : {}),
   });
-
   const data = unwrap(result);
   return { videoUrl: data.video?.url };
+}
+
+/** @deprecated — use recastVideo with engine: 'wan'. Kept for backward compat. */
+export async function recastVideoWithWan(
+  params: RecastParams,
+  onProgress?: (progress: VideoProgress) => void,
+): Promise<VideoResult> {
+  return recastVideo({ ...params, engine: 'wan' }, onProgress);
 }
 
 // ─────────────────────────────────────────────

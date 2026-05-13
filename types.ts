@@ -106,6 +106,7 @@ export interface PoseModificationParams {
 // ─── Video Engines ──────────────────────────────────────────────────────────
 export enum VideoEngine {
   // Image-to-Video
+  Seedance2 = 'seedance-2.0',
   Kling26Standard = 'kling-2.6-standard',
   Kling26Pro = 'kling-2.6-pro',
   Kling3Pro = 'kling-3.0-pro',
@@ -130,6 +131,10 @@ export interface VideoParams {
   // Image-to-Video
   duration?: '5' | '10';
   endImage?: File | null;
+  /** Aspect ratio hint — Seedance 2.0 only. Defaults to '9:16' (reels). */
+  aspectRatio?: '9:16' | '16:9' | '4:3' | '1:1' | '3:4' | '21:9' | 'auto';
+  /** Output resolution — Seedance 2.0 only. */
+  resolution?: '480p' | '720p' | '1080p';
   // Motion Control
   referenceVideo?: File | null;
   characterOrientation?: 'image' | 'video';
@@ -438,6 +443,7 @@ export const HIGGSFIELD_MODEL_LABELS: Record<HiggsfieldModel, { name: string; de
 
 export const VIDEO_ENGINE_LABELS: Record<VideoEngine, { name: string; icon: string; description: string; mode: VideoMode }> = {
   // Image-to-Video
+  [VideoEngine.Seedance2]: { name: 'Seedance 2.0', icon: '🎞️', description: 'Vertical-native reels, audio sincronizado, 4-15s', mode: 'image-to-video' },
   [VideoEngine.Kling26Standard]: { name: 'Kling 2.6', icon: '🎥', description: 'Fast, 5-10s clips', mode: 'image-to-video' },
   [VideoEngine.Kling26Pro]: { name: 'Kling 2.6 Pro', icon: '🎬', description: 'High quality, 1080p, native audio', mode: 'image-to-video' },
   [VideoEngine.Kling3Pro]: { name: 'Kling 3.0 Pro', icon: '✨', description: 'Best quality, cinematic, native audio', mode: 'image-to-video' },
@@ -537,6 +543,7 @@ export const CREDIT_COSTS: Record<string, number> = {
   'upscale-aura':    3,
   'expand':          14,
   // ── Video — Image-to-Video ──
+  [VideoEngine.Seedance2]:             86,
   [VideoEngine.Kling26Standard]:       86,
   [VideoEngine.Kling26Pro]:           143,
   [VideoEngine.Kling3Pro]:            286,
@@ -981,8 +988,8 @@ export const FEATURE_ENGINES: Record<string, { default: string; keys: string[] }
   },
   // ── Video ──
   'video:image-to-video': {
-    default: VideoEngine.Kling26Pro,
-    keys: [VideoEngine.Kling26Standard, VideoEngine.Kling26Pro, VideoEngine.Kling3Pro],
+    default: VideoEngine.Seedance2,
+    keys: [VideoEngine.Seedance2, VideoEngine.Kling26Standard, VideoEngine.Kling26Pro, VideoEngine.Kling3Pro],
   },
   'video:motion-control': {
     default: VideoEngine.Kling26MotionPro,

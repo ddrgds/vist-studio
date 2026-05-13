@@ -222,13 +222,15 @@ export async function editFallback(p: EditFallbackParams): Promise<string[]> {
 }
 
 /** Friendly engine name for logs / future telemetry. */
-export const FALLBACK_ENGINE_NAME =
-  FALLBACK_ENGINE === 'flux2-pro-rep' ? 'flux-2-pro-replicate'
-  : FALLBACK_ENGINE === 'flux2-klein' ? 'flux-2-klein-9b-edit'
-  : FALLBACK_ENGINE === 'flux2-pro'   ? 'flux-2-pro-edit-fal'
-  : FALLBACK_ENGINE === 'wan'         ? 'wan-2.7-image-pro'
-  : FALLBACK_ENGINE === 'grok'        ? 'grok-imagine-quality'
-  : 'seedream-v5-lite';
+const ENGINE_NAMES: Record<FallbackEngine, string> = {
+  'flux2-pro-rep': 'flux-2-pro-replicate',
+  'flux2-klein':   'flux-2-klein-9b-edit',
+  'flux2-pro':     'flux-2-pro-edit-fal',
+  'wan':           'wan-2.7-image-pro',
+  'grok':          'grok-imagine-quality',
+  'seedream':      'seedream-v5-lite',
+};
+export const FALLBACK_ENGINE_NAME: string = ENGINE_NAMES[FALLBACK_ENGINE];
 
 /** @deprecated — kept for backward compatibility with old import paths. */
 export const USE_GROK_FALLBACK = (FALLBACK_ENGINE as FallbackEngine) === 'grok';

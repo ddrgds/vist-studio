@@ -24,11 +24,12 @@ const MobileEditor = lazy(() => import('./MobileEditor'));
 const MobileGallery = lazy(() => import('./MobileGallery'));
 const MobileProfile = lazy(() => import('./MobileProfile'));
 const Recast = lazy(() => import('./Recast'));
+const Reels = lazy(() => import('./Reels'));
 const Imagina = lazy(() => import('./Imagina'));
 const MobileOnboarding = lazy(() => import('./MobileOnboarding'));
 const PricingPage = lazy(() => import('../components/PricingPage'));
 
-type MobilePage = 'home' | 'headshot' | 'reimaginar' | 'sesion' | 'editor' | 'recast' | 'imagina' | 'create' | 'gallery' | 'characters' | 'profile' | 'pricing';
+type MobilePage = 'home' | 'headshot' | 'reimaginar' | 'sesion' | 'editor' | 'recast' | 'reels' | 'imagina' | 'create' | 'gallery' | 'characters' | 'profile' | 'pricing';
 
 interface AppEntry {
   id: MobilePage | 'soon';
@@ -72,6 +73,12 @@ const APPS: AppEntry[] = [
     cost: '60-230 cr · 5-10s',
     bg: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=85',
     accent: '#B0542D', isLive: true, isNew: true,
+  },
+  {
+    id: 'reels', name: 'Reels', tagline: 'Una foto → reel vertical 9:16',
+    cost: '48-272 cr · 4-8s',
+    bg: 'https://images.unsplash.com/photo-1605723517503-3cadb5818a0c?w=600&q=85',
+    accent: '#FF6B9D', isLive: true, isNew: true,
   },
   {
     id: 'imagina', name: 'Imagina', tagline: 'Variaciones de una foto que amas',
@@ -310,6 +317,7 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
       reimaginar: 'reimaginar',
       sesion: 'sesion',
       recast: 'recast',
+      reels: 'reels',
       imagina: 'imagina',
     };
     const target = map[p] ?? 'home';
@@ -353,6 +361,12 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
         return (
           <Suspense fallback={<MobileLoader />}>
             <Recast onNav={navigateFromSubApp} />
+          </Suspense>
+        );
+      case 'reels':
+        return (
+          <Suspense fallback={<MobileLoader />}>
+            <Reels onNav={navigateFromSubApp} />
           </Suspense>
         );
       case 'imagina':

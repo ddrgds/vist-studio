@@ -37,7 +37,7 @@ import { useProfile } from '../contexts/ProfileContext';
 import { useToast } from '../contexts/ToastContext';
 import { hapticLight, hapticMedium, hapticSuccess, hapticError, sharePhoto } from '../services/nativeService';
 import { AppTopBar, urlToFile, type AppMood } from '../components/apps/_shared';
-import { recastVideoWithWan, type VideoProgress } from '../services/falVideoService';
+import { recastVideo, type VideoProgress } from '../services/falVideoService';
 
 const REELS_MOOD: AppMood = {
   bg0: '#F5E8D4',
@@ -63,10 +63,14 @@ type Resolution = '480p' | '720p';
 const MAX_DURATION_S = 10;
 const MAX_VIDEO_MB = 80;
 
-// Cost per second per resolution (with ~65% margin on fal price)
+// Cost per second — Kling 3 Pro Motion Control (DEFAULT 2026-05-13).
+// fal price: ~$0.20/s per Kling pricing. With ~65% margin = ~58 cr/s.
+// Resolution toggle is currently vestigial since Kling 3 motion-control
+// doesn't expose a resolution param — same cost both buckets for now.
+// When we add an Express (Wan VACE) tier toggle, restore differential pricing.
 const COST_PER_SEC: Record<Resolution, number> = {
-  '480p': 12, // ~$0.04 → 12 cr
-  '720p': 23, // ~$0.08 → 23 cr
+  '480p': 58,
+  '720p': 58,
 };
 
 export default function Recast({ onNav }: Props) {
@@ -243,18 +247,21 @@ export default function Recast({ onNav }: Props) {
     hapticMedium();
 
     try {
-      const result = await recastVideoWithWan(
+      // Default engine: Kling 3 Pro Motion (better identity, sharper output).
+      // Wan 2.2 stays available as Express tier when we expose a toggle.
+      const result = await recastVideo(
         {
           sourceVideo: videoFile,
           characterImage: characterImageFile,
+          engine: 'kling3',
+          characterOrientation: 'video',
           resolution,
-          quality: 'high',
           abortSignal: abortRef.current.signal,
         },
         prog => setProgress(prog),
       );
 
-      if (!result.videoUrl) throw new Error('Wan no devolvió URL del video');
+      if (!result.videoUrl) throw new Error('No se devolvió URL del video');
 
       setResultUrl(result.videoUrl);
       setPhase('result');
@@ -265,7 +272,7 @@ export default function Recast({ onNav }: Props) {
         id: crypto.randomUUID(),
         url: result.videoUrl,
         type: 'video',
-        model: 'wan-2.2-animate-replace',
+        model: 'kling-v3-motion-control',
         timestamp: Date.now(),
         prompt: `Recast · ${selectedCharacter?.name ?? 'custom'} · ${resolution}`,
         characterId: characterId ?? undefined,
