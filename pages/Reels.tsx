@@ -58,17 +58,20 @@ const LIGHT_MOOD: AppMood = {
   gold:       '#E8A04C',
 };
 
+// Dark mood — warm umber base matching Recast's dark variant so the suite
+// stays coherent at night. Accent stays in the rosé family for Reels'
+// identity, just softened/desaturated to read well on warm dark bg.
 const DARK_MOOD: AppMood = {
-  bg0:        '#161018',
-  bgCard:     '#1F1820',
-  paper:      '#2A1F2A',
-  ink0:       '#F4ECEC',
-  ink1:       '#D8C8D0',
-  ink2:       '#9B8B95',
-  ink3:       '#6A5A63',
-  line:       'rgba(255,255,255,0.08)',
-  accent:     '#F08498',
-  accentDeep: '#C45770',
+  bg0:        '#181410',
+  bgCard:     '#221C18',
+  paper:      '#2C241F',
+  ink0:       '#F8EFE5',
+  ink1:       '#E0D0BD',
+  ink2:       '#A0907A',
+  ink3:       '#705F4F',
+  line:       'rgba(255,239,229,0.10)',
+  accent:     '#E07898',
+  accentDeep: '#B85578',
   gold:       '#E8B070',
 };
 
