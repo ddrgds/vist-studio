@@ -35,51 +35,9 @@ import { useCharacterStore, type SavedCharacter } from '../stores/characterStore
 import { useProfile } from '../contexts/ProfileContext';
 import { useToast } from '../contexts/ToastContext';
 import { hapticLight, hapticMedium, hapticSuccess, hapticError, sharePhoto } from '../services/nativeService';
-import { AppTopBar, urlToFile, type AppMood } from '../components/apps/_shared';
+import { AppTopBar, urlToFile, ensureValidImageFile, type AppMood } from '../components/apps/_shared';
 import { generateImageToVideo, type VideoProgress } from '../services/falVideoService';
 import { VideoEngine } from '../types';
-
-// Seedance 2.0 only accepts JPEG / PNG / WebP. Some character photos come
-// back from the CDN as octet-stream, or are HEIC/AVIF/GIF — those would
-// trigger the "imagen no válida" error. This normalizes anything the browser
-// can decode to JPEG with matching .jpg extension, and caps at 2048px on the
-// longer edge so we don't blow Seedance's 30MB limit on Hi-DPI exports.
-async function ensureValidImageFile(file: File): Promise<File> {
-  const ALLOWED = ['image/jpeg', 'image/png', 'image/webp'];
-  const MAX_EDGE = 2048;
-  const MAX_BYTES = 25 * 1024 * 1024;
-
-  // Fast path: already a valid format AND within size limit AND filename matches.
-  const ext = (file.name.split('.').pop() || '').toLowerCase();
-  const extMatch =
-    (file.type === 'image/jpeg' && (ext === 'jpg' || ext === 'jpeg')) ||
-    (file.type === 'image/png'  && ext === 'png') ||
-    (file.type === 'image/webp' && ext === 'webp');
-  if (ALLOWED.includes(file.type) && extMatch && file.size <= MAX_BYTES) {
-    return file;
-  }
-
-  // Re-encode via canvas. Works for HEIC on iOS Safari, AVIF, GIF first frame,
-  // octet-stream, and anything else the browser can decode as an image.
-  const bitmap = await createImageBitmap(file).catch(() => null);
-  if (!bitmap) {
-    throw new Error('Formato de imagen no soportado por el navegador');
-  }
-  const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
-  const w = Math.round(bitmap.width * scale);
-  const h = Math.round(bitmap.height * scale);
-  const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Canvas no disponible');
-  ctx.drawImage(bitmap, 0, 0, w, h);
-
-  const blob: Blob | null = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.92));
-  if (!blob) throw new Error('No se pudo recodificar la imagen');
-  const safeName = file.name.replace(/\.[^.]+$/, '') + '.jpg';
-  return new File([blob], safeName, { type: 'image/jpeg' });
-}
 
 const REELS_MOOD: AppMood = {
   bg0:        '#F5EBDB',

@@ -36,7 +36,7 @@ import { useCharacterStore, type SavedCharacter } from '../stores/characterStore
 import { useProfile } from '../contexts/ProfileContext';
 import { useToast } from '../contexts/ToastContext';
 import { hapticLight, hapticMedium, hapticSuccess, hapticError, sharePhoto } from '../services/nativeService';
-import { AppTopBar, urlToFile, type AppMood } from '../components/apps/_shared';
+import { AppTopBar, urlToFile, ensureValidImageFile, type AppMood } from '../components/apps/_shared';
 import { recastVideo, type VideoProgress } from '../services/falVideoService';
 
 const REELS_MOOD: AppMood = {
@@ -190,26 +190,33 @@ export default function Recast({ onNav }: Props) {
     }
     try {
       hapticLight();
-      const file = await urlToFile(url, `recast-character-${selectedCharacter.id.slice(0, 8)}.jpg`);
+      // Normalize before sending to Kling 3 — same fix as Reels/Seedance.
+      // HEIC + octet-stream + oversize images get re-encoded as JPEG.
+      const raw = await urlToFile(url, `recast-character-${selectedCharacter.id.slice(0, 8)}.jpg`);
+      const file = await ensureValidImageFile(raw);
       setCharacterImageFile(file);
       setCharacterImageUrl(url);
       setPhase('configure');
-    } catch {
-      toast.error('No se pudo cargar la foto');
+    } catch (err: any) {
+      console.error('[Recast] photo load error:', err);
+      toast.error(`No se pudo cargar la foto: ${String(err?.message ?? err).slice(0, 80)}`);
     }
   };
 
-  const handleCharImgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      toast.error('Solo imágenes');
-      e.target.value = '';
+  const handleCharImgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.files?.[0];
+    e.target.value = '';
+    if (!raw) return;
+    if (raw.size > 25 * 1024 * 1024) {
+      toast.error('Máximo 25 MB');
       return;
     }
-    if (file.size > 12 * 1024 * 1024) {
-      toast.error('Máximo 12 MB');
-      e.target.value = '';
+    let file: File;
+    try {
+      file = await ensureValidImageFile(raw);
+    } catch (err: any) {
+      console.error('[Recast] upload error:', err);
+      toast.error(`Imagen inválida: ${String(err?.message ?? err).slice(0, 80)}`);
       return;
     }
     const reader = new FileReader();
@@ -221,7 +228,6 @@ export default function Recast({ onNav }: Props) {
       setPhase('configure');
     };
     reader.readAsDataURL(file);
-    e.target.value = '';
   };
 
   // ─── Generate ────────────────────────────────────

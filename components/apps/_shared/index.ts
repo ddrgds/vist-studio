@@ -12,6 +12,7 @@ export { AppEmptyState } from './AppEmptyState';
 export { AppFloatingCTA } from './AppFloatingCTA';
 export { useAppUpload } from './useAppUpload';
 export { urlToFile } from './urlToFile';
+export { ensureValidImageFile } from './ensureValidImageFile';
 export { HeroProSwitch, HERO_PRO_EXTRA_COST } from './HeroProSwitch';
 export type { AppMood } from './types';
 export { APP_EASE } from './types';
