@@ -46,13 +46,13 @@ interface PosePreset {
 }
 
 const SCENARIOS: ScenarioPreset[] = [
-  { id: 'loft',   name: 'Loft Brooklyn',  meta: 'Interior · día',     description: 'minimalist Brooklyn loft interior, exposed brick wall, large windows with natural daylight, wood floors, plants', img: 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=400&q=85' },
-  { id: 'hotel',  name: 'Hotel boutique', meta: 'Suite · ventana',    description: 'boutique hotel suite, elegant linen sheets, large window with diffused warm light, neutral interior', img: 'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?w=400&q=85' },
-  { id: 'beach',  name: 'Playa tropical', meta: 'Exterior · sunset',  description: 'tropical beach at golden hour, soft warm sunset light, turquoise ocean, sand, palm trees in background', img: 'https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=400&q=85' },
-  { id: 'cafe',   name: 'Café parisino',  meta: 'Interior · noche',   description: 'parisian cafe interior at night, warm tungsten lighting, marble bar, coffee cups, intimate atmosphere', img: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=400&q=85' },
-  { id: 'studio', name: 'Estudio editorial', meta: 'Set · backdrop',  description: 'professional photography studio, seamless paper backdrop, controlled studio lighting, editorial setup', img: 'https://images.unsplash.com/photo-1444723121867-7a241cacace9?w=400&q=85' },
-  { id: 'street', name: 'Street urbana',  meta: 'Exterior · día',     description: 'urban street setting, modern city architecture, soft overcast light, contemporary backdrop', img: 'https://images.unsplash.com/photo-1542140372-de3a3f87a9a4?w=400&q=85' },
-  { id: 'rooftop',name: 'Rooftop sunset', meta: 'Exterior · sunset',  description: 'rooftop terrace at golden hour, city skyline in background, warm sunset light, contemporary outdoor setting', img: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=400&q=85' },
+  { id: 'loft',   name: 'Loft Brooklyn',  meta: 'Interior · día',     description: 'minimalist Brooklyn loft interior, exposed brick wall, large windows with natural daylight, wood floors, plants', img: '/app-thumbs/sesion-scenes/loft.jpg' },
+  { id: 'hotel',  name: 'Hotel boutique', meta: 'Suite · ventana',    description: 'boutique hotel suite, elegant linen sheets, large window with diffused warm light, neutral interior', img: '/app-thumbs/sesion-scenes/hotel.jpg' },
+  { id: 'beach',  name: 'Playa tropical', meta: 'Exterior · sunset',  description: 'tropical beach at golden hour, soft warm sunset light, turquoise ocean, sand, palm trees in background', img: '/app-thumbs/sesion-scenes/beach.jpg' },
+  { id: 'cafe',   name: 'Café parisino',  meta: 'Interior · noche',   description: 'parisian cafe interior at night, warm tungsten lighting, marble bar, coffee cups, intimate atmosphere', img: '/app-thumbs/sesion-scenes/cafe.jpg' },
+  { id: 'studio', name: 'Estudio editorial', meta: 'Set · backdrop',  description: 'professional photography studio, seamless paper backdrop, controlled studio lighting, editorial setup', img: '/app-thumbs/sesion-scenes/studio.jpg' },
+  { id: 'street', name: 'Street urbana',  meta: 'Exterior · día',     description: 'urban street setting, modern city architecture, soft overcast light, contemporary backdrop', img: '/app-thumbs/sesion-scenes/street.jpg' },
+  { id: 'rooftop',name: 'Rooftop sunset', meta: 'Exterior · sunset',  description: 'rooftop terrace at golden hour, city skyline in background, warm sunset light, contemporary outdoor setting', img: '/app-thumbs/sesion-scenes/rooftop.jpg' },
 ];
 
 type OutfitCat = 'editorial' | 'casual' | 'sensual' | 'sport' | 'fantasy';
@@ -114,16 +114,16 @@ const OUTFIT_PALETTES: OutfitPalette[] = [
 ];
 
 const POSES: PosePreset[] = [
-  { id: 'sitting',     name: 'Sentada',           description: 'sitting elegantly, relaxed posture',                                  img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=85' },
-  { id: 'lying',       name: 'Acostada',          description: 'lying down on her side, relaxed pose',                                img: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=200&q=85' },
-  { id: 'standing',    name: 'De pie',            description: 'standing confident, hand on hip',                                     img: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=200&q=85' },
-  { id: 'mirror',      name: 'Espejo',            description: 'mirror selfie pose, candid moment',                                   img: 'https://images.unsplash.com/photo-1542140372-de3a3f87a9a4?w=200&q=85' },
-  { id: 'looking-away',name: 'Mirada lejos',      description: 'looking away from camera, profile angle, contemplative',              img: 'https://images.unsplash.com/photo-1521252659862-eec69941b071?w=200&q=85' },
-  { id: 'window',      name: 'Apoyo ventana',     description: 'leaning against window, natural light from side, dreamy mood',        img: 'https://images.unsplash.com/photo-1551316679-9c6ae9dec224?w=200&q=85' },
-  { id: 'walking',     name: 'Caminando',         description: 'walking forward, motion captured, dynamic',                           img: 'https://images.unsplash.com/photo-1496440737103-cd596325d314?w=200&q=85' },
-  { id: 'reclining',   name: 'Reclinada',         description: 'reclining elegantly, head tilted back, languid pose',                 img: 'https://images.unsplash.com/photo-1548142813-c348350df52b?w=200&q=85' },
-  { id: 'over-shoulder',name: 'Mirada hombro',    description: 'looking back over shoulder, soft gaze at camera',                     img: 'https://images.unsplash.com/photo-1496661269814-a841e78df103?w=200&q=85' },
-  { id: 'hands-hair',  name: 'Manos cabello',     description: 'hands running through hair, natural candid gesture',                  img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=85' },
+  { id: 'sitting',     name: 'Sentada',           description: 'sitting elegantly, relaxed posture',                                  img: '/app-thumbs/sesion-poses/sitting.jpg' },
+  { id: 'lying',       name: 'Acostada',          description: 'lying down on her side, relaxed pose',                                img: '/app-thumbs/sesion-poses/lying.jpg' },
+  { id: 'standing',    name: 'De pie',            description: 'standing confident, hand on hip',                                     img: '/app-thumbs/sesion-poses/standing.jpg' },
+  { id: 'mirror',      name: 'Espejo',            description: 'mirror selfie pose, candid moment',                                   img: '/app-thumbs/sesion-poses/mirror.jpg' },
+  { id: 'looking-away',name: 'Mirada lejos',      description: 'looking away from camera, profile angle, contemplative',              img: '/app-thumbs/sesion-poses/looking-away.jpg' },
+  { id: 'window',      name: 'Apoyo ventana',     description: 'leaning against window, natural light from side, dreamy mood',        img: '/app-thumbs/sesion-poses/window.jpg' },
+  { id: 'walking',     name: 'Caminando',         description: 'walking forward, motion captured, dynamic',                           img: '/app-thumbs/sesion-poses/walking.jpg' },
+  { id: 'reclining',   name: 'Reclinada',         description: 'reclining elegantly, head tilted back, languid pose',                 img: '/app-thumbs/sesion-poses/reclining.jpg' },
+  { id: 'over-shoulder',name: 'Mirada hombro',    description: 'looking back over shoulder, soft gaze at camera',                     img: '/app-thumbs/sesion-poses/over-shoulder.jpg' },
+  { id: 'hands-hair',  name: 'Manos cabello',     description: 'hands running through hair, natural candid gesture',                  img: '/app-thumbs/sesion-poses/hands-hair.jpg' },
 ];
 
 const LIGHTING = [
