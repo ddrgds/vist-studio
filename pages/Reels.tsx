@@ -1,15 +1,19 @@
 /**
- * Reels — Image-to-Video reel composer (Kling 2.6 Standard via fal.ai).
+ * Reels — Image-to-Video reel composer (Happy Horse / Alibaba via fal.ai).
  *
  *   Concept: the user picks a character, then a specific photo of that
  *   character (an outfit/look). They pick a template (or write a custom
- *   prompt) and Kling animates it into a vertical 9:16 short clip with
- *   synced audio. Perfect for IG/TikTok reels.
+ *   prompt) and Happy Horse animates it into a vertical 9:16 1080p clip
+ *   with synced audio. Perfect for IG/TikTok reels.
  *
- *   Engine swapped from Seedance 2.0 → Kling 2.6 Standard on 2026-05-13.
- *   Seedance's ByteDance content moderation rejected most sensual content
- *   (the bulk of our LATAM influencer use case); Kling is more permissive
- *   at the same credit cost (86 cr/5s).
+ *   Engine evolution (2026-05-13):
+ *   Seedance 2.0 → Kling 2.6 Standard → Happy Horse (Alibaba).
+ *   Seedance rejected most sensual content with 422. Kling 2.6 worked
+ *   but had no multi-ref char consistency. Happy Horse wins on:
+ *     - up to 9 reference images for character coherence
+ *     - 1080p vertical 9:16 native
+ *     - opt-out safety_checker (sensual passes)
+ *     - Alibaba/Wan-family quality + permissiveness
  *
  *   Phases:
  *     1. pick-character        — choose saved character or upload portrait
@@ -82,9 +86,9 @@ interface Props {
 type Phase = 'pick-character' | 'pick-character-photo' | 'configure' | 'generating' | 'result';
 type Duration = '5' | '10';
 
-// Cost in credits for Kling 2.6 Standard via fal: ~$0.06/s, 65% margin.
-// 5s = 86 cr, 10s = 172 cr. Matches CREDIT_COSTS[Kling26Standard].
-const COST_PER_SEC = 17;
+// Cost in credits for Happy Horse via fal: ~$0.10/s @ 1080p, 65% margin.
+// 5s = 145 cr, 10s = 290 cr. Matches CREDIT_COSTS[HappyHorse].
+const COST_PER_SEC = 29;
 
 // ─── Prompt templates ──────────────────────────────────
 // Curated set of action prompts optimized for Kling 2.6 Standard, written
@@ -292,13 +296,15 @@ export default function Reels({ onNav }: Props) {
           mode: 'image-to-video',
           baseImage: characterImageFile,
           prompt: finalPrompt,
-          engine: VideoEngine.Kling26Standard,
+          engine: VideoEngine.HappyHorse,
           duration,
+          aspectRatio: '9:16',
+          resolution: '1080p',
         },
         prog => setProgress(prog),
       );
 
-      if (!result.videoUrl) throw new Error('Kling no devolvió URL del video');
+      if (!result.videoUrl) throw new Error('Happy Horse no devolvió URL del video');
 
       setResultUrl(result.videoUrl);
       setPhase('result');
@@ -309,7 +315,7 @@ export default function Reels({ onNav }: Props) {
         id: crypto.randomUUID(),
         url: result.videoUrl,
         type: 'video',
-        model: 'kling-v2.6-standard-image-to-video',
+        model: 'happy-horse-reference-to-video',
         timestamp: Date.now(),
         prompt: `Reel · ${selectedCharacter?.name ?? 'custom'} · ${duration}s · ${finalPrompt.slice(0, 60)}`,
         characterId: characterId ?? undefined,
@@ -414,7 +420,7 @@ export default function Reels({ onNav }: Props) {
             <em>Un reel</em> de 5 segundos.
           </h1>
           <p className="rl-hero-sub">
-            Elige un look de tu personaje, describe qué hace, y Kling lo convierte en un clip vertical con audio. Listo para subir a IG o TikTok.
+            Elige un look de tu personaje, describe qué hace, y Happy Horse lo convierte en un clip vertical 1080p con audio. Listo para subir a IG o TikTok.
           </p>
         </section>
 

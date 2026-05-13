@@ -105,10 +105,12 @@ export interface PoseModificationParams {
 
 // ─── Video Engines ──────────────────────────────────────────────────────────
 export enum VideoEngine {
-  // Image-to-Video
+  // Image-to-Video / Reference-to-Video
+  HappyHorse = 'happy-horse',
   Seedance2 = 'seedance-2.0',
   Kling26Standard = 'kling-2.6-standard',
   Kling26Pro = 'kling-2.6-pro',
+  Kling3Standard = 'kling-3.0-standard',
   Kling3Pro = 'kling-3.0-pro',
   // Motion Control
   Kling26MotionStandard = 'kling-2.6-motion-standard',
@@ -442,10 +444,12 @@ export const HIGGSFIELD_MODEL_LABELS: Record<HiggsfieldModel, { name: string; de
 };
 
 export const VIDEO_ENGINE_LABELS: Record<VideoEngine, { name: string; icon: string; description: string; mode: VideoMode }> = {
-  // Image-to-Video
+  // Image-to-Video / Reference-to-Video
+  [VideoEngine.HappyHorse]: { name: 'Happy Horse', icon: '🐎', description: 'Multi-referencia, 1080p vertical, permisivo', mode: 'image-to-video' },
   [VideoEngine.Seedance2]: { name: 'Seedance 2.0', icon: '🎞️', description: 'Vertical-native reels, audio sincronizado, 4-15s', mode: 'image-to-video' },
   [VideoEngine.Kling26Standard]: { name: 'Kling 2.6', icon: '🎥', description: 'Fast, 5-10s clips', mode: 'image-to-video' },
   [VideoEngine.Kling26Pro]: { name: 'Kling 2.6 Pro', icon: '🎬', description: 'High quality, 1080p, native audio', mode: 'image-to-video' },
+  [VideoEngine.Kling3Standard]: { name: 'Kling 3.0', icon: '🎬', description: 'v3 quality, 1080p, audio nativo', mode: 'image-to-video' },
   [VideoEngine.Kling3Pro]: { name: 'Kling 3.0 Pro', icon: '✨', description: 'Best quality, cinematic, native audio', mode: 'image-to-video' },
   // Motion Control
   [VideoEngine.Kling26MotionStandard]: { name: 'Kling 2.6 Motion', icon: '🕺', description: 'Transfer movements, up to 30s', mode: 'motion-control' },
@@ -543,9 +547,11 @@ export const CREDIT_COSTS: Record<string, number> = {
   'upscale-aura':    3,
   'expand':          14,
   // ── Video — Image-to-Video ──
+  [VideoEngine.HappyHorse]:           145,
   [VideoEngine.Seedance2]:             86,
   [VideoEngine.Kling26Standard]:       86,
   [VideoEngine.Kling26Pro]:           143,
+  [VideoEngine.Kling3Standard]:       229,
   [VideoEngine.Kling3Pro]:            286,
   // Video — Motion Control
   [VideoEngine.Kling26MotionStandard]: 86,
@@ -988,12 +994,12 @@ export const FEATURE_ENGINES: Record<string, { default: string; keys: string[] }
   },
   // ── Video ──
   'video:image-to-video': {
-    // Default switched from Seedance 2.0 to Kling 2.6 Standard 2026-05-13.
-    // Seedance has ByteDance-level content moderation that rejects most
-    // sensual/lingerie reels (the bulk of the LATAM influencer use case).
-    // Kling 2.6 Standard is same credit cost, more permissive policy.
-    default: VideoEngine.Kling26Standard,
-    keys: [VideoEngine.Kling26Standard, VideoEngine.Kling26Pro, VideoEngine.Kling3Pro, VideoEngine.Seedance2],
+    // Default switched to Happy Horse 2026-05-13. Alibaba/Wan-family model
+    // with multi-reference character consistency (up to 9 refs), 1080p
+    // vertical 9:16, native audio, and an opt-out safety_checker for the
+    // sensual/influencer use case. Kling family stays as quality upgrade.
+    default: VideoEngine.HappyHorse,
+    keys: [VideoEngine.HappyHorse, VideoEngine.Kling3Standard, VideoEngine.Kling3Pro, VideoEngine.Kling26Standard, VideoEngine.Seedance2],
   },
   'video:motion-control': {
     default: VideoEngine.Kling26MotionPro,

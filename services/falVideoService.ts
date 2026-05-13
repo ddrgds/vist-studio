@@ -14,10 +14,12 @@ fal.config({ proxyUrl: '/fal-api' });
 // ─────────────────────────────────────────────
 
 const VIDEO_MODEL_IDS: Record<string, string> = {
-  // Image-to-Video
+  // Image-to-Video / Reference-to-Video
+  [VideoEngine.HappyHorse]: 'alibaba/happy-horse/reference-to-video',
   [VideoEngine.Seedance2]: 'bytedance/seedance-2.0/image-to-video',
   [VideoEngine.Kling26Standard]: 'fal-ai/kling-video/v2.6/standard/image-to-video',
   [VideoEngine.Kling26Pro]: 'fal-ai/kling-video/v2.6/pro/image-to-video',
+  [VideoEngine.Kling3Standard]: 'fal-ai/kling-video/v3/standard/image-to-video',
   [VideoEngine.Kling3Pro]: 'fal-ai/kling-video/v3/pro/image-to-video',
   // Motion Control
   [VideoEngine.Kling26MotionStandard]: 'fal-ai/kling-video/v2.6/standard/motion-control',
@@ -64,6 +66,44 @@ export async function generateImageToVideo(
 
   const imageUrl = await uploadFile(params.baseImage);
   const endImageUrl = params.endImage ? await uploadFile(params.endImage) : undefined;
+
+  // Happy Horse (Alibaba) — reference-to-video with up to 9 character refs.
+  // Schema: image_urls (list), prompt referencing characterN. Safety checker
+  // off by default for the LATAM influencer use case. Vertical 9:16 1080p.
+  if (params.engine === VideoEngine.HappyHorse) {
+    // Auto-prefix "character1 " so Happy Horse anchors the action to the
+    // reference subject (model docs require explicit character[N] mention).
+    const userPrompt = params.prompt || 'natural cinematic motion';
+    const hhPrompt = /character\s*\d/i.test(userPrompt)
+      ? userPrompt
+      : `character1 ${userPrompt}`;
+
+    const hhInput: Record<string, any> = {
+      prompt: hhPrompt,
+      image_urls: [imageUrl],
+      aspect_ratio: params.aspectRatio || '9:16',
+      resolution: params.resolution === '480p' ? '720p' : (params.resolution || '1080p'),
+      duration: parseInt(params.duration || '5', 10),
+      enable_safety_checker: false,
+    };
+
+    try {
+      const result = await fal.subscribe(modelId, {
+        input: hhInput,
+        timeout: 600000,
+        onQueueUpdate: buildQueueHandler(onProgress),
+      });
+      const data = unwrap(result);
+      return { videoUrl: data.video?.url, duration: data.duration };
+    } catch (err: any) {
+      console.error('[HappyHorse] error body:', err?.body ?? err?.response?.body ?? err);
+      console.error('[HappyHorse] payload sent:', {
+        ...hhInput,
+        image_urls: hhInput.image_urls?.map((u: string) => `${u.slice(0, 60)}…`),
+      });
+      throw err;
+    }
+  }
 
   // Seedance 2.0 uses a different input schema — image_url (not start_image_url),
   // explicit aspect_ratio + resolution, no negative_prompt, no shot_type.
