@@ -34,10 +34,11 @@ import { normalizeForBothEnginesSafe, adaptPromptForWanSafe } from './aiPromptAd
  *   - 'grok'         → Grok Quality (tight policy, kept for non-spicy)
  */
 export type FallbackEngine = 'flux2-pro-rep' | 'flux2-klein' | 'flux2-pro' | 'wan' | 'seedream' | 'grok';
-// Switched to flux2-pro-rep 2026-05-12 — Replicate Pro/Max permissive moderation +
-// Haiku prompt adapter combined produce IG-grade outputs consistently. fal Pro
-// kept as third-tier fallback when Replicate has outages.
-export const FALLBACK_ENGINE: FallbackEngine = 'flux2-pro-rep';
+// Switched to wan 2026-05-13 — Wan 2.7 Image Pro with thinking_mode +
+// image_set_mode + Haiku Spanish-compressor (adaptPromptForWan) validated to
+// preserve identity at 85-90% with 4-6 reference images and pass spicy content
+// where NB2 rejects with 422. Flux 2 Pro Replicate stays in tree as opt-in.
+export const FALLBACK_ENGINE: FallbackEngine = 'wan';
 
 export interface EditFallbackParams {
   baseImage: File;
