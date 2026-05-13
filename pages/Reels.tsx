@@ -26,11 +26,10 @@
  * VIST mobile app suite (Headshot, Reimaginar, Sesión, Recast, Imagina),
  * differentiated by a coral/rosé accent vs the clay accents in the other apps.
  *
- * Cost: Seedance 2.0
- *   - 480p · 5s  ≈  60 cr
- *   - 720p · 5s  ≈ 100 cr  (default)
- *   - 1080p · 5s ≈ 170 cr
- * Scales linearly with duration.
+ * Cost: Happy Horse video-edit 1080p
+ *   - 5s  → 145 cr
+ *   - 10s → 290 cr
+ * Scales linearly with duration. No resolution toggle (always 1080p).
  */
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -228,7 +227,7 @@ export default function Reels({ onNav }: Props) {
     }
     try {
       hapticLight();
-      // Seedance 2.0 validates by MIME type — JPEG/PNG/WebP only. urlToFile
+      // Happy Horse validates by MIME type — JPEG/PNG/WebP only. urlToFile
       // names the file 'character.png' by default which can mislead the
       // uploader. We name it generically and normalize the type below.
       const rawFile = await urlToFile(url, `reel-character-${selectedCharacter.id.slice(0, 8)}.jpg`);
@@ -651,7 +650,7 @@ export default function Reels({ onNav }: Props) {
           <p className="rl-gen-sub">
             {progress?.status === 'IN_QUEUE'
               ? `En cola${progress.queuePosition ? ` · posición ${progress.queuePosition}` : ''}…`
-              : 'Seedance 2.0 está renderizando…'}
+              : 'Happy Horse está renderizando…'}
           </p>
 
           {progress?.logs && progress.logs.length > 0 && (
