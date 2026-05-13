@@ -297,7 +297,7 @@ function PersonajeDetail({ character: c, galleryItems, onBack, onNav, onUpdateCh
 
   const handleEnrichAnchor = async () => {
     if (!c.characteristics?.trim()) {
-      toast.error('No hay anchor para enriquecer. Editá manualmente primero.');
+      toast.error('No hay anchor para enriquecer. Edita manualmente primero.');
       return;
     }
     hapticMedium();
@@ -305,7 +305,7 @@ function PersonajeDetail({ character: c, galleryItems, onBack, onNav, onUpdateCh
     try {
       const enriched = await enrichAnchor(c.characteristics);
       if (enriched === c.characteristics) {
-        toast.info('No se pudo enriquecer. Probá editar manualmente.');
+        toast.info('No se pudo enriquecer. Prueba editar manualmente.');
         return;
       }
       onUpdateCharacter(c.id, { characteristics: enriched });
@@ -503,7 +503,7 @@ function PersonajeDetail({ character: c, galleryItems, onBack, onNav, onUpdateCh
           <span className="ch-field-hint">{activeRefs.length} en uso · primera = portada</span>
         </div>
         {activeRefs.length === 0 ? (
-          <div className="ch-empty-refs">Sin referencias activas — activá al menos 1 abajo.</div>
+          <div className="ch-empty-refs">Sin referencias activas — activa al menos 1 abajo.</div>
         ) : (
           <div className="ch-refs-grid">
             {activeRefs.map((url, i) => (
@@ -709,7 +709,7 @@ function PersonajeDetail({ character: c, galleryItems, onBack, onNav, onUpdateCh
           <span className="ch-field-hint">
             {currentVoice
               ? 'La voz que usa el personaje para hablar'
-              : 'Asigná una voz para Recast y futuras features'}
+              : 'Asigna una voz para Recast y futuras features'}
           </span>
         </div>
 

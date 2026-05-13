@@ -264,7 +264,7 @@ export default function MobileGallery({ onNav }: Props) {
           mood={ATELIER_MOOD}
           icon={<ImageIcon size={28} />}
           title={<>Tu galería está <em>vacía</em></>}
-          sub="Generá tu primera foto en Headshot Pro o en Sesión de Fotos. Todo lo que crees se archiva acá."
+          sub="Genera tu primera foto en Headshot Pro o en Sesión de Fotos. Todo lo que crees se archiva aquí."
           ctas={[
             { label: 'Probar Headshot', icon: <Sparkles size={14} />, onClick: () => onNav('headshot'), variant: 'primary' },
             { label: 'Sesión de fotos', onClick: () => onNav('sesion'), variant: 'ghost' },

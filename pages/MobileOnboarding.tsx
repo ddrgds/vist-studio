@@ -187,8 +187,8 @@ const Step2: React.FC<{
 }> = ({ name, onName }) => (
   <div className="ob-step">
     <div className="ob-eyebrow">Tu modelo</div>
-    <h1 className="ob-title">Empezá por un nombre</h1>
-    <p className="ob-sub">Lo demás (rostro, pelo, ropa, look) lo definís en Crear Personaje. Acá solo necesitamos cómo se llama.</p>
+    <h1 className="ob-title">Empieza por un nombre</h1>
+    <p className="ob-sub">Lo demás (rostro, pelo, ropa, look) lo defines en Crear Personaje. Aquí solo necesitamos cómo se llama.</p>
 
     <label className="ob-field-label">Nombre</label>
     <input
@@ -243,7 +243,7 @@ const Step4: React.FC = () => (
     </div>
     <div className="ob-eyebrow">Cadencia</div>
     <h1 className="ob-title">Postear seguido importa más que postear perfecto</h1>
-    <p className="ob-sub">Una sugerencia honesta de ritmo para las primeras semanas. Vos ajustás lo que funcione:</p>
+    <p className="ob-sub">Una sugerencia honesta de ritmo para las primeras semanas. Tú ajustas lo que funcione:</p>
     <div className="ob-plan">
       {[
         { week: 'Sem 1', action: 'Crear modelo + abrir cuentas (IG/TikTok) + 4-5 fotos de presentación' },

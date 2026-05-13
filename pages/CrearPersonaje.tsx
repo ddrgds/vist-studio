@@ -743,7 +743,7 @@ RULES: The SUBJECT description above is non-negotiable — every body proportion
         }
         setGeneratedSheets(newSheets);
         if (newSheets.length > 0) {
-          toast.success(`Ficha completa lista · revisá antes de guardar`);
+          toast.success(`Ficha completa lista · revisa antes de guardar`);
           hapticSuccess();
         } else {
           toast.error('Ninguna sheet pudo generarse — guardando solo las 4 fotos');

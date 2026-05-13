@@ -411,7 +411,7 @@ export default function Reels({ onNav }: Props) {
             <em>Un reel</em> de 5 segundos.
           </h1>
           <p className="rl-hero-sub">
-            Elegí un look de tu personaje, describí qué hace, y Seedance 2.0 lo convierte en un clip vertical con audio. Listo para subir a IG o TikTok.
+            Elige un look de tu personaje, describe qué hace, y Kling lo convierte en un clip vertical con audio. Listo para subir a IG o TikTok.
           </p>
         </section>
 
@@ -498,14 +498,14 @@ export default function Reels({ onNav }: Props) {
         <section className="rl-section">
           <div className="rl-section-head">
             <span className="rl-eyebrow">Paso 2 · El look</span>
-            <small>{selectedCharacter.name} · elegí qué foto animar</small>
+            <small>{selectedCharacter.name} · elige qué foto animar</small>
           </div>
 
           {characterPhotos.length === 0 ? (
             <div className="rl-empty-chars">
               <div className="rl-empty-chars-icon"><Sparkles size={22} /></div>
               <strong>Sin fotos guardadas</strong>
-              <small>Generá fotos del personaje primero, o subí una.</small>
+              <small>Genera fotos del personaje primero, o sube una.</small>
               <button
                 className="rl-empty-alt"
                 onClick={() => { hapticLight(); charImgInputRef.current?.click(); }}
@@ -568,7 +568,7 @@ export default function Reels({ onNav }: Props) {
         <section className="rl-section">
           <div className="rl-section-head">
             <span className="rl-eyebrow">Paso 3 · Plantilla</span>
-            <small>Tocá una para empezar, o escribí abajo</small>
+            <small>Toca una para empezar, o escribe abajo</small>
           </div>
 
           <div className="rl-tpl-scroll">
@@ -586,7 +586,7 @@ export default function Reels({ onNav }: Props) {
 
           <textarea
             className="rl-prompt"
-            placeholder="O escribí tu propia acción: camina hacia la cámara con confianza, mueve el pelo, sonríe sutil…"
+            placeholder="O escribe tu propia acción: camina hacia la cámara con confianza, mueve el pelo, sonríe sutil…"
             value={prompt}
             onChange={e => { setPrompt(e.target.value); setTemplateId(null); }}
             rows={3}

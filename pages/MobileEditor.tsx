@@ -57,17 +57,17 @@ interface ToolDef {
 }
 
 const TOOLS: ToolDef[] = [
-  { id: 'freeai',    label: 'AI Edit',    icon: Sparkles,  cost: 13, desc: 'Editá con cualquier instrucción' },
-  { id: 'relight',   label: 'Reluz',      icon: Sun,       cost: 6,  desc: 'Cambiá la iluminación' },
+  { id: 'freeai',    label: 'AI Edit',    icon: Sparkles,  cost: 13, desc: 'Edita con cualquier instrucción' },
+  { id: 'relight',   label: 'Reluz',      icon: Sun,       cost: 6,  desc: 'Cambia la iluminación' },
   { id: 'style',     label: 'Estilo',     icon: Palette,   cost: 6,  desc: 'Estilo artístico' },
   { id: 'realskin',  label: 'Piel real',  icon: Wand2,     cost: 6,  desc: 'Poros y textura natural' },
   { id: 'enhance',   label: 'Retoque',    icon: Aperture,  cost: 6,  desc: 'Suavizado editorial' },
-  { id: 'tryon',     label: 'Try-On',     icon: Shirt,     cost: 14, desc: 'Probate ropa o accesorios' },
-  { id: 'product',   label: 'Producto',   icon: Package,   cost: 14, desc: 'Sostené o usá un producto en mano' },
-  { id: 'faceswap',  label: 'Cambio de rostro', icon: Users, cost: 6, desc: 'Intercambiá el rostro' },
-  { id: 'composite', label: 'Escena',     icon: Layers,    cost: 6,  desc: 'Cambiá el fondo/escenario' },
-  { id: 'rotate360', label: 'Ángulos',    icon: Repeat,    cost: 19, desc: 'Rotá la cámara 360°' },
-  { id: 'expand',    label: 'Expandir',   icon: Maximize2, cost: 14, desc: 'Extendé los bordes' },
+  { id: 'tryon',     label: 'Try-On',     icon: Shirt,     cost: 14, desc: 'Pruébate ropa o accesorios' },
+  { id: 'product',   label: 'Producto',   icon: Package,   cost: 14, desc: 'Sostén o usa un producto en mano' },
+  { id: 'faceswap',  label: 'Cambio de rostro', icon: Users, cost: 6, desc: 'Intercambia el rostro' },
+  { id: 'composite', label: 'Escena',     icon: Layers,    cost: 6,  desc: 'Cambia el fondo/escenario' },
+  { id: 'rotate360', label: 'Ángulos',    icon: Repeat,    cost: 19, desc: 'Rota la cámara 360°' },
+  { id: 'expand',    label: 'Expandir',   icon: Maximize2, cost: 14, desc: 'Extiende los bordes' },
   { id: 'rembg',     label: 'Sin fondo',  icon: Scissors,  cost: 6,  desc: 'Quita el fondo' },
 ];
 
@@ -438,7 +438,7 @@ export default function MobileEditor({ onNav }: Props) {
     } catch (e: any) {
       console.error('Gallery pick failed:', e);
       hapticError();
-      toast.error('Esa foto no se pudo cargar. Probá otra o subí una desde tu teléfono.');
+      toast.error('Esa foto no se pudo cargar. Prueba otra o sube una desde tu teléfono.');
     } finally {
       setPickingId(null);
     }
@@ -686,7 +686,7 @@ export default function MobileEditor({ onNav }: Props) {
     // ─── Modo Básico — client-side canvas, gratis, sin créditos ───
     if (editorTab === 'basic') {
       if (!basicHasChanges()) {
-        toast.info('Ajustá un filtro o slider primero');
+        toast.info('Ajusta un filtro o slider primero');
         return;
       }
       hapticMedium();
@@ -840,7 +840,7 @@ export default function MobileEditor({ onNav }: Props) {
     // For freeai, this also translates sensitive ES → EN.
     const promptPair = await buildPromptPair();
     if (!promptPair && activeToolDef.id !== 'rembg' && activeToolDef.id !== 'expand') {
-      toast.error('Completá los datos del tool primero');
+      toast.error('Completa los datos del tool primero');
       return;
     }
     if (promptPair?.translated) {
@@ -1492,7 +1492,7 @@ export default function MobileEditor({ onNav }: Props) {
                   </button>
                 )}
 
-                <p className="me-hint">100% local. No usa créditos. Aplicá cuantas veces quieras y compará en el canvas.</p>
+                <p className="me-hint">100% local. No usa créditos. Aplica cuantas veces quieras y compara en el canvas.</p>
               </>
             )}
 

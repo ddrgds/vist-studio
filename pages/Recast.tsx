@@ -170,7 +170,7 @@ export default function Recast({ onNav }: Props) {
         return;
       }
       if (dur > MAX_DURATION_S) {
-        toast.error(`Máximo ${MAX_DURATION_S}s. Tu video dura ${Math.round(dur)}s. Recortá antes de subirlo.`);
+        toast.error(`Máximo ${MAX_DURATION_S}s. Tu video dura ${Math.round(dur)}s. Recórtalo antes de subirlo.`);
         URL.revokeObjectURL(url);
         return;
       }
@@ -403,11 +403,11 @@ export default function Recast({ onNav }: Props) {
         <section className="rc-hero">
           <div className="rc-hero-eyebrow">Character · swap</div>
           <h1 className="rc-hero-title">
-            Grabate vos.<br />
+            Grábate tú.<br />
             <em>Aparece</em> tu modelo.
           </h1>
           <p className="rc-hero-sub">
-            Grabás un video con tu cara y tu cuerpo. Tu personaje virtual hereda el movimiento, en el mismo escenario, con la misma luz. Audio y voz se mantienen del video original.
+            Grabas un video con tu cara y tu cuerpo. Tu personaje virtual hereda el movimiento, en el mismo escenario, con la misma luz. Audio y voz se mantienen del video original.
           </p>
         </section>
 
@@ -637,7 +637,7 @@ export default function Recast({ onNav }: Props) {
             uso para el swap?
           </h1>
           <p className="rc-hero-sub">
-            Cada foto trae su outfit, su pelo y su pose. El video final hereda lo que elijas acá.
+            Cada foto trae su outfit, su pelo y su pose. El video final hereda lo que elijas aquí.
           </p>
         </section>
 

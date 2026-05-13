@@ -55,7 +55,7 @@ export const VOICE_LIBRARY: VoiceLibraryEntry[] = [
 /** ElevenLabs sample text for previewing voices — same line for every voice
  *  so the user can compare them apples-to-apples. Spanish, 8-second range. */
 export const VOICE_SAMPLE_TEXT_ES =
-  'Hola, soy tu voz. Imaginá todo lo que podemos crear juntos. Este es solo el comienzo.';
+  'Hola, soy tu voz. Imagina todo lo que podemos crear juntos. Este es solo el comienzo.';
 
 export const VOICE_SAMPLE_TEXT_EN =
   'Hi, I\'m your voice. Imagine everything we can create together. This is only the beginning.';

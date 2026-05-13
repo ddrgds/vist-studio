@@ -317,7 +317,7 @@ export default function MobileProfile({ onNav }: Props) {
             <div className="mp-toggle-desc">
               {profile.contentMode === 'creator'
                 ? 'Acceso a presets editoriales sensuales (lencería, boudoir, beach Brazilian). Solo +18.'
-                : 'Solo presets editoriales clásicos. Activá Modo Creator para sensual editorial.'}
+                : 'Solo presets editoriales clásicos. Activa Modo Creator para sensual editorial.'}
             </div>
           </div>
           <div className={`mp-toggle-switch ${profile.contentMode === 'creator' ? 'is-on' : ''}`}>

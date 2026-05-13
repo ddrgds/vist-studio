@@ -317,7 +317,7 @@ export default function VoicePicker({
   const cloneFromRecording = () => {
     if (!recordedBlob) return;
     if (recordSecs < MIN_RECORD_SEC) {
-      onError?.(`Grabá al menos ${MIN_RECORD_SEC} segundos`);
+      onError?.(`Graba al menos ${MIN_RECORD_SEC} segundos`);
       return;
     }
     const ext = recordedBlob.type.includes('mp4') ? 'm4a' : 'webm';
@@ -504,9 +504,9 @@ export default function VoicePicker({
           </div>
 
           <div className="vp-script">
-            <span className="vp-script-eyebrow">Leé este texto</span>
+            <span className="vp-script-eyebrow">Lee este texto</span>
             <p>{SAMPLE_SCRIPT_ES.replace('{NAME}', characterName)}</p>
-            <small>Apuntá a {TARGET_RECORD_SEC} segundos. Mínimo {MIN_RECORD_SEC}, máximo {MAX_RECORD_SEC}.</small>
+            <small>Apunta a {TARGET_RECORD_SEC} segundos. Mínimo {MIN_RECORD_SEC}, máximo {MAX_RECORD_SEC}.</small>
           </div>
 
           {/* Recording UI */}
@@ -566,9 +566,9 @@ export default function VoicePicker({
             <strong>Tips para mejor calidad</strong>
             <ul>
               <li>Lugar silencioso, sin eco</li>
-              <li>Hablá natural, no actues</li>
+              <li>Habla natural, no actúes</li>
               <li>Cerca del micrófono pero sin tocarlo</li>
-              <li>Si tosés o te trabás, mejor empezar de nuevo</li>
+              <li>Si toses o te trabas, mejor empezar de nuevo</li>
             </ul>
           </div>
         </>
