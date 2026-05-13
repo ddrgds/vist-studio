@@ -518,7 +518,7 @@ export default function Landing({ onAuth }: LandingProps) {
               Empieza gratis. Escala cuando funcione.
             </h2>
             <p style={{ color: C.n400, fontSize: '16px', maxWidth: '560px', margin: '0 auto' }}>
-              Free para validar. Side Project si te lo tomas en serio. Negocio cuando empieces a vender.
+              Free para validar. Mini para probar con compromiso bajo. Side Project si te lo tomas en serio. Negocio cuando empieces a vender.
             </p>
           </div>
         </Reveal>
@@ -526,6 +526,7 @@ export default function Landing({ onAuth }: LandingProps) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
           {[
             { tier: 'Free', price: '$0', sub: 'para siempre', desc: '50 cr al registro · 25 cr/sem · 1 modelo · Modo Standard · Discord', cta: 'Empezar gratis', highlight: false },
+            { tier: 'Mini', price: '$5', sub: 'al mes', desc: '250 cr/mes · 1 modelo · Modo Standard · sin watermark · 2K · cancela cuando quieras', cta: 'Suscribirme', highlight: false },
             { tier: 'Side Project', price: '$19', sub: 'al mes', desc: '800 cr/mes · 1 modelo · Standard + Creator · sin watermark · 2K · todas las estéticas', cta: 'Suscribirme', highlight: true },
             { tier: 'Negocio', price: '$79', sub: 'al mes', desc: '4,000 cr/mes · 3 modelos · Reels HD · voces LATAM · playbook completo · priority queue', cta: 'Suscribirme', highlight: false },
             { tier: 'Pro', price: '$199', sub: 'al mes', desc: '12,000 cr/mes · 10 modelos · multi-personaje · 1:1 setup · affiliate dashboard', cta: 'Suscribirme', highlight: false },

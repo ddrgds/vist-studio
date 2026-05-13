@@ -26,8 +26,9 @@ const MobileProfile = lazy(() => import('./MobileProfile'));
 const Recast = lazy(() => import('./Recast'));
 const Imagina = lazy(() => import('./Imagina'));
 const MobileOnboarding = lazy(() => import('./MobileOnboarding'));
+const PricingPage = lazy(() => import('../components/PricingPage'));
 
-type MobilePage = 'home' | 'headshot' | 'reimaginar' | 'sesion' | 'editor' | 'recast' | 'imagina' | 'create' | 'gallery' | 'characters' | 'profile';
+type MobilePage = 'home' | 'headshot' | 'reimaginar' | 'sesion' | 'editor' | 'recast' | 'imagina' | 'create' | 'gallery' | 'characters' | 'profile' | 'pricing';
 
 interface AppEntry {
   id: MobilePage | 'soon';
@@ -304,7 +305,7 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
       characters: 'characters',
       create: 'create',
       profile: 'profile',
-      pricing: 'profile',     // Profile screen has the upgrade CTA
+      pricing: 'pricing',
       headshot: 'headshot',
       reimaginar: 'reimaginar',
       sesion: 'sesion',
@@ -383,6 +384,44 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
           <Suspense fallback={<MobileLoader />}>
             <MobileProfile onNav={navigateFromSubApp} />
           </Suspense>
+        );
+      case 'pricing':
+        // Reuses PricingPage (also used on desktop). Its grid collapses to
+        // 1-column on narrow viewports, so it renders fine in the mobile shell.
+        // A floating back button takes the user back to Profile.
+        return (
+          <div style={{ minHeight: '100vh', position: 'relative' }}>
+            <button
+              type="button"
+              onClick={() => { hapticLight(); navigateMobile('profile'); }}
+              style={{
+                position: 'fixed',
+                top: 'calc(env(safe-area-inset-top, 0px) + 12px)',
+                left: 12,
+                zIndex: 100,
+                background: 'rgba(255,252,245,0.92)',
+                border: '1px solid rgba(31,26,20,0.10)',
+                borderRadius: 999,
+                padding: '7px 14px 7px 11px',
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 11.5,
+                fontWeight: 500,
+                color: '#1F1A14',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                cursor: 'pointer',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+              }}
+            >
+              ← Volver
+            </button>
+            <Suspense fallback={<MobileLoader />}>
+              <PricingPage />
+            </Suspense>
+          </div>
         );
       default:
         return <MobileHome onNav={navigateMobile} />;

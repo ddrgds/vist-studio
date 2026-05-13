@@ -30,10 +30,11 @@ interface Props {
 }
 
 const PLAN_LABELS: Record<string, { label: string; tagline: string; tier: number; cta: string | null }> = {
-  starter: { label: 'Gratis',  tagline: '25 créditos al mes', tier: 0, cta: 'Mejorar plan' },
-  pro:     { label: 'Pro',     tagline: '500 créditos al mes · $19', tier: 1, cta: 'Cambiar plan' },
-  studio:  { label: 'Studio',  tagline: '2,500 créditos al mes · $79', tier: 2, cta: 'Cambiar plan' },
-  brand:   { label: 'Brand',   tagline: 'Créditos ilimitados · $199', tier: 3, cta: null },
+  starter: { label: 'Free',          tagline: '50 cr al registro · 25 cr/sem',          tier: 0, cta: 'Mejorar plan' },
+  mini:    { label: 'Mini',          tagline: '250 créditos al mes · $5',               tier: 1, cta: 'Cambiar plan' },
+  pro:     { label: 'Side Project',  tagline: '800 créditos al mes · $19',              tier: 2, cta: 'Cambiar plan' },
+  studio:  { label: 'Negocio',       tagline: '4,000 créditos al mes · $79',            tier: 3, cta: 'Cambiar plan' },
+  brand:   { label: 'Pro Agency',    tagline: '12,000 créditos al mes · $199',          tier: 4, cta: 'Cambiar plan' },
 };
 
 const DISCORD_URL = 'https://discord.gg/vist-studio';

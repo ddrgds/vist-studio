@@ -455,7 +455,7 @@ export const VIDEO_ENGINE_LABELS: Record<VideoEngine, { name: string; icon: stri
 // Subscription plans
 // ─────────────────────────────────────────────
 
-export type SubscriptionPlan = 'starter' | 'pro' | 'studio' | 'brand';
+export type SubscriptionPlan = 'starter' | 'mini' | 'pro' | 'studio' | 'brand';
 export type SubscriptionStatus = 'free' | 'active' | 'cancelled';
 
 // ─────────────────────────────────────────────

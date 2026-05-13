@@ -8,6 +8,7 @@ export interface SubscriptionState {
   profileLoaded: boolean;
   // Computed helpers
   isUnlimited:     boolean;  // brand plan
+  isPaid:          boolean;  // mini / pro / studio / brand (any active subscription)
   isProOrAbove:    boolean;
   isStudioOrAbove: boolean;
   isBrand:         boolean;
@@ -34,6 +35,7 @@ export const useSubscription = (): SubscriptionState => {
     profileLoaded: !isLoading && profile !== null,
     isUnlimited:     credits >= 999999,
     isActive:        status === 'active',
+    isPaid:          ['mini', 'pro', 'studio', 'brand'].includes(plan),
     isProOrAbove:    ['pro', 'studio', 'brand'].includes(plan),
     isStudioOrAbove: ['studio', 'brand'].includes(plan),
     isBrand:         plan === 'brand',

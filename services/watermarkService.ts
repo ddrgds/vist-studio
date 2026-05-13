@@ -119,10 +119,15 @@ export async function watermarkIfFreeTier(
   subscriptionStatus: string | null | undefined,
   options?: WatermarkOptions,
 ): Promise<string> {
-  // Premium plans skip watermark — anyone subscribed to pro/studio/brand
-  // with active billing gets clean outputs.
+  // Paid plans skip watermark — anyone subscribed to mini/pro/studio/brand
+  // with active billing gets clean outputs. Free tier ('starter') always
+  // sees the @VIST mark as friction to upgrade.
   const isPremium = subscriptionStatus === 'active' || subscriptionStatus === 'on_trial'
-  const isPaidPlan = subscriptionPlan === 'pro' || subscriptionPlan === 'studio' || subscriptionPlan === 'brand'
+  const isPaidPlan =
+    subscriptionPlan === 'mini' ||
+    subscriptionPlan === 'pro' ||
+    subscriptionPlan === 'studio' ||
+    subscriptionPlan === 'brand'
   if (isPremium && isPaidPlan) return imageUrl
 
   return applyWatermark(imageUrl, options)

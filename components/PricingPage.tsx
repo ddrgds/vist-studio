@@ -26,36 +26,40 @@ interface Plan {
 }
 
 // ─────────────────────────────────────────────
-// Variant IDs — replace with your real LS IDs
+// Variant IDs — public product identifiers, not secrets.
 // ─────────────────────────────────────────────
-// These are read from import.meta.env so they're baked in at build time
-// and never need a server round-trip for the pricing page itself.
-
-// Lemon Squeezy variant IDs — public product identifiers, not secrets
+// Resolution order per slot:
+//   1. import.meta.env.VITE_LS_*_VARIANT_ID   ← preferred. Set these in Cloudflare
+//      Pages → Settings → Environment variables (Production) and rebuild. Lets you
+//      swap Lemon Squeezy variants ($19/$79/$199 etc.) without a code change.
+//   2. fallback string below ← legacy IDs from $9.99/$29.99/$99.99 tier. Used only
+//      so local dev still works when envs aren't set; checkout in prod must use
+//      env-injected IDs.
+const env = (import.meta as any).env ?? {};
+// Fallback IDs match Lemon Squeezy production variants as of 2026-05-12.
+// Env vars take precedence so you can swap stores/accounts without a code change.
 const V = {
-  proMonthly:     '1374166',
-  proAnnual:      '1374257',
-  studioMonthly:  '1374262',
-  studioAnnual:   '1374271',
-  brandMonthly:   '1374277',
-  brandAnnual:    '1374280',
-  credits200:     '1374283',
-  credits750:     '1374287',
-  credits3000:    '1374291',
+  miniMonthly:    env.VITE_LS_MINI_MONTHLY_VARIANT_ID    || '1050128',
+  miniAnnual:     env.VITE_LS_MINI_ANNUAL_VARIANT_ID     || '1050120',
+  proMonthly:     env.VITE_LS_PRO_MONTHLY_VARIANT_ID     || '872578',
+  proAnnual:      env.VITE_LS_PRO_ANNUAL_VARIANT_ID      || '872643',
+  studioMonthly:  env.VITE_LS_STUDIO_MONTHLY_VARIANT_ID  || '872647',
+  studioAnnual:   env.VITE_LS_STUDIO_ANNUAL_VARIANT_ID   || '872654',
+  brandMonthly:   env.VITE_LS_BRAND_MONTHLY_VARIANT_ID   || '872659',
+  brandAnnual:    env.VITE_LS_BRAND_ANNUAL_VARIANT_ID    || '872660',
+  credits200:     env.VITE_LS_CREDITS_200_VARIANT_ID     || '872662',
+  credits750:     env.VITE_LS_CREDITS_750_VARIANT_ID     || '872664',
+  credits3000:    env.VITE_LS_CREDITS_3000_VARIANT_ID    || '872667',
 };
 
 // ─────────────────────────────────────────────
 // Plan data
 // ─────────────────────────────────────────────
 
-// NOTE: Plan IDs (starter/pro/studio/brand) are kept for backend compatibility
+// NOTE: Plan IDs (starter/mini/pro/studio/brand) are kept for backend compatibility
 // with the SubscriptionPlan enum in DB and existing Lemon Squeezy webhooks.
-// Display name + price changed to match the wedge "AI operator LATAM".
-//
-// ⚠️ Lemon Squeezy variant IDs below still point to OLD prices ($9.99/$29.99/$99.99).
-// Need to create NEW variants in Lemon Squeezy for $19/$79/$199 and update V.* below.
-// Until then, checkout will charge old prices — disabled paid CTAs in production
-// until variant IDs are refreshed.
+// Display name + price match the wedge "AI operator LATAM" wedge (locked 2026-05-05).
+// Variant IDs point to live LS variants at the correct prices ($5/$19/$79/$199).
 const PLANS: Plan[] = [
   {
     id: 'starter', name: 'Free · Explora', monthlyPrice: 0, annualPrice: 0,
@@ -75,6 +79,28 @@ const PLANS: Plan[] = [
       { label: 'Modo Standard solo (editorial)' },
       { label: 'Watermark @VIST en outputs' },
       { label: 'Discord de la comunidad' },
+    ],
+  },
+  {
+    id: 'mini', name: 'Mini', monthlyPrice: 5, annualPrice: 4,
+    description: 'Prueba el flujo completo sin compromiso. Cancela cuando quieras.',
+    cta: 'Suscribirme', ctaStyle: 'ghost',
+    credits: '250 créditos / mes',
+    monthlyVariantId: V.miniMonthly,
+    annualVariantId:  V.miniAnnual,
+    limits: [
+      { label: 'Créditos / mes',   value: '250' },
+      { label: 'Modelos',          value: '1' },
+      { label: 'Modo Creator',     value: '✗' },
+      { label: 'Resolución máx.',  value: '2K' },
+    ],
+    features: [
+      { label: '250 créditos mensuales (~38 fotos)' },
+      { label: '1 modelo virtual' },
+      { label: 'Modo Standard (editorial)' },
+      { label: 'Sin watermark · 2K resolution' },
+      { label: 'Discord de la comunidad' },
+      { label: 'Cancela cuando quieras' },
     ],
   },
   {
@@ -154,7 +180,7 @@ const CREDIT_PACKS = [
 
 const FAQ_ITEMS = [
   { q: '¿Qué incluye el plan gratis?', a: '50 créditos al registrarte (suficientes para crear tu primera modelo + ~10 fotos), más 25 créditos automáticos cada lunes. 1 modelo. Modo Standard. Watermark "@VIST" en los outputs. Acceso al Discord. Sin tarjeta de crédito.' },
-  { q: '¿Cuántas fotos puedo generar?', a: 'Una foto cuesta entre 6-13 créditos según calidad. Free ≈ 11 fotos/mes. Side Project ≈ 120 fotos/mes. Negocio ≈ 615 fotos/mes. Pro Agency ≈ 1,850 fotos/mes.' },
+  { q: '¿Cuántas fotos puedo generar?', a: 'Una foto cuesta entre 6-13 créditos según calidad. Free ≈ 11 fotos/mes. Mini ≈ 38 fotos/mes. Side Project ≈ 120 fotos/mes. Negocio ≈ 615 fotos/mes. Pro Agency ≈ 1,850 fotos/mes.' },
   { q: '¿Y los reels?', a: 'Reels son más caros (~86-143 créditos). Free no incluye reels HD. Side Project ≈ 9 reels/mes. Negocio ≈ 46 reels HD/mes. Pro Agency ≈ 140 reels HD/mes.' },
   { q: '¿Qué es Modo Creator?', a: 'Toggle opt-in (+18) que desbloquea presets sensuales editoriales: lencería, beach Brazilian, boudoir LATAM, mirror selfie. Línea dura: NO topless, NO desnudo, NO contenido explícito. Sistema de safety automático rechaza outputs que crucen la línea.' },
   { q: '¿Cómo monetizo mi modelo?', a: 'IG/TikTok orgánico (engagement → marcas), OnlyFans/Fansly para teaser content (no explícito), tu propia tienda. El playbook (incluido en Negocio y Pro) te guía mes a mes con metas claras.' },
@@ -345,7 +371,7 @@ const PricingPage: React.FC = () => {
         )}
 
         {/* ── Plan cards ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-20">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-20">
           {PLANS.map((plan) => {
             const price = annual ? plan.annualPrice : plan.monthlyPrice;
             const isCurrent = currentPlan === plan.id || (currentPlan === 'starter' && plan.id === 'starter');

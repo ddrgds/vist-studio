@@ -12,15 +12,20 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 // ── Credit allocations per plan ───────────────────────────────────────────────
+// IMPORTANT: keep in sync with PricingPage credit copy. Mismatches give users
+// either more or fewer credits than advertised.
 const PLAN_CREDITS: Record<string, number> = {
-  pro:    2000,
-  studio: 8000,
-  brand:  999999, // treated as unlimited in frontend
+  mini:   250,
+  pro:    800,
+  studio: 4000,
+  brand:  12000,
 };
 
 // ── Map LS variant ID → plan name (subscriptions) ────────────────────────────
 const buildVariantMap = (): Record<string, string> => {
   const raw: Record<string, string> = {
+    [Deno.env.get('LEMONSQUEEZY_MINI_MONTHLY_VARIANT_ID')   ?? '']: 'mini',
+    [Deno.env.get('LEMONSQUEEZY_MINI_ANNUAL_VARIANT_ID')    ?? '']: 'mini',
     [Deno.env.get('LEMONSQUEEZY_PRO_MONTHLY_VARIANT_ID')    ?? '']: 'pro',
     [Deno.env.get('LEMONSQUEEZY_PRO_ANNUAL_VARIANT_ID')     ?? '']: 'pro',
     [Deno.env.get('LEMONSQUEEZY_STUDIO_MONTHLY_VARIANT_ID') ?? '']: 'studio',

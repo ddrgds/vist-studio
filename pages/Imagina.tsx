@@ -331,7 +331,7 @@ Return as a single paragraph in technical English prose, ~150 words. NO bullet p
   };
 
   // Manual commit — user picks which variations to save to gallery
-  const commitToGallery = () => {
+  const commitToGallery = async () => {
     if (savedToGallery) return; // double-save guard
     const urls = resultsRef.current
       .map((r, i) => ({ r, i }))
@@ -341,7 +341,12 @@ Return as a single paragraph in technical English prose, ~150 words. NO bullet p
       toast.error('Selecciona al menos una variación para guardar');
       return;
     }
-    addItems(urls.map(url => ({
+    // Apply @VIST watermark for free-tier users — premium plans get clean outputs.
+    const { watermarkIfFreeTier } = await import('../services/watermarkService');
+    const stamped = await Promise.all(
+      urls.map(url => watermarkIfFreeTier(url, profile?.subscriptionPlan, profile?.subscriptionStatus)),
+    );
+    addItems(stamped.map(url => ({
       id: crypto.randomUUID(),
       url,
       type: 'edit' as const,
