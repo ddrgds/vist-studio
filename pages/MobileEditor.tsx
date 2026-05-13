@@ -599,7 +599,9 @@ export default function MobileEditor({ onNav }: Props) {
       if (!text) return null;
       const { buildEditPromptPair } = await import('../services/promptBuilder');
       const hasRef = !!freeaiRefFile;
-      const pair = await buildEditPromptPair({
+
+      // Always build the mechanical pair as a safety net + flat fallback.
+      const mechanicalPair = await buildEditPromptPair({
         userInstruction: hasRef
           ? `${text}\n\n(Figure 2 is a user-provided reference image — use it as visual context for the requested change.)`
           : text,
@@ -612,10 +614,28 @@ export default function MobileEditor({ onNav }: Props) {
           'composition (unless instructed to change)',
         ],
         numReferences: hasRef ? 1 : 0,
-        // Inject the linked character's permanent physical anchor.
         physicalAnchor: linkedCharacter?.characteristics,
       });
-      return { nb2: pair.jsonSpec, fallback: pair.flatProse, translated: pair.wasTranslated };
+
+      // Try Haiku adapter for a smarter NB2 JSON spec — it understands user
+      // intent better than the mechanical builder (e.g. "playa" → tropical
+      // beach + golden hour + bikini), sanitizes anchor anatomy, and applies
+      // creative_direction intelligently. Falls back to the mechanical pair
+      // silently if Haiku is down.
+      try {
+        const { adaptPromptForNB2Safe } = await import('../services/aiPromptAdapter');
+        const { prompt: smartJson, adapted } = await adaptPromptForNB2Safe(text, {
+          refCount: hasRef ? 1 : 0,
+          characterAnchor: linkedCharacter?.characteristics,
+          aspectRatio: '3:4',
+          contentMode: profile?.contentMode,
+        });
+        if (adapted) {
+          return { nb2: smartJson, fallback: mechanicalPair.flatProse, translated: mechanicalPair.wasTranslated };
+        }
+      } catch { /* fall through to mechanical */ }
+
+      return { nb2: mechanicalPair.jsonSpec, fallback: mechanicalPair.flatProse, translated: mechanicalPair.wasTranslated };
     }
 
     // All other tools — curated English prose works for both engines.
@@ -1206,6 +1226,12 @@ export default function MobileEditor({ onNav }: Props) {
           disabled={generating}
           onChange={setPremiumTier}
           extraCost={HERO_PRO_EXTRA_COST}
+          mood={{
+            ...ATELIER_MOOD,
+            ink2: 'rgba(245, 235, 219, 0.78)',
+            line: 'rgba(245, 235, 219, 0.22)',
+            bgCard: '#F5EBDB',
+          }}
         />
         <div className="me-credits">
           <span className="me-credits-dot" />
@@ -2091,10 +2117,14 @@ const EDITOR_STYLES = `
   font-family: inherit;
 }
 
-/* Character anchor chip — shown above canvas when editing a linked character's photo */
+/* Character anchor chip — shown above canvas when editing a linked character's photo.
+   Pushed below floating topbar (back ~32px + 12px*2 padding + safe-area) so it
+   never overlaps the back button. */
 .me-anchor-chip {
+  position: relative;
+  z-index: 4;
   display: inline-flex; align-items: center; gap: 8px;
-  margin: 8px 12px 0;
+  margin: calc(env(safe-area-inset-top) + 64px) 12px 0;
   padding: 6px 10px 6px 12px;
   background: rgba(201, 120, 92, 0.12);
   border: 1px solid rgba(201, 120, 92, 0.30);

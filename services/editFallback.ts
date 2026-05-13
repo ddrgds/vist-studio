@@ -15,25 +15,29 @@
  * implementations stay in tree so we can revert quickly.
  */
 
-import { editImageWithSeedream5, editImageWithGrokFal, editWithFlux2Klein, editWithFlux2ProUrl, editWithFlux2Max } from './falService';
-import { editWithWan27Pro } from './replicateService';
+import { editImageWithSeedream5, editImageWithGrokFal, editWithFlux2Klein, editWithFlux2ProUrl, editWithFlux2Max, buildFlux2NativePrompt, type Flux2NativeSpec } from './falService';
+import { editWithWan27Pro, editWithFlux2ProReplicate, editWithFlux2MaxReplicate } from './replicateService';
+import { adaptPromptForFlux2Safe } from './fluxPromptAdapter';
+import { normalizeForBothEnginesSafe } from './aiPromptAdapter';
 
 /**
  * Pick which engine handles the post-NB2 fallback. Bench history:
- *   - 'flux2-klein' → Flux 2 Klein 9B Edit (CURRENT — bench 2026-05-12)
- *                     Grok-level identity, accepts stylized + spicy, 4-10s, ~$0.05
- *   - 'flux2-pro'   → Flux 2 Pro Edit (PREMIUM TIER — per-call override)
- *                     Extra context awareness (extracts ref styling), 28-31s, ~$0.20
- *   - 'wan'         → Wan 2.7 Image Pro Replicate (deprecated for stylized chars
- *                     via DashScope moderation; kept for non-stylized photoreal)
- *   - 'seedream'    → Seedream v5 Lite (last resort, accepts everything)
- *   - 'grok'        → Grok Quality (tight policy, kept for non-spicy)
+ *   - 'flux2-pro-rep' → Flux 2 Pro Edit via REPLICATE (DEFAULT 2026-05-12)
+ *                       kkkk-bench validated: 9.5/10 identity + matte fabric +
+ *                       cutouts pass content filter where fal rejects.
+ *                       ~25-30s, ~$0.06 (vs fal Pro $0.10). All non-spicy +
+ *                       most spicy passes with safety_tolerance: 5.
+ *   - 'flux2-pro'    → Flux 2 Pro Edit via fal (third fallback when Replicate down)
+ *   - 'flux2-klein'  → Flux 2 Klein 9B Edit via fal (Express tier, ~$0.05, 4-10s)
+ *   - 'wan'          → Wan 2.7 Image Pro Replicate (legacy, DashScope moderation)
+ *   - 'seedream'     → Seedream v5 Lite (last resort, accepts everything)
+ *   - 'grok'         → Grok Quality (tight policy, kept for non-spicy)
  */
-export type FallbackEngine = 'flux2-klein' | 'flux2-pro' | 'wan' | 'seedream' | 'grok';
-// Switched to flux2-pro 2026-05-12 — identity 10/10 in benchmark (kkkk stylized
-// char) vs Wan's DashScope rejection. Cost: ~$0.10-0.11 for 2K 3:4 + 3 refs.
-// At 10cr retail ($0.24) = 56-66% margin. Klein kept available for Express tier.
-export const FALLBACK_ENGINE: FallbackEngine = 'flux2-pro';
+export type FallbackEngine = 'flux2-pro-rep' | 'flux2-klein' | 'flux2-pro' | 'wan' | 'seedream' | 'grok';
+// Switched to flux2-pro-rep 2026-05-12 — Replicate Pro/Max permissive moderation +
+// Haiku prompt adapter combined produce IG-grade outputs consistently. fal Pro
+// kept as third-tier fallback when Replicate has outages.
+export const FALLBACK_ENGINE: FallbackEngine = 'flux2-pro-rep';
 
 export interface EditFallbackParams {
   baseImage: File;
@@ -47,6 +51,19 @@ export interface EditFallbackParams {
   aspectRatio?: string;
   /** Premium tier — overrides default to Flux 2 Pro for higher ref-context fidelity. */
   tier?: 'standard' | 'premium';
+  /**
+   * Optional Flux-native spec. When provided AND the routed engine is a Flux 2
+   * variant (Klein / Pro / Max), we BUILD a BFL-format prompt from this spec
+   * instead of converting `flatInstruction`. Improves identity + style adherence.
+   * When absent, falls back to `flatInstruction` + heuristic `formatPromptForFlux2`.
+   */
+  flux2Spec?: Flux2NativeSpec;
+  /**
+   * Optional character anchor (characteristics) to feed into the Haiku
+   * normalizer for sanitization. When provided, the same anchor key is used
+   * upstream by editWithNB2Fal — cache hit makes the second Haiku call free.
+   */
+  characterAnchor?: string;
 }
 
 /**
@@ -75,13 +92,47 @@ export async function editFallback(p: EditFallbackParams): Promise<string[]> {
   const refCount = p.referenceImages?.length ?? 0;
   const disciplinedInstruction = applyRefDiscipline(p.flatInstruction, refCount);
 
-  // Premium tier override — pin Flux 2 Max (ultra hero) regardless of default.
-  // Used when caller is the Premium path (NB Pro primary failed → cascade to Max).
-  // Max gives top-tier ref-context awareness (extracts coquette ribbons, lace, etc).
+  // Build the prompt to send to Flux. Three paths in priority order:
+  //   1. If caller passed a structured `flux2Spec` → use buildFlux2NativePrompt
+  //      (deterministic, no Haiku call needed)
+  //   2. Else → unified canonical normalizer (same Haiku call as NB2 primary
+  //      via shared cache — second invocation is a free Map lookup). Strip
+  //      `never_add` since Flux ignores negatives per BFL docs.
+  //   3. Fallback to legacy Flux adapter if normalizer throws.
+  const buildFluxInstruction = async (): Promise<string> => {
+    if (p.flux2Spec) {
+      return buildFlux2NativePrompt({ ...p.flux2Spec, refCount });
+    }
+    const { prompt: normalized, adapted } = await normalizeForBothEnginesSafe(
+      p.flatInstruction,
+      {
+        refCount,
+        characterAnchor: p.characterAnchor,
+        aspectRatio: p.aspectRatio,
+      },
+    );
+    if (adapted) {
+      // Replicate's stripNeverAddForFlux runs inside the editWithFlux2* funcs,
+      // so we can pass the normalized JSON through as-is.
+      return normalized;
+    }
+    // Final degraded fallback: legacy Flux narrative adapter.
+    const { prompt } = await adaptPromptForFlux2Safe(disciplinedInstruction, {
+      refCount,
+      characterAnchor: p.characterAnchor,
+      aspectRatio: p.aspectRatio,
+      skinRecipe: 'ig-clean',
+    });
+    return prompt;
+  };
+
+  // Premium tier override — pin Flux 2 Max via Replicate (HERO Pro).
+  // kkkk-bench validated: 9.5/10 identity + creative bonus details.
   if (p.tier === 'premium') {
-    return editWithFlux2Max(
+    const fluxPrompt = await buildFluxInstruction();
+    return editWithFlux2MaxReplicate(
       p.baseImage,
-      disciplinedInstruction,
+      fluxPrompt,
       p.referenceImages || [],
       p.onProgress,
       { aspectRatio: p.aspectRatio },
@@ -90,10 +141,23 @@ export async function editFallback(p: EditFallbackParams): Promise<string[]> {
   }
 
   // Standard tier — uses configured FALLBACK_ENGINE.
+  if (FALLBACK_ENGINE === 'flux2-pro-rep') {
+    const fluxPrompt = await buildFluxInstruction();
+    return editWithFlux2ProReplicate(
+      p.baseImage,
+      fluxPrompt,
+      p.referenceImages || [],
+      p.onProgress,
+      { aspectRatio: p.aspectRatio },
+      p.abortSignal,
+    );
+  }
+
   if (FALLBACK_ENGINE === 'flux2-klein') {
+    const fluxPrompt = await buildFluxInstruction();
     return editWithFlux2Klein(
       p.baseImage,
-      disciplinedInstruction,
+      fluxPrompt,
       p.referenceImages || [],
       p.onProgress,
       { aspectRatio: p.aspectRatio },
@@ -102,9 +166,10 @@ export async function editFallback(p: EditFallbackParams): Promise<string[]> {
   }
 
   if (FALLBACK_ENGINE === 'flux2-pro') {
+    const fluxPrompt = await buildFluxInstruction();
     return editWithFlux2ProUrl(
       p.baseImage,
-      disciplinedInstruction,
+      fluxPrompt,
       p.referenceImages || [],
       p.onProgress,
       { aspectRatio: p.aspectRatio },
@@ -152,10 +217,11 @@ export async function editFallback(p: EditFallbackParams): Promise<string[]> {
 
 /** Friendly engine name for logs / future telemetry. */
 export const FALLBACK_ENGINE_NAME =
-  FALLBACK_ENGINE === 'flux2-klein' ? 'flux-2-klein-9b-edit'
-  : FALLBACK_ENGINE === 'flux2-pro' ? 'flux-2-pro-edit'
-  : FALLBACK_ENGINE === 'wan'       ? 'wan-2.7-image-pro'
-  : FALLBACK_ENGINE === 'grok'      ? 'grok-imagine-quality'
+  FALLBACK_ENGINE === 'flux2-pro-rep' ? 'flux-2-pro-replicate'
+  : FALLBACK_ENGINE === 'flux2-klein' ? 'flux-2-klein-9b-edit'
+  : FALLBACK_ENGINE === 'flux2-pro'   ? 'flux-2-pro-edit-fal'
+  : FALLBACK_ENGINE === 'wan'         ? 'wan-2.7-image-pro'
+  : FALLBACK_ENGINE === 'grok'        ? 'grok-imagine-quality'
   : 'seedream-v5-lite';
 
 /** @deprecated — kept for backward compatibility with old import paths. */

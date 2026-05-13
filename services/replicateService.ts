@@ -656,6 +656,175 @@ export async function editWithWan27Pro(
 }
 
 // ─────────────────────────────────────────────
+// FLUX 2 Pro EDIT via Replicate — preferred over fal for permissive moderation
+// kkkk-bench 2026-05-12: identity 9.5/10, latex/cutouts pass content filter
+// where fal rejects, ~25-30s, ~$0.06/image (vs fal Pro $0.10)
+// ─────────────────────────────────────────────
+export async function editWithFlux2ProReplicate(
+  baseImage: File,
+  prompt: string,
+  referenceImages: File[] = [],
+  onProgress?: (p: number) => void,
+  options?: { aspectRatio?: string },
+  abortSignal?: AbortSignal,
+): Promise<string[]> {
+  onProgress?.(8);
+
+  // input_images expects up to 8. Order: base first, then refs.
+  const allFiles = [baseImage, ...referenceImages].slice(0, 8);
+  const imageUris = await Promise.all(allFiles.map(fileToDataUri));
+
+  onProgress?.(20);
+
+  // First attempt with the candid render_quality. If Replicate rejects with
+  // E005 sensitive content, retry once with a softened prompt — Pro filter
+  // is stricter than Max about "skin imperfections" language.
+  const tryWithPrompt = async (p: string) => replicate.run('black-forest-labs/flux-2-pro' as `${string}/${string}`, {
+    input: {
+      prompt: p,
+      input_images: imageUris,
+      aspect_ratio: options?.aspectRatio || '3:4',
+      resolution: '2 MP',
+      safety_tolerance: 5,
+      output_format: 'jpg',
+      output_quality: 95,
+    },
+    ...(abortSignal ? { signal: abortSignal } : {}),
+  });
+
+  // Flux ignores negatives — strip never_add before sending (BFL docs).
+  const fluxPrompt = stripNeverAddForFlux(prompt);
+
+  let output: unknown;
+  try {
+    output = await tryWithPrompt(fluxPrompt);
+  } catch (err) {
+    const msg = String((err as any)?.message || err);
+    if (/E005|sensitive|flagged/i.test(msg)) {
+      console.warn('[Flux 2 Pro Replicate] E005 on first attempt, retrying with softened render_quality');
+      output = await tryWithPrompt(softenPromptForFlux(prompt));
+    } else {
+      throw err;
+    }
+  }
+
+  onProgress?.(95);
+
+  const url = extractReplicateUrl(output);
+  if (!url) throw new Error(`Flux 2 Pro Replicate returned empty output (got: ${JSON.stringify(output).slice(0, 200)})`);
+
+  onProgress?.(100);
+  return [url];
+}
+
+/**
+ * Soften a prompt that triggered Flux Pro's content filter (E005). Replaces
+ * aggressive "candid skin imperfection" language with neutral wording.
+ */
+function softenPromptForFlux(prompt: string): string {
+  return prompt
+    .replace(/Real authentic iPhone selfie photograph[^"]*?not studio lighting\./gi,
+      'Natural editorial photograph with visible skin texture, subtle freckles, healthy luminous finish, soft multi-directional lighting, candid framing.')
+    .replace(/asymmetric micro-imperfections like real human skin/gi, 'natural skin texture')
+    .replace(/skin shows natural variation/gi, 'natural skin tone')
+    .replace(/strand chaos|flyaway strands/gi, 'natural strands')
+    .replace(/mid-motion candid \(not posed\)/gi, 'relaxed natural expression')
+    .replace(/phone camera quality/gi, 'editorial quality');
+}
+
+/**
+ * Strip the `never_add` array from a JSON prompt before sending to Flux 2.
+ * Per BFL docs: "Flux 2 doesn't understand negative prompts — they may add
+ * what you're trying to avoid." NB2 respects them, Flux ignores them at best
+ * and can hallucinate them at worst. Drop them entirely for Flux.
+ *
+ * Best-effort regex (we don't want to JSON.parse and stringify because that
+ * loses comments/formatting and we don't validate the prompt structure).
+ */
+export function stripNeverAddForFlux(prompt: string): string {
+  // Match "never_add": [...] (with multiline content), including trailing comma
+  // if present. Handles common quote styles and whitespace.
+  return prompt
+    .replace(/,?\s*"never_add"\s*:\s*\[[^\]]*\]/g, '')
+    .replace(/,(\s*})/g, '$1'); // clean up any orphaned trailing comma
+}
+
+// ─────────────────────────────────────────────
+// FLUX 2 Max EDIT via Replicate — HERO Pro tier (premium)
+// kkkk-bench 2026-05-12: 9.5/10 with creative bonus details (coquette bows,
+// blue hair highlights, eyeshadow), ~40-55s, ~$0.12/image
+// ─────────────────────────────────────────────
+export async function editWithFlux2MaxReplicate(
+  baseImage: File,
+  prompt: string,
+  referenceImages: File[] = [],
+  onProgress?: (p: number) => void,
+  options?: { aspectRatio?: string },
+  abortSignal?: AbortSignal,
+): Promise<string[]> {
+  onProgress?.(8);
+
+  const allFiles = [baseImage, ...referenceImages].slice(0, 8);
+  const imageUris = await Promise.all(allFiles.map(fileToDataUri));
+
+  onProgress?.(20);
+
+  // Same candid-with-soft-retry pattern as Pro. Max usually accepts the
+  // aggressive candid prompt, but soft retry is here as safety net.
+  const tryWithPrompt = async (p: string) => replicate.run('black-forest-labs/flux-2-max' as `${string}/${string}`, {
+    input: {
+      prompt: p,
+      input_images: imageUris,
+      aspect_ratio: options?.aspectRatio || '3:4',
+      resolution: '2 MP',
+      safety_tolerance: 5,
+      output_format: 'jpg',
+      output_quality: 95,
+    },
+    ...(abortSignal ? { signal: abortSignal } : {}),
+  });
+
+  // Flux ignores negatives — strip never_add before sending (BFL docs).
+  const fluxPrompt = stripNeverAddForFlux(prompt);
+
+  let output: unknown;
+  try {
+    output = await tryWithPrompt(fluxPrompt);
+  } catch (err) {
+    const msg = String((err as any)?.message || err);
+    if (/E005|sensitive|flagged/i.test(msg)) {
+      console.warn('[Flux 2 Max Replicate] E005 on first attempt, retrying with softened render_quality');
+      output = await tryWithPrompt(softenPromptForFlux(prompt));
+    } else {
+      throw err;
+    }
+  }
+
+  onProgress?.(95);
+
+  const url = extractReplicateUrl(output);
+  if (!url) throw new Error(`Flux 2 Max Replicate returned empty output (got: ${JSON.stringify(output).slice(0, 200)})`);
+
+  onProgress?.(100);
+  return [url];
+}
+
+// Normalize Replicate output (string, array, ReadableStream, URL object) → string URL
+function extractReplicateUrl(raw: any): string | undefined {
+  const extractUrl = (v: any): string | undefined => {
+    if (!v) return undefined;
+    if (typeof v === 'string') return v || undefined;
+    if (typeof v?.url === 'function') return String(v.url());
+    if (v instanceof URL) return v.toString();
+    const s = String(v);
+    return s && s !== '[object Object]' ? s : undefined;
+  };
+  if (Array.isArray(raw)) return extractUrl(raw[0]);
+  if (raw?.output) return extractUrl(Array.isArray(raw.output) ? raw.output[0] : raw.output);
+  return extractUrl(raw);
+}
+
+// ─────────────────────────────────────────────
 // FLUX 2 Pro — generation via Replicate
 // ─────────────────────────────────────────────
 export async function generateWithFlux2Pro(

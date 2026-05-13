@@ -1217,50 +1217,210 @@ export const editImageWithFlux2Pro = async (
  *   - Strips "NO X", "NEVER X", "Avoid:" clauses (Flux ignores them anyway)
  *   - Collapses extra whitespace
  */
+/**
+ * Translates a generic instruction (designed for NB2) into Flux 2's preferred
+ * format per BFL prompting guide (https://docs.bfl.ai/guides/prompting_guide_flux2):
+ *
+ *   1. Sintaxis multi-ref: @image1, @image2, etc. with explicit role per image
+ *   2. No negative prompts ("NO X", "Avoid:", "NEVER X") — Flux ignores them
+ *   3. Subject + Action + Style + Context order (word order matters)
+ *   4. 30-80 word sweet spot — over 80 confuses ref-context attention
+ *   5. Positive anatomy phrasing instead of "no extra arms"
+ *
+ * Heuristic: extract subject/style/outfit/context from the input prose using
+ * keyword matching. Doesn't require structured JSON, but produces better
+ * results when the caller has already passed a JSON spec (via the
+ * `buildFlux2NativePrompt` helper, which we also export below).
+ */
 function formatPromptForFlux2(instruction: string, refCount: number): string {
   if (!instruction || !instruction.trim()) {
     return 'Generate a professional editorial photograph of this person.';
   }
   let prompt = instruction.trim();
 
-  // Strip "Edit Figure 1:" / "Edit @image1:" prefixes — the @image preamble
-  // we prepend takes over the ref-binding role.
+  // 1. Strip "Edit Figure 1:" / "Edit @image1:" prefixes — preamble takes over
   prompt = prompt.replace(/^Edit\s+(?:Figure\s+\d+|@image\d+)\s*:\s*/i, '');
 
-  // Translate Figure N → @imageN (Flux's native ref syntax)
+  // 2. Translate Figure N → @imageN (Flux's native syntax)
   prompt = prompt.replace(/\bFigure\s+(\d+)/gi, '@image$1');
   prompt = prompt.replace(/\bFigures\s+(\d+)\s*[-–]\s*(\d+)/gi, '@image$1-@image$2');
   prompt = prompt.replace(/\bFigures\s+(\d+)\s*\+/gi, '@image$1+');
 
-  // Strip negative phrasing Flux doesn't support
+  // 3. Strip negatives. Flux ignores them and they waste tokens.
   prompt = prompt
     .replace(/\bAvoid:\s*[^.]*\./gi, '')
+    .replace(/\bDo\s+NOT\s+[^.]*\./gi, '')
     .replace(/\bNO\s+(text|magazine|caption|watermark|logo|label|brand|airbrush|smoothing|CGI|porcelain|plastic)[^.,]*[.,]/gi, '')
     .replace(/\bNEVER\s+\w[^.,]*[.,]/gi, '');
 
-  // Prepend @image preamble if the prompt has no @image references yet.
-  // Matches the exact playground structure user validated 2026-05-12.
+  // 4. Strip JSON spec fences/scaffolding ("REIMAGINE SPECIFICATION:", { } blocks)
+  //    — the JSON is meant for NB2, Flux prefers structured-prose instead.
+  prompt = prompt.replace(/REIMAGINE SPECIFICATION:\s*/g, '');
+  prompt = prompt.replace(/^\s*\{[\s\S]*\}\s*$/, ''); // pure JSON dump → strip
+  // Strip top-level JSON keys like '"must_preserve":' that leak through
+  prompt = prompt.replace(/"(must_preserve|must_change|rules|render_quality|never_add)":\s*\[[^\]]*\],?/g, '');
+
+  // 5. Prepend @image preamble if missing. Each image gets an explicit role
+  //    per BFL guide — improves multi-ref attention significantly.
   if (!prompt.includes('@image')) {
-    const total = Math.max(1, refCount + 1); // base + refs
-    const refs: string[] = ['@image1 is the base reference of the subject'];
-    for (let i = 1; i < total; i++) {
-      const role = i === 1 ? 'additional identity reference (body angles)'
-                : i === 2 ? 'expression reference'
+    const refs: string[] = ['@image1 is the subject and base composition reference'];
+    for (let i = 1; i <= refCount; i++) {
+      const role = i === 1 ? 'identity reference for face geometry and body proportions'
+                : i === 2 ? 'identity reference for hair, skin tone, and physical features'
+                : i === 3 ? 'identity reference for additional angles'
                 : `identity reference ${i}`;
       refs.push(`@image${i + 1} is the ${role}`);
     }
-    prompt = `${refs.join('. ')}. Generate a NEW editorial fashion photograph of this same person. Preserve face geometry from @image1, eye color and shape, hair color and length, skin tone with freckles, piercings, and small bow tattoos. ${prompt}`;
+    prompt = `${refs.join('. ')}. ${prompt}`;
   }
 
-  // Append anatomy guard — Flux 2 occasionally generates extra limbs/fingers
-  // on complex poses. Positive phrasing works better than negatives for Flux.
+  // 6. Append anatomy guard (positive phrasing per BFL — works for Flux).
   if (!/anatomically correct/i.test(prompt)) {
-    prompt += ' Anatomically correct human body: exactly two arms with two hands, five fingers per hand, two legs with two feet, no duplicated limbs, no extra appendages, natural human proportions throughout.';
+    prompt += ' Anatomically correct human body: exactly two arms with two hands, five fingers per hand, two legs with two feet, natural human proportions throughout.';
   }
 
-  // Cleanup collapsed punctuation
+  // 7. Cleanup collapsed punctuation
   prompt = prompt.replace(/\s{2,}/g, ' ').replace(/\s*\.\s*\./g, '.').replace(/,\s*,/g, ',').trim();
   return prompt;
+}
+
+/**
+ * BFL-native Flux 2 prompt builder. Use this when the caller has structured
+ * data (subject description, style, outfit, palette, scene) instead of just
+ * a prose blob. Produces a 60-90 word prompt in BFL's preferred format.
+ *
+ * Per docs:
+ * - Order: Subject + Action + Style + Context
+ * - Hex codes for colors (e.g. "#5B1A1A burgundy") not just words
+ * - Each image gets a role: "@image1 is subject, @image2 is hair reference"
+ *
+ * Used by editFallback when caller passes `flux2Spec`.
+ */
+export interface Flux2NativeSpec {
+  /** "young Latin woman with violet eyes, jet black hair, septum piercing" */
+  subject: string;
+  /** "standing confidently, hands in pockets, slight side glance" */
+  action?: string;
+  /** "editorial fashion, Gótico Victoriano aesthetic, magazine quality" */
+  style: string;
+  /** "candle-lit cathedral, foggy stone arches, warm amber light" */
+  context?: string;
+  /** Outfit color override: "#5B1A1A burgundy velvet" — overrides style default. */
+  outfitColor?: string;
+  /** Camera/quality cues: "35mm film, shallow depth of field, magazine grade" */
+  technical?: string;
+  /** Number of identity reference images (not counting the base @image1). */
+  refCount: number;
+  /**
+   * Skin/lighting recipe preset. Defaults to 'ig-clean' (modern IG aesthetic,
+   * subtle texture, minimal grain). Use 'documentary' only for editorial
+   * campaigns / magazine cover work that needs Kodak Portra analog vibe.
+   */
+  skinRecipe?: 'ig-clean' | 'documentary';
+}
+
+/**
+ * Skin/lighting recipes appended to Flux 2 Pro/Max prompts. Two presets:
+ *
+ *   IG_CLEAN (default) — modern Instagram aesthetic. Healthy natural skin,
+ *   subtle visible freckles, clean modern lighting, MINIMAL film grain. The
+ *   look NB2 produces natively: fresh, polished but not airbrushed, lanzable
+ *   directly to feed. Use for influencer / IG-feed-bound content.
+ *
+ *   DOCUMENTARY — Vogue editorial / Kodak Portra 400 analog film. Pore-level
+ *   skin texture, hard sidelight, heavy grain. Use for editorial campaigns,
+ *   magazine covers, photo books. Won't look right on IG.
+ *
+ * Default is IG_CLEAN because 95% of our users are operadores IG LATAM.
+ */
+// Minimal skin tag — kkkk-spicy-bench validated 2026-05-09. Each extra word
+// is a chance for Flux to misinterpret. The bench winners used just 12 words:
+// "Realistic fashion photography, visible pores and freckles. No CGI smoothing."
+// Don't over-prompt. Less is more for Flux 2.
+const SKIN_RECIPE_IG_CLEAN = 'Realistic IG editorial photography, healthy dewy skin with visible pores and subtle freckles. No CGI smoothing.';
+
+const SKIN_RECIPE_DOCUMENTARY = 'RAW analog editorial photography. Documentary skin texture: pore-level resolution visible at all scales, sharp micro-freckles, subtle natural skin blemishes and imperfections, slight specular sebum sheen on T-zone (forehead, nose bridge, chin) and collarbone. Hard directional sidelight from upper-front sculpting cheekbone and jaw shadows, creating dimensional facial structure. Slight skin tone variation across face (warm undertone in cheeks, cooler in temples). Kodak Portra 400 35mm film grain texture, NO digital smoothing, NO airbrush, NO porcelain finish.';
+
+/**
+ * BFL-native Flux 2 prompt builder — uses the kkkk-bench-validated formula:
+ *
+ *   1. @image1/N preamble with explicit roles (base, body, expression)
+ *   2. Concrete generation cue: "Generate a NEW [photograph] of this same person"
+ *   3. EXPLICIT preservation list: "Preserve face geometry from @image1, eye
+ *      color, hair, skin freckles, piercings, tattoos" — Flux attends strongly
+ *   4. Subject: [anchor description] — long is OK when the preservation list
+ *      and @image cues anchor it as IDENTITY not as scene
+ *   5. PRIMARY STYLE: concrete narrative scene description (not style name
+ *      concatenation). E.g. "Subject standing in front of mirror holding
+ *      iPhone, wearing pink camisole with ribbon bow..." not "boudoir + selfie"
+ *   6. GROK_SKIN_ADDENDUM at the end for photoreal documentary look
+ *
+ * This produces 200-280 word prompts that consistently beat the generic
+ * BFL Subject+Action+Style+Context format for editorial fashion photos.
+ */
+export function buildFlux2NativePrompt(spec: Flux2NativeSpec): string {
+  // 1. @image preamble — explicit roles per BFL multi-ref guide
+  const refs: string[] = ['@image1 is the base reference of the subject'];
+  for (let i = 1; i <= spec.refCount; i++) {
+    const role = i === 1 ? 'identity reference (body angles)'
+              : i === 2 ? 'identity reference (expression)'
+              : `identity reference ${i}`;
+    refs.push(`@image${i + 1} is the ${role}`);
+  }
+  const preamble = refs.join('. ') + '.';
+
+  // 2. Concrete generation cue + 3. Preservation list (the kkkk-bench winner)
+  const isPhotoreal = !spec.technical || /editorial|magazine|photoreal|35mm|film/i.test(spec.technical);
+  const generationCue = `Generate a NEW ${isPhotoreal ? 'editorial fashion photograph' : 'image'} of this same person.`;
+  const preservation = `Preserve face geometry from @image1, eye color and shape, hair color and length, skin texture with freckles, piercings, and small bow tattoos.`;
+
+  // 4. Subject — keep the anchor. The preservation list above prevents Flux
+  // from treating it as scene description.
+  const subject = spec.subject ? `Subject: ${spec.subject}` : '';
+
+  // 5. PRIMARY STYLE — caller passes concrete narrative scene description.
+  // If caller passes just a style name (short), we keep it but it'll be weak.
+  const primaryStyle = `PRIMARY STYLE: ${spec.style}.`;
+
+  // Action becomes part of the narrative if provided.
+  const action = spec.action ? `${spec.action}` : '';
+
+  // Context adds setting/lighting cues. Concatenate if both action and context.
+  const context = spec.context ? `${spec.context}` : '';
+
+  // Outfit color override — placed inside PRIMARY STYLE for stronger binding.
+  const outfitColor = spec.outfitColor
+    ? `OUTFIT COLOR: ${spec.outfitColor}. Applied only to clothing — leave scene and lighting unchanged.`
+    : '';
+
+  // 6. Skin/light recipe at the end. Only for photoreal — stylized chars
+  // (anime, 3D) skip this. Default = IG_CLEAN (NB2-like aesthetic, clean,
+  // lanzable a IG sin retoque). Pass skinRecipe: 'documentary' for editorial
+  // Kodak Portra vibe.
+  const skinRecipe = isPhotoreal
+    ? (spec.skinRecipe === 'documentary' ? SKIN_RECIPE_DOCUMENTARY : SKIN_RECIPE_IG_CLEAN)
+    : '';
+
+  // Anatomy guard at the very end.
+  const anatomy = 'Anatomically correct human body: exactly two arms with two hands, five fingers per hand, two legs with two feet, natural proportions throughout.';
+
+  return [
+    preamble,
+    generationCue,
+    preservation,
+    subject,
+    primaryStyle,
+    action,
+    context,
+    outfitColor,
+    skinRecipe,
+    anatomy,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([.,])/g, '$1')
+    .trim();
 }
 
 /** Flux 2 Klein 9B Edit — default fallback. Multi-ref support, ~4-10s, ~$0.05.
@@ -1848,10 +2008,41 @@ export const editWithNB2Fal = async (
   instruction: string,
   referenceImages: File[] = [],
   onProgress?: (percent: number) => void,
-  options?: { resolution?: string; seed?: number; aspectRatio?: string },
+  options?: { resolution?: string; seed?: number; aspectRatio?: string; characterAnchor?: string; skipNormalize?: boolean },
   abortSignal?: AbortSignal,
 ): Promise<string[]> => {
   if (abortSignal?.aborted) throw new Error('Cancelado');
+  if (onProgress) onProgress(5);
+
+  // ── Pre-normalize through Haiku (kkkk-bench validated) ─────────────────────
+  // Sanitizes character anchor (caps verbose clinical hooks at ~80 words,
+  // replaces "L3-L4 vertebrae" → "defined waist", etc) and injects candid
+  // render_quality for IG-grade skin variation. Cached LRU 200 — second call
+  // with same input is free. Cache shared with editFallback so the cascade
+  // path (NB2 fails → Flux) doesn't re-invoke Haiku.
+  //
+  // Skipped if:
+  //   - skipNormalize flag set (caller already ran the normalizer)
+  //   - ANTHROPIC_API_KEY missing in env (proxy will error, falls back to raw)
+  let finalInstruction = instruction;
+  if (!options?.skipNormalize) {
+    try {
+      const { normalizeForBothEnginesSafe } = await import('./aiPromptAdapter');
+      const { prompt: normalized, adapted } = await normalizeForBothEnginesSafe(instruction, {
+        refCount: referenceImages.length,
+        characterAnchor: options?.characterAnchor,
+        aspectRatio: options?.aspectRatio,
+      });
+      if (adapted) {
+        // Wrap normalized JSON in EDIT SPECIFICATION marker (NB2 recognizes this).
+        finalInstruction = /^\s*\{/.test(normalized)
+          ? `EDIT SPECIFICATION:\n${normalized}`
+          : normalized;
+      }
+    } catch (err) {
+      console.warn('[editWithNB2Fal] normalizer failed, using raw instruction:', err);
+    }
+  }
   if (onProgress) onProgress(10);
 
   const allImages = [baseImage, ...referenceImages.slice(0, 13)]; // max 14 total
@@ -1871,7 +2062,8 @@ export const editWithNB2Fal = async (
 
   // Wrap instruction with safety intent context. Defensive: if instruction is
   // empty (which would 422 fal), fall back to a generic edit instruction.
-  const cleanInstruction = (instruction || '').trim() || 'Generate a professional photo of this person';
+  // Uses finalInstruction (which is either the Haiku-normalized JSON or the raw).
+  const cleanInstruction = (finalInstruction || '').trim() || 'Generate a professional photo of this person';
 
   // ── Reference discipline guard (fix 2026-05-12) ──
   // When refs are passed AND the instruction does NOT explicitly request to change
