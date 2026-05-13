@@ -34,7 +34,7 @@ interface Props {
 type TabId =
   | 'featured' | 'all'
   | 'fashion' | 'aesthetic' | 'pose' | 'selfie' | 'expression'
-  | 'photo' | 'mood' | 'lifestyle' | 'era' | 'profession' | 'experimental'
+  | 'photo' | 'mood' | 'lifestyle' | 'lugar' | 'era' | 'profession' | 'experimental'
   | 'spicy';
 
 const TABS: { id: TabId; label: string; sourceCategories: SoulStyleCategory[] }[] = [
@@ -47,7 +47,8 @@ const TABS: { id: TabId; label: string; sourceCategories: SoulStyleCategory[] }[
   { id: 'expression',   label: 'Expresión',   sourceCategories: ['expression'] },
   { id: 'photo',        label: 'Foto',        sourceCategories: ['photo', 'social', 'content'] },
   { id: 'mood',         label: 'Mood',        sourceCategories: ['mood', 'concept'] },
-  { id: 'lifestyle',    label: 'Lifestyle',   sourceCategories: ['lifestyle', 'place', 'location'] },
+  { id: 'lifestyle',    label: 'Lifestyle',   sourceCategories: ['lifestyle'] },
+  { id: 'lugar',        label: 'Lugar',       sourceCategories: ['place', 'location'] },
   { id: 'era',          label: 'Época',       sourceCategories: ['era'] },
   { id: 'profession',   label: 'Profesión',   sourceCategories: ['profession'] },
   { id: 'experimental', label: 'Experimental',sourceCategories: ['experimental'] },
@@ -57,6 +58,33 @@ const TABS: { id: TabId; label: string; sourceCategories: SoulStyleCategory[] }[
 const COST = 10;
 const PREMIUM_EXTRA = 15;   // +15cr when Premium tier toggle is active
 const MAX_SELECTED = 4; // 1 primary + up to 3 accents
+
+// Color palette options for the outfit. Selecting any of these (other than
+// 'auto') injects an explicit color override into the prompt JSON, telling the
+// engine to apply this palette to the wardrobe regardless of the soul style's
+// native colors. Background/lighting stay driven by the style/accent.
+type PaletteId =
+  | 'auto' | 'black' | 'white' | 'red' | 'burgundy' | 'pink'
+  | 'pastel' | 'earth' | 'olive' | 'navy' | 'jewel' | 'metallic' | 'neon';
+
+// Hex codes are intentional — Flux 2 docs state that "#FF0000" outperforms
+// "red" for color precision. NB2 also accepts hex. Grok ignores them but
+// keeps the color word fallback. Format: "<color words> (hex: #XXXXXX)".
+const PALETTES: { id: PaletteId; label: string; swatch: string; prompt: string }[] = [
+  { id: 'auto',     label: 'Auto',     swatch: 'linear-gradient(135deg,#FF6B9D,#A78BFA,#4FACFE)', prompt: '' },
+  { id: 'black',    label: 'Negro',    swatch: '#111111',  prompt: 'all-black wardrobe, monochrome black clothing (hex: #0A0A0A)' },
+  { id: 'white',    label: 'Blanco',   swatch: '#FFFFFF',  prompt: 'white and cream clothing, ivory tones (hex: #F5F0E6 cream, #FFFFFF white)' },
+  { id: 'red',      label: 'Rojo',     swatch: '#C42E2E',  prompt: 'rich red clothing, scarlet wardrobe (hex: #C42E2E scarlet)' },
+  { id: 'burgundy', label: 'Burdeos',  swatch: '#5B1A1A',  prompt: 'burgundy and oxblood clothing, deep wine red (hex: #5B1A1A burgundy)' },
+  { id: 'pink',     label: 'Rosa',     swatch: '#F5A8C5',  prompt: 'soft pink clothing, blush rose, muted dusty pink (hex: #F5A8C5 blush)' },
+  { id: 'pastel',   label: 'Pastel',   swatch: 'linear-gradient(135deg,#FBC7D9,#C9D6FF)', prompt: 'pastel clothing, soft baby pink + lavender + mint + powder blue (hex: #FBC7D9 baby pink, #C9D6FF lavender, #C3E8D0 mint)' },
+  { id: 'earth',    label: 'Tierra',   swatch: 'linear-gradient(135deg,#B89674,#7A5A3F)', prompt: 'earth-toned clothing, camel + beige + warm browns + terracotta (hex: #B89674 camel, #7A5A3F brown, #C97B5C terracotta)' },
+  { id: 'olive',    label: 'Oliva',    swatch: '#6B7A3A',  prompt: 'olive or sage green clothing, deep forest green wardrobe (hex: #6B7A3A olive, #4A5C28 forest)' },
+  { id: 'navy',     label: 'Azul',     swatch: '#1F2A5C',  prompt: 'navy blue clothing, deep ocean blue, indigo (hex: #1F2A5C navy, #2C3E70 indigo)' },
+  { id: 'jewel',    label: 'Joya',     swatch: 'linear-gradient(135deg,#1E6F50,#7A1F4D,#1F3F8E)', prompt: 'jewel-tone clothing, saturated emerald + sapphire + ruby (hex: #1E6F50 emerald, #1F3F8E sapphire, #7A1F4D ruby)' },
+  { id: 'metallic', label: 'Metálico', swatch: 'linear-gradient(135deg,#C0C0C0,#FFD37A)', prompt: 'metallic clothing, silver + gold + chrome reflective fabrics (hex: #C0C0C0 silver, #FFD37A gold, #E5E4E2 chrome)' },
+  { id: 'neon',     label: 'Neón',     swatch: 'linear-gradient(135deg,#FF00C8,#00F0FF)', prompt: 'neon clothing, electric pink + acid green + cyan, vivid saturated (hex: #FF00C8 electric pink, #00F0FF cyan, #B5FF00 acid green)' },
+];
 
 // Mobile-curated featured pool — gender-balanced mix of unisex / masculine /
 // feminine styles. Overrides the global `featured: true` flag (which skews
@@ -114,6 +142,11 @@ export default function Reimaginar({ onNav }: Props) {
   // Costs +15cr. Identity already perfect on standard Klein, premium is for hero
   // shots where every detail of the character aesthetic must come through.
   const [premiumTier, setPremiumTier] = useState<boolean>(false);
+  // Color palette override for the outfit. 'auto' lets the chosen soul style
+  // dictate its native colors (e.g. Goth Romántico → black). Any other value
+  // injects an outfit_color_override into the JSON spec that the engine treats
+  // as authoritative for the wardrobe (background/lighting untouched).
+  const [paletteId, setPaletteId] = useState<PaletteId>('auto');
   const abortRef = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -351,6 +384,16 @@ export default function Reimaginar({ onNav }: Props) {
             })),
             blend_rule: 'Primary style dominates the OUTFIT and CORE LOOK. Accent styles ONLY contribute setting, environment, lighting, and mood. Do NOT generate a hybrid outfit — the wardrobe must come purely from primary style.',
           } : {}),
+          ...(paletteId !== 'auto' ? (() => {
+            const palette = PALETTES.find(p => p.id === paletteId);
+            return palette ? {
+              outfit_color_override: {
+                palette: palette.label,
+                description: palette.prompt,
+                rule: 'This color palette is AUTHORITATIVE for the outfit/wardrobe. It OVERRIDES the default colors of the primary style. Apply ONLY to the clothing — do not change the background, scene, or lighting which stay driven by the style.',
+              },
+            } : {};
+          })() : {}),
           composition: 'NEW pose, NEW camera angle, NEW framing — do not copy the original photo layout.',
           aspect_ratio: aspectRatio,
         },
@@ -402,7 +445,19 @@ export default function Reimaginar({ onNav }: Props) {
           jsonInstruction,
           refFiles,
           p => setProgress(Math.min(85, 15 + Math.round(p * 0.7))),
-          { resolution: '2K', aspectRatio },
+          {
+            resolution: '2K',
+            aspectRatio,
+            // Pass character anchor + ID so the Haiku normalizer cache keys
+            // by character (prevents kkkk's piercings/bows leaking into
+            // other personas via cache collision on similar anchor prefixes).
+            characterAnchor: selectedChar?.characteristics,
+            // The JSON spec already contains the anchor; Reimaginar built it
+            // with withPhysicalAnchor. Skip the normalizer here — the app
+            // already sanitized + structured the spec correctly for this
+            // template-driven path.
+            skipNormalize: true,
+          },
           abortRef.current.signal,
         );
         if (!resultUrls || resultUrls.length === 0) throw new Error(premiumTier ? 'NB Pro empty' : 'NB2 empty');
@@ -439,7 +494,52 @@ export default function Reimaginar({ onNav }: Props) {
         const anchorText = cleanAnchor
           ? ` The subject is described as: ${cleanAnchor}. These physical traits are absolute and override any reference ambiguity.`
           : '';
-        const flatInstruction = `Edit Figure 1: ${taskVerb} of this same character in a different aesthetic. ${idProse}${anchorText} PRIMARY STYLE: ${primaryStyle?.name || 'editorial'} — ${primaryDesc}.${accentText}${customText} CHANGE: pose, camera angle, framing, background, outfit. ${skinFlat} ${NO_TEXT_RULE}`;
+        const paletteText = paletteId !== 'auto'
+          ? (() => {
+              const p = PALETTES.find(x => x.id === paletteId);
+              return p ? ` OUTFIT COLOR (override style defaults): ${p.prompt}. Apply ONLY to clothing — keep scene and lighting from the style.` : '';
+            })()
+          : '';
+        const flatInstruction = `Edit Figure 1: ${taskVerb} of this same character in a different aesthetic. ${idProse}${anchorText} PRIMARY STYLE: ${primaryStyle?.name || 'editorial'} — ${primaryDesc}.${accentText}${customText}${paletteText} CHANGE: pose, camera angle, framing, background, outfit. ${skinFlat} ${NO_TEXT_RULE}`;
+
+        // Flux 2 native spec. Format validated by kkkk-bench 2026-05-09:
+        //   - subject: full anchor (the preservation list keeps Flux from
+        //     interpreting it as scene description)
+        //   - style: CONCRETE NARRATIVE of primary style only — NOT a list of
+        //     accent names. Accents contribute to context separately.
+        //   - context: blended setting/lighting from accents (max 2 to avoid
+        //     contradictory scenes like boudoir+shower+selfie at once)
+        //   - outfitColor: palette hex injection
+        //   - technical: photoreal vs stylized cue (triggers GROK_SKIN_ADDENDUM)
+        const paletteForFlux = paletteId !== 'auto'
+          ? PALETTES.find(p => p.id === paletteId)?.prompt
+          : undefined;
+        // Pick at most 2 accent hints, blend them into a single contextual phrase
+        // instead of dumping all 3 — Flux concat'd hints from boudoir+wet+selfie
+        // produced incoherent scenes in earlier bench.
+        const topAccentHints = accentStyles
+          .slice(0, 2)
+          .map(s => s.hint || s.name)
+          .filter(Boolean);
+        const blendedContext = topAccentHints.length > 0
+          ? `Setting and lighting: ${topAccentHints.join('. Additionally, ')}.`
+          : '';
+        const flux2Spec = {
+          refCount: refFiles.length,
+          // Anchor is the kkkk-style verbose physical description. The
+          // preservation list in the prompt builder anchors it to identity.
+          subject: cleanAnchor || `young woman, distinctive identity from references`,
+          action: '',
+          // PRIMARY STYLE: concrete narrative from the primary style's HINT
+          // (which is already a scene description), not the style name +
+          // accent name concatenation that caused incoherent outputs.
+          style: primaryStyle?.hint || primaryStyle?.name || customDirection || 'editorial fashion photograph',
+          context: blendedContext,
+          outfitColor: paletteForFlux,
+          technical: charIsNonPhoto
+            ? `${charRenderStyle} rendering style — do not convert to photorealism`
+            : 'editorial magazine quality, 35mm film, shallow depth of field',
+        };
 
         resultUrls = await editFallback({
           baseImage: baseFile,
@@ -449,6 +549,7 @@ export default function Reimaginar({ onNav }: Props) {
           abortSignal: abortRef.current.signal,
           aspectRatio,
           tier: premiumTier ? 'premium' : 'standard',
+          flux2Spec,
         });
         if (!resultUrls || resultUrls.length === 0) throw new Error('Ambos motores fallaron');
       }
@@ -854,10 +955,26 @@ export default function Reimaginar({ onNav }: Props) {
       </section>
 
       {/* Custom prompt accordion */}
-      <section className="rm-section">
+      <section className="rm-section rm-custom-section">
         <button
           className="rm-custom-toggle"
-          onClick={() => { hapticLight(); setShowCustom(v => !v); }}
+          onClick={() => {
+            hapticLight();
+            setShowCustom(v => {
+              const next = !v;
+              // When opening, scroll the textarea into view above the
+              // sticky palette/aspect strips (~260px of overlap area).
+              if (next) {
+                setTimeout(() => {
+                  document.querySelector('.rm-custom-box')?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                  });
+                }, 50);
+              }
+              return next;
+            });
+          }}
         >
           <Wand2 size={14} />
           <span>Dirección custom</span>
@@ -902,6 +1019,25 @@ export default function Reimaginar({ onNav }: Props) {
           </div>
         </div>
       )}
+
+      {/* Palette strip — overrides the outfit color of the chosen style. */}
+      <div className="rm-palette-strip" role="radiogroup" aria-label="Paleta de la ropa">
+        {PALETTES.map(p => (
+          <button
+            key={p.id}
+            type="button"
+            role="radio"
+            aria-checked={paletteId === p.id}
+            className={`rm-palette-pill ${paletteId === p.id ? 'is-active' : ''}`}
+            onClick={() => { hapticLight(); setPaletteId(p.id); }}
+            disabled={generating}
+            title={p.label}
+          >
+            <span className="rm-palette-swatch" style={{ background: p.swatch }} />
+            <span className="rm-palette-label">{p.label}</span>
+          </button>
+        ))}
+      </div>
 
       {/* Aspect ratio strip — feed (3:4) / square (1:1) / reels (9:16) / banner (16:9) */}
       <div className="rm-aspect-strip" role="radiogroup" aria-label="Formato de salida">
@@ -981,7 +1117,10 @@ const REIMAGINAR_STYLES = `
   color: var(--ink-0);
   font-family: 'DM Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
-  padding-bottom: calc(180px + env(safe-area-inset-bottom));
+  /* Leave room for the stack of sticky elements:
+     - CTA wrap (~64px) + aspect strip (~38px) + palette strip (~44px) + tray (~80px when shown)
+     - Plus margin so the last accordion ("Dirección custom") clears the palette top. */
+  padding-bottom: calc(260px + env(safe-area-inset-bottom));
   background-image:
     radial-gradient(circle at 20% 10%, rgba(31,26,20,0.025) 1px, transparent 1px),
     radial-gradient(circle at 80% 60%, rgba(31,26,20,0.02) 1px, transparent 1px);
@@ -1555,8 +1694,15 @@ const REIMAGINAR_STYLES = `
 }
 .rm-shell .rm-tray-hint { color: var(--ink-3); text-transform: none; letter-spacing: 0.05em; }
 .rm-shell .rm-tray-pills {
-  display: flex; flex-wrap: wrap; gap: 4px;
+  display: flex; flex-wrap: nowrap; gap: 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 2px;
 }
+.rm-shell .rm-tray-pills::-webkit-scrollbar { display: none; }
+.rm-shell .rm-tray-pill { flex-shrink: 0; }
 .rm-shell .rm-tray-pill {
   display: inline-flex;
   align-items: center;
@@ -1591,6 +1737,61 @@ const REIMAGINAR_STYLES = `
   cursor: pointer;
 }
 .rm-shell .rm-tray-pill.is-primary .rm-tray-pill-x { background: rgba(255,255,255,0.18); }
+
+/* Palette strip — horizontal scrollable row of color swatches.
+   Sits ABOVE aspect strip. Sticky-fixed near bottom but below aspect. */
+.rm-shell .rm-palette-strip {
+  position: fixed;
+  left: 50%; transform: translateX(-50%);
+  bottom: calc(190px + env(safe-area-inset-bottom));
+  width: calc(100% - 24px);
+  max-width: 456px;
+  display: flex; gap: 6px;
+  padding: 6px 8px;
+  background: rgba(252, 248, 240, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  z-index: 41;
+  box-shadow: 0 4px 14px rgba(31, 26, 20, 0.08);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.rm-shell .rm-palette-strip::-webkit-scrollbar { display: none; }
+.rm-shell .rm-palette-pill {
+  flex-shrink: 0;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px 3px 4px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-1);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.rm-shell .rm-palette-pill:active { transform: scale(0.94); }
+.rm-shell .rm-palette-pill.is-active {
+  background: var(--ink-0);
+  color: var(--bg-card);
+}
+.rm-shell .rm-palette-pill:disabled { opacity: 0.4; cursor: not-allowed; }
+.rm-shell .rm-palette-swatch {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 1px solid rgba(31, 26, 20, 0.18);
+  flex-shrink: 0;
+}
+.rm-shell .rm-palette-pill.is-active .rm-palette-swatch {
+  border-color: var(--bg-card);
+}
+.rm-shell .rm-palette-label { white-space: nowrap; }
 
 /* Aspect ratio strip (formato salida) — sits above premium + CTA */
 .rm-shell .rm-aspect-strip {

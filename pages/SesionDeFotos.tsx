@@ -184,6 +184,18 @@ export default function SesionDeFotos({ onNav }: Props) {
   const [selectedLighting, setSelectedLighting] = useState<string>('natural');
   const [generating, setGenerating] = useState(false);
   const [slots, setSlots] = useState<PhotoSlot[]>([]);
+  // Mirror of slots that always reflects the latest value synchronously.
+  // React's setSlots updater runs lazily, so reading from `slots` (closure)
+  // or via pass-through setSlots is unreliable inside async flows. The ref
+  // is bumped alongside every setSlots call via setSlotsRef() below.
+  const slotsRef = useRef<PhotoSlot[]>([]);
+  const setSlotsRef = (updater: (prev: PhotoSlot[]) => PhotoSlot[]) => {
+    setSlots(prev => {
+      const next = updater(prev);
+      slotsRef.current = next;
+      return next;
+    });
+  };
   const [openLightboxIdx, setOpenLightboxIdx] = useState<number | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -381,7 +393,16 @@ export default function SesionDeFotos({ onNav }: Props) {
           instruction,
           refFiles,
           undefined,
-          { resolution: '2K' },
+          {
+            resolution: '2K',
+            // Sesion already builds a curated JSON spec (outfit + scenario +
+            // lighting + pose) with the character anchor pre-sanitized via
+            // promptBuilder. Skip Haiku normalization to preserve the exact
+            // outfit terms (e.g. "lingerie set" must stay as-is — Haiku has
+            // been observed silently softening intimate-apparel descriptors).
+            skipNormalize: true,
+            characterAnchor: selectedChar?.characteristics,
+          },
           abortSignal,
         );
         if (r && r.length > 0) return r[0];
@@ -457,8 +478,10 @@ export default function SesionDeFotos({ onNav }: Props) {
     abortRef.current = new AbortController();
     const abortSignal = abortRef.current.signal;
 
-    // Initialize slots
-    setSlots(Array.from({ length: photoCount }, () => ({ url: null, status: 'pending' as const })));
+    // Initialize slots — seed the ref alongside state so async readers stay in sync.
+    const initialSlots = Array.from({ length: photoCount }, () => ({ url: null, status: 'pending' as const }));
+    slotsRef.current = initialSlots;
+    setSlots(initialSlots);
 
     // Build base file + reference files
     let baseFile: File;
@@ -524,14 +547,14 @@ export default function SesionDeFotos({ onNav }: Props) {
     const startNext = () => {
       if (abortSignal.aborted) {
         // Mark any remaining pending slots as failed so UI reflects cancel
-        setSlots(prev => prev.map(s => s.status === 'pending' ? { ...s, status: 'failed', error: 'Cancelado' } : s));
+        setSlotsRef(prev => prev.map(s => s.status === 'pending' ? { ...s, status: 'failed', error: 'Cancelado' } : s));
         if (activeWorkers === 0 && resolvedAll) resolvedAll();
         return;
       }
       while (activeWorkers < CONCURRENCY && nextIdx < photoSpecs.length) {
         const spec = photoSpecs[nextIdx++];
         activeWorkers++;
-        setSlots(prev => prev.map((s, i) => i === spec.index ? { ...s, status: 'generating' } : s));
+        setSlotsRef(prev => prev.map((s, i) => i === spec.index ? { ...s, status: 'generating' } : s));
 
         generateOnePhoto(
           baseFile, refFiles,
@@ -544,15 +567,15 @@ export default function SesionDeFotos({ onNav }: Props) {
           figureMap,
         )
           .then(url => {
-            setSlots(prev => prev.map((s, i) => i === spec.index
+            setSlotsRef(prev => prev.map((s, i) => i === spec.index
               ? (url ? { ...s, url, status: 'done', poseUsed: spec.pose.name } : { ...s, status: 'failed', error: 'No se pudo generar' })
               : s));
           })
           .catch(err => {
             if (err?.name === 'AbortError') {
-              setSlots(prev => prev.map((s, i) => i === spec.index ? { ...s, status: 'failed', error: 'Cancelado' } : s));
+              setSlotsRef(prev => prev.map((s, i) => i === spec.index ? { ...s, status: 'failed', error: 'Cancelado' } : s));
             } else {
-              setSlots(prev => prev.map((s, i) => i === spec.index ? { ...s, status: 'failed', error: String(err?.message || err).slice(0, 60) } : s));
+              setSlotsRef(prev => prev.map((s, i) => i === spec.index ? { ...s, status: 'failed', error: String(err?.message || err).slice(0, 60) } : s));
             }
           })
           .finally(() => {
@@ -573,37 +596,40 @@ export default function SesionDeFotos({ onNav }: Props) {
 
     setGenerating(false);
 
-    // Restore credits proportionally for failed photos
-    setSlots(currentSlots => {
-      const failed = currentSlots.filter(s => s.status === 'failed').length;
-      if (failed > 0) {
-        const refundPerPhoto = cost / photoCount;
-        restoreCredits(Math.round(refundPerPhoto * failed));
-        toast.info(`${failed} foto${failed > 1 ? 's' : ''} falló. Créditos parciales restaurados.`);
-      }
+    // Read final slots from the ref — `slots` from closure or pass-through
+    // setSlots are stale here because React batches state updates.
+    const finalSlots = slotsRef.current;
 
-      // Save successful photos to gallery
-      const successful = currentSlots.filter(s => s.status === 'done' && s.url);
-      if (successful.length > 0) {
-        addItems(successful.map((s, i) => ({
-          id: crypto.randomUUID(),
-          url: s.url!,
-          prompt: `Sesión · ${scenario.name} · ${outfitList.map(o => o.name).join(' / ')}`,
-          model: 'nb2-sesion',
-          timestamp: Date.now() + i,
-          type: 'create' as const,
-          characterId: selectedChar?.id ?? undefined,
-          tags: ['sesion-de-fotos', selectedScenario, ...(customBaseFile ? ['custom-upload'] : [])],
-          source: 'sesion-de-fotos' as any,
-        })));
-        if (selectedChar) incrementUsage(selectedChar.id);
-        hapticSuccess();
-      } else {
-        hapticError();
-      }
+    const failed = finalSlots.filter(s => s.status === 'failed').length;
+    if (failed > 0) {
+      const refundPerPhoto = cost / photoCount;
+      restoreCredits(Math.round(refundPerPhoto * failed));
+      toast.info(`${failed} foto${failed > 1 ? 's' : ''} falló. Créditos parciales restaurados.`);
+    }
 
-      return currentSlots;
-    });
+    // Save successful photos to gallery — watermark free-tier outputs.
+    const successful = finalSlots.filter(s => s.status === 'done' && s.url);
+    if (successful.length > 0) {
+      const { watermarkIfFreeTier } = await import('../services/watermarkService');
+      const stamped = await Promise.all(
+        successful.map(s => watermarkIfFreeTier(s.url!, profile?.subscriptionPlan, profile?.subscriptionStatus)),
+      );
+      addItems(stamped.map((url, i) => ({
+        id: crypto.randomUUID(),
+        url,
+        prompt: `Sesión · ${scenario.name} · ${outfitList.map(o => o.name).join(' / ')}`,
+        model: 'nb2-sesion',
+        timestamp: Date.now() + i,
+        type: 'create' as const,
+        characterId: selectedChar?.id ?? undefined,
+        tags: ['sesion-de-fotos', selectedScenario, ...(customBaseFile ? ['custom-upload'] : [])],
+        source: 'sesion-de-fotos' as any,
+      })));
+      if (selectedChar) incrementUsage(selectedChar.id);
+      hapticSuccess();
+    } else {
+      hapticError();
+    }
 
     abortRef.current = null;
   };
