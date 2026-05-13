@@ -194,16 +194,11 @@ function MobileHome({ onNav }: { onNav: (p: MobilePage) => void }) {
               style={{ '--app-accent': app.accent } as React.CSSProperties}
             >
               <div className="m-app-bg" style={{ backgroundImage: `url(${app.bg})` }} />
-              {app.isNew && <span className="m-app-new">Nuevo</span>}
               {app.comingSoon && (
                 <span className="m-app-soon">
                   <Lock size={9} /> {app.comingSoon}
                 </span>
               )}
-              <div className="m-app-corner">
-                <span className="m-app-dot" style={{ background: app.accent }} />
-                <span>{app.name}</span>
-              </div>
               <div className="m-app-content">
                 <h3>{app.name.split(' ')[0]} <em>{app.name.split(' ').slice(1).join(' ') || '·'}</em></h3>
                 <small>{app.tagline}</small>
@@ -833,35 +828,6 @@ const MOBILE_STYLES = `
   content: '';
   position: absolute; inset: 0;
   background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.85) 100%);
-}
-.m-shell .m-app-corner {
-  position: absolute;
-  top: 12px; left: 12px;
-  display: flex; align-items: center; gap: 6px;
-  padding: 4px 9px;
-  background: rgba(255, 252, 245, 0.92);
-  backdrop-filter: blur(6px);
-  border-radius: 999px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 8px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-0);
-  z-index: 2;
-}
-.m-shell .m-app-dot { width: 5px; height: 5px; border-radius: 50%; }
-.m-shell .m-app-new {
-  position: absolute;
-  top: 12px; right: 12px;
-  z-index: 3;
-  padding: 4px 9px;
-  background: #C9785C;
-  border-radius: 999px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 8px;
-  letter-spacing: 0.18em;
-  color: #FFFCF5;
-  text-transform: uppercase;
 }
 .m-shell .m-app-soon {
   position: absolute;
