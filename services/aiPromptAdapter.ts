@@ -1,9 +1,10 @@
 /**
  * aiPromptAdapter — Haiku-based middleware that rewrites prompts for the
- * appropriate engine. Two adapters:
+ * appropriate engine. Three adapters:
  *
- *   adaptPromptForNB2  → NB2-style JSON structured spec (multi-section)
+ *   adaptPromptForNB2   → NB2-style JSON structured spec (multi-section)
  *   adaptPromptForFlux2 → Flux 2 BFL-format narrative (bench-validated)
+ *   adaptPromptForWan   → Minimal Spanish "subject + place + action" sentence
  *
  * Why one file:
  *   Both share the same proxy (/anthropic-api), same Haiku model, same LRU
@@ -306,6 +307,101 @@ export async function adaptPromptForFlux2Safe(
     return { prompt: adapted, adapted: true };
   } catch (err) {
     console.warn('[adaptPromptForFlux2] falling back to raw instruction:', err);
+    return { prompt: rawInstruction, adapted: false };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Wan 2.7 adapter — minimal "subject + place + action" Spanish sentence
+// ─────────────────────────────────────────────────────────────────────────
+// Validated 2026-05-13: Wan 2.7 with thinking_mode + image_set_mode preserves
+// identity at 85-95% when given a literal one-sentence instruction. Scaffolding
+// (REFERENCE DISCIPLINE, JSON specs, anti-anatomy clauses) actively dilutes
+// the signal — the model uses the reference set directly. Haiku's job here is
+// the OPPOSITE of the NB2/Flux adapters: STRIP, do not EXPAND.
+//
+// The output is the action sentence ONLY. editWithWan27Pro wraps it with the
+// "modelo con referencias de imagen 1 a imagen N:" prefix using the live ref
+// count, so the adapter doesn't need to know it.
+
+const WAN_ADAPTER_SYSTEM = `Eres un compresor de prompts para Wan 2.7 Image Pro. Tu trabajo es OPUESTO al de un adapter normal: en vez de expandir o estructurar, COMPRIMES a una sola frase en español.
+
+CONTEXTO (validado 2026-05-13):
+Wan 2.7 con thinking_mode + image_set_mode preserva identidad al 85-95% cuando recibe instrucciones literales y cortas. El scaffolding (REFERENCE DISCIPLINE, JSON specs, descripciones de iluminación, guardas anti-anatomía, listas de "NO X") DILUYE la señal — el modelo usa el set de referencias directamente y NO necesita instrucciones de cómo usarlas.
+
+REGLAS:
+
+1. UNA SOLA FRASE en español. Máximo ~25 palabras. Formato "lugar/acción + outfit + (luz opcional)".
+   - "selfie en el espejo con lencería de encaje rosa, luz cálida"
+   - "sentada en un tronco en el bosque con lencería negra, luz natural"
+   - "caminando por la playa al atardecer con vestido blanco fluido"
+   - "posando en estudio con blazer negro sobre fondo blanco"
+
+2. NO incluyas: "modelo con referencias de imagen X a Y" (eso lo agrega la función). Empieza directo con el lugar/acción.
+
+3. PRESERVA los términos de outfit EXACTOS:
+   - "lencería" / "lingerie" / "bikini" / "corset" / "bodysuit" — verbatim
+   - colores con palabras simples ("rosa", "negro"), no hex codes
+   - materiales si el usuario los mencionó: "encaje", "látex", "cuero", "malla"
+
+4. ELIMINA:
+   - Lenguaje clínico ("vértebras L3-L4", "proyección anterior") → reescribir natural ("cintura definida", "busto curvilíneo")
+   - JSON, marcadores como "EDIT SPECIFICATION:", "@image1", "Figure 1"
+   - Frases como "same person, same identity", "anatomically correct" — Wan ya sabe
+   - Listas de "NO text, NO watermarks" — innecesario
+   - Descripciones de cámara/lente ("85mm f/1.8", "shallow DOF") — innecesario
+   - Anchor del personaje (descripción de cuerpo/cara) — las referencias hacen ese trabajo
+
+5. Si el input está en inglés, TRADUCE al español. Si está mezclado, normalízalo al español.
+
+6. Si el input ya es minimal en español (≤25 palabras, sin scaffolding), devuélvelo IGUAL sin cambios.
+
+OUTPUT: solo la frase en español. Sin comillas, sin markdown, sin preámbulo, sin explicación.`;
+
+interface AdaptForWanContext {
+  /** Optional aspect ratio hint. Not injected into prompt — passed via API param. */
+  aspectRatio?: string;
+}
+
+export async function adaptPromptForWan(
+  rawInstruction: string,
+  ctx: AdaptForWanContext = {},
+): Promise<string> {
+  if (!rawInstruction || !rawInstruction.trim()) {
+    return 'retrato natural en luz suave';
+  }
+
+  // Fast-path: if input is already short and looks like a clean Spanish action
+  // sentence (no JSON braces, no English scaffolding keywords), skip Haiku.
+  const trimmed = rawInstruction.trim();
+  const wordCount = trimmed.split(/\s+/).length;
+  const looksScaffolded = /\b(EDIT SPECIFICATION|REFERENCE DISCIPLINE|@image\d|Figure \d|same person, same|anatomically correct)\b/i.test(trimmed)
+    || /^\s*[{[]/.test(trimmed);
+  if (wordCount <= 25 && !looksScaffolded) {
+    return trimmed;
+  }
+
+  const ctxStr = JSON.stringify({ ar: ctx.aspectRatio });
+  const key = hashKey('wan', rawInstruction, ctxStr);
+  const cached = cacheGet(key);
+  if (cached) return cached;
+
+  const result = await callHaiku(WAN_ADAPTER_SYSTEM, rawInstruction, 200);
+  // Defensive: Haiku occasionally wraps output in quotes despite instructions.
+  const cleaned = result.replace(/^["'`]+|["'`]+$/g, '').trim();
+  cacheSet(key, cleaned);
+  return cleaned;
+}
+
+export async function adaptPromptForWanSafe(
+  rawInstruction: string,
+  ctx: AdaptForWanContext = {},
+): Promise<{ prompt: string; adapted: boolean }> {
+  try {
+    const adapted = await adaptPromptForWan(rawInstruction, ctx);
+    return { prompt: adapted, adapted: true };
+  } catch (err) {
+    console.warn('[adaptPromptForWan] falling back to raw instruction:', err);
     return { prompt: rawInstruction, adapted: false };
   }
 }

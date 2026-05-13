@@ -18,7 +18,7 @@
 import { editImageWithSeedream5, editImageWithGrokFal, editWithFlux2Klein, editWithFlux2ProUrl, editWithFlux2Max, buildFlux2NativePrompt, type Flux2NativeSpec } from './falService';
 import { editWithWan27Pro, editWithFlux2ProReplicate, editWithFlux2MaxReplicate } from './replicateService';
 import { adaptPromptForFlux2Safe } from './fluxPromptAdapter';
-import { normalizeForBothEnginesSafe } from './aiPromptAdapter';
+import { normalizeForBothEnginesSafe, adaptPromptForWanSafe } from './aiPromptAdapter';
 
 /**
  * Pick which engine handles the post-NB2 fallback. Bench history:
@@ -178,11 +178,16 @@ export async function editFallback(p: EditFallbackParams): Promise<string[]> {
   }
 
   if (FALLBACK_ENGINE === 'wan') {
-    // Wan 2.7 Pro Replicate — handles spicy + multi-ref + identity beautifully.
-    // No prompt rewriting needed: Wan respects literal intent.
+    // Wan 2.7 Pro — Haiku COMPRESSES the input to a single Spanish action
+    // sentence (opposite of NB2's JSON expand). editWithWan27Pro then wraps it
+    // with "modelo con referencias de imagen 1 a imagen N:" and flips
+    // thinking_mode + image_set_mode. Validated 2026-05-13.
+    const { prompt: wanPrompt } = await adaptPromptForWanSafe(p.flatInstruction, {
+      aspectRatio: p.aspectRatio,
+    });
     return editWithWan27Pro(
       p.baseImage,
-      disciplinedInstruction,
+      wanPrompt,
       p.referenceImages || [],
       p.onProgress,
       p.abortSignal,

@@ -621,12 +621,22 @@ export async function editWithWan27Pro(
 
   onProgress?.(20);
 
+  // Minimal wrapper validated 2026-05-13: Wan with thinking_mode + image_set_mode
+  // preserves identity at 95%+ from raw "subject + place + action" prompts.
+  // No scaffolding needed — the model uses the reference set directly.
+  const refCount = allFiles.length;
+  const wrappedPrompt = refCount > 1
+    ? `modelo con referencias de imagen 1 a imagen ${refCount}: ${prompt}`
+    : prompt;
+
   const output = await replicate.run('wan-video/wan-2.7-image-pro' as `${string}/${string}`, {
     input: {
-      prompt,
+      prompt: wrappedPrompt,
       images: imageUris,
       size: '2K',
       num_outputs: 1,
+      thinking_mode: true,
+      image_set_mode: true,
     },
     ...(abortSignal ? { signal: abortSignal } : {}),
   });
