@@ -47,12 +47,12 @@ type BackdropId = 'studio' | 'office' | 'outdoor' | 'abstract';
 type ExpressionId = 'neutral' | 'smile' | 'confident' | 'soft';
 
 const STYLE_PRESETS: { id: StyleId; name: string; tagline: string; img: string }[] = [
-  { id: 'editorial', name: 'Editorial', tagline: 'Magazine cover', img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=85' },
-  { id: 'corporate', name: 'Corporativo', tagline: 'LinkedIn pro', img: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=85' },
-  { id: 'casual', name: 'Casual', tagline: 'Natural light', img: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&q=85' },
-  { id: 'cinematic', name: 'Cinematográfico', tagline: 'Drama + grain', img: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&q=85' },
-  { id: 'beauty', name: 'Beauty', tagline: 'Skin first', img: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400&q=85' },
-  { id: 'bw', name: 'Blanco y negro', tagline: 'Timeless mono', img: 'https://images.unsplash.com/photo-1542140372-de3a3f87a9a4?w=400&q=85' },
+  { id: 'editorial', name: 'Editorial', tagline: 'Magazine cover', img: '/app-thumbs/headshot-styles/editorial.jpg' },
+  { id: 'corporate', name: 'Corporativo', tagline: 'LinkedIn pro', img: '/app-thumbs/headshot-styles/corporate.jpg' },
+  { id: 'casual', name: 'Casual', tagline: 'Natural light', img: '/app-thumbs/headshot-styles/casual.jpg' },
+  { id: 'cinematic', name: 'Cinematográfico', tagline: 'Drama + grain', img: '/app-thumbs/headshot-styles/cinematic.jpg' },
+  { id: 'beauty', name: 'Beauty', tagline: 'Skin first', img: '/app-thumbs/headshot-styles/beauty.jpg' },
+  { id: 'bw', name: 'Blanco y negro', tagline: 'Timeless mono', img: '/app-thumbs/headshot-styles/bw.jpg' },
 ];
 
 const STYLE_PROMPTS: Record<StyleId, string> = {

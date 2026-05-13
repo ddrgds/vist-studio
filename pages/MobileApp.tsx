@@ -49,6 +49,12 @@ interface AppEntry {
 // communicate each app's function in a unified warm cream/clay palette.
 const APPS: AppEntry[] = [
   {
+    id: 'create', name: 'Crear Personaje', tagline: 'Construye tu modelo virtual',
+    cost: '20-60 cr · 5 min',
+    bg: '/app-thumbs/create.jpg',
+    accent: '#7A5E2F', isLive: true, isNew: true,
+  },
+  {
     id: 'headshot', name: 'Headshot Pro', tagline: 'Retratos profesionales',
     cost: '10 cr · 30s',
     bg: '/app-thumbs/headshot.jpg',
@@ -166,18 +172,10 @@ function MobileHome({ onNav }: { onNav: (p: MobilePage) => void }) {
             </div>
           </button>
         </section>
-      ) : (
-        <section className="m-section">
-          <button className="m-create-quick" onClick={() => onNav('create')}>
-            <span className="m-create-quick-icon"><Sparkles size={14} /></span>
-            <span className="m-create-quick-text">
-              Crear nuevo personaje
-              <small>{characters.length} personaje{characters.length === 1 ? '' : 's'} guardado{characters.length === 1 ? '' : 's'}</small>
-            </span>
-            <span className="m-create-quick-arrow">→</span>
-          </button>
-        </section>
-      )}
+      ) : null}
+      {/* Users with 1+ characters discover Crear Personaje via the APPS grid
+       *  (first card with the create.jpg thumb) — the previous compact
+       *  dashed-border button passed unnoticed. */}
 
       {/* Apps grid */}
       <section className="m-section">

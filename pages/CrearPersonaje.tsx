@@ -75,10 +75,10 @@ const ENGINES: { id: Engine; name: string; tagline: string; bestFor: string }[] 
 ];
 
 const RENDER_STYLES = [
-  { id: 'photorealistic', name: 'Fotorrealista', meta: 'DSLR quality',     img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=85' },
-  { id: 'anime',          name: 'Anime / Manhwa', meta: '2D · Stylized',   img: 'https://images.unsplash.com/photo-1578632292113-23dc46e90516?w=400&q=85' },
-  { id: '3d-render',      name: '3D Render',     meta: 'Pixar · CGI feel', img: 'https://images.unsplash.com/photo-1635805737707-575885ab0820?w=400&q=85' },
-  { id: 'illustration',   name: 'Ilustración',   meta: 'Hand-drawn',       img: 'https://images.unsplash.com/photo-1551316679-9c6ae9dec224?w=400&q=85' },
+  { id: 'photorealistic', name: 'Fotorrealista', meta: 'DSLR quality',     img: '/app-thumbs/creator-styles/photorealistic.jpg' },
+  { id: 'anime',          name: 'Anime / Manhwa', meta: '2D · Stylized',   img: '/app-thumbs/creator-styles/anime.jpg' },
+  { id: '3d-render',      name: '3D Render',     meta: 'Pixar · CGI feel', img: '/app-thumbs/creator-styles/3d-render.jpg' },
+  { id: 'illustration',   name: 'Ilustración',   meta: 'Hand-drawn',       img: '/app-thumbs/creator-styles/illustration.jpg' },
 ];
 
 const PERSONALITY = [
