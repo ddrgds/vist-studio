@@ -143,20 +143,27 @@ function MobileHome({ onNav }: { onNav: (p: MobilePage) => void }) {
         </button>
       </section>
 
-      {/* Foundation: Crear personaje — prominent when 0, compact when 1+ */}
+      {/* Foundation: Crear personaje — prominent hero when 0, compact when 1+ */}
       {characters.length === 0 ? (
         <section className="m-section">
           <div className="m-section-head">
             <span className="m-eyebrow">Empieza aquí</span>
             <h2 className="m-section-title">Construye tu <em>modelo</em></h2>
           </div>
-          <button className="m-foundation" onClick={() => onNav('create')}>
-            <div className="m-foundation-step">1</div>
-            <div className="m-foundation-text">
+          <button className="m-foundation-hero" onClick={() => onNav('create')}>
+            <div className="m-foundation-bg" style={{ backgroundImage: 'url(/app-thumbs/create.jpg)' }} />
+            <div className="m-foundation-tag">
+              <span className="m-foundation-step">1</span>
+              <span>Empieza aquí</span>
+            </div>
+            <div className="m-foundation-content">
               <strong>Crear Personaje</strong>
               <small>Tu modelo virtual desde cero · 5 minutos</small>
+              <span className="m-foundation-cta">
+                <Sparkles size={14} />
+                Construir
+              </span>
             </div>
-            <Sparkles size={18} />
           </button>
         </section>
       ) : (
@@ -688,33 +695,77 @@ const MOBILE_STYLES = `
 }
 .m-shell .m-section-title em { font-style: italic; }
 
-/* Foundation */
-.m-shell .m-foundation {
-  display: flex; align-items: center; gap: 12px;
+/* Foundation hero card — visual CTA when user has 0 characters */
+.m-shell .m-foundation-hero {
+  position: relative;
   width: 100%;
-  padding: 16px;
-  background: var(--bg-card);
-  border: 1px solid var(--line);
-  border-radius: 16px;
+  aspect-ratio: 16/9;
+  padding: 0;
+  border: none;
+  border-radius: 18px;
+  overflow: hidden;
   cursor: pointer;
   font-family: inherit;
   text-align: left;
-  color: var(--ink-1);
+  background: #2A1F18;
   transition: transform 0.3s var(--ease);
 }
-.m-shell .m-foundation:active { transform: scale(0.98); }
+.m-shell .m-foundation-hero:active { transform: scale(0.98); }
+.m-shell .m-foundation-bg {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center top;
+}
+.m-shell .m-foundation-hero::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(110deg, rgba(20,16,12,0.78) 0%, rgba(20,16,12,0.55) 45%, rgba(20,16,12,0.10) 100%);
+}
+.m-shell .m-foundation-tag {
+  position: absolute;
+  top: 14px; left: 14px;
+  display: flex; align-items: center; gap: 7px;
+  padding: 4px 10px 4px 4px;
+  background: rgba(255,252,245,0.92);
+  backdrop-filter: blur(6px);
+  border-radius: 999px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-0);
+  z-index: 2;
+}
 .m-shell .m-foundation-step {
-  width: 32px; height: 32px;
+  width: 18px; height: 18px;
   border-radius: 50%;
   background: var(--ink-0);
-  color: var(--bg-card);
+  color: #FFFCF5;
   display: flex; align-items: center; justify-content: center;
-  font-weight: 700; font-size: 14px;
+  font-weight: 700; font-size: 11px;
   flex-shrink: 0;
 }
-.m-shell .m-foundation-text { flex: 1; min-width: 0; }
-.m-shell .m-foundation-text strong { display: block; font-size: 14px; color: var(--ink-0); }
-.m-shell .m-foundation-text small { font-size: 11px; color: var(--ink-2); margin-top: 2px; display: block; }
+.m-shell .m-foundation-content {
+  position: absolute;
+  left: 18px; right: 18px; bottom: 16px;
+  display: flex; flex-direction: column; gap: 4px;
+  z-index: 2;
+  color: #FFFCF5;
+}
+.m-shell .m-foundation-content strong {
+  font-family: 'Instrument Serif', 'DM Serif Display', serif;
+  font-size: 22px; font-weight: 400;
+  line-height: 1.1;
+}
+.m-shell .m-foundation-content small { font-size: 12px; opacity: 0.82; }
+.m-shell .m-foundation-cta {
+  align-self: flex-start;
+  margin-top: 8px;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px;
+  background: #FFFCF5;
+  color: var(--ink-0);
+  border-radius: 999px;
+  font-size: 12px; font-weight: 600;
+  font-family: 'DM Sans', system-ui, sans-serif;
+}
 
 /* Compact create button (when user already has characters) */
 .m-shell .m-create-quick {
