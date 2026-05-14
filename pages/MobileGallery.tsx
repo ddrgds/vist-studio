@@ -578,13 +578,17 @@ function Lightbox({
   const touchStartY = useRef<number | null>(null);
   const [dragY, setDragY] = useState(0);
 
-  // Hide the global bottom nav while the lightbox is open. Sets a data
-  // attribute on <body>; MobileApp's CSS targets it. Without this, the nav
-  // shows underneath the action sheet on every device and the sheet content
-  // appears "trapped" between the photo and the nav (user feedback 2026-05-14).
+  // Hide the global bottom nav while the lightbox is open. Two signals — a
+  // body data-attribute (CSS) and a window event (React state in MobileApp).
+  // Either alone failed on some iOS Safari builds due to stacking-context
+  // weirdness with the nav's backdrop-filter. Both together cover all paths.
   useEffect(() => {
     document.body.dataset.modalOpen = 'gallery-lightbox';
-    return () => { delete document.body.dataset.modalOpen; };
+    window.dispatchEvent(new CustomEvent('vist:modal-open'));
+    return () => {
+      delete document.body.dataset.modalOpen;
+      window.dispatchEvent(new CustomEvent('vist:modal-close'));
+    };
   }, []);
 
   const onTouchStart = (e: React.TouchEvent) => {

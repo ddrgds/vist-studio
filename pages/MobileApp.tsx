@@ -256,6 +256,20 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
   const [page, setPage] = useState<MobilePage>('home');
   const [transitioning, setTransitioning] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  // Tracks whether any descendant has opened a fullscreen modal/lightbox.
+  // Components dispatch `vist:modal-open` / `vist:modal-close` window events
+  // and we hide the global bottom nav in response.
+  const [modalOpen, setModalOpen] = useState(false);
+  useEffect(() => {
+    const open = () => setModalOpen(true);
+    const close = () => setModalOpen(false);
+    window.addEventListener('vist:modal-open', open);
+    window.addEventListener('vist:modal-close', close);
+    return () => {
+      window.removeEventListener('vist:modal-open', open);
+      window.removeEventListener('vist:modal-close', close);
+    };
+  }, []);
 
   const characters = useCharacterStore(s => s.characters);
   const charactersLoading = useCharacterStore(s => s.isLoading);
@@ -351,7 +365,8 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
   // when in a deep sub-app to avoid CTA collision.
   // Show on hub pages — sub-apps have their own back button + CTA bar so
   // they don't need (and would conflict with) the global nav.
-  const showBottomNav = page === 'home' || page === 'gallery' || page === 'characters' || page === 'profile';
+  const showBottomNav = !modalOpen
+    && (page === 'home' || page === 'gallery' || page === 'characters' || page === 'profile');
 
   const renderActive = () => {
     switch (page) {
@@ -983,10 +998,12 @@ const MOBILE_STYLES = `
 
 /* ── Bottom nav ── */
 /* Hide the bottom nav when any app opens a fullscreen lightbox or modal.
- * Consumers set document.body.dataset.modalOpen on open / clear on close.
- * Without this hook the nav sits visually below the modal sheet (~60px of
- * dead bar with no relevant nav targets while inside a photo viewer). */
-body[data-modal-open] .m-shell .m-bottom-nav { display: none; }
+ * Two redundant signals (CSS + state lift) so a stacking-context or
+ * specificity quirk on any device can't keep the nav alive underneath. */
+body[data-modal-open] .m-shell .m-bottom-nav,
+.m-shell.is-modal-open .m-bottom-nav {
+  display: none !important;
+}
 
 .m-shell .m-bottom-nav {
   flex-shrink: 0;

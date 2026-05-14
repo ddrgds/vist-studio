@@ -30,14 +30,18 @@ export function AppLightbox({ src, alt, onClose }: Props) {
     if (!src) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    // Tell the mobile shell to hide its bottom nav while we're fullscreen,
-    // otherwise the nav peeks through under the lightbox sheet/photo on iOS.
+    // Two signals so the mobile shell hides its bottom nav reliably:
+    // (1) body data-attribute that the global CSS targets;
+    // (2) window CustomEvent the shell listens to and reflects in state.
+    // Belt-and-suspenders — either alone has misfired on certain iOS builds.
     document.body.dataset.modalOpen = 'app-lightbox';
+    window.dispatchEvent(new CustomEvent('vist:modal-open'));
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
     return () => {
       document.body.style.overflow = prev;
       delete document.body.dataset.modalOpen;
+      window.dispatchEvent(new CustomEvent('vist:modal-close'));
       window.removeEventListener('keydown', onKey);
     };
   }, [src, onClose]);
