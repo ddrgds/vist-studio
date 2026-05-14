@@ -636,10 +636,16 @@ export default function SesionDeFotos({ onNav }: Props) {
         prompt: `Sesión · ${scenario.name} · ${outfitList.map(o => o.name).join(' / ')}`,
         model: 'nb2-sesion',
         timestamp: Date.now() + i,
-        type: 'create' as const,
+        // 'session' makes MobileGallery's "Sesiones" filter pick these up.
+        // Storage layer remaps session → create internally — safe both sides.
+        type: 'session' as const,
         characterId: selectedChar?.id ?? undefined,
         tags: ['sesion-de-fotos', selectedScenario, ...(customBaseFile ? ['custom-upload'] : [])],
-        source: 'sesion-de-fotos' as any,
+        // 'director' is one of the two valid enum values ('generate' | 'director').
+        // Previously cast 'sesion-de-fotos' as any here, which silently failed the
+        // DB CHECK constraint on cloud save — photos lived only in IndexedDB
+        // until refresh, then disappeared on reload.
+        source: 'director' as const,
       })));
       if (selectedChar) incrementUsage(selectedChar.id);
       hapticSuccess();
@@ -782,7 +788,7 @@ export default function SesionDeFotos({ onNav }: Props) {
           <div className="ss-proof-card">
             <div className="ss-proof-header">
               <div className="ss-proof-title-block">
-                <div className="ss-proof-title">Hoja de <em>contactos</em></div>
+                <div className="ss-proof-title">Tus <em>fotos</em></div>
                 <div className="ss-proof-meta">
                   {completedCount} listas · {keptCount > 0 ? `${keptCount} keeper · ` : ''}
                   {rejectedCount > 0 ? `${rejectedCount} reject · ` : ''}
