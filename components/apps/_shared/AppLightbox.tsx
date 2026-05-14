@@ -30,10 +30,14 @@ export function AppLightbox({ src, alt, onClose }: Props) {
     if (!src) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    // Tell the mobile shell to hide its bottom nav while we're fullscreen,
+    // otherwise the nav peeks through under the lightbox sheet/photo on iOS.
+    document.body.dataset.modalOpen = 'app-lightbox';
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
     return () => {
       document.body.style.overflow = prev;
+      delete document.body.dataset.modalOpen;
       window.removeEventListener('keydown', onKey);
     };
   }, [src, onClose]);
@@ -68,7 +72,11 @@ export function AppLightbox({ src, alt, onClose }: Props) {
 
 const LIGHTBOX_STYLES = `
 .vist-lightbox {
-  position: fixed; inset: 0; z-index: 200;
+  position: fixed; inset: 0;
+  /* 100dvh sticks to the dynamic viewport on iOS so URL-bar transitions
+   * don't leave a sliver of the parent UI visible at the bottom. */
+  height: 100dvh;
+  z-index: 9999;
   background: rgba(8, 7, 12, 0.94);
   backdrop-filter: blur(14px);
   display: flex; align-items: center; justify-content: center;

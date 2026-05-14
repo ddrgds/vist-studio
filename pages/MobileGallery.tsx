@@ -11,7 +11,7 @@
  * "Editar" hands off via `pipelineStore.setHeroShot(url)` → MobileEditor reads
  * `heroShotUrl` on mount and auto-loads it as the base for editing.
  */
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Star, Edit2, Share2, Trash2, X, Check, Image as ImageIcon, Film, Sparkles,
   Tag,
@@ -578,6 +578,15 @@ function Lightbox({
   const touchStartY = useRef<number | null>(null);
   const [dragY, setDragY] = useState(0);
 
+  // Hide the global bottom nav while the lightbox is open. Sets a data
+  // attribute on <body>; MobileApp's CSS targets it. Without this, the nav
+  // shows underneath the action sheet on every device and the sheet content
+  // appears "trapped" between the photo and the nav (user feedback 2026-05-14).
+  useEffect(() => {
+    document.body.dataset.modalOpen = 'gallery-lightbox';
+    return () => { delete document.body.dataset.modalOpen; };
+  }, []);
+
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
   };
@@ -1119,8 +1128,11 @@ const MG_STYLES = `
 const LIGHTBOX_STYLES = `
 .mg-lightbox {
   position: fixed; inset: 0;
+  /* 100dvh keeps the lightbox glued to the dynamic viewport on iOS — without
+   * it, the URL-bar showing/hiding caused a few pixels of nav to bleed under. */
+  height: 100dvh;
   background: rgba(8, 6, 5, 0.94);
-  z-index: 200;
+  z-index: 9999;
   display: flex; flex-direction: column;
   animation: mg-fade-in 0.18s var(--mg-ease);
   -webkit-tap-highlight-color: transparent;

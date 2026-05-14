@@ -982,6 +982,12 @@ const MOBILE_STYLES = `
 }
 
 /* ── Bottom nav ── */
+/* Hide the bottom nav when any app opens a fullscreen lightbox or modal.
+ * Consumers set document.body.dataset.modalOpen on open / clear on close.
+ * Without this hook the nav sits visually below the modal sheet (~60px of
+ * dead bar with no relevant nav targets while inside a photo viewer). */
+body[data-modal-open] .m-shell .m-bottom-nav { display: none; }
+
 .m-shell .m-bottom-nav {
   flex-shrink: 0;
   display: grid;
