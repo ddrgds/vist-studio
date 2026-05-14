@@ -37,6 +37,7 @@ import { hapticLight, hapticMedium, hapticSuccess, hapticError, sharePhoto } fro
 import { AppTopBar, urlToFile, ensureValidImageFile, type AppMood } from '../components/apps/_shared';
 import { editVideoWithHappyHorse, type VideoProgress } from '../services/falVideoService';
 import { useColorScheme } from '../hooks/useColorScheme';
+import { useKeyboardOffset } from '../hooks/useKeyboardOffset';
 
 const LIGHT_MOOD: AppMood = {
   bg0:        '#F5E8D4',
@@ -118,6 +119,10 @@ export default function VideoEdit({ onNav }: Props) {
 
   const scheme = useColorScheme();
   const MOOD = scheme === 'dark' ? DARK_MOOD : LIGHT_MOOD;
+  // Fallback for iOS < 17 where interactive-widget=resizes-content is not
+  // honored — translate the fixed-bottom CTA bar up by the keyboard height
+  // so the prompt textarea stays visible while typing.
+  const kbOffset = useKeyboardOffset();
 
   const credits = profile?.creditsRemaining ?? 0;
 
@@ -602,7 +607,7 @@ export default function VideoEdit({ onNav }: Props) {
           </div>
         </section>
 
-        <div className="ve-cta-bar">
+        <div className="ve-cta-bar" style={{ transform: `translateY(${-kbOffset}px)` }}>
           <div className="ve-cta-cost">
             <strong>{cost} cr</strong>
             <small>1080p · audio auto</small>
@@ -814,6 +819,9 @@ const veStyles = (m: AppMood) => `
   margin: 0 -22px 14px; padding: 4px 22px 8px;
   scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  /* Right-edge fade hint — see Reels.rl-tpl-scroll for rationale. */
+  mask-image: linear-gradient(to right, black calc(100% - 32px), transparent);
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 32px), transparent);
 }
 .ve-tpl-scroll::-webkit-scrollbar { display: none; }
 .ve-tpl-card {
@@ -884,6 +892,9 @@ const veStyles = (m: AppMood) => `
   background: linear-gradient(180deg, transparent, ${m.bg0} 30%);
   display: flex; align-items: center; justify-content: space-between;
   gap: 12px; z-index: 10;
+  /* useKeyboardOffset translates this bar up on iOS < 17. The transition
+   * smooths the rise/fall when the soft keyboard opens/closes. */
+  transition: transform 0.18s ease-out;
 }
 .ve-cta-cost { display: flex; flex-direction: column; }
 .ve-cta-cost strong { font-size: 18px; font-family: 'JetBrains Mono', monospace; color: ${m.ink0}; }

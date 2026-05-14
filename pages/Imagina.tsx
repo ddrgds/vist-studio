@@ -735,7 +735,7 @@ Return as a single paragraph in technical English prose, ~150 words. NO bullet p
           {results.map((r, i) => (
             <div key={i} className={`im-result-slot is-${r.status}`}>
               {r.status === 'done' && r.url
-                ? <img src={r.url} alt="" />
+                ? <img src={r.url} alt="" loading="lazy" />
                 : r.status === 'failed'
                   ? <div className="im-slot-fail"><X size={14} /></div>
                   : <div className="im-slot-loader"><Loader size={16} className="im-spin" /></div>}
@@ -780,7 +780,7 @@ Return as a single paragraph in technical English prose, ~150 words. NO bullet p
                   aria-label={`Variación ${i + 1} — ${isSelected ? 'seleccionada' : 'no seleccionada'}`}
                 >
                   {isDone
-                    ? <img src={r.url!} alt="" />
+                    ? <img src={r.url!} alt="" loading="lazy" />
                     : <div className="im-slot-fail"><X size={14} /></div>}
                   {isDone && (
                     <span className="im-slot-check">

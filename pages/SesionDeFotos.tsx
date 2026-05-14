@@ -1238,6 +1238,9 @@ const SESION_STYLES = `
   overflow-x: auto;
   scrollbar-width: none;
   padding-bottom: 4px;
+  /* Right-edge fade so users discover more characters off-screen. */
+  mask-image: linear-gradient(to right, black calc(100% - 32px), transparent);
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 32px), transparent);
 }
 .ss-shell .ss-char-row::-webkit-scrollbar { display: none; }
 .ss-shell .ss-char-chip {
@@ -1560,6 +1563,9 @@ const SESION_STYLES = `
   margin: 0 -20px;
   padding: 0 20px 4px;
   scroll-snap-type: x mandatory;
+  /* Right-edge fade so users discover the row continues off-screen. */
+  mask-image: linear-gradient(to right, black calc(100% - 32px), transparent);
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 32px), transparent);
 }
 .ss-shell .ss-cards-row::-webkit-scrollbar { display: none; }
 .ss-shell .ss-scn-card {

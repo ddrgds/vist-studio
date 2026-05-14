@@ -981,6 +981,10 @@ const rlStyles = (m: AppMood) => `
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  /* Right-edge fade so users discover that more templates are off-screen.
+   * Without this hint, mobile users assume the visible row is the full set. */
+  mask-image: linear-gradient(to right, black calc(100% - 32px), transparent);
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 32px), transparent);
 }
 .rl-tpl-scroll::-webkit-scrollbar { display: none; }
 .rl-tpl-card {

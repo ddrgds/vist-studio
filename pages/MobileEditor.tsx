@@ -1035,7 +1035,7 @@ export default function MobileEditor({ onNav }: Props) {
 
   // ── Compare logic ────────────────────────────────
   // Two paths to comparing the original (baseUrl) vs the result (resultUrl):
-  //   1) Long-press the canvas (~180ms) → hold to compare, release to exit.
+  //   1) Long-press the canvas (~350ms) → hold to compare, release to exit.
   //   2) Tap the floating "Comparar" pill → toggles compare mode (sticky).
   // Both images are stacked in DOM, we just fade the result on/off → no
   // re-download, no flash, instant snap.
@@ -1049,7 +1049,7 @@ export default function MobileEditor({ onNav }: Props) {
       longPressedRef.current = true;
       hapticLight();
       setComparing(true);
-    }, 180);
+    }, 350); // iOS link-preview convention is ~400ms — 350 feels responsive without misfiring during normal taps/scrolls.
   }
   function onCanvasPressEnd() {
     if (compareTimerRef.current) {
