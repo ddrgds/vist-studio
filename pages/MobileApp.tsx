@@ -424,7 +424,7 @@ export default function MobileApp({ onWebNav }: { onWebNav?: (p: Page) => void }
         // 1-column on narrow viewports, so it renders fine in the mobile shell.
         // A floating back button takes the user back to Profile.
         return (
-          <div style={{ minHeight: '100vh', position: 'relative' }}>
+          <div style={{ minHeight: '100dvh', position: 'relative' }}>
             <button
               type="button"
               onClick={() => { hapticLight(); navigateMobile('profile'); }}
@@ -568,7 +568,8 @@ const MOBILE_STYLES = `
 .m-shell .m-greet-btn:active { opacity: 0.7; }
 .m-shell .m-avatar {
   position: relative;
-  width: 40px; height: 40px;
+  width: 44px; height: 44px;
+  min-width: 44px; min-height: 44px;
   border-radius: 50%;
   background: var(--paper);
   background-size: cover; background-position: center;
@@ -961,14 +962,15 @@ const MOBILE_STYLES = `
 }
 .m-shell .m-nav-item {
   display: flex; flex-direction: column;
-  align-items: center; gap: 4px;
+  align-items: center; justify-content: center; gap: 4px;
   background: transparent;
   border: none;
   font-family: inherit;
   font-size: 10px; font-weight: 500;
   color: var(--ink-3);
   cursor: pointer;
-  padding: 4px;
+  padding: 10px 4px;
+  min-height: 56px;
   transition: color 0.3s var(--ease);
 }
 .m-shell .m-nav-item.is-active { color: var(--ink-0); }

@@ -920,7 +920,7 @@ RULES: The SUBJECT description above is non-negotiable — every body proportion
           <div className="cp-field-head">
             <span className="cp-field-name"><span className="cp-field-num">02</span>Nombre</span>
           </div>
-          <input className="cp-input" placeholder="Sofia, Luna, Diego…" value={name} onChange={e => setName(e.target.value)} maxLength={32} />
+          <input className="cp-input" placeholder="Sofia, Luna, Diego…" value={name} onChange={e => setName(e.target.value)} maxLength={32} enterKeyHint="done" inputMode="text" autoComplete="off" />
         </section>
 
         <section className="cp-section">
@@ -1028,7 +1028,7 @@ RULES: The SUBJECT description above is non-negotiable — every body proportion
           {showRefine && (
             <div className="cp-prompt-box">
               <textarea className="cp-textarea" value={refineText} onChange={e => setRefineText(e.target.value)}
-                placeholder="Ej: ojos más almendrados, expresión más confiada, pelo un poco más oscuro..." rows={3} maxLength={240} />
+                placeholder="Ej: ojos más almendrados, expresión más confiada, pelo un poco más oscuro..." rows={3} maxLength={240} enterKeyHint="send" inputMode="text" />
               <div className="cp-refine-row">
                 <span className="cp-prompt-meta">{refineText.length} / 240</span>
                 <button className="cp-refine-btn" onClick={handleRefine} disabled={!refineText.trim() || refining}>
@@ -1443,7 +1443,7 @@ RULES: The SUBJECT description above is non-negotiable — every body proportion
           <span className="cp-field-name"><span className="cp-field-num">07</span>Nombre</span>
           <span className="cp-field-hint">Requerido</span>
         </div>
-        <input className="cp-input" placeholder="Sofia, Luna, Diego…" value={name} onChange={e => setName(e.target.value)} maxLength={32} />
+        <input className="cp-input" placeholder="Sofia, Luna, Diego…" value={name} onChange={e => setName(e.target.value)} maxLength={32} enterKeyHint="done" inputMode="text" autoComplete="off" />
       </section>
 
       {/* 08 Refuerzo opcional — texto técnico permanente que se inyecta en TODOS los prompts */}
@@ -1463,6 +1463,8 @@ RULES: The SUBJECT description above is non-negotiable — every body proportion
                 placeholder="Detalles técnicos que quieres que el modelo respete SIEMPRE (proporciones extra, texturas específicas, anti-features...)"
                 rows={4}
                 maxLength={500}
+                enterKeyHint="send"
+                inputMode="text"
               />
               <div className="cp-prompt-meta">{freePrompt.length} / 500</div>
             </div>
@@ -1653,7 +1655,7 @@ const CREAR_STYLES = `
 
   max-width: 480px;
   margin: 0 auto;
-  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg-0);
   color: var(--ink-0);
   font-family: 'DM Sans', sans-serif;
@@ -1789,6 +1791,7 @@ const CREAR_STYLES = `
 /* Input */
 .cp-shell .cp-input {
   width: 100%; padding: 12px 14px;
+  min-height: 44px;
   background: var(--bg-card);
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -1811,6 +1814,10 @@ const CREAR_STYLES = `
 .cp-shell .cp-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .cp-shell .cp-chip {
   padding: 7px 12px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: var(--bg-card);
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -1900,7 +1907,7 @@ const CREAR_STYLES = `
   padding: 12px;
 }
 .cp-shell .cp-textarea {
-  width: 100%; background: transparent; border: none; outline: none; resize: none;
+  width: 100%; min-height: 44px; background: transparent; border: none; outline: none; resize: none;
   font-family: inherit; font-size: 13px; color: var(--ink-0); line-height: 1.5;
 }
 .cp-shell .cp-textarea::placeholder { color: var(--ink-3); }
@@ -2129,7 +2136,7 @@ const CREAR_STYLES = `
   position: fixed;
   top: 0; left: 50%; transform: translateX(-50%);
   width: 100%; max-width: 480px;
-  height: 100vh;
+  height: 100dvh;
   background: rgba(245, 235, 219, 0.96);
   backdrop-filter: blur(12px);
   display: flex; flex-direction: column;

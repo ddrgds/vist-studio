@@ -1500,7 +1500,7 @@ const RC_STYLES = `
   z-index: 2;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  min-height: 100vh;
+  min-height: 100dvh;
   padding: 40px 30px;
   color: #FFFAEC;
   text-align: center;

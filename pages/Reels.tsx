@@ -598,6 +598,8 @@ export default function Reels({ onNav }: Props) {
             onChange={e => { setPrompt(e.target.value); setTemplateId(null); }}
             rows={3}
             maxLength={400}
+            enterKeyHint="send"
+            inputMode="text"
           />
 
           <div className="rl-config-row">
@@ -727,7 +729,7 @@ export default function Reels({ onNav }: Props) {
 // ═══════════════════════════════════════════════
 const rlStyles = (m: AppMood) => `
 .rl-shell {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: ${m.bg0};
   background-image:
     radial-gradient(80% 60% at 50% 0%, rgba(216,84,120,0.10), transparent 70%),
@@ -1111,7 +1113,7 @@ const rlStyles = (m: AppMood) => `
   box-shadow: none;
 }
 .rl-gen-shell {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;

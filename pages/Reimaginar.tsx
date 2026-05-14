@@ -807,14 +807,11 @@ export default function Reimaginar({ onNav }: Props) {
               <button className="rm-canvas-btn" onClick={() => { hapticLight(); onNav('editor'); }}>
                 <Edit3 size={14} /> Editar
               </button>
-              <a
-                href={resultUrl}
-                download={`reimaginar-${Date.now()}.png`}
-                className="rm-canvas-btn"
-                onClick={() => hapticLight()}
-              >
+              {/* Routes through sharePhoto so iOS lands the file in Photos.
+                  <a download> silently fails on iOS WKWebView for cross-origin URLs. */}
+              <button className="rm-canvas-btn" onClick={handleShare}>
                 <Download size={14} /> Bajar
-              </a>
+              </button>
               <button className="rm-canvas-btn rm-canvas-btn-prim" onClick={handleShare}>
                 <Share2 size={14} /> Compartir
               </button>
@@ -850,9 +847,13 @@ export default function Reimaginar({ onNav }: Props) {
         <Search size={14} className="rm-search-icon" />
         <input
           className="rm-search-input"
+          type="search"
           placeholder="Buscar estilo (boudoir, Y2K, dark academia...)"
           value={search}
           onChange={e => setSearch(e.target.value)}
+          enterKeyHint="search"
+          inputMode="search"
+          autoComplete="off"
         />
         {search && (
           <button
@@ -1010,6 +1011,9 @@ export default function Reimaginar({ onNav }: Props) {
               onChange={e => setCustomPrompt(e.target.value)}
               placeholder="Ej: nadando en una piscina infinity con sunset rosa, mood Wes Anderson..."
               rows={3}
+              maxLength={400}
+              enterKeyHint="send"
+              inputMode="text"
             />
             <div className="rm-custom-meta">
               {customPrompt.length} / 400 · Combina con estilos seleccionados
@@ -1420,6 +1424,8 @@ const REIMAGINAR_STYLES = `
 .rm-shell .rm-tab {
   flex-shrink: 0;
   padding: 8px 14px;
+  min-height: 44px;
+  justify-content: center;
   background: transparent;
   border: 1px solid var(--line);
   border-radius: 999px;

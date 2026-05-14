@@ -934,7 +934,8 @@ const IM_STYLES = `
   backdrop-filter: blur(8px);
 }
 .im-shell .im-back {
-  width: 32px; height: 32px;
+  width: 44px; height: 44px;
+  min-width: 44px; min-height: 44px;
   border-radius: 50%;
   background: var(--im-bg-card);
   border: 1px solid var(--im-line);
@@ -1116,7 +1117,7 @@ const IM_STYLES = `
   z-index: 2;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  min-height: 100vh;
+  min-height: 100dvh;
   padding: 40px 30px;
   color: #FFFCF5;
   text-align: center;
@@ -1248,7 +1249,8 @@ const IM_STYLES = `
   background: var(--im-bg-card);
 }
 .im-shell .im-gallery-back {
-  width: 32px; height: 32px;
+  width: 44px; height: 44px;
+  min-width: 44px; min-height: 44px;
   border-radius: 50%;
   background: var(--im-paper);
   border: 1px solid var(--im-line);

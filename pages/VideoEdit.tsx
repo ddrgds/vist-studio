@@ -570,6 +570,8 @@ export default function VideoEdit({ onNav }: Props) {
             onChange={e => { setPrompt(e.target.value); setTemplateId(null); }}
             rows={3}
             maxLength={400}
+            enterKeyHint="send"
+            inputMode="text"
           />
 
           <div className="ve-refs">
@@ -710,7 +712,7 @@ export default function VideoEdit({ onNav }: Props) {
 // ═══════════════════════════════════════════════
 const veStyles = (m: AppMood) => `
 .ve-shell {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: ${m.bg0};
   background-image:
     radial-gradient(80% 60% at 50% 0%, rgba(156,109,42,0.10), transparent 70%),
@@ -896,7 +898,7 @@ const veStyles = (m: AppMood) => `
 }
 .ve-cta-go:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
 .ve-gen-shell {
-  min-height: 100vh; display: flex; flex-direction: column;
+  min-height: 100dvh; display: flex; flex-direction: column;
   align-items: center; justify-content: center; padding: 32px; text-align: center;
 }
 .ve-gen-orb {

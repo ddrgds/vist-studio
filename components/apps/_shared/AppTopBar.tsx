@@ -60,7 +60,11 @@ const TOPBAR_STYLES = `
 .vist-app-topbar {
   position: sticky; top: 0; z-index: 30;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 20px 10px;
+  /* Self-contained safe-area: floor at 14px, otherwise yield to the device
+   * notch / Dynamic Island inset. Previously the parent shell had to handle
+   * this — fragile when an app forgot to inset its scroll container. */
+  padding-top: max(14px, env(safe-area-inset-top));
+  padding-right: 20px; padding-left: 20px; padding-bottom: 10px;
   background: linear-gradient(180deg, var(--app-bg-0) 0%, var(--app-bg-0) 80%, transparent 100%);
   backdrop-filter: blur(8px);
 }

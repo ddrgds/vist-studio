@@ -494,14 +494,13 @@ export default function HeadshotPro({ onNav }: Props) {
               <button className="hp-canvas-btn" onClick={() => { hapticLight(); onNav('editor'); }}>
                 <Edit3 size={14} /> Editar
               </button>
-              <a
-                href={resultUrl}
-                download={`headshot-${Date.now()}.png`}
-                className="hp-canvas-btn"
-                onClick={() => hapticLight()}
-              >
+              {/* "Bajar" routes through sharePhoto — iOS WKWebView ignores
+                  <a download> for cross-origin URLs and silently navigates
+                  away instead of saving. sharePhoto picks the right path
+                  per platform (Capacitor share / Web Share / iOS new tab). */}
+              <button className="hp-canvas-btn" onClick={handleShare}>
                 <Download size={14} /> Bajar
-              </a>
+              </button>
               <button className="hp-canvas-btn hp-canvas-btn-prim" onClick={handleShare}>
                 <Share2 size={14} /> Compartir
               </button>
@@ -772,7 +771,7 @@ const HEADSHOT_STYLES = `
   right: 6px;
   top: 50%;
   transform: translateY(-50%);
-  width: 20px; height: 20px;
+  width: 32px; height: 32px;
   border-radius: 50%;
   background: rgba(255,255,255,0.18);
   border: none;
@@ -870,8 +869,9 @@ const HEADSHOT_STYLES = `
   justify-content: center;
 }
 .hp-shell .hp-canvas-btn {
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   padding: 8px 12px;
+  min-height: 44px;
   background: rgba(255, 252, 245, 0.94);
   backdrop-filter: blur(8px);
   border: 1px solid var(--line);

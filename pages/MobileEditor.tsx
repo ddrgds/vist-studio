@@ -1561,6 +1561,8 @@ export default function MobileEditor({ onNav }: Props) {
                     placeholder="Ej: ponela en una playa al atardecer · cambiale el cabello a rubio · sumale lentes de sol..."
                     rows={4}
                     maxLength={300}
+                    enterKeyHint="send"
+                    inputMode="text"
                   />
                   <div className="me-textarea-counter">{freeaiText.length} / 300</div>
                   <input ref={freeaiRefInputRef} type="file" accept="image/*" hidden
@@ -1979,8 +1981,9 @@ const EDITOR_STYLES = `
   background: linear-gradient(180deg, rgba(14,11,7,0.55) 0%, rgba(14,11,7,0) 100%);
 }
 .me-back, .me-credits {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 7px 11px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 12px 14px;
+  min-height: 44px;
   border-radius: 999px;
   background: rgba(31,26,20,0.06);
   border: none;
@@ -2802,8 +2805,9 @@ const EDITOR_STYLES = `
   gap: 8px;
 }
 .me-sheet-tool-card {
-  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
   padding: 12px 6px 10px;
+  min-height: 60px;
   border-radius: 12px;
   background: rgba(245,235,219,0.04);
   border: 1.5px solid rgba(245,235,219,0.08);

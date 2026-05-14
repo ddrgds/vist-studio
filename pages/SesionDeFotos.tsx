@@ -1129,14 +1129,12 @@ export default function SesionDeFotos({ onNav }: Props) {
             <button className="ss-lb-btn" onClick={() => handleShareSlot(openLightboxIdx)}>
               <Share2 size={14} /> Compartir
             </button>
-            <a
-              href={slots[openLightboxIdx]!.url!}
-              download={`sesion-${openLightboxIdx + 1}.png`}
-              className="ss-lb-btn"
-              onClick={() => hapticLight()}
-            >
+            {/* Routes through handleShareSlot (which uses sharePhoto) so iOS
+                lands the file in Photos. <a download> silently fails on iOS
+                WKWebView for cross-origin URLs. */}
+            <button className="ss-lb-btn" onClick={() => handleShareSlot(openLightboxIdx)}>
               <Download size={14} /> Bajar
-            </a>
+            </button>
           </div>
           <button className="ss-lightbox-close" onClick={() => setOpenLightboxIdx(null)} aria-label="Cerrar">
             <X size={18} />
@@ -1246,6 +1244,7 @@ const SESION_STYLES = `
   flex-shrink: 0;
   display: flex; align-items: center; gap: 8px;
   padding: 6px 12px 6px 6px;
+  min-height: 44px;
   background: var(--bg-card);
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -1622,6 +1621,10 @@ const SESION_STYLES = `
 }
 .ss-shell .ss-cat-pill {
   padding: 5px 11px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   border: 1px solid var(--line);
   border-radius: 999px;
