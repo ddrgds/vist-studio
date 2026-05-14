@@ -68,7 +68,9 @@ const APP_SECTIONS: AppSection[] = [
         id: 'create', name: 'Crear Personaje',
         tagline: 'Construye tu modelo virtual desde cero · 5 minutos',
         cost: '20-60 cr',
-        bg: '/app-thumbs/create.jpg',
+        // create-wide.jpg is a 16:9-native variant. Original /create.jpg is
+        // a 2x2 comp card kept for use inside CrearPersonaje itself.
+        bg: '/app-thumbs/create-wide.jpg',
         accent: '#7A5E2F', isLive: true, isNew: true, wide: true,
       },
     ],
