@@ -8,7 +8,7 @@
  * Detection: Capacitor.isNativePlatform() OR ?mobile=1 in URL (for browser testing).
  */
 import React, { lazy, Suspense, useEffect, useState } from 'react';
-import { Aperture, Home, Images, User, Sparkles, Lock } from 'lucide-react';
+import { Home, Images, User, Lock } from 'lucide-react';
 import type { Page } from '../App';
 import { useCharacterStore } from '../stores/characterStore';
 import { useGalleryStore } from '../stores/galleryStore';
@@ -42,65 +42,97 @@ interface AppEntry {
   isLive: boolean;
   isNew?: boolean;
   comingSoon?: string;
+  /** When true, the card spans both columns of the grid as a "hub" card. */
+  wide?: boolean;
 }
 
+interface AppSection {
+  /** Section heading shown above the grid. null = no heading (foundation row). */
+  heading: string | null;
+  apps: AppEntry[];
+}
+
+// Apps are grouped into 3 sections so the home reads as a natural workflow:
+//   1. Foundation (Crear Modelo — always first, wide hub card)
+//   2. FOTOS (Sesión / Headshot / Reimaginar / Imagina, then Editor IA wide)
+//   3. VIDEOS (Reels / Recast, then Editar Video wide)
+// Wide cards = the "hub" of each category. Standard cards = specific tools.
+//
 // Custom-generated thumbnails (Flux 2 Pro, 2026-05-13) live in
-// public/app-thumbs/. They replace the generic Unsplash stock photos and
-// communicate each app's function in a unified warm cream/clay palette.
-const APPS: AppEntry[] = [
+// public/app-thumbs/.
+const APP_SECTIONS: AppSection[] = [
   {
-    id: 'create', name: 'Crear Personaje', tagline: 'Construye tu modelo virtual',
-    cost: '20-60 cr · 5 min',
-    bg: '/app-thumbs/create.jpg',
-    accent: '#7A5E2F', isLive: true, isNew: true,
+    heading: null,
+    apps: [
+      {
+        id: 'create', name: 'Crear Personaje',
+        tagline: 'Construye tu modelo virtual desde cero · 5 minutos',
+        cost: '20-60 cr',
+        bg: '/app-thumbs/create.jpg',
+        accent: '#7A5E2F', isLive: true, isNew: true, wide: true,
+      },
+    ],
   },
   {
-    id: 'headshot', name: 'Headshot Pro', tagline: 'Retratos profesionales',
-    cost: '10 cr · 30s',
-    bg: '/app-thumbs/headshot.jpg',
-    accent: '#C9785C', isLive: true, isNew: true,
+    heading: 'Fotos',
+    apps: [
+      {
+        id: 'sesion', name: 'Sesión de Fotos', tagline: 'Multi-foto coherente',
+        cost: '16-40 cr · 4-12 fotos',
+        bg: '/app-thumbs/sesion.jpg',
+        accent: '#B0772D', isLive: true, isNew: true,
+      },
+      {
+        id: 'headshot', name: 'Headshot Pro', tagline: 'Retratos profesionales',
+        cost: '10 cr · 30s',
+        bg: '/app-thumbs/headshot.jpg',
+        accent: '#C9785C', isLive: true, isNew: true,
+      },
+      {
+        id: 'reimaginar', name: 'Reimaginar',
+        tagline: 'Transforma una foto · 500+ estéticas',
+        cost: '10 cr · 20s',
+        bg: '/app-thumbs/reimaginar.jpg',
+        accent: '#8B4566', isLive: true, isNew: true,
+      },
+      {
+        id: 'imagina', name: 'Imagina', tagline: 'Variaciones de una foto que amas',
+        cost: '6-32 cr · 1-9 fotos',
+        bg: '/app-thumbs/imagina.jpg',
+        accent: '#C9785C', isLive: true, isNew: true,
+      },
+      {
+        id: 'editor', name: 'Editor IA',
+        tagline: 'Reluz, estilo, piel · 12 herramientas',
+        cost: '6-13 cr · por edición',
+        bg: '/app-thumbs/editor.jpg',
+        accent: '#C9785C', isLive: true, isNew: true, wide: true,
+      },
+    ],
   },
   {
-    id: 'reimaginar', name: 'Reimaginar', tagline: '500+ estéticas',
-    cost: '10 cr · 20s',
-    bg: '/app-thumbs/reimaginar.jpg',
-    accent: '#8B4566', isLive: true, isNew: true,
-  },
-  {
-    id: 'sesion', name: 'Sesión de Fotos', tagline: 'Multi-foto coherente',
-    cost: '16-40 cr · 4-12 fotos',
-    bg: '/app-thumbs/sesion.jpg',
-    accent: '#B0772D', isLive: true, isNew: true,
-  },
-  {
-    id: 'editor', name: 'Editor IA', tagline: 'Reluz, estilo, piel, AI Edit',
-    cost: '6-13 cr · por edición',
-    bg: '/app-thumbs/editor.jpg',
-    accent: '#C9785C', isLive: true, isNew: true,
-  },
-  {
-    id: 'recast', name: 'Recast', tagline: 'Grábate tú, aparece tu modelo',
-    cost: '60-230 cr · 5-10s',
-    bg: '/app-thumbs/recast.jpg',
-    accent: '#B0542D', isLive: true, isNew: true,
-  },
-  {
-    id: 'reels', name: 'Reels', tagline: 'Una foto → reel vertical 1080p',
-    cost: '145-290 cr · 5-10s',
-    bg: '/app-thumbs/reels.jpg',
-    accent: '#D85478', isLive: true, isNew: true,
-  },
-  {
-    id: 'videoedit', name: 'Editar Video', tagline: 'Cambia fondo, outfit, color en un video',
-    cost: '145 cr · 3-60s',
-    bg: '/app-thumbs/videoedit.jpg',
-    accent: '#9C6D2A', isLive: true, isNew: true,
-  },
-  {
-    id: 'imagina', name: 'Imagina', tagline: 'Variaciones de una foto que amas',
-    cost: '6-32 cr · 1-9 fotos',
-    bg: '/app-thumbs/imagina.jpg',
-    accent: '#C9785C', isLive: true, isNew: true,
+    heading: 'Videos',
+    apps: [
+      {
+        id: 'reels', name: 'Reels', tagline: 'Una foto → reel vertical 1080p',
+        cost: '145-290 cr · 5-10s',
+        bg: '/app-thumbs/reels.jpg',
+        accent: '#D85478', isLive: true, isNew: true,
+      },
+      {
+        id: 'recast', name: 'Recast', tagline: 'Grábate tú, aparece tu modelo',
+        cost: '60-230 cr · 5-10s',
+        bg: '/app-thumbs/recast.jpg',
+        accent: '#B0542D', isLive: true, isNew: true,
+      },
+      {
+        id: 'videoedit', name: 'Editar Video',
+        tagline: 'Cambia fondo, outfit, color en un video',
+        cost: '145 cr · 3-60s',
+        bg: '/app-thumbs/videoedit.jpg',
+        accent: '#9C6D2A', isLive: true, isNew: true, wide: true,
+      },
+    ],
   },
 ];
 
@@ -139,75 +171,45 @@ function MobileHome({ onNav }: { onNav: (p: MobilePage) => void }) {
         </div>
       </div>
 
-      <section className="m-hero">
-        <div className="m-hero-eyebrow">App de la semana</div>
-        <h1 className="m-hero-title">Tu primer<br /><em>retrato pro.</em></h1>
-        <p className="m-hero-sub">Editorial, corporativo, beauty. En 30 segundos.</p>
-        <button className="m-hero-cta" onClick={() => { hapticLight(); onNav('headshot'); }}>
-          <Aperture size={14} />
-          Probar Headshot Pro
-        </button>
-      </section>
+      {/* Hero block removed 2026-05-14 — was hardcoded to Headshot Pro,
+       *  redundant with the Headshot card in the grid, and ate above-the-fold
+       *  space. The 3 wide cards below (Crear Modelo, Editor IA, Editar Video)
+       *  now carry the visual weight. */}
 
-      {/* Foundation: Crear personaje — prominent hero when 0, compact when 1+ */}
-      {characters.length === 0 ? (
-        <section className="m-section">
-          <div className="m-section-head">
-            <span className="m-eyebrow">Empieza aquí</span>
-            <h2 className="m-section-title">Construye tu <em>modelo</em></h2>
+      {/* Apps grouped into Foundation / Fotos / Videos sections */}
+      {APP_SECTIONS.map((section, sectionIdx) => (
+        <section key={section.heading ?? `s-${sectionIdx}`} className="m-section">
+          {section.heading && (
+            <div className="m-section-head">
+              <h2 className="m-section-title m-section-title-cat">{section.heading}</h2>
+            </div>
+          )}
+
+          <div className="m-apps-grid">
+            {section.apps.map((app, i) => (
+              <button
+                key={`${app.name}-${i}`}
+                className={`m-app-card ${app.wide ? 'm-app-card-wide' : ''} ${!app.isLive ? 'is-soon' : ''}`}
+                disabled={!app.isLive}
+                onClick={() => { if (app.isLive) { hapticLight(); onNav(app.id as MobilePage); } }}
+                style={{ '--app-accent': app.accent } as React.CSSProperties}
+              >
+                <div className="m-app-bg" style={{ backgroundImage: `url(${app.bg})` }} />
+                {app.comingSoon && (
+                  <span className="m-app-soon">
+                    <Lock size={9} /> {app.comingSoon}
+                  </span>
+                )}
+                <div className="m-app-content">
+                  <h3>{app.name.split(' ')[0]} <em>{app.name.split(' ').slice(1).join(' ') || '·'}</em></h3>
+                  <small>{app.tagline}</small>
+                  <div className="m-app-meta">{app.cost}</div>
+                </div>
+              </button>
+            ))}
           </div>
-          <button className="m-foundation-hero" onClick={() => { hapticLight(); onNav('create'); }}>
-            <div className="m-foundation-bg" style={{ backgroundImage: 'url(/app-thumbs/create.jpg)' }} />
-            <div className="m-foundation-tag">
-              <span className="m-foundation-step">1</span>
-              <span>Empieza aquí</span>
-            </div>
-            <div className="m-foundation-content">
-              <strong>Crear Personaje</strong>
-              <small>Tu modelo virtual desde cero · 5 minutos</small>
-              <span className="m-foundation-cta">
-                <Sparkles size={14} />
-                Construir
-              </span>
-            </div>
-          </button>
         </section>
-      ) : null}
-      {/* Users with 1+ characters discover Crear Personaje via the APPS grid
-       *  (first card with the create.jpg thumb) — the previous compact
-       *  dashed-border button passed unnoticed. */}
-
-      {/* Apps grid */}
-      <section className="m-section">
-        <div className="m-section-head">
-          <span className="m-eyebrow">Apps premium</span>
-          <h2 className="m-section-title">Suite <em>VIST</em></h2>
-        </div>
-
-        <div className="m-apps-grid">
-          {APPS.map((app, i) => (
-            <button
-              key={`${app.name}-${i}`}
-              className={`m-app-card ${!app.isLive ? 'is-soon' : ''}`}
-              disabled={!app.isLive}
-              onClick={() => { if (app.isLive) { hapticLight(); onNav(app.id as MobilePage); } }}
-              style={{ '--app-accent': app.accent } as React.CSSProperties}
-            >
-              <div className="m-app-bg" style={{ backgroundImage: `url(${app.bg})` }} />
-              {app.comingSoon && (
-                <span className="m-app-soon">
-                  <Lock size={9} /> {app.comingSoon}
-                </span>
-              )}
-              <div className="m-app-content">
-                <h3>{app.name.split(' ')[0]} <em>{app.name.split(' ').slice(1).join(' ') || '·'}</em></h3>
-                <small>{app.tagline}</small>
-                <div className="m-app-meta">{app.cost}</div>
-              </div>
-            </button>
-          ))}
-        </div>
-      </section>
+      ))}
 
       <div style={{ height: 24 }} />
     </div>
@@ -692,6 +694,16 @@ const MOBILE_STYLES = `
   line-height: 1;
 }
 .m-shell .m-section-title em { font-style: italic; }
+/* Category headings (Fotos / Videos) — smaller, monospace eyebrow-style. */
+.m-shell .m-section-title-cat {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  margin: 0;
+  font-weight: 600;
+}
 
 /* Foundation hero card — visual CTA when user has 0 characters */
 .m-shell .m-foundation-hero {
@@ -825,6 +837,18 @@ const MOBILE_STYLES = `
 }
 .m-shell .m-app-card:not(:disabled):active { transform: scale(0.97); }
 .m-shell .m-app-card.is-soon { opacity: 0.7; cursor: not-allowed; }
+
+/* Wide card — spans both columns of the grid. Used for the 3 "hub" cards
+ * (Crear Modelo, Editor IA, Editar Video) so they read as primary actions
+ * within each section. Wider aspect ratio keeps them visually balanced
+ * against the standard 3:4 tiles. */
+.m-shell .m-app-card-wide {
+  grid-column: 1 / -1;
+  aspect-ratio: 16 / 9;
+}
+.m-shell .m-app-card-wide .m-app-content h3 { font-size: 26px; }
+.m-shell .m-app-card-wide .m-app-content small { font-size: 13px; }
+.m-shell .m-app-card-wide .m-app-content { max-width: 70%; }
 .m-shell .m-app-bg {
   position: absolute; inset: 0;
   background-size: cover; background-position: center;
