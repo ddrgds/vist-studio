@@ -870,7 +870,8 @@ export default function Recast({ onNav }: Props) {
             autoPlay
             loop
             playsInline
-            controls={false}
+            controls
+            controlsList="nodownload"
             onClick={() => togglePlay('result')}
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}

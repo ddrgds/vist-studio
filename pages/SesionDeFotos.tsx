@@ -643,6 +643,10 @@ export default function SesionDeFotos({ onNav }: Props) {
       })));
       if (selectedChar) incrementUsage(selectedChar.id);
       hapticSuccess();
+      // User feedback (2026-05-14): "no queda claro cuándo se guardan las fotos".
+      // Photos save automatically into the Gallery on success — surface that
+      // explicitly so the user trusts the flow.
+      toast.success(`${successful.length} foto${successful.length === 1 ? '' : 's'} en Galería`);
     } else {
       hapticError();
     }
@@ -850,7 +854,10 @@ export default function SesionDeFotos({ onNav }: Props) {
                   <span className="ss-stat"><span className="ss-stat-dot is-reject" />{rejectedCount} reject</span>
                   <span className="ss-stat"><span className="ss-stat-dot is-pending" />{completedCount - keptCount - rejectedCount} pending</span>
                 </div>
-                <span className="ss-proof-tip">Tap para abrir</span>
+                {/* Make auto-save behavior explicit. The keep/reject marks are
+                 *  just session curation; every successful photo is already
+                 *  saved to the Gallery the moment it generates. */}
+                <span className="ss-proof-tip">Guardadas en Galería · Tap para abrir</span>
               </div>
             )}
           </div>

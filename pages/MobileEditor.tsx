@@ -26,7 +26,7 @@ import { useCharacterStore } from '../stores/characterStore';
 import { usePipelineStore } from '../stores/pipelineStore';
 import { hapticLight, hapticMedium, hapticSuccess, hapticError } from '../services/nativeService';
 import type { AppMood } from '../components/apps/_shared';
-import { urlToFile, useAppUpload, HeroProSwitch, HERO_PRO_EXTRA_COST } from '../components/apps/_shared';
+import { urlToFile, useAppUpload, HeroProSwitch, HERO_PRO_EXTRA_COST, AppLightbox } from '../components/apps/_shared';
 
 const ATELIER_MOOD: AppMood = {
   bg0: '#F5EBDB',
@@ -416,6 +416,9 @@ export default function MobileEditor({ onNav }: Props) {
   const [progress, setProgress] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
   const [comparing, setComparing] = useState(false); // long-press to show original
+  // Lightbox state — tapping the Maximize2 button on the result overlay
+  // expands the current result (or base) image to a fullscreen viewer.
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
   // ── Source picker handlers ───────────────────────
   const [pickingId, setPickingId] = useState<string | null>(null);
@@ -1325,6 +1328,13 @@ export default function MobileEditor({ onNav }: Props) {
             <button className="me-overlay-btn" onClick={continueEditing} aria-label="Usar como base">
               <Sparkles size={14} />
             </button>
+            <button
+              className="me-overlay-btn"
+              onClick={() => { hapticLight(); setLightbox(resultUrl); }}
+              aria-label="Ampliar"
+            >
+              <Maximize2 size={14} />
+            </button>
             <button className="me-overlay-btn" onClick={downloadResult} aria-label="Descargar">
               <Download size={14} />
             </button>
@@ -1949,6 +1959,8 @@ export default function MobileEditor({ onNav }: Props) {
           </div>
         )}
       </div>
+
+      <AppLightbox src={lightbox} onClose={() => setLightbox(null)} />
     </div>
   );
 }

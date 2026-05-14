@@ -22,7 +22,7 @@ import { hapticLight, hapticMedium, hapticSuccess, hapticError, sharePhoto, take
 import { SOUL_STYLES, SOUL_STYLE_CATEGORIES, type SoulStyle, type SoulStyleCategory } from '../data/soulStyles';
 import { identityProse, NO_TEXT_RULE, NEVER_ADD_TEXT, PHOTOREAL_SKIN, renderStyleSkin, withPhysicalAnchor, sanitizeAnchor } from '../services/promptBuilder';
 import { urlToFile } from '../components/apps/_shared/urlToFile';
-import { AppTopBar, type AppMood } from '../components/apps/_shared';
+import { AppTopBar, AppLightbox, type AppMood } from '../components/apps/_shared';
 
 // Mood: editorial cream + dusty rose + champagne — matches existing palette
 const LIGHT_MOOD: AppMood = {
@@ -150,6 +150,8 @@ export default function Reimaginar({ onNav }: Props) {
   const [progress, setProgress] = useState(0);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
+  // Lightbox state — tap any result image or history thumb to view fullscreen.
+  const [lightbox, setLightbox] = useState<string | null>(null);
   // Aspect ratio — 3:4 default (IG feed vertical) but user can pick reels (9:16),
   // square (1:1), landscape (4:3), or banner (16:9) for different content surfaces.
   const [aspectRatio, setAspectRatio] = useState<'3:4' | '1:1' | '4:3' | '9:16' | '16:9'>('3:4');
@@ -802,6 +804,8 @@ export default function Reimaginar({ onNav }: Props) {
               src={resultUrl}
               alt="Reimaginar resultado"
               className="rm-canvas-img rm-fade-in"
+              onClick={() => { hapticLight(); setLightbox(resultUrl); }}
+              style={{ cursor: 'zoom-in' }}
             />
             <div className="rm-canvas-actions">
               <button className="rm-canvas-btn" onClick={() => { hapticLight(); onNav('editor'); }}>
@@ -827,14 +831,17 @@ export default function Reimaginar({ onNav }: Props) {
         )}
       </div>
 
-      {/* History strip */}
+      {/* History strip — tap any thumb to view fullscreen. The active result
+       *  also reads as fullscreen-ready; switching results uses the swap
+       *  flow inside the lightbox (not yet exposed) or by long-press (todo).
+       *  For now: tap = expand, matching user expectation. */}
       {history.length > 0 && (
         <div className="rm-history">
           {history.map((url, i) => (
             <button
               key={url + i}
               className={`rm-history-thumb ${url === resultUrl ? 'is-active' : ''}`}
-              onClick={() => setResultUrl(url)}
+              onClick={() => { hapticLight(); setLightbox(url); }}
               style={{ backgroundImage: `url(${url})` }}
               aria-label={`Resultado ${i + 1}`}
             />
@@ -1112,6 +1119,8 @@ export default function Reimaginar({ onNav }: Props) {
           </button>
         </div>
       </div>
+
+      <AppLightbox src={lightbox} onClose={() => setLightbox(null)} />
     </div>
   );
 }

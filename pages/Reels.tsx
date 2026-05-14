@@ -692,6 +692,8 @@ export default function Reels({ onNav }: Props) {
             autoPlay
             loop
             playsInline
+            controls
+            controlsList="nodownload"
             onClick={togglePlay}
           />
           <button className="rl-play-overlay" onClick={togglePlay} aria-label={isPlaying ? 'Pausar' : 'Reproducir'}>

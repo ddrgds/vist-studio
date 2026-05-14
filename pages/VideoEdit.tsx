@@ -681,6 +681,8 @@ export default function VideoEdit({ onNav }: Props) {
             autoPlay
             loop
             playsInline
+            controls
+            controlsList="nodownload"
             onClick={() => togglePlay('result')}
           />
           <button className="ve-play-overlay" onClick={() => togglePlay('result')} aria-label={isPlaying ? 'Pausar' : 'Reproducir'}>
