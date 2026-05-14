@@ -107,7 +107,10 @@ const APP_SECTIONS: AppSection[] = [
         id: 'editor', name: 'Editor IA',
         tagline: 'Reluz, estilo, piel · 12 herramientas',
         cost: '6-13 cr · por edición',
-        bg: '/app-thumbs/editor.jpg',
+        // editor-wide.jpg is a 16:9-native macro close-up that crops cleanly
+        // on the wide card. Original /editor.jpg (3:4 close-up) is kept for
+        // any non-wide use.
+        bg: '/app-thumbs/editor-wide.jpg',
         accent: '#C9785C', isLive: true, isNew: true, wide: true,
       },
     ],
@@ -131,7 +134,10 @@ const APP_SECTIONS: AppSection[] = [
         id: 'videoedit', name: 'Editar Video',
         tagline: 'Cambia fondo, outfit, color en un video',
         cost: '145 cr · 3-60s',
-        bg: '/app-thumbs/videoedit.jpg',
+        // videoedit-wide.jpg is a 16:9-native warm/cool grade split that
+        // crops cleanly on the wide card. Original /videoedit.jpg (3:4)
+        // kept for any non-wide use.
+        bg: '/app-thumbs/videoedit-wide.jpg',
         accent: '#9C6D2A', isLive: true, isNew: true, wide: true,
       },
     ],
